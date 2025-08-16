@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Cita - Oh My Pet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <nav class="bg-blue-800 p-4 shadow-md">
+        <div class="container mx-auto flex items-center justify-between">
+            <h1 class="text-white text-2xl font-bold">OH MY PET 🐾</h1>
+            <div>
+                <a href="#" class="text-blue-200 hover:text-white mx-3 font-semibold">Productos</a>
+                <a href="#" class="text-blue-200 hover:text-white mx-3 font-semibold">Citas</a>
+                <a href="#" class="text-blue-200 hover:text-white mx-3 font-semibold">Mi Cuenta</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex justify-center items-center py-10">
+        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Agendar una Cita</h2>
+    <form>
+        <div class="mb-4">
+            <label for="appointment-pet" class="block text-gray-700 mb-2">¿Para qué mascota?</label>
+            <select id="appointment-pet" name="appointment-pet" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">-- Selecciona una mascota --</option>
+                <option value="mascota1">Rocky (Perro de Ana)</option>
+                <option value="mascota2">Misu (Gato de Pedro)</option>
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label for="appointment-service" class="block text-gray-700 mb-2">¿Qué servicio necesitas?</label>
+            <select id="appointment-service" name="appointment-service" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">-- Selecciona un servicio --</option>
+                <option value="baño">Baño Básico</option>
+                <option value="corte">Corte de Pelo</option>
+                <option value="uñas">Corte de Uñas</option>
+            </select>
+        </div>
+
+        <div class="mb-6">
+            <label for="appointment-date" class="block text-gray-700 mb-2">Elige una fecha:</label>
+            <input type="date" id="appointment-date" name="appointment-date" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <button type="submit" class="w-full bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition-colors">
+            Ver Horarios Disponibles
+        </button>
+    </form>
+</div>
+        </main>
+
+</body>
+</html>
