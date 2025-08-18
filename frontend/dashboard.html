@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Oh My Pet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <nav class="bg-blue-800 p-4 shadow-md"
+        <div class="cobtainer mx-auto flex items-center justify-between">
+            <h1 class="text-white text2xl font-bold">OH MY PET🐾</h1>
+
+            <div>
+                <a href="productos.html" class="text-blue-200 hover:text-white mx-3 font-semibold">Productos</a>
+                <a href="citas.html" class="text-blue-200 hover:text-white mx-3 font-semibold">Citas</a>
+                <a href="#" id="logout-button" class="text-blue-200 hover:text-white mx-3 font-semibold">Cerrar Sesión</a>
+            </div>
+
+        </div>
+    </nav>
+    <main class="container mx-auto p-6">
+        <h1 id="welcome-message" class="text-3xl font-bold text-gray-800">Cargando...</h1>
+
+    </main>
+
+    <script type="module" src="supabase-client.js"></script>
+    
+</body>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        
+        const { data, error } = await supabase.auth.getUser();
+
+       
+        if (!data.user) {
+            
+            alert('Necesitas iniciar sesión para acceder a esta página.');
+            window.location.href = 'login.html';
+            return; 
+        }
+
+        
+        const userName = data.user.user_metadata.nombre;
+        const welcomeMessageElement = document.querySelector('#welcome-message');
+        if (userName) {
+            welcomeMessageElement.textContent = `¡Bienvenido de vuelta, ${userName}!`;
+        } else {
+            welcomeMessageElement.textContent = '¡Bienvenido!';
+        }
+
+        
+        const logoutButton = document.querySelector('#logout-button');
+        logoutButton.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                alert(`Error al cerrar sesión: ${error.message}`);
+            } else {
+                alert('Sesión cerrada exitosamente.');
+                window.location.href = 'login.html';
+            }
+        });
+    });
+</script>
