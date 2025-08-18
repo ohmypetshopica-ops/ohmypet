@@ -29,32 +29,40 @@
     <script type="module" src="supabase-client.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const { data, error } = await supabase.auth.getUser();
+            const { data: { user } } = await supabase.auth.getUser();
 
-            if (error || !data.user) {
+            if (!user) {
                 alert('Necesitas iniciar sesión para acceder a esta página.');
                 window.location.href = 'login.html';
                 return; 
             }
 
-            // Lógica para mostrar el enlace de Administrador según el rol del usuario
-            const userRole = data.user.user_metadata.role; 
-            const adminLink = document.querySelector('#admin-link');
+            // --- INICIO: LÓGICA NUEVA PARA EL ENLACE DE ADMIN ---
+            // 1. Consultamos la tabla 'user_roles' para obtener el rol del usuario actual
+            const { data: roleData, error: roleError } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', user.id)
+                .single();
 
-            // Si el rol es 'dueno' o 'caja', mostramos el enlace
-            if (adminLink && (userRole === 'dueno' || userRole === 'caja')) {
-                adminLink.classList.remove('hidden');
+            // 2. Si el rol es 'dueno' o 'caja', mostramos el enlace de Admin
+            if (!roleError && roleData && ['dueno', 'empleado'].includes(roleData.role)) {
+                const adminLink = document.querySelector('#admin-link');
+                if (adminLink) {
+                    adminLink.classList.remove('hidden');
+                }
             }
+            // --- FIN: LÓGICA NUEVA ---
 
-            // Mostrar mensaje de bienvenida personalizado
-            const userName = data.user.user_metadata.nombre;
+            // Lógica para el mensaje de bienvenida
+            const userName = user.user_metadata.nombre;
             const welcomeMessageElement = document.querySelector('#welcome-message');
             if (userName) {
                 welcomeMessageElement.textContent = `¡Bienvenido de vuelta, ${userName}!`;
             } else {
                 welcomeMessageElement.textContent = '¡Bienvenido!';
             }
-
+            
             // Lógica para cerrar sesión
             const logoutButton = document.querySelector('#logout-button');
             logoutButton.addEventListener('click', async (event) => {

@@ -64,8 +64,8 @@
                     // 3. Redirigir según el rol obtenido
                     const userRole = roleData.role;
 
-                    if (userRole === 'dueno' || userRole === 'caja') {
-                        window.location.href = 'admin-productos.html';
+                    if (userRole === 'dueno' || userRole === 'empleado') {
+                        window.location.href = 'dashboard.html';
                     } else {
                         window.location.href = 'dashboard.html';
                     }
