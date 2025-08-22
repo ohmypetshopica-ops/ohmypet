@@ -27,22 +27,9 @@
             </button>
         </div>
 
-        <div class="bg-white shadow-lg rounded-xl overflow-hidden">
-            <table class="min-w-full leading-normal">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Imagen</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Precio</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="product-table-body">
-                    </tbody>
-            </table>
-        </div>
-    </main>
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            </div>
+        </main>
 
     <div id="product-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full hidden">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-2xl rounded-2xl bg-white">
@@ -114,34 +101,48 @@
                 return;
             }
 
-            const tableBody = document.querySelector('#product-table-body');
-            tableBody.innerHTML = ''; 
+            const productGrid = document.querySelector('#product-grid');
+            productGrid.innerHTML = ''; 
 
             productos.forEach(producto => {
-                const tableRow = `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                            <div class="flex-shrink-0 w-12 h-12">
-                                <img class="w-full h-full rounded-lg object-cover" src="${producto.imagen_url || 'https://via.placeholder.com/150'}" alt="Imagen de ${producto.nombre}">
+                const productCard = `
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-transform transform hover:-translate-y-1">
+                        <img class="h-48 w-full object-cover" src="${producto.imagen_url || 'https://via.placeholder.com/400x300.png?text=Sin+Imagen'}" alt="Imagen de ${producto.nombre}">
+                        <div class="p-4">
+                            <h3 class="text-lg font-bold text-gray-800">${producto.nombre}</h3>
+                            <p class="text-gray-600 mt-1">S/ ${producto.precio.toFixed(2)}</p>
+                            <p class="text-sm text-gray-500 mt-1">Stock: ${producto.stock}</p>
+                            <div class="mt-4">
+                                <button data-id="${producto.id}" class="edit-button text-sm text-green-600 hover:text-green-800 font-semibold">Editar</button>
                             </div>
-                        </td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                            <p class="text-gray-900 whitespace-no-wrap font-semibold">${producto.nombre}</p>
-                        </td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                            <p class="text-gray-900 whitespace-no-wrap">S/ ${producto.precio.toFixed(2)}</p>
-                        </td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                            <p class="text-gray-900 whitespace-no-wrap">${producto.stock}</p>
-                        </td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                            <button data-id="${producto.id}" class="edit-button text-green-600 hover:text-green-800 font-semibold">Editar</button>
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                 `;
-                tableBody.innerHTML += tableRow;
+                productGrid.innerHTML += productCard;
             });
         };
+
+        // --- INICIO: NUEVA LÓGICA PARA SUBIR IMÁGENES ---
+        async function uploadProductImage(file) {
+            if (!file) return null;
+
+            const fileName = `${Date.now()}-${file.name}`;
+            const { data, error } = await supabase.storage
+                .from('product-images') // El nombre exacto de tu bucket
+                .upload(fileName, file);
+
+            if (error) {
+                console.error('Error al subir la imagen:', error);
+                return null;
+            }
+
+            const { data: publicUrlData } = supabase.storage
+                .from('product-images')
+                .getPublicUrl(fileName);
+            
+            return publicUrlData.publicUrl;
+        }
+        // --- FIN: NUEVA LÓGICA PARA SUBIR IMÁGENES ---
 
         const modal = document.querySelector('#product-modal');
         const addProductButton = document.querySelector('#add-product-button');
@@ -156,6 +157,7 @@
             productForm.name.value = product.nombre || '';
             productForm.price.value = product.precio || '';
             productForm.stock.value = product.stock || '';
+            productForm.image.value = ''; // Limpiar el campo de la imagen
             
             modal.classList.remove('hidden');
         };
@@ -178,6 +180,15 @@
                 stock: parseInt(productForm.stock.value),
             };
 
+            // Subir la imagen si se ha seleccionado una nueva
+            const imageFile = productForm.image.files[0];
+            if (imageFile) {
+                const imageUrl = await uploadProductImage(imageFile);
+                if (imageUrl) {
+                    productData.imagen_url = imageUrl;
+                }
+            }
+
             let error;
             if (editingProductId) {
                 ({ error } = await supabase.from('productos').update(productData).eq('id', editingProductId));
@@ -194,12 +205,11 @@
             }
         });
 
-        document.querySelector('#product-table-body').addEventListener('click', async (event) => {
-            const target = event.target;
-            const productId = target.dataset.id;
-            if (!productId) return;
-
-            if (target.classList.contains('edit-button')) {
+        // Modificar el event listener para que funcione con el nuevo grid
+        document.querySelector('#product-grid').addEventListener('click', async (event) => {
+            const editButton = event.target.closest('.edit-button');
+            if (editButton) {
+                const productId = editButton.dataset.id;
                 const { data: product, error } = await supabase.from('productos').select('*').eq('id', productId).single();
                 if (error) {
                     alert(`No se pudo obtener el producto: ${error.message}`);
