@@ -70,22 +70,8 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { user } } = await supabase.auth.getUser();
-
             if (!user) {
-                alert('Necesitas iniciar sesión para acceder a esta página.');
                 window.location.href = 'login.html';
-                return;
-            }
-
-            const { data: roleData, error: roleError } = await supabase
-                .from('user_roles')
-                .select('role')
-                .eq('user_id', user.id)
-                .single();
-
-            if (roleError || !['dueno', 'empleado'].includes(roleData?.role)) {
-                alert('No tienes permisos para acceder a la administración de productos.');
-                window.location.href = 'dashboard.html';
                 return;
             }
             fetchAndDisplayProducts();
@@ -96,15 +82,12 @@
                 .from('productos')
                 .select('*')
                 .order('id', { ascending: true });
-
             if (error) {
                 console.error('Error al obtener productos:', error);
                 return;
             }
-
             const productGrid = document.querySelector('#product-grid');
             productGrid.innerHTML = ''; 
-
             productos.forEach(producto => {
                 const productCard = `
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-transform transform hover:-translate-y-1">
@@ -125,23 +108,17 @@
 
         async function uploadProductImage(file) {
             if (!file) return null;
-
             const fileName = `${Date.now()}-${file.name}`;
-            
             const { data, error } = await supabase.storage
-                .from('imagenes-productos')
+                .from('imagenes-productos') // <- Verificando que usa el nombre correcto
                 .upload(fileName, file);
-
             if (error) {
-                // MEJORA: Imprime el error completo en la consola para más detalles.
                 console.error('Error detallado al subir la imagen:', error);
                 return null;
             }
-
             const { data: publicUrlData } = supabase.storage
-                .from('imagenes-productos')
+                .from('imagenes-productos') // <- Verificando que usa el nombre correcto
                 .getPublicUrl(fileName);
-            
             return publicUrlData.publicUrl;
         }
 
@@ -154,12 +131,10 @@
         const showModal = (isEdit = false, product = {}) => {
             modalTitle.textContent = isEdit ? 'Editar Producto' : 'Agregar Nuevo Producto';
             editingProductId = isEdit ? product.id : null;
-            
             productForm.name.value = product.nombre || '';
             productForm.price.value = product.precio || '';
             productForm.stock.value = product.stock || '';
             productForm.image.value = '';
-            
             modal.classList.remove('hidden');
         };
 
@@ -174,32 +149,27 @@
 
         productForm.addEventListener('submit', async (event) => {
             event.preventDefault();
-            
             const productData = {
                 nombre: productForm.name.value,
                 precio: parseFloat(productForm.price.value),
                 stock: parseInt(productForm.stock.value),
             };
-
             const imageFile = productForm.image.files[0];
             if (imageFile) {
                 const imageUrl = await uploadProductImage(imageFile);
                 if (imageUrl) {
                     productData.imagen_url = imageUrl;
                 } else {
-                    // Si la subida de imagen falla, detenemos el proceso para no guardar un producto sin imagen
                     alert('Hubo un error al subir la imagen. Revisa la consola para más detalles.');
                     return;
                 }
             }
-
             let error;
             if (editingProductId) {
                 ({ error } = await supabase.from('productos').update(productData).eq('id', editingProductId));
             } else {
                 ({ error } = await supabase.from('productos').insert([productData]));
             }
-
             if (error) {
                 alert(`Error al guardar el producto: ${error.message}`);
                 console.error('Error detallado al guardar el producto:', error);
