@@ -139,7 +139,6 @@
                         </td>
                         <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <button data-id="${producto.id}" class="edit-button text-yellow-600 hover:text-yellow-900 mr-3 font-semibold">Editar</button>
-                            <button data-id="${producto.id}" class="delete-button text-red-600 hover:text-red-900 font-semibold">Eliminar</button>
                         </td>
                     </tr>
                 `;
@@ -209,19 +208,6 @@
                     alert(`No se pudo obtener el producto: ${error.message}`);
                 } else {
                     showModal(true, product);
-                }
-            }
-
-            if (target.classList.contains('delete-button')) {
-                const isConfirmed = confirm('¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.');
-                if (isConfirmed) {
-                    const { error } = await supabase.from('productos').delete().eq('id', productId);
-                    if (error) {
-                        alert(`Error al eliminar el producto: ${error.message}`);
-                    } else {
-                        alert('Producto eliminado.');
-                        fetchAndDisplayProducts();
-                    }
                 }
             }
         });
