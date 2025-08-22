@@ -26,12 +26,16 @@
                 <label for="password" class="block text-gray-600 mb-2">Contraseña</label>
                 <input type="password" id="password" name="password" placeholder="••••••••" class="w-full p-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required>
             </div>
-
             
             <button type="submit" class="w-full bg-green-500 text-white font-bold p-3 rounded-lg hover:bg-green-600 transition-colors">
                 Crear Cuenta
             </button>
         </form>
+
+        <div class="mt-6 text-center">
+            <p class="text-gray-600">¿Ya tienes una cuenta? <a href="login.html" class="text-green-500 hover:underline font-semibold">Inicia sesión</a></p>
+        </div>
+
     </div>
 
     <script type="module" src="supabase-client.js"></script>
@@ -45,23 +49,36 @@
             const email = registerForm.email.value;
             const password = registerForm.password.value;
             
-
-            const { data, error } = await supabase.auth.signUp({
+            // 1. Registrar al usuario en Supabase Auth
+            const { data, error: signUpError } = await supabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
                     data: {
                         nombre: name,
-                        
                     }
                 }
             });
 
-            if (error) {
-                alert(`Error: ${error.message}`);
-            } else {
-                alert('¡Registro exitoso! Revisa tu correo para confirmar la cuenta.');
-                window.location.href = 'login.html';
+            if (signUpError) {
+                alert(`Error al registrar: ${signUpError.message}`);
+                return;
+            }
+
+            if (data.user) {
+                // 2. Asignar el rol de 'cliente' en la tabla user_roles
+                const { error: roleError } = await supabase
+                    .from('user_roles')
+                    .insert([
+                        { user_id: data.user.id, role: 'cliente' }
+                    ]);
+
+                if (roleError) {
+                    alert(`Error al asignar rol: ${roleError.message}`);
+                } else {
+                    alert('¡Registro exitoso! Revisa tu correo para confirmar la cuenta. Serás redirigido para iniciar sesión.');
+                    window.location.href = 'login.html';
+                }
             }
         });
     </script>

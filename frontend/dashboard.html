@@ -37,7 +37,6 @@
                 return; 
             }
 
-            // --- INICIO: LÓGICA NUEVA PARA EL ENLACE DE ADMIN ---
             const { data: roleData, error: roleError } = await supabase
                 .from('user_roles')
                 .select('role')
@@ -50,7 +49,6 @@
                     adminLink.classList.remove('hidden');
                 }
             }
-            // --- FIN: LÓGICA NUEVA ---
 
             const userName = user.user_metadata.nombre;
             const welcomeMessageElement = document.querySelector('#welcome-message');
@@ -67,7 +65,7 @@
                 if (error) {
                     alert(`Error al cerrar sesión: ${error.message}`);
                 } else {
-                    alert('Sesión cerrada exitosamente.');
+                    // --- CAMBIO: Alerta eliminada ---
                     window.location.href = 'login.html';
                 }
             });

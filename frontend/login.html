@@ -26,6 +26,11 @@
                 Ingresar
             </button>
         </form>
+
+        <div class="mt-6 text-center">
+            <p class="text-gray-600">¿No tienes una cuenta? <a href="register.html" class="text-green-500 hover:underline font-semibold">Regístrate aquí</a></p>
+        </div>
+
     </div>
 
     <script type="module" src="supabase-client.js"></script>
@@ -38,7 +43,6 @@
             const email = loginForm.email.value;
             const password = loginForm.password.value;
 
-            // 1. Iniciar sesión
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password,
@@ -47,27 +51,28 @@
             if (authError) {
                 alert(`Error: ${authError.message}`);
             } else {
-                // MENSAJE DE ALERTA ELIMINADO DE AQUÍ
-                
-                // 2. Obtener el rol desde la nueva tabla 'user_roles'
                 const { data: roleData, error: roleError } = await supabase
                     .from('user_roles')
                     .select('role')
                     .eq('user_id', authData.user.id)
-                    .single(); // .single() es importante para obtener un solo objeto
+                    .single();
 
                 if (roleError) {
                     alert('Error al verificar tu rol. Es posible que no tengas permisos asignados.');
                     await supabase.auth.signOut();
                 } else {
-                    // 3. Redirigir según el rol obtenido
                     const userRole = roleData.role;
 
+                    // --- INICIO: LÓGICA DE REDIRECCIÓN POR ROL ---
                     if (userRole === 'dueno' || userRole === 'empleado') {
-                        window.location.href = 'dashboard.html';
+                        window.location.href = 'dashboard.html'; // Redirige a admin
+                    } else if (userRole === 'cliente') {
+                        window.location.href = 'index.html'; // Redirige a la página de cliente
                     } else {
-                        window.location.href = 'dashboard.html';
+                        alert('Rol no reconocido. Contacta al administrador.');
+                        await supabase.auth.signOut();
                     }
+                    // --- FIN: LÓGICA DE REDIRECCIÓN POR ROL ---
                 }
             }
         });
