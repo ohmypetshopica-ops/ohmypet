@@ -29,7 +29,8 @@
 
         <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             </div>
-        </main>
+
+    </main>
 
     <div id="product-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full hidden">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-2xl rounded-2xl bg-white">
@@ -122,13 +123,14 @@
             });
         };
 
-        // --- INICIO: NUEVA LÓGICA PARA SUBIR IMÁGENES ---
         async function uploadProductImage(file) {
             if (!file) return null;
 
             const fileName = `${Date.now()}-${file.name}`;
+            
+            // CAMBIO: Se usa el nombre de tu bucket "imagenes-productos"
             const { data, error } = await supabase.storage
-                .from('product-images') // El nombre exacto de tu bucket
+                .from('imagenes-productos')
                 .upload(fileName, file);
 
             if (error) {
@@ -136,13 +138,13 @@
                 return null;
             }
 
+            // CAMBIO: Se obtiene la URL desde tu bucket "imagenes-productos"
             const { data: publicUrlData } = supabase.storage
-                .from('product-images')
+                .from('imagenes-productos')
                 .getPublicUrl(fileName);
             
             return publicUrlData.publicUrl;
         }
-        // --- FIN: NUEVA LÓGICA PARA SUBIR IMÁGENES ---
 
         const modal = document.querySelector('#product-modal');
         const addProductButton = document.querySelector('#add-product-button');
@@ -157,7 +159,7 @@
             productForm.name.value = product.nombre || '';
             productForm.price.value = product.precio || '';
             productForm.stock.value = product.stock || '';
-            productForm.image.value = ''; // Limpiar el campo de la imagen
+            productForm.image.value = '';
             
             modal.classList.remove('hidden');
         };
@@ -180,7 +182,6 @@
                 stock: parseInt(productForm.stock.value),
             };
 
-            // Subir la imagen si se ha seleccionado una nueva
             const imageFile = productForm.image.files[0];
             if (imageFile) {
                 const imageUrl = await uploadProductImage(imageFile);
@@ -205,7 +206,6 @@
             }
         });
 
-        // Modificar el event listener para que funcione con el nuevo grid
         document.querySelector('#product-grid').addEventListener('click', async (event) => {
             const editButton = event.target.closest('.edit-button');
             if (editButton) {
