@@ -128,17 +128,16 @@
 
             const fileName = `${Date.now()}-${file.name}`;
             
-            // CAMBIO: Se usa el nombre de tu bucket "imagenes-productos"
             const { data, error } = await supabase.storage
                 .from('imagenes-productos')
                 .upload(fileName, file);
 
             if (error) {
-                console.error('Error al subir la imagen:', error);
+                // MEJORA: Imprime el error completo en la consola para más detalles.
+                console.error('Error detallado al subir la imagen:', error);
                 return null;
             }
 
-            // CAMBIO: Se obtiene la URL desde tu bucket "imagenes-productos"
             const { data: publicUrlData } = supabase.storage
                 .from('imagenes-productos')
                 .getPublicUrl(fileName);
@@ -187,6 +186,10 @@
                 const imageUrl = await uploadProductImage(imageFile);
                 if (imageUrl) {
                     productData.imagen_url = imageUrl;
+                } else {
+                    // Si la subida de imagen falla, detenemos el proceso para no guardar un producto sin imagen
+                    alert('Hubo un error al subir la imagen. Revisa la consola para más detalles.');
+                    return;
                 }
             }
 
@@ -199,6 +202,7 @@
 
             if (error) {
                 alert(`Error al guardar el producto: ${error.message}`);
+                console.error('Error detallado al guardar el producto:', error);
             } else {
                 alert(`¡Producto ${editingProductId ? 'actualizado' : 'agregado'} con éxito!`);
                 hideModal();
