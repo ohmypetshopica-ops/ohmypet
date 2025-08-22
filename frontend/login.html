@@ -47,7 +47,7 @@
             if (authError) {
                 alert(`Error: ${authError.message}`);
             } else {
-                alert('¡Inicio de sesión exitoso!');
+                // MENSAJE DE ALERTA ELIMINADO DE AQUÍ
                 
                 // 2. Obtener el rol desde la nueva tabla 'user_roles'
                 const { data: roleData, error: roleError } = await supabase
@@ -58,7 +58,6 @@
 
                 if (roleError) {
                     alert('Error al verificar tu rol. Es posible que no tengas permisos asignados.');
-                    // Opcional: Desconectar al usuario si no tiene rol
                     await supabase.auth.signOut();
                 } else {
                     // 3. Redirigir según el rol obtenido
