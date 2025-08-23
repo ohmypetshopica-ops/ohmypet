@@ -13,6 +13,7 @@ loginForm.addEventListener('submit', async (event) => {
     });
 
     if (authError) {
+        // Mantenemos la alerta de error por si la contraseña o el email son incorrectos
         alert(`Error: ${authError.message}`);
         return;
     }
@@ -25,7 +26,7 @@ loginForm.addEventListener('submit', async (event) => {
         .single();
 
     if (roleError) {
-        alert('Inicio de sesión exitoso, pero no pudimos verificar tu rol. Serás dirigido a la tienda.');
+        // Se ha quitado la alerta de aquí. Redirige directamente.
         window.location.href = 'tienda.html';
         return;
     }
@@ -34,12 +35,10 @@ loginForm.addEventListener('submit', async (event) => {
     const userRole = roleData ? roleData.role : null;
 
     if (userRole === 'dueno' || userRole === 'empleado') {
-        // Si es dueño o empleado, va al dashboard de administración
-        alert('¡Inicio de sesión de administrador exitoso!');
+        // Se ha quitado la alerta. Redirige directamente al dashboard.
         window.location.href = 'dashboard.html';
     } else {
-        // Si es cliente o no tiene un rol definido, va a la tienda
-        alert('¡Inicio de sesión exitoso!');
+        // Se ha quitado la alerta. Redirige directamente al inicio.
         window.location.href = 'index.html';
     }
 });
