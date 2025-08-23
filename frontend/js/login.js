@@ -1,5 +1,3 @@
-import { supabase } from '../supabase-client.js';
-
 const loginForm = document.querySelector('#login-form');
 const googleLoginBtn = document.querySelector('#google-login-btn');
 const forgotPasswordLink = document.querySelector('#forgot-password-link');
@@ -12,6 +10,7 @@ loginForm.addEventListener('submit', async (event) => {
 
     const email = loginForm.email.value;
     const password = loginForm.password.value;
+    const supabase = window.supabase;
 
     // 1. Iniciar sesión del usuario
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -54,6 +53,7 @@ loginForm.addEventListener('submit', async (event) => {
 // --------------------------------------------------
 if (googleLoginBtn) {
     googleLoginBtn.addEventListener('click', async () => {
+        const supabase = window.supabase;
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
@@ -72,6 +72,7 @@ if (googleLoginBtn) {
 if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener('click', async (event) => {
         event.preventDefault();
+        const supabase = window.supabase;
         const email = prompt("Por favor, ingresa tu correo electrónico para restablecer la contraseña:");
         if (email) {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
