@@ -40,6 +40,6 @@ loginForm.addEventListener('submit', async (event) => {
     } else {
         // Si es cliente o no tiene un rol definido, va a la tienda
         alert('¡Inicio de sesión exitoso!');
-        window.location.href = 'tienda.html';
+        window.location.href = 'index.html';
     }
 });

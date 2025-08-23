@@ -8,7 +8,6 @@
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <style>
-        /* Estilo para asegurar que el texto no se rompa en múltiples líneas durante la transición */
         .sidebar-link-text {
             white-space: nowrap;
         }
@@ -26,15 +25,22 @@
             </div>
             
             <nav class="flex flex-col space-y-4">
+                <a href="index.html" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
+                    <ion-icon name="home-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
+                    <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Inicio</span>
+                </a>
                 <a href="#" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
                     <ion-icon name="cart-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
                     <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Carrito</span>
                 </a>
-                <a href="login.html" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
+            </nav>
+
+            <div class="mt-auto">
+                <a href="login.html" class="flex items-center p-3 text-gray-600 hover:bg-red-100 hover:text-red-600 rounded-lg font-semibold">
                     <ion-icon name="log-in-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
                     <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Iniciar Sesión</span>
                 </a>
-            </nav>
+            </div>
         </aside>
         <div class="flex-1">
             <main class="container mx-auto p-6">
