@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('#close-cart-btn').addEventListener('click', toggleCart);
     document.querySelector('#cart-items').addEventListener('click', handleCartActions);
 
-    // ✅ Nuevos listeners para búsqueda y ordenamiento
+    // Listeners para búsqueda y ordenamiento
     document.querySelector('#search-input').addEventListener('input', applyFiltersAndSort);
     document.querySelector('#sort-filter').addEventListener('change', applyFiltersAndSort);
 
@@ -43,19 +43,19 @@ function renderProducts(productsToDisplay) {
     const productGrid = document.querySelector('#product-grid');
     const noResultsMessage = document.querySelector('#no-results');
 
-    if (productsToDisplay.length === 0) {
+    if (!productsToDisplay || productsToDisplay.length === 0) {
         productGrid.innerHTML = '';
         noResultsMessage.classList.remove('hidden');
     } else {
         noResultsMessage.classList.add('hidden');
         productGrid.innerHTML = productsToDisplay.map(producto => `
-            <div class="bg-white rounded-xl shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 hover:shadow-lg flex flex-col">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 hover-shadow-lg flex flex-col">
                 <div class="h-56 flex items-center justify-center bg-white p-2">
                     <img class="max-h-full max-w-full object-contain" src="${producto.imagen_url || 'https://via.placeholder.com/400x300.png?text=Sin+Imagen'}" alt="Imagen de ${producto.nombre}">
                 </div>
                 <div class="p-3 flex flex-col flex-grow">
-                    <h3 class="text-sm font-bold text-gray-800 truncate">${producto.nombre}</h3>
-                    <p class="text-lg font-bold text-teal-800 mt-1">S/ ${parseFloat(producto.precio).toFixed(2)}</p>
+                    <h3 class="text-sm font-bold text-gray-800 truncate">${producto.nombre || 'Producto sin nombre'}</h3>
+                    <p class="text-lg font-bold text-teal-800 mt-1">S/ ${parseFloat(producto.precio || 0).toFixed(2)}</p>
                     <button class="add-to-cart-btn w-full mt-auto pt-2 text-sm bg-green-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-green-600 transition-colors"
                         data-id="${producto.id}" data-nombre="${producto.nombre}" data-precio="${producto.precio}" data-imagen_url="${producto.imagen_url || ''}">
                         Agregar
@@ -66,30 +66,35 @@ function renderProducts(productsToDisplay) {
     }
 }
 
-// 3. Aplica los filtros de búsqueda y ordenamiento
+// 3. ✅ FUNCIÓN CORREGIDA: Aplica los filtros de búsqueda y ordenamiento
 function applyFiltersAndSort() {
     const searchTerm = document.querySelector('#search-input').value.toLowerCase();
     const sortValue = document.querySelector('#sort-filter').value;
 
-    // Primero, filtra por el término de búsqueda
-    let filteredProducts = allProducts.filter(product =>
-        product.nombre.toLowerCase().includes(searchTerm)
-    );
+    let processedProducts = [...allProducts];
 
-    // Luego, ordena los resultados filtrados
-    switch (sortValue) {
-        case 'price-asc':
-            filteredProducts.sort((a, b) => a.precio - b.precio);
-            break;
-        case 'price-desc':
-            filteredProducts.sort((a, b) => b.precio - a.precio);
-            break;
-        case 'name-asc':
-            filteredProducts.sort((a, b) => a.nombre.localeCompare(b.nombre));
-            break;
+    // Primero, filtra por el término de búsqueda (si hay algo escrito)
+    if (searchTerm) {
+        processedProducts = processedProducts.filter(product =>
+            (product.nombre || '').toLowerCase().includes(searchTerm)
+        );
     }
 
-    renderProducts(filteredProducts);
+    // Luego, ordena los resultados ya filtrados
+    switch (sortValue) {
+        case 'price-asc':
+            processedProducts.sort((a, b) => (a.precio || 0) - (b.precio || 0));
+            break;
+        case 'price-desc':
+            processedProducts.sort((a, b) => (b.precio || 0) - (a.precio || 0));
+            break;
+        case 'name-asc':
+            processedProducts.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+            break;
+        // El caso 'default' no necesita ordenarse, mantiene el original
+    }
+
+    renderProducts(processedProducts);
 }
 
 
