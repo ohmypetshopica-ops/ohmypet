@@ -8,10 +8,9 @@
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <style>
-        /* Estilo para asegurar que el texto no se rompa en múltiples líneas durante la transición */
-        .sidebar-link-text {
-            white-space: nowrap;
-        }
+        .sidebar-link-text { white-space: nowrap; }
+        .view { display: none; } /* Oculta todas las vistas por defecto */
+        .view.active { display: block; } /* Muestra solo la vista activa */
     </style>
 </head>
 <body class="bg-gray-100">
@@ -25,21 +24,20 @@
                 </h1>
             </div>
             
-            <nav class="flex flex-col space-y-4">
-                <a href="dashboard.html" class="flex items-center p-3 bg-blue-100 text-blue-800 rounded-lg font-semibold">
+            <nav id="sidebar-nav" class="flex flex-col space-y-4">
+                <a href="#dashboard" data-view="dashboard-view" class="nav-link flex items-center p-3 bg-blue-100 text-blue-800 rounded-lg font-semibold">
                     <ion-icon name="grid-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
                     <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Dashboard</span>
                 </a>
-                <a href="admin-productos.html" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
+                <a href="#products" data-view="products-view" id="products-link" class="nav-link hidden items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
                     <ion-icon name="bag-handle-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
                     <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Productos</span>
                 </a>
-                <a href="citas.html" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
+                <a href="#citas" data-view="citas-view" class="nav-link flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
                     <ion-icon name="calendar-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
                     <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Citas</span>
                 </a>
-                
-                </nav>
+            </nav>
 
             <div class="mt-auto">
                 <a href="#" id="logout-button" class="flex items-center p-3 text-red-500 hover:bg-red-100 rounded-lg font-semibold">
@@ -48,85 +46,295 @@
                 </a>
             </div>
         </aside>
-        <main class="flex-1 p-8 overflow-y-auto flex flex-col items-center">
-            <div class="w-full max-w-6xl"> <div class="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 id="welcome-message" class="text-3xl font-bold text-gray-800">Cargando...</h1>
-                        <p class="text-gray-500">Aquí tienes un resumen de la actividad de tu tienda.</p>
+        <main class="flex-1 p-8 overflow-y-auto">
+            
+            <div id="dashboard-view" class="view active">
+                <div class="w-full max-w-6xl mx-auto">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h1 id="welcome-message" class="text-3xl font-bold text-gray-800">Cargando...</h1>
+                            <p class="text-gray-500">Aquí tienes un resumen de la actividad de tu tienda.</p>
+                        </div>
                     </div>
-                </div>
-
-                <div class="bg-blue-800 text-white p-8 rounded-2xl shadow-xl mb-8 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold">Administra tu tienda eficientemente</h2>
-                        <p class="mt-2 max-w-lg">Gestiona productos, agenda citas y revisa las estadísticas de tu negocio en un solo lugar.</p>
-                        <a href="admin-productos.html" class="mt-4 inline-block bg-white text-blue-800 font-bold py-2 px-4 rounded-lg hover:bg-blue-100 transition-colors">
-                            Ir a Productos
-                        </a>
-                    </div>
-                    <img src="https://img.freepik.com/premium-vector/cute-corgi-dog-paws-up-wall-cartoon_42750-541.jpg" alt="Pet illustration" class="w-40 h-40 object-cover rounded-full hidden sm:block">
-                </div>
-                
-                <div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Accesos Rápidos</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow">
-                            <h4 class="font-bold text-xl text-gray-800">Gestión de Productos</h4>
-                            <p class="text-gray-500 mt-2">Añade, edita y elimina productos de tu inventario.</p>
-                            <a href="admin-productos.html" class="text-blue-600 font-semibold mt-4 inline-block">Ver Productos →</a>
+                    <div class="bg-blue-800 text-white p-8 rounded-2xl shadow-xl mb-8 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold">Administra tu tienda eficientemente</h2>
+                            <p class="mt-2 max-w-lg">Gestiona productos, agenda citas y revisa las estadísticas de tu negocio.</p>
                         </div>
-                        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow">
-                            <h4 class="font-bold text-xl text-gray-800">Agenda de Citas</h4>
-                            <p class="text-gray-500 mt-2">Consulta y administra las citas programadas.</p>
-                            <a href="citas.html" class="text-blue-600 font-semibold mt-4 inline-block">Ver Citas →</a>
-                        </div>
-                        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow">
-                            <h4 class="font-bold text-xl text-gray-800">Reportes</h4>
-                            <p class="text-gray-500 mt-2">Visualiza las ventas y el rendimiento de tu tienda.</p>
-                            <a href="#" class="text-blue-600 font-semibold mt-4 inline-block">Ver Reportes →</a>
-                        </div>
+                        <img src="https://img.freepik.com/premium-vector/cute-corgi-dog-paws-up-wall-cartoon_42750-541.jpg" alt="Pet illustration" class="w-40 h-40 object-cover rounded-full hidden sm:block">
                     </div>
                 </div>
             </div>
+
+            <div id="products-view" class="view">
+                <div class="container mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-4xl font-bold text-gray-800">Gestión de Productos</h1>
+                        <button id="add-product-button" class="bg-blue-500 text-white font-bold py-2 px-5 rounded-lg hover:bg-blue-600 transition-colors">
+                            Agregar Producto
+                        </button>
+                    </div>
+                    <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        </div>
+                </div>
+            </div>
+
+            <div id="citas-view" class="view">
+                 <div class="w-full max-w-6xl mx-auto">
+                    <h1 class="text-4xl font-bold text-gray-800">Agenda de Citas</h1>
+                    <p class="text-gray-600 mt-4">Esta sección está en construcción.</p>
+                </div>
+            </div>
+
         </main>
         </div>
 
+    <div id="product-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-2xl rounded-2xl bg-white">
+            <div class="mt-3 text-center">
+                <h3 id="modal-title" class="text-2xl leading-6 font-bold text-gray-900 mb-4">Agregar Nuevo Producto</h3>
+                <div class="px-7 py-3">
+                    <form id="product-form" class="space-y-4">
+                        <div>
+                            <label for="product-name" class="text-left block text-sm font-medium text-gray-600">Nombre del Producto</label>
+                            <input type="text" id="product-name" name="name" class="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                        </div>
+                        <div>
+                            <label for="product-price" class="text-left block text-sm font-medium text-gray-600">Precio</label>
+                            <input type="number" id="product-price" name="price" step="0.01" class="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                        </div>
+                        <div>
+                            <label for="product-stock" class="text-left block text-sm font-medium text-gray-600">Stock</label>
+                            <input type="number" id="product-stock" name="stock" class="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                        </div>
+                        <div>
+                            <label for="product-image" class="text-left block text-sm font-medium text-gray-600">Imagen del Producto</label>
+                            <input type="file" id="product-image" name="image" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                        <div class="mt-4 flex justify-center">
+                            <img id="image-preview" src="" alt="Vista previa de la imagen" class="hidden max-w-full h-auto max-h-64 object-cover rounded-lg"/>
+                        </div>
+                        <div class="items-center px-4 py-3">
+                            <button id="save-product-button" type="submit" class="w-full px-4 py-2 bg-blue-500 text-white text-base font-bold rounded-lg shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Guardar Producto</button>
+                            <button id="cancel-button" type="button" class="mt-3 w-full px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-lg shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     <script type="module" src="supabase-client.js"></script>
     <script>
+        // --- VARIABLES GLOBALES ---
+        let editingProductId = null;
+
+        // --- INICIALIZACIÓN ---
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { user } } = await supabase.auth.getUser();
-
             if (!user) {
-                alert('Necesitas iniciar sesión para acceder a esta página.');
                 window.location.href = 'login.html';
                 return; 
             }
 
-            // La lógica para mostrar el enlace de Admin ha sido eliminada
-            
-            // --- LÓGICA PARA MENSAJES DE BIENVENIDA ---
+            setupWelcomeMessage(user);
+            setupNavigation();
+            setupProductManagement(); // Configura la lógica de productos
+
+            // Lógica de roles para mostrar el enlace de productos
+            const { data: roleData, error: roleError } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', user.id)
+                .single();
+
+            if (!roleError && roleData && ['dueno', 'empleado'].includes(roleData.role)) {
+                document.querySelector('#products-link').classList.remove('hidden');
+                document.querySelector('#products-link').classList.add('flex');
+            }
+
+            // Lógica para cerrar sesión
+            document.querySelector('#logout-button').addEventListener('click', async (event) => {
+                event.preventDefault();
+                await supabase.auth.signOut();
+                window.location.href = 'login.html';
+            });
+        });
+
+        // --- LÓGICA DE NAVEGACIÓN ---
+        const setupNavigation = () => {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const views = document.querySelectorAll('.view');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetViewId = link.dataset.view;
+
+                    // Ocultar todas las vistas y quitar la clase activa de los enlaces
+                    views.forEach(view => view.classList.remove('active'));
+                    navLinks.forEach(navLink => {
+                        navLink.classList.remove('bg-blue-100', 'text-blue-800');
+                        navLink.classList.add('text-gray-600', 'hover:bg-gray-200');
+                    });
+                    
+                    // Mostrar la vista seleccionada y marcar el enlace como activo
+                    const targetView = document.querySelector(`#${targetViewId}`);
+                    if (targetView) {
+                        targetView.classList.add('active');
+                        link.classList.add('bg-blue-100', 'text-blue-800');
+                        link.classList.remove('text-gray-600', 'hover:bg-gray-200');
+                    }
+
+                    // Si se hace clic en productos, cargar los productos
+                    if (targetViewId === 'products-view') {
+                        fetchAndDisplayProducts();
+                    }
+                });
+            });
+        };
+
+        // --- LÓGICA DE BIENVENIDA ---
+        const setupWelcomeMessage = (user) => {
             const userName = user.user_metadata.nombre;
             const welcomeMessageElement = document.querySelector('#welcome-message');
-            
             if (userName) {
                 welcomeMessageElement.textContent = `¡Bienvenido de vuelta, ${userName}!`;
             } else {
                 welcomeMessageElement.textContent = '¡Bienvenido!';
             }
-            
-            // --- LÓGICA PARA CERRAR SESIÓN ---
-            const logoutButton = document.querySelector('#logout-button');
-            logoutButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                const { error } = await supabase.auth.signOut();
-                if (error) {
-                    alert(`Error al cerrar sesión: ${error.message}`);
-                } else {
-                    alert('Sesión cerrada exitosamente.');
-                    window.location.href = 'login.html';
-                }
+        };
+
+        // --- LÓGICA DE GESTIÓN DE PRODUCTOS ---
+        const setupProductManagement = () => {
+            const modal = document.querySelector('#product-modal');
+            const addProductButton = document.querySelector('#add-product-button');
+            const cancelButton = document.querySelector('#cancel-button');
+            const productForm = document.querySelector('#product-form');
+            const imageInput = document.querySelector('#product-image');
+
+            addProductButton.addEventListener('click', () => showModal(false));
+            cancelButton.addEventListener('click', hideModal);
+            imageInput.addEventListener('change', handleImagePreview);
+            productForm.addEventListener('submit', handleFormSubmit);
+            document.querySelector('#product-grid').addEventListener('click', handleGridClick);
+        };
+
+        const fetchAndDisplayProducts = async () => {
+            const { data: productos, error } = await supabase.from('productos').select('*').order('id', { ascending: true });
+            if (error) {
+                console.error('Error al obtener productos:', error);
+                return;
+            }
+            const productGrid = document.querySelector('#product-grid');
+            productGrid.innerHTML = ''; 
+            productos.forEach(producto => {
+                const productCard = `
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-transform transform hover:-translate-y-1">
+                        <img class="h-48 w-full object-contain bg-gray-100" src="${producto.imagen_url || 'https://via.placeholder.com/400x300.png?text=Sin+Imagen'}" alt="Imagen de ${producto.nombre}">
+                        <div class="p-4">
+                            <h3 class="text-lg font-bold text-gray-800">${producto.nombre}</h3>
+                            <p class="text-gray-600 mt-1">S/ ${producto.precio.toFixed(2)}</p>
+                            <p class="text-sm text-gray-500 mt-1">Stock: ${producto.stock}</p>
+                            <div class="mt-4">
+                                <button data-id="${producto.id}" class="edit-button text-sm text-blue-600 hover:text-blue-800 font-semibold">Editar</button>
+                            </div>
+                        </div>
+                    </div>`;
+                productGrid.innerHTML += productCard;
             });
-        });
+        };
+
+        async function uploadProductImage(file) {
+            if (!file) return null;
+            const fileName = `${Date.now()}-${file.name.replace(/\s/g, '-')}`;
+            const { error } = await supabase.storage.from('imagenes-productos').upload(fileName, file);
+            if (error) {
+                console.error('Error al subir la imagen:', error);
+                return null;
+            }
+            const { data: publicUrlData } = supabase.storage.from('imagenes-productos').getPublicUrl(fileName);
+            return publicUrlData.publicUrl;
+        }
+
+        const showModal = (isEdit = false, product = {}) => {
+            const modalTitle = document.querySelector('#modal-title');
+            const productForm = document.querySelector('#product-form');
+            const imagePreview = document.querySelector('#image-preview');
+            modalTitle.textContent = isEdit ? 'Editar Producto' : 'Agregar Nuevo Producto';
+            editingProductId = isEdit ? product.id : null;
+            productForm.name.value = product.nombre || '';
+            productForm.price.value = product.precio || '';
+            productForm.stock.value = product.stock || '';
+            if (isEdit && product.imagen_url) {
+                imagePreview.src = product.imagen_url;
+                imagePreview.classList.remove('hidden');
+            }
+            document.querySelector('#product-modal').classList.remove('hidden');
+        };
+
+        const hideModal = () => {
+            document.querySelector('#product-form').reset();
+            editingProductId = null;
+            const imagePreview = document.querySelector('#image-preview');
+            imagePreview.src = '';
+            imagePreview.classList.add('hidden');
+            document.querySelector('#product-modal').classList.add('hidden');
+        };
+        
+        const handleImagePreview = (event) => {
+            const file = event.target.files[0];
+            const imagePreview = document.querySelector('#image-preview');
+            if (file) {
+                imagePreview.src = URL.createObjectURL(file);
+                imagePreview.classList.remove('hidden');
+            }
+        };
+
+        const handleFormSubmit = async (event) => {
+            event.preventDefault();
+            const productForm = document.querySelector('#product-form');
+            const productData = {
+                nombre: productForm.name.value,
+                precio: parseFloat(productForm.price.value),
+                stock: parseInt(productForm.stock.value),
+            };
+            const imageFile = productForm.image.files[0];
+            if (imageFile) {
+                const imageUrl = await uploadProductImage(imageFile);
+                if (imageUrl) {
+                    productData.imagen_url = imageUrl;
+                } else {
+                    alert('Hubo un error al subir la imagen.');
+                    return;
+                }
+            }
+            let error;
+            if (editingProductId) {
+                ({ error } = await supabase.from('productos').update(productData).eq('id', editingProductId));
+            } else {
+                ({ error } = await supabase.from('productos').insert([productData]));
+            }
+            if (error) {
+                alert(`Error al guardar el producto: ${error.message}`);
+            } else {
+                alert(`¡Producto ${editingProductId ? 'actualizado' : 'agregado'} con éxito!`);
+                hideModal();
+                fetchAndDisplayProducts();
+            }
+        };
+
+        const handleGridClick = async (event) => {
+            const editButton = event.target.closest('.edit-button');
+            if (editButton) {
+                const productId = editButton.dataset.id;
+                const { data: product, error } = await supabase.from('productos').select('*').eq('id', productId).single();
+                if (error) {
+                    alert(`No se pudo obtener el producto: ${error.message}`);
+                } else {
+                    showModal(true, product);
+                }
+            }
+        };
     </script>
 </body>
 </html>
