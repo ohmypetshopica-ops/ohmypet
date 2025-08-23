@@ -6,8 +6,6 @@ const checkDevice = () => {
     const dashboardContainer = document.querySelector('#dashboard-container');
     const mobileBlocker = document.querySelector('#mobile-blocker');
     
-    // Usamos un umbral de 1024px para considerar "escritorio".
-    // Puedes ajustar este valor si lo necesitas.
     if (window.innerWidth < 1024) {
         dashboardContainer.classList.add('hidden');
         dashboardContainer.classList.remove('flex');
@@ -23,7 +21,6 @@ const checkDevice = () => {
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // Ejecutar la verificación de dispositivo al cargar y al cambiar el tamaño de la ventana
     checkDevice();
     window.addEventListener('resize', checkDevice);
 
@@ -60,13 +57,15 @@ const setupNavigation = () => {
             const targetViewId = link.dataset.view;
             views.forEach(view => view.classList.remove('active'));
             navLinks.forEach(navLink => {
-                navLink.classList.remove('bg-blue-100', 'text-blue-800');
+                // ✅ Remueve las nuevas clases de color
+                navLink.classList.remove('bg-teal-100', 'text-teal-800');
                 navLink.classList.add('text-gray-600');
             });
             const targetView = document.querySelector(`#${targetViewId}`);
             if (targetView) {
                 targetView.classList.add('active');
-                link.classList.add('bg-blue-100', 'text-blue-800');
+                // ✅ Agrega las nuevas clases de color
+                link.classList.add('bg-teal-100', 'text-teal-800');
             }
             if (targetViewId === 'products-view') {
                 fetchAndDisplayProducts();
@@ -140,7 +139,7 @@ const fetchAndDisplayProducts = async () => {
                     <p class="text-gray-900 whitespace-no-wrap">S/ ${producto.precio.toFixed(2)}</p>
                 </td>
                 <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                    <button data-id="${producto.id}" class="edit-button text-blue-600 hover:text-blue-900">
+                    <button data-id="${producto.id}" class="edit-button text-teal-600 hover:text-teal-900">
                         <ion-icon name="create-outline" class="text-xl"></ion-icon>
                     </button>
                 </td>
