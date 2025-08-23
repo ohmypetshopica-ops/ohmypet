@@ -13,19 +13,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupNavigation();
     setupProductManagement(); // Configura la lógica de productos
 
-    // Lógica de roles para mostrar el enlace de productos
-    const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
-
-    if (!roleError && roleData && ['dueno', 'empleado'].includes(roleData.role)) {
+    const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
+    if (roleData && ['dueno', 'empleado'].includes(roleData.role)) {
         document.querySelector('#products-link').classList.remove('hidden');
         document.querySelector('#products-link').classList.add('flex');
     }
 
-    // Lógica para cerrar sesión
     document.querySelector('#logout-button').addEventListener('click', async (event) => {
         event.preventDefault();
         await supabase.auth.signOut();
@@ -37,28 +30,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 const setupNavigation = () => {
     const navLinks = document.querySelectorAll('.nav-link');
     const views = document.querySelectorAll('.view');
-
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const targetViewId = link.dataset.view;
-
-            // Ocultar todas las vistas y quitar la clase activa de los enlaces
             views.forEach(view => view.classList.remove('active'));
             navLinks.forEach(navLink => {
                 navLink.classList.remove('bg-blue-100', 'text-blue-800');
-                navLink.classList.add('text-gray-600', 'hover:bg-gray-200');
+                navLink.classList.add('text-gray-600');
             });
-            
-            // Mostrar la vista seleccionada y marcar el enlace como activo
             const targetView = document.querySelector(`#${targetViewId}`);
             if (targetView) {
                 targetView.classList.add('active');
                 link.classList.add('bg-blue-100', 'text-blue-800');
-                link.classList.remove('text-gray-600', 'hover:bg-gray-200');
             }
-
-            // Si se hace clic en productos, cargar los productos
             if (targetViewId === 'products-view') {
                 fetchAndDisplayProducts();
             }
@@ -70,25 +55,16 @@ const setupNavigation = () => {
 const setupWelcomeMessage = (user) => {
     const userName = user.user_metadata.nombre;
     const welcomeMessageElement = document.querySelector('#welcome-message');
-    if (userName) {
-        welcomeMessageElement.textContent = `¡Bienvenido de vuelta, ${userName}!`;
-    } else {
-        welcomeMessageElement.textContent = '¡Bienvenido!';
-    }
+    welcomeMessageElement.textContent = userName ? `¡Bienvenido de vuelta, ${userName}!` : '¡Bienvenido!';
 };
 
 // --- LÓGICA DE GESTIÓN DE PRODUCTOS ---
 const setupProductManagement = () => {
-    const addProductButton = document.querySelector('#add-product-button');
-    const cancelButton = document.querySelector('#cancel-button');
-    const productForm = document.querySelector('#product-form');
-    const imageInput = document.querySelector('#product-image');
-
-    addProductButton.addEventListener('click', () => showModal(false));
-    cancelButton.addEventListener('click', hideModal);
-    imageInput.addEventListener('change', handleImagePreview);
-    productForm.addEventListener('submit', handleFormSubmit);
-    document.querySelector('#product-grid').addEventListener('click', handleGridClick);
+    document.querySelector('#add-product-button').addEventListener('click', () => showModal(false));
+    document.querySelector('#cancel-button').addEventListener('click', hideModal);
+    document.querySelector('#product-image').addEventListener('change', handleImagePreview);
+    document.querySelector('#product-form').addEventListener('submit', handleFormSubmit);
+    document.querySelector('#product-table-body').addEventListener('click', handleTableClick);
 };
 
 const fetchAndDisplayProducts = async () => {
@@ -97,24 +73,61 @@ const fetchAndDisplayProducts = async () => {
         console.error('Error al obtener productos:', error);
         return;
     }
-    const productGrid = document.querySelector('#product-grid');
-    productGrid.innerHTML = ''; 
+    const tableBody = document.querySelector('#product-table-body');
+    tableBody.innerHTML = ''; 
     productos.forEach(producto => {
-        const productCard = `
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-transform transform hover:-translate-y-1">
-                <img class="h-48 w-full object-contain bg-gray-100" src="${producto.imagen_url || 'https://via.placeholder.com/400x300.png?text=Sin+Imagen'}" alt="Imagen de ${producto.nombre}">
-                <div class="p-4">
-                    <h3 class="text-lg font-bold text-gray-800">${producto.nombre}</h3>
-                    <p class="text-gray-600 mt-1">S/ ${producto.precio.toFixed(2)}</p>
-                    <p class="text-sm text-gray-500 mt-1">Stock: ${producto.stock}</p>
-                    <div class="mt-4">
-                        <button data-id="${producto.id}" class="edit-button text-sm text-blue-600 hover:text-blue-800 font-semibold">Editar</button>
+        // Lógica para determinar el estado del stock
+        let statusClass = '';
+        let statusText = '';
+        if (producto.stock > 10) {
+            statusClass = 'bg-green-100 text-green-800';
+            statusText = 'En Stock';
+        } else if (producto.stock > 0) {
+            statusClass = 'bg-yellow-100 text-yellow-800';
+            statusText = 'Stock Bajo';
+        } else {
+            statusClass = 'bg-red-100 text-red-800';
+            statusText = 'Agotado';
+        }
+
+        const tableRow = `
+            <tr class="hover:bg-gray-50">
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 w-12 h-12">
+                            <img class="w-full h-full rounded-md object-cover" src="${producto.imagen_url || 'https://via.placeholder.com/150'}" alt="${producto.nombre}" />
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-900 font-semibold whitespace-no-wrap">${producto.nombre}</p>
+                        </div>
                     </div>
-                </div>
-            </div>`;
-        productGrid.innerHTML += productCard;
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <p class="text-gray-900 whitespace-no-wrap">SKU-${producto.id}</p>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <p class="text-gray-900 whitespace-no-wrap">${producto.stock}</p>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <span class="relative inline-block px-3 py-1 font-semibold leading-tight ${statusClass} rounded-full">
+                        <span class="relative">${statusText}</span>
+                    </span>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <p class="text-gray-900 whitespace-no-wrap">S/ ${producto.precio.toFixed(2)}</p>
+                </td>
+                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <button data-id="${producto.id}" class="edit-button text-blue-600 hover:text-blue-900">
+                        <ion-icon name="create-outline" class="text-xl"></ion-icon>
+                    </button>
+                </td>
+            </tr>
+        `;
+        tableBody.innerHTML += tableRow;
     });
 };
+
+// ... (El resto de funciones como uploadProductImage, showModal, hideModal, etc., permanecen igual)
 
 async function uploadProductImage(file) {
     if (!file) return null;
@@ -152,7 +165,7 @@ const hideModal = () => {
     imagePreview.classList.add('hidden');
     document.querySelector('#product-modal').classList.add('hidden');
 };
-
+        
 const handleImagePreview = (event) => {
     const file = event.target.files[0];
     const imagePreview = document.querySelector('#image-preview');
@@ -195,7 +208,7 @@ const handleFormSubmit = async (event) => {
     }
 };
 
-const handleGridClick = async (event) => {
+const handleTableClick = async (event) => {
     const editButton = event.target.closest('.edit-button');
     if (editButton) {
         const productId = editButton.dataset.id;
