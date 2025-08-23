@@ -1,166 +1,162 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oh My Pet - Grooming Profesional</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
-    <style>
-        /* Puedes añadir aquí fuentes personalizadas si lo deseas */
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oh My Pet - Grooming Profesional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
 </head>
 <body class="text-gray-700">
 
-    <header class="bg-teal-50 pt-6 pb-20">
-        <div class="container mx-auto px-6">
-            <nav class="flex justify-between items-center">
-                <div class="text-2xl font-bold text-teal-800">Oh My Pet!</div>
-                <div class="flex items-center space-x-6">
-                    <a href="tienda.html" class="text-teal-800 font-semibold hover:text-green-600">
-                        Tienda
-                    </a>
-                    <a href="#" class="bg-green-500 text-white font-semibold py-2 px-5 rounded-full hover:bg-green-600 transition-colors">
-                        Agenda tu cita
-                    </a>
-                    
-                    <div id="user-session-controls" class="flex items-center space-x-4">
-                         <span id="welcome-message" class="hidden font-semibold text-gray-700"></span>
-                         <a id="login-link" href="login.html" class="text-teal-800 font-semibold hover:text-green-600">Iniciar Sesión</a>
-                         <a id="logout-button" href="#" class="hidden text-red-500 font-semibold hover:text-red-700">Cerrar Sesión</a>
-                    </div>
-                </div>
-            </nav>
+    <header class="bg-teal-50 pt-6 pb-20">
+        <div class="container mx-auto px-6">
+            <nav class="flex justify-between items-center">
+                <div class="text-2xl font-bold text-teal-800">Oh My Pet!</div>
+                <div class="flex items-center space-x-6">
+                    <a href="tienda.html" class="text-teal-800 font-semibold hover:text-green-600">
+                        Tienda
+                    </a>
+                    <a href="#" class="bg-green-500 text-white font-semibold py-2 px-5 rounded-full hover:bg-green-600 transition-colors">
+                        Agenda tu cita
+                    </a>
+                    
+                    <div id="user-session-controls" class="flex items-center space-x-4">
+                         <a id="login-link" href="login.html" class="text-teal-800 font-semibold hover:text-green-600">Iniciar Sesión</a>
+                         <a id="logout-button" href="#" class="hidden text-red-500 font-semibold hover:text-red-700">Cerrar Sesión</a>
+                    </div>
+                </div>
+            </nav>
 
-            <div class="text-center mt-20">
-                <h1 class="text-5xl md:text-7xl font-bold text-gray-800 leading-tight">
-                    Transformamos el estilo de tu mascota
-                </h1>
-                <p class="text-gray-500 text-xl mt-4">
-                    Un servicio completo de grooming que cuida cada detalle de tu peludito.
-                </p>
-                <a href="#servicios" class="mt-8 inline-block bg-green-500 text-white font-bold py-3 px-8 rounded-full hover:bg-green-600 transition-colors">
-                    Ver detalles
-                </a>
-            </div>
-        </div>
-    </header>
+            <div class="text-center mt-20">
+                <h1 class="text-5xl md:text-7xl font-bold text-gray-800 leading-tight">
+                    Transformamos el estilo de tu mascota
+                </h1>
+                <p class="text-gray-500 text-xl mt-4">
+                    Un servicio completo de grooming que cuida cada detalle de tu peludito.
+                </p>
+                <a href="#servicios" class="mt-8 inline-block bg-green-500 text-white font-bold py-3 px-8 rounded-full hover:bg-green-600 transition-colors">
+                    Ver detalles
+                </a>
+            </div>
+        </div>
+    </header>
 
-    <main>
-        <section id="servicios" class="py-20 bg-white">
-            <div class="container mx-auto px-6 text-center">
-                <h2 class="text-4xl font-bold text-gray-800">Todo en uno: El cuidado completo de tu peludito</h2>
-                <p class="text-gray-500 mt-2">Un solo servicio, un solo precio. Todo lo que tu perro necesita para lucir impecable.</p>
-                <p class="mt-4 text-green-600 font-semibold">✓ Todo incluido - Sin costos extra - Sin sorpresas</p>
+    <main>
+        <section id="servicios" class="py-20 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-4xl font-bold text-gray-800">Todo en uno: El cuidado completo de tu peludito</h2>
+                <p class="text-gray-500 mt-2">Un solo servicio, un solo precio. Todo lo que tu perro necesita para lucir impecable.</p>
+                <p class="mt-4 text-green-600 font-semibold">✓ Todo incluido - Sin costos extra - Sin sorpresas</p>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6 mt-12">
-                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
-                        <span class="text-4xl">✂️</span>
-                        <span class="mt-2 text-sm font-semibold text-center">Secado y cepillado</span>
-                    </div>
-                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
-                        <span class="text-4xl">💧</span>
-                    </div>
-                        <span class="mt-2 text-sm font-semibold text-center">Doble shampoo</span>
-                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
-                        <span class="text-4xl">🌿</span>
-                        <span class="mt-2 text-sm font-semibold text-center">Acondicionamiento</span>
-                    </div>
-                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
-                        <span class="text-4xl">🐾</span>
-                        <span class="mt-2 text-sm font-semibold text-center">Corte de uñas</span>
-                    </div>
-                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
-                        <span class="text-4xl">👂</span>
-                        <span class="mt-2 text-sm font-semibold text-center">Limpieza de oídos</span>
-                    </div>
-                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
-                        <span class="text-4xl">🧼</span>
-                        <span class="mt-2 text-sm font-semibold text-center">Limpieza de almohadillas</span>
-                    </div>
-                     <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
-                        <span class="text-4xl">⚕️</span>
-                        <span class="mt-2 text-sm font-semibold text-center">Corte higiénico</span>
-                    </div>
-                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
-                        <span class="text-4xl">⭐</span>
-                        <span class="mt-2 text-sm font-semibold text-center">Corte estético</span>
-                    </div>
-                </div>
-            </div>
-        </section>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6 mt-12">
+                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
+                        <ion-icon name="cut-outline" class="text-4xl"></ion-icon>
+                        <span class="mt-2 text-sm font-semibold text-center">Secado y cepillado</span>
+                    </div>
+                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
+                        <ion-icon name="water-outline" class="text-4xl"></ion-icon>
+                        <span class="mt-2 text-sm font-semibold text-center">Doble shampoo</span>
+                    </div>
+                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
+                        <ion-icon name="leaf-outline" class="text-4xl"></ion-icon>
+                        <span class="mt-2 text-sm font-semibold text-center">Acondicionamiento</span>
+                    </div>
+                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
+                        <ion-icon name="paw-outline" class="text-4xl"></ion-icon>
+                        <span class="mt-2 text-sm font-semibold text-center">Corte de uñas</span>
+                    </div>
+                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
+                        <ion-icon name="ear-outline" class="text-4xl"></ion-icon>
+                        <span class="mt-2 text-sm font-semibold text-center">Limpieza de oídos</span>
+                    </div>
+                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
+                        <ion-icon name="happy-outline" class="text-4xl"></ion-icon>
+                        <span class="mt-2 text-sm font-semibold text-center">Limpieza de almohadillas</span>
+                    </div>
+                     <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
+                        <ion-icon name="medkit-outline" class="text-4xl"></ion-icon>
+                        <span class="mt-2 text-sm font-semibold text-center">Corte higiénico</span>
+                    </div>
+                    <div class="bg-green-100 text-green-800 p-4 rounded-xl flex flex-col items-center justify-center aspect-square">
+                        <ion-icon name="star-outline" class="text-4xl"></ion-icon>
+                        <span class="mt-2 text-sm font-semibold text-center">Corte estético</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <section class="py-20 bg-teal-50">
-            <div class="container mx-auto px-6">
-                <h2 class="text-center text-4xl font-bold text-gray-800 mb-12">¿Por qué elegirnos?</h2>
-                <div class="grid md:grid-cols-4 gap-10 text-center">
-                    <div>
-                        <h3 class="font-bold text-lg">Profesionales certificados</h3>
-                        <p class="text-gray-500 mt-2 text-sm">Nuestro equipo ama a los animales y está capacitado para brindar el mejor cuidado.</p>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-lg">Ambiente sin estrés</h3>
-                        <p class="text-gray-500 mt-2 text-sm">Un espacio tranquilo donde tu perro se siente seguro y relajado.</p>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-lg">Productos naturales</h3>
-                        <p class="text-gray-500 mt-2 text-sm">Usamos champús y acondicionadores libres de químicos fuertes.</p>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-lg">Fotos del proceso</h3>
-                        <p class="text-gray-500 mt-2 text-sm">Te enviamos fotos antes y después para que veas el cambio.</p>
-                    </div>
-                </div>
+        <section class="py-20 bg-teal-50">
+            <div class="container mx-auto px-6">
+                <h2 class="text-center text-4xl font-bold text-gray-800 mb-12">¿Por qué elegirnos?</h2>
+                <div class="grid md:grid-cols-4 gap-10 text-center">
+                    <div>
+                        <h3 class="font-bold text-lg">Profesionales certificados</h3>
+                        <p class="text-gray-500 mt-2 text-sm">Nuestro equipo ama a los animales y está capacitado para brindar el mejor cuidado.</p>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg">Ambiente sin estrés</h3>
+                        <p class="text-gray-500 mt-2 text-sm">Un espacio tranquilo donde tu perro se siente seguro y relajado.</p>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg">Productos naturales</h3>
+                        <p class="text-gray-500 mt-2 text-sm">Usamos champús y acondicionadores libres de químicos fuertes.</p>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg">Fotos del proceso</h3>
+                        <p class="text-gray-500 mt-2 text-sm">Te enviamos fotos antes y después para que veas el cambio.</p>
+                    </div>
+                </div>
 
-                <h2 class="text-center text-4xl font-bold text-gray-800 mt-20 mb-12">Lo que dicen nuestros clientes</h2>
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="bg-teal-100 p-6 rounded-lg text-center">
-                        <p>"¡Lola salió como una princesa! No paró de recibir cumplidos."</p>
-                        <p class="mt-4 font-semibold">- Ana M.</p>
-                    </div>
-                    <div class="bg-teal-100 p-6 rounded-lg text-center">
-                        <p>"Mi perro tiene ansiedad, pero aquí se relajó como nunca. ¡Gracias!"</p>
-                        <p class="mt-4 font-semibold">- Carlos R.</p>
-                    </div>
-                    <div class="bg-teal-100 p-6 rounded-lg text-center">
-                        <p>"El trato es increíble y los precios muy justos. Volveremos sin duda."</p>
-                        <p class="mt-4 font-semibold">- Laura T.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
+                <h2 class="text-center text-4xl font-bold text-gray-800 mt-20 mb-12">Lo que dicen nuestros clientes</h2>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="bg-teal-100 p-6 rounded-lg text-center">
+                        <p>"¡Lola salió como una princesa! No paró de recibir cumplidos."</p>
+                        <p class="mt-4 font-semibold">- Ana M.</p>
+                    </div>
+                    <div class="bg-teal-100 p-6 rounded-lg text-center">
+                        <p>"Mi perro tiene ansiedad, pero aquí se relajó como nunca. ¡Gracias!"</p>
+                        <p class="mt-4 font-semibold">- Carlos R.</p>
+                    </div>
+                    <div class="bg-teal-100 p-6 rounded-lg text-center">
+                        <p>"El trato es increíble y los precios muy justos. Volveremos sin duda."</p>
+                        <p class="mt-4 font-semibold">- Laura T.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <section class="py-20 bg-white">
-            <div class="container mx-auto px-6 text-center">
-                <h2 class="text-4xl font-bold text-gray-800">¿Listo para consentir a tu perrito?</h2>
-                <p class="text-gray-500 mt-2">Agenda una cita en minutos. Tenemos horarios flexibles, incluyendo fines de semana.</p>
-                <a href="#" class="mt-8 inline-block bg-green-500 text-white font-bold py-3 px-8 rounded-full hover:bg-green-600 transition-colors">
-                    Agenda tu cita ahora
-                </a>
+        <section class="py-20 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-4xl font-bold text-gray-800">¿Listo para consentir a tu perrito?</h2>
+                <p class="text-gray-500 mt-2">Agenda una cita en minutos. Tenemos horarios flexibles, incluyendo fines de semana.</p>
+                <a href="#" class="mt-8 inline-block bg-green-500 text-white font-bold py-3 px-8 rounded-full hover:bg-green-600 transition-colors">
+                    Agenda tu cita ahora
+                </a>
 
-                <div class="mt-20 border-t pt-10">
-                    <h3 class="text-2xl font-bold text-gray-800">Encuéntranos</h3>
-                    <p class="text-gray-600 mt-4">📍 Residencial Ica - Cardo B-8, Ica</p>
-                    <p class="text-gray-600 mt-2">📞 904 343 949</p>
-                    <a href="#" class="text-green-600 font-semibold mt-2 inline-block">Chatea por WhatsApp</a>
-                </div>
-            </div>
-        </section>
-    </main>
+                <div class="mt-20 border-t pt-10">
+                    <h3 class="text-2xl font-bold text-gray-800">Encuéntranos</h3>
+                    <p class="text-gray-600 mt-4">📍 Residencial Ica - Cardo B-8, Ica</p>
+                    <p class="text-gray-600 mt-2">📞 904 343 949</p>
+                    <a href="#" class="text-green-600 font-semibold mt-2 inline-block">Chatea por WhatsApp</a>
+                </div>
+            </div>
+        </section>
+    </main>
 
-    <footer class="bg-teal-800 text-white py-10">
-        <div class="container mx-auto px-6 text-center">
-            <p class="text-2xl font-bold">Oh My <span class="text-green-400">Pet!</span></p>
-            <div class="flex justify-center space-x-6 mt-4">
-                <a href="#" class="hover:text-green-400">Instagram</a>
-                <a href="#" class="hover:text-green-400">Facebook</a>
-            </div>
-            <p class="text-sm text-teal-300 mt-8">&copy; 2025 Oh My Pet. Todos los derechos reservados.</p>
-        </div>
-    </footer>
+    <footer class="bg-teal-800 text-white py-10">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-2xl font-bold">Oh My <span class="text-green-400">Pet!</span></p>
+            <div class="flex justify-center space-x-6 mt-4">
+                <a href="#" class="hover:text-green-400">Instagram</a>
+                <a href="#" class="hover:text-green-400">Facebook</a>
+            </div>
+            <p class="text-sm text-teal-300 mt-8">&copy; 2025 Oh My Pet. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 
-    <script type="module" src="supabase-client.js"></script>
-    <script type="module" src="./js/main.js"></script>
+    <script type="module" src="supabase-client.js"></script>
+    <script type="module" src="./js/main.js"></script>
 </body>
 </html>
