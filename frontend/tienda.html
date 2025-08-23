@@ -10,33 +10,44 @@
 </head>
 <body class="bg-teal-50">
 
-    <div class="relative">
-        <aside class="w-20 bg-white flex flex-col items-center p-4 shadow-lg h-screen fixed top-0 left-0">
-            <a href="index.html" class="mb-10">
-                <span class="text-4xl">🐾</span>
+    <header class="bg-white shadow-md py-3 px-4 sm:px-6 fixed top-0 left-0 w-full z-30">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="index.html" class="flex items-center space-x-2 flex-shrink-0">
+                <span class="text-3xl">🐾</span>
+                <span class="text-xl font-bold text-gray-800 hidden sm:block">Oh My Pet</span>
             </a>
-            <nav class="flex flex-col space-y-8">
-                <a href="index.html" title="Inicio" class="p-3 text-gray-600 hover:bg-gray-200 rounded-lg">
-                    <ion-icon name="home-outline" class="text-3xl"></ion-icon>
-                </a>
-            </nav>
-            <div class="mt-auto">
-                <a href="login.html" title="Iniciar Sesión" class="p-3 text-gray-600 hover:bg-red-100 hover:text-red-600 rounded-lg">
+
+            <div class="relative w-full max-w-md mx-4">
+                <input type="text" id="search-input" placeholder="Buscar productos..." class="w-full p-2 pl-10 border rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <ion-icon name="search-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></ion-icon>
+            </div>
+
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <select id="sort-filter" class="border rounded-full p-2 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm">
+                    <option value="default">Ordenar por</option>
+                    <option value="price-asc">Menor a Mayor Precio</option>
+                    <option value="price-desc">Mayor a Menor Precio</option>
+                    <option value="name-asc">Nombre (A-Z)</option>
+                </select>
+                <a href="login.html" title="Iniciar Sesión" class="p-2 text-gray-600 hover:text-teal-600">
                     <ion-icon name="log-in-outline" class="text-3xl"></ion-icon>
                 </a>
             </div>
-        </aside>
-
-        <div class="ml-20">
-            <main class="container mx-auto p-4 sm:p-6">
-                <div class="text-center mb-10">
-                    <h1 class="text-4xl font-bold text-gray-800">Nuestros Productos</h1>
-                    <p class="text-gray-500 mt-2">Todo lo que necesitas para tu mascota</p>
-                </div>
-                <div id="product-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6"></div>
-            </main>
         </div>
-    </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 pt-24">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-gray-800">Nuestros Productos</h1>
+            <p class="text-gray-500 mt-2"></p>
+        </div>
+        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6"></div>
+        
+        <div id="no-results" class="hidden text-center mt-10 py-10">
+            <p class="text-2xl font-semibold text-gray-500">No se encontraron productos</p>
+            <p class="text-gray-400 mt-2">Intenta con otra búsqueda o ajusta los filtros.</p>
+        </div>
+    </main>
 
     <div id="backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
     <aside id="cart-sidebar" class="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">

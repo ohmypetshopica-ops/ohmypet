@@ -1,14 +1,20 @@
+// Variable global para guardar todos los productos y no pedirlos cada vez
+let allProducts = [];
+
 document.addEventListener('DOMContentLoaded', () => {
-    fetchAndDisplayProducts();
+    fetchAndStoreProducts();
     renderCart();
 
     // --- MANEJADORES DE EVENTOS ---
     document.querySelector('#product-grid').addEventListener('click', handleAddToCartClick);
-    document.querySelector('#cart-bubble-btn').addEventListener('click', toggleCart); 
+    document.querySelector('#cart-bubble-btn').addEventListener('click', toggleCart);
     document.querySelector('#close-cart-btn').addEventListener('click', toggleCart);
     document.querySelector('#cart-items').addEventListener('click', handleCartActions);
-    
-    // El backdrop ahora solo cierra el carrito
+
+    // ✅ Nuevos listeners para búsqueda y ordenamiento
+    document.querySelector('#search-input').addEventListener('input', applyFiltersAndSort);
+    document.querySelector('#sort-filter').addEventListener('change', applyFiltersAndSort);
+
     const backdrop = document.querySelector('#backdrop');
     backdrop.addEventListener('click', () => {
         if (!document.querySelector('#cart-sidebar').classList.contains('translate-x-full')) {
@@ -21,27 +27,71 @@ document.addEventListener('DOMContentLoaded', () => {
 // FUNCIONES DE LA TIENDA
 // =================================================================================
 
-async function fetchAndDisplayProducts() {
-    const { data: productos, error } = await supabase.from('productos').select('*').order('nombre');
-    if (error) { console.error('Error cargando productos:', error); return; }
-
-    const productGrid = document.querySelector('#product-grid');
-    productGrid.innerHTML = productos.map(producto => `
-        <div class="bg-white rounded-xl shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 hover:shadow-lg flex flex-col">
-            <div class="h-40 flex items-center justify-center bg-white p-2">
-                <img class="max-h-full max-w-full object-contain" src="${producto.imagen_url || 'https://via.placeholder.com/400x300.png?text=Sin+Imagen'}" alt="Imagen de ${producto.nombre}">
-            </div>
-            <div class="p-3 flex flex-col flex-grow">
-                <h3 class="text-sm font-bold text-gray-800 truncate">${producto.nombre}</h3>
-                <p class="text-lg font-bold text-teal-800 mt-1">S/ ${parseFloat(producto.precio).toFixed(2)}</p>
-                <button class="add-to-cart-btn w-full mt-auto pt-2 text-sm bg-green-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-green-600 transition-colors"
-                    data-id="${producto.id}" data-nombre="${producto.nombre}" data-precio="${producto.precio}" data-imagen_url="${producto.imagen_url || ''}">
-                    Agregar
-                </button>
-            </div>
-        </div>
-    `).join('');
+// 1. Carga los productos desde Supabase y los guarda en la variable global
+async function fetchAndStoreProducts() {
+    const { data: productos, error } = await supabase.from('productos').select('*');
+    if (error) {
+        console.error('Error cargando productos:', error);
+        return;
+    }
+    allProducts = productos;
+    renderProducts(allProducts); // Muestra todos los productos inicialmente
 }
+
+// 2. Muestra los productos en la cuadrícula
+function renderProducts(productsToDisplay) {
+    const productGrid = document.querySelector('#product-grid');
+    const noResultsMessage = document.querySelector('#no-results');
+
+    if (productsToDisplay.length === 0) {
+        productGrid.innerHTML = '';
+        noResultsMessage.classList.remove('hidden');
+    } else {
+        noResultsMessage.classList.add('hidden');
+        productGrid.innerHTML = productsToDisplay.map(producto => `
+            <div class="bg-white rounded-xl shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 hover:shadow-lg flex flex-col">
+                <div class="h-56 flex items-center justify-center bg-white p-2">
+                    <img class="max-h-full max-w-full object-contain" src="${producto.imagen_url || 'https://via.placeholder.com/400x300.png?text=Sin+Imagen'}" alt="Imagen de ${producto.nombre}">
+                </div>
+                <div class="p-3 flex flex-col flex-grow">
+                    <h3 class="text-sm font-bold text-gray-800 truncate">${producto.nombre}</h3>
+                    <p class="text-lg font-bold text-teal-800 mt-1">S/ ${parseFloat(producto.precio).toFixed(2)}</p>
+                    <button class="add-to-cart-btn w-full mt-auto pt-2 text-sm bg-green-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-green-600 transition-colors"
+                        data-id="${producto.id}" data-nombre="${producto.nombre}" data-precio="${producto.precio}" data-imagen_url="${producto.imagen_url || ''}">
+                        Agregar
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+// 3. Aplica los filtros de búsqueda y ordenamiento
+function applyFiltersAndSort() {
+    const searchTerm = document.querySelector('#search-input').value.toLowerCase();
+    const sortValue = document.querySelector('#sort-filter').value;
+
+    // Primero, filtra por el término de búsqueda
+    let filteredProducts = allProducts.filter(product =>
+        product.nombre.toLowerCase().includes(searchTerm)
+    );
+
+    // Luego, ordena los resultados filtrados
+    switch (sortValue) {
+        case 'price-asc':
+            filteredProducts.sort((a, b) => a.precio - b.precio);
+            break;
+        case 'price-desc':
+            filteredProducts.sort((a, b) => b.precio - a.precio);
+            break;
+        case 'name-asc':
+            filteredProducts.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            break;
+    }
+
+    renderProducts(filteredProducts);
+}
+
 
 function handleAddToCartClick(event) {
     const button = event.target.closest('.add-to-cart-btn');
@@ -64,7 +114,7 @@ function handleAddToCartClick(event) {
 }
 
 // =================================================================================
-// FUNCIONES DEL CARRITO
+// FUNCIONES DEL CARRITO (Sin cambios)
 // =================================================================================
 
 function toggleCart() {
@@ -81,7 +131,7 @@ function addProductToCart(product) {
     } else {
         cart.push({ ...product, quantity: 1 });
     }
-    
+
     localStorage.setItem('cart', JSON.stringify(cart));
     renderCart();
     showToast(`"${product.nombre}" fue agregado al carrito.`);
@@ -113,7 +163,7 @@ function renderCart() {
 function handleCartActions(event) {
     const button = event.target.closest('button');
     if (!button) return;
-    
+
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
     const productId = button.dataset.id;
     if (!productId) return;
