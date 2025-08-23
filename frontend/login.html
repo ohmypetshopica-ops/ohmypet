@@ -11,41 +11,56 @@
         .custom-button-gradient {
             background-image: linear-gradient(to bottom right, #34d399, #10b981);
         }
+        .google-button {
+            transition: all 0.3s ease;
+        }
+        .google-button:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
     </style>
 </head>
-<body class="bg-teal-50 h-screen w-screen flex font-sans">
+<body class="bg-teal-50 h-screen w-screen flex flex-col items-center justify-center font-sans">
 
-    <div class="w-full md:w-1/2 p-10 flex flex-col items-center justify-center">
-        <div class="w-full max-w-xs text-center">
-            <h1 class="text-3xl font-bold mb-2 text-gray-800">LOGIN</h1>
-            <p class="text-gray-500 text-sm mb-6">Ingresa tus credenciales para continuar.</p>
-            
-            <form id="login-form" class="space-y-6">
-                <div class="relative">
-                    <ion-icon name="mail-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
-                    <input type="email" id="email" name="email" placeholder="Correo Electrónico" class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
-                </div>
-                
-                <div class="relative">
-                    <ion-icon name="lock-closed-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
-                    <input type="password" id="password" name="password" placeholder="Contraseña" class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
-                </div>
-                
-                <button type="submit" class="w-full p-3 rounded-lg text-white font-bold transition-colors custom-button-gradient hover:opacity-80">
-                    Ingresar
-                </button>
-            </form>
-
-            <div class="text-center mt-6">
-                <a href="tienda.html" class="text-teal-600 hover:underline text-sm">o ver la tienda como invitado</a>
+    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm">
+        <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">LOGIN</h1>
+        <p class="text-gray-500 text-center text-sm mb-6">Ingresa tus credenciales para continuar.</p>
+        
+        <form id="login-form" class="space-y-6">
+            <div class="relative">
+                <ion-icon name="mail-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
+                <input type="email" id="email" name="email" placeholder="Correo Electrónico" class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
             </div>
-        </div>
-    </div>
+            
+            <div class="relative">
+                <ion-icon name="lock-closed-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
+                <input type="password" id="password" name="password" placeholder="Contraseña" class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+            </div>
 
-    <div class="hidden md:flex flex-col w-1/2 items-center justify-center bg-teal-800 text-white p-10 relative">
-        <div class="relative z-10 text-center max-w-sm p-6 bg-white bg-opacity-10 rounded-xl backdrop-blur-sm">
-            <h2 class="text-3xl font-bold mb-2">¡Los mejores productos y servicios están a un clic!</h2>
-            <p class="text-lg font-light">Accede a tu cuenta para gestionar tus mascotas, citas y compras.</p>
+            <a href="#" class="block text-right text-sm text-teal-600 hover:underline -mt-4">
+                ¿Olvidaste tu contraseña?
+            </a>
+            
+            <button type="submit" class="w-full p-3 rounded-lg text-white font-bold custom-button-gradient hover:opacity-80 transition-opacity">
+                Ingresar
+            </button>
+        </form>
+
+        <div class="flex items-center my-6">
+            <div class="flex-grow border-t border-gray-300"></div>
+            <span class="flex-shrink mx-4 text-gray-500">O</span>
+            <div class="flex-grow border-t border-gray-300"></div>
+        </div>
+
+        <button class="google-button w-full flex items-center justify-center p-3 border border-gray-300 rounded-lg bg-white text-gray-700 font-semibold">
+            <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google Icon" class="w-5 h-5 mr-3">
+            Ingresar con Google
+        </button>
+
+        <div class="text-center mt-6">
+            <p class="text-sm text-gray-600">
+                ¿No tienes una cuenta? 
+                <a href="register.html" class="text-teal-600 font-semibold hover:underline">Regístrate</a>
+            </p>
         </div>
     </div>
 
