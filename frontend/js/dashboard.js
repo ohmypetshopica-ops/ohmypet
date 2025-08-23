@@ -1,8 +1,32 @@
 // --- VARIABLES GLOBALES ---
 let editingProductId = null;
 
+// --- FUNCIÓN DE VERIFICACIÓN DE DISPOSITIVO ---
+const checkDevice = () => {
+    const dashboardContainer = document.querySelector('#dashboard-container');
+    const mobileBlocker = document.querySelector('#mobile-blocker');
+    
+    // Usamos un umbral de 1024px para considerar "escritorio".
+    // Puedes ajustar este valor si lo necesitas.
+    if (window.innerWidth < 1024) {
+        dashboardContainer.classList.add('hidden');
+        dashboardContainer.classList.remove('flex');
+        mobileBlocker.classList.remove('hidden');
+        mobileBlocker.classList.add('flex');
+    } else {
+        dashboardContainer.classList.remove('hidden');
+        dashboardContainer.classList.add('flex');
+        mobileBlocker.classList.add('hidden');
+        mobileBlocker.classList.remove('flex');
+    }
+};
+
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // Ejecutar la verificación de dispositivo al cargar y al cambiar el tamaño de la ventana
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         window.location.href = 'login.html';
@@ -11,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     setupWelcomeMessage(user);
     setupNavigation();
-    setupProductManagement(); // Configura la lógica de productos
+    setupProductManagement();
 
     const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
     if (roleData && ['dueno', 'empleado'].includes(roleData.role)) {
@@ -58,7 +82,7 @@ const setupWelcomeMessage = (user) => {
     welcomeMessageElement.textContent = userName ? `¡Bienvenido de vuelta, ${userName}!` : '¡Bienvenido!';
 };
 
-// --- LÓGICA DE GESTIÓN DE PRODUCTOS ---
+// --- LÓGICA DE GESTIÓN DE PRODUCTOS (SIN CAMBIOS) ---
 const setupProductManagement = () => {
     document.querySelector('#add-product-button').addEventListener('click', () => showModal(false));
     document.querySelector('#cancel-button').addEventListener('click', hideModal);
@@ -76,7 +100,6 @@ const fetchAndDisplayProducts = async () => {
     const tableBody = document.querySelector('#product-table-body');
     tableBody.innerHTML = ''; 
     productos.forEach(producto => {
-        // Lógica para determinar el estado del stock
         let statusClass = '';
         let statusText = '';
         if (producto.stock > 10) {
@@ -126,8 +149,6 @@ const fetchAndDisplayProducts = async () => {
         tableBody.innerHTML += tableRow;
     });
 };
-
-// ... (El resto de funciones como uploadProductImage, showModal, hideModal, etc., permanecen igual)
 
 async function uploadProductImage(file) {
     if (!file) return null;
