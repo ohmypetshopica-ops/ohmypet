@@ -6,10 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('#product-grid').addEventListener('click', handleAddToCartClick);
     document.querySelector('#cart-bubble-btn').addEventListener('click', toggleCart); 
     document.querySelector('#close-cart-btn').addEventListener('click', toggleCart);
-    document.querySelector('#cart-backdrop').addEventListener('click', toggleCart);
     document.querySelector('#cart-items').addEventListener('click', handleCartActions);
+    
+    // El backdrop ahora solo cierra el carrito
+    const backdrop = document.querySelector('#backdrop');
+    backdrop.addEventListener('click', () => {
+        if (!document.querySelector('#cart-sidebar').classList.contains('translate-x-full')) {
+            toggleCart();
+        }
+    });
 });
-
 
 // =================================================================================
 // FUNCIONES DE LA TIENDA
@@ -22,15 +28,15 @@ async function fetchAndDisplayProducts() {
     const productGrid = document.querySelector('#product-grid');
     productGrid.innerHTML = productos.map(producto => `
         <div class="bg-white rounded-xl shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 hover:shadow-lg flex flex-col">
-            <div class="h-48 flex items-center justify-center bg-white p-4">
+            <div class="h-40 flex items-center justify-center bg-white p-2">
                 <img class="max-h-full max-w-full object-contain" src="${producto.imagen_url || 'https://via.placeholder.com/400x300.png?text=Sin+Imagen'}" alt="Imagen de ${producto.nombre}">
             </div>
-            <div class="p-4 flex flex-col flex-grow">
-                <h3 class="text-md font-bold text-gray-800 truncate">${producto.nombre}</h3>
-                <p class="text-xl font-bold text-teal-800 mt-1">S/ ${parseFloat(producto.precio).toFixed(2)}</p>
-                <button class="add-to-cart-btn w-full mt-auto pt-3 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-colors"
+            <div class="p-3 flex flex-col flex-grow">
+                <h3 class="text-sm font-bold text-gray-800 truncate">${producto.nombre}</h3>
+                <p class="text-lg font-bold text-teal-800 mt-1">S/ ${parseFloat(producto.precio).toFixed(2)}</p>
+                <button class="add-to-cart-btn w-full mt-auto pt-2 text-sm bg-green-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-green-600 transition-colors"
                     data-id="${producto.id}" data-nombre="${producto.nombre}" data-precio="${producto.precio}" data-imagen_url="${producto.imagen_url || ''}">
-                    Agregar al Carrito
+                    Agregar
                 </button>
             </div>
         </div>
@@ -55,15 +61,7 @@ function handleAddToCartClick(event) {
     };
 
     addProductToCart(product);
-    
-    button.textContent = '¡Agregado! ✔️';
-    button.disabled = true;
-    setTimeout(() => {
-        button.textContent = 'Agregar al Carrito';
-        button.disabled = false;
-    }, 1500);
 }
-
 
 // =================================================================================
 // FUNCIONES DEL CARRITO
@@ -71,7 +69,7 @@ function handleAddToCartClick(event) {
 
 function toggleCart() {
     document.querySelector('#cart-sidebar').classList.toggle('translate-x-full');
-    document.querySelector('#cart-backdrop').classList.toggle('hidden');
+    document.querySelector('#backdrop').classList.toggle('hidden');
 }
 
 function addProductToCart(product) {
@@ -156,14 +154,8 @@ function updateCartBubble(cart) {
 function showToast(message) {
     const container = document.querySelector('#toast-container');
     const toast = document.createElement('div');
-    toast.className = 'bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full';
+    toast.className = 'bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg';
     toast.textContent = message;
-    
     container.appendChild(toast);
-
-    setTimeout(() => { toast.classList.remove('translate-x-full'); }, 10);
-    setTimeout(() => {
-        toast.classList.add('translate-x-full');
-        toast.addEventListener('transitionend', () => toast.remove());
-    }, 3000);
+    setTimeout(() => { toast.remove(); }, 3000);
 }
