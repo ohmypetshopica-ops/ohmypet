@@ -6,29 +6,44 @@
     <title>Iniciar Sesión - Oh My Pet</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-teal-50 flex items-center justify-center h-screen">
+<body class="bg-teal-50">
 
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">¡Bienvenido de Nuevo!</h1>
-        
-        <form id="login-form">
-            <div class="mb-4">
-                <label for="email" class="block text-gray-700 mb-2">Correo Electrónico:</label>
-                <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
-            </div>
+    <div class="flex h-screen items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg flex w-full max-w-4xl overflow-hidden">
             
-            <div class="mb-6">
-                <label for="password" class="block text-gray-700 mb-2">Contraseña:</label>
-                <input type="password" id="password" name="password" placeholder="••••••••" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
-            </div>
-            
-            <button type="submit" class="w-full bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition-colors">
-                Ingresar
-            </button>
-        </form>
+            <div class="w-full lg:w-1/2 p-8 flex flex-col justify-center">
+                <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">¡Bienvenido de Nuevo!</h1>
+                <p class="text-gray-500 text-center mb-6">Ingresa tus credenciales para continuar.</p>
+                
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label for="email" class="block text-gray-700 mb-2 font-semibold">Correo Electrónico:</label>
+                        <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="password" class="block text-gray-700 mb-2 font-semibold">Contraseña:</label>
+                        <input type="password" id="password" name="password" placeholder="••••••••" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-green-500 text-white p-3 rounded-lg font-bold hover:bg-green-600 transition-colors">
+                        Ingresar
+                    </button>
+                </form>
 
-        <div class="text-center mt-4">
-            <a href="tienda.html" class="text-teal-500 hover:underline">o ver la tienda como invitado</a>
+                <div class="text-center mt-4">
+                    <a href="tienda.html" class="text-teal-600 hover:underline">o ver la tienda como invitado</a>
+                </div>
+            </div>
+
+            <div class="hidden lg:flex w-1/2 bg-teal-600 p-8 items-center justify-center relative">
+                <div class="absolute inset-0 bg-cover bg-center opacity-30" style="background-image: url('https://source.unsplash.com/1600x900/?dog,cat,pets');"></div>
+                <div class="text-center text-white relative z-10 p-6 rounded-lg bg-black bg-opacity-20 backdrop-blur-sm">
+                    <p class="text-2xl font-bold">¡Los mejores productos y servicios están a un clic!</p>
+                    <p class="mt-2 text-lg font-light">Accede a tu cuenta para gestionar tus mascotas, citas y compras.</p>
+                </div>
+            </div>
+
         </div>
     </div>
 
