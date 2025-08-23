@@ -5,24 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - Oh My Pet</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <style>
+        .gradient-bg {
+            background-image: linear-gradient(to bottom, #2b6cb0, #2c5282); /* Degradado azul de Tailwind */
+        }
+    </style>
 </head>
-<body class="bg-teal-50 flex items-center justify-center h-screen font-sans">
+<body class="bg-teal-50 h-screen w-screen flex font-sans">
 
-    <div class="bg-white rounded-xl shadow-lg flex w-full max-w-4xl overflow-hidden">
-        
-        <div class="w-full md:w-1/2 p-8 flex flex-col justify-center">
+    <div class="w-full md:w-1/2 p-10 flex flex-col items-center justify-center">
+        <div class="w-full max-w-sm">
             <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">¡Bienvenido de Nuevo!</h1>
             <p class="text-gray-500 text-center mb-6">Ingresa tus credenciales para continuar.</p>
             
-            <form id="login-form">
-                <div class="mb-4">
-                    <label for="email" class="block text-gray-700 mb-2 font-semibold">Correo Electrónico:</label>
-                    <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+            <form id="login-form" class="space-y-6">
+                <div class="relative">
+                    <ion-icon name="mail-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></ion-icon>
+                    <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com" class="w-full pl-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
                 </div>
                 
-                <div class="mb-6">
-                    <label for="password" class="block text-gray-700 mb-2 font-semibold">Contraseña:</label>
-                    <input type="password" id="password" name="password" placeholder="••••••••" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+                <div class="relative">
+                    <ion-icon name="lock-closed-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></ion-icon>
+                    <input type="password" id="password" name="password" placeholder="••••••••" class="w-full pl-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
                 </div>
                 
                 <button type="submit" class="w-full bg-green-500 text-white p-3 rounded-lg font-bold hover:bg-green-600 transition-colors">
@@ -30,18 +36,17 @@
                 </button>
             </form>
 
-            <div class="text-center mt-4">
-                <a href="tienda.html" class="text-teal-600 hover:underline">o ver la tienda como invitado</a>
+            <div class="text-center mt-6">
+                <a href="tienda.html" class="text-teal-600 hover:underline text-sm">o ver la tienda como invitado</a>
             </div>
         </div>
+    </div>
 
-        <div class="hidden md:flex w-1/2 bg-teal-800 p-8 items-center justify-center text-white text-center">
-            <div class="max-w-xs">
-                <p class="text-2xl font-bold">¡Los mejores productos y servicios están a un clic!</p>
-                <p class="mt-2 text-lg font-light">Accede a tu cuenta para gestionar tus mascotas, citas y compras.</p>
-            </div>
+    <div class="hidden md:flex flex-col w-1/2 items-center justify-center bg-teal-800 text-white p-10 relative">
+        <div class="relative z-10 text-center max-w-sm p-6 bg-white bg-opacity-10 rounded-xl backdrop-blur-sm">
+            <h2 class="text-3xl font-bold mb-2">¡Los mejores productos y servicios están a un clic!</h2>
+            <p class="text-lg font-light">Accede a tu cuenta para gestionar tus mascotas, citas y compras.</p>
         </div>
-
     </div>
 
     <script type="module" src="supabase-client.js"></script>
