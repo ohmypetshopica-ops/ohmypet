@@ -1,5 +1,12 @@
-const loginForm = document.querySelector('#login-form');
+import { supabase } from '../supabase-client.js';
 
+const loginForm = document.querySelector('#login-form');
+const googleLoginBtn = document.querySelector('#google-login-btn');
+const forgotPasswordLink = document.querySelector('#forgot-password-link');
+
+// --------------------------------------------------
+// Iniciar sesión con Email y Contraseña
+// --------------------------------------------------
 loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
@@ -13,7 +20,6 @@ loginForm.addEventListener('submit', async (event) => {
     });
 
     if (authError) {
-        // Mantenemos la alerta de error por si la contraseña o el email son incorrectos
         alert(`Error: ${authError.message}`);
         return;
     }
@@ -26,8 +32,8 @@ loginForm.addEventListener('submit', async (event) => {
         .single();
 
     if (roleError) {
-        // Se ha quitado la alerta de aquí. Redirige directamente.
-        window.location.href = 'tienda.html';
+        alert('Inicio de sesión exitoso, pero no pudimos verificar tu rol. Serás dirigido a la tienda.');
+        window.location.href = 'index.html';
         return;
     }
 
@@ -35,10 +41,47 @@ loginForm.addEventListener('submit', async (event) => {
     const userRole = roleData ? roleData.role : null;
 
     if (userRole === 'dueno' || userRole === 'empleado') {
-        // Se ha quitado la alerta. Redirige directamente al dashboard.
+        alert('¡Inicio de sesión de administrador exitoso!');
         window.location.href = 'dashboard.html';
     } else {
-        // Se ha quitado la alerta. Redirige directamente al inicio.
+        alert('¡Inicio de sesión exitoso!');
         window.location.href = 'index.html';
     }
 });
+
+// --------------------------------------------------
+// Iniciar sesión con Google
+// --------------------------------------------------
+if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', async () => {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin + '/dashboard.html'
+            }
+        });
+        if (error) {
+            alert(`Error al iniciar sesión con Google: ${error.message}`);
+        }
+    });
+}
+
+// --------------------------------------------------
+// Recuperar Contraseña
+// --------------------------------------------------
+if (forgotPasswordLink) {
+    forgotPasswordLink.addEventListener('click', async (event) => {
+        event.preventDefault();
+        const email = prompt("Por favor, ingresa tu correo electrónico para restablecer la contraseña:");
+        if (email) {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/update-password.html',
+            });
+            if (error) {
+                alert(`Error: ${error.message}`);
+            } else {
+                alert('Se ha enviado un correo electrónico para restablecer tu contraseña. Por favor, revisa tu bandeja de entrada.');
+            }
+        }
+    });
+}
