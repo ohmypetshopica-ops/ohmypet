@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda - Oh My Pet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <style>
+        /* Estilo para asegurar que el texto no se rompa en múltiples líneas durante la transición */
+        .sidebar-link-text {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <div class="flex">
+        <aside class="w-20 hover:w-64 bg-white flex flex-col p-4 shadow-lg transition-all duration-300 ease-in-out overflow-hidden group h-screen sticky top-0">
+            <div class="pt-2 pb-6 px-2 group-hover:px-0">
+                <h1 class="text-blue-800 text-2xl font-bold flex items-center">
+                    <span class="text-3xl">🐾</span>
+                    <span class="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">OH MY PET</span>
+                </h1>
+            </div>
+            
+            <nav class="flex flex-col space-y-4">
+                <a href="#" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
+                    <ion-icon name="cart-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
+                    <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Carrito</span>
+                </a>
+                <a href="login.html" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
+                    <ion-icon name="log-in-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
+                    <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Iniciar Sesión</span>
+                </a>
+            </nav>
+        </aside>
+        <div class="flex-1">
+            <main class="container mx-auto p-6">
+                <div class="text-center mb-10">
+                    <h1 class="text-4xl font-bold text-gray-800">Nuestros Productos</h1>
+                    <p class="text-gray-500 mt-2">Todo lo que necesitas para tu mascota</p>
+                </div>
+
+                <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    </div>
+            </main>
+
+            <footer class="text-center p-4 mt-10 text-gray-500">
+                <p>&copy; 2025 Oh My Pet. Todos los derechos reservados.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script type="module" src="supabase-client.js"></script>
+    <script type="module" src="./js/tienda.js"></script>
+</body>
+</html>
