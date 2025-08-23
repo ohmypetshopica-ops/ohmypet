@@ -8,5 +8,5 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 // Crear y exportar el cliente de Supabase
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Hacer que la variable 'supabase' sea accesible globalmente
-window.supabase = supabase;
+// Exportar la variable 'supabase' para su uso en otros módulos
+export { supabase };
