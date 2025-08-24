@@ -5,32 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear Cuenta - Oh My Pet</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <style>
+        .custom-button-gradient {
+            background-image: linear-gradient(to bottom right, #34d399, #10b981);
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen py-10">
+<body class="bg-teal-50 h-screen w-screen flex flex-col items-center justify-center font-sans">
 
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Crea tu Cuenta</h1>
-
-        <form id="register-form">
-            <div class="mb-4">
-                <label for="name" class="block text-gray-700 mb-2">Nombre Completo:</label>
-                <input type="text" id="name" name="name" placeholder="Tu nombre y apellido" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
+        <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">REGISTRO</h1>
+        <p class="text-gray-500 text-center text-sm mb-6">Crea una cuenta para continuar.</p>
+        
+        <form id="register-form" class="space-y-6">
+            <div class="relative">
+                <ion-icon name="person-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
+                <input type="text" id="name" name="name" placeholder="Tu nombre completo" class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
             </div>
             
-            <div class="mb-4">
-                <label for="email" class="block text-gray-700 mb-2">Correo Electrónico:</label>
-                <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <div class="relative">
+                <ion-icon name="mail-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
+                <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com" class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
             </div>
             
-            <div class="mb-4">
-                <label for="password" class="block text-gray-700 mb-2">Contraseña:</label>
-                <input type="password" id="password" name="password" placeholder="••••••••" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <div class="relative">
+                <ion-icon name="lock-closed-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
+                <input type="password" id="password" name="password" placeholder="Contraseña" class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
             </div>
 
-            <button type="submit" class="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition-colors">
+            <button type="submit" class="w-full p-3 rounded-lg text-white font-bold custom-button-gradient hover:opacity-80 transition-opacity">
                 Crear Cuenta
             </button>
         </form>
+
+        <div class="text-center mt-6">
+            <p class="text-sm text-gray-600">
+                ¿Ya tienes una cuenta? 
+                <a href="login.html" class="text-teal-600 font-semibold hover:underline">Ingresa</a>
+            </p>
+        </div>
     </div>
 
     <script type="module" src="supabase-client.js"></script>

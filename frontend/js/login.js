@@ -2,7 +2,6 @@
 import { supabase } from '../supabase-client.js';
 
 const loginForm = document.querySelector('#login-form');
-const googleLoginBtn = document.querySelector('#google-login-btn');
 const forgotPasswordLink = document.querySelector('#forgot-password-link');
 
 // --------------------------------------------------
@@ -13,7 +12,6 @@ loginForm.addEventListener('submit', async (event) => {
 
     const email = loginForm.email.value;
     const password = loginForm.password.value;
-    // const supabase = window.supabase; // Ya no es necesaria
 
     // 1. Iniciar sesión del usuario
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -50,23 +48,6 @@ loginForm.addEventListener('submit', async (event) => {
         window.location.href = 'index.html';
     }
 });
-
-// --------------------------------------------------
-// Iniciar sesión con Google
-// --------------------------------------------------
-if (googleLoginBtn) {
-    googleLoginBtn.addEventListener('click', async () => {
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: window.location.origin + '/dashboard.html'
-            }
-        });
-        if (error) {
-            alert(`Error al iniciar sesión con Google: ${error.message}`);
-        }
-    });
-}
 
 // --------------------------------------------------
 // Recuperar Contraseña
