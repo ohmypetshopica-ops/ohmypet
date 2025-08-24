@@ -23,4 +23,4 @@ registerForm.addEventListener('submit', async (event) => {
         alert('¡Registro exitoso! Revisa tu correo para confirmar la cuenta.');
         window.location.href = 'login.html';
     }
-});
+}); 
