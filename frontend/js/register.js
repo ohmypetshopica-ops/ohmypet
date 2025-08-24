@@ -1,6 +1,3 @@
-// Importa el cliente de Supabase desde la carpeta padre
-import { supabase } from '../supabase-client.js';
-
 const registerForm = document.querySelector('#register-form');
 
 registerForm.addEventListener('submit', async (event) => {
