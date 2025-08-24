@@ -1,3 +1,6 @@
+// Importa el cliente de Supabase desde la ruta absoluta
+import { supabase } from '/Oh my Pet/frontend/supabase-client.js';
+
 const registerForm = document.querySelector('#register-form');
 
 registerForm.addEventListener('submit', async (event) => {
