@@ -53,18 +53,9 @@ loginForm.addEventListener('submit', async (event) => {
 // Recuperar Contraseña
 // --------------------------------------------------
 if (forgotPasswordLink) {
-    forgotPasswordLink.addEventListener('click', async (event) => {
+    forgotPasswordLink.addEventListener('click', (event) => {
         event.preventDefault();
-        const email = prompt("Por favor, ingresa tu correo electrónico para restablecer la contraseña:");
-        if (email) {
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin + '/update-password.html',
-            });
-            if (error) {
-                alert(`Error: ${error.message}`);
-            } else {
-                alert('Se ha enviado un correo electrónico para restablecer tu contraseña. Por favor, revisa tu bandeja de entrada.');
-            }
-        }
+        // Redirige a la nueva página de "olvidé mi contraseña"
+        window.location.href = 'forgot-password.html';
     });
 }
