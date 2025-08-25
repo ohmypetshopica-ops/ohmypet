@@ -24,7 +24,7 @@ loginForm.addEventListener('submit', async (e) => {
         console.error(error);
     } else {
         // Redirige al dashboard o a la página principal tras un login exitoso.
-        window.location.href = 'pages/login.html';
+        window.location.href = 'https://codearlo.com/ohmypet/frontend/index.html';
     }
 });
 
