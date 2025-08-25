@@ -7,14 +7,20 @@ import { getUserRole } from '../models/userRoles.model.js';
 
 async function guard() {
   const { data:{ session } } = await supabase.auth.getSession();
-  if (!session) { window.location.href = '/frontend/login.html'; return null; }
+  if (!session) { 
+    window.location.href = '../login.html'; 
+    return null; 
+  }
   const role = await getUserRole(session.user.id);
   if (!role || !['dueno','empleado'].includes(role)) {
-    window.location.href = '/frontend/login.html'; return null;
+    window.location.href = '../login.html'; 
+    return null;
   }
   const welcome = document.querySelector('#welcome-message');
   if (welcome) welcome.textContent = `Bienvenido, ${session.user.email}`;
-  supabase.auth.onAuthStateChange((event)=>{ if(event==='SIGNED_OUT') location.href='/frontend/login.html';});
+  supabase.auth.onAuthStateChange((event)=>{ 
+    if(event==='SIGNED_OUT') location.href='../login.html';
+  });
   return { session, role };
 }
 
@@ -38,6 +44,7 @@ async function loadMetrics() {
 }
 
 export async function initDashboardPage(){
-  const ok = await guard(); if(!ok) return;
+  const ok = await guard(); 
+  if(!ok) return;
   await loadMetrics();
 }

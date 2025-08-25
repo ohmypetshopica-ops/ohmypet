@@ -7,14 +7,20 @@ import { supabase } from '../../supabase-client.js';
 
 async function guard() {
   const { data:{ session } } = await supabase.auth.getSession();
-  if (!session) { window.location.href='/frontend/login.html'; return null; }
+  if (!session) { 
+    window.location.href='../login.html'; 
+    return null; 
+  }
   const role = await getUserRole(session.user.id);
   if (!role || !['dueno','empleado'].includes(role)) {
-    window.location.href='/frontend/login.html'; return null;
+    window.location.href='../login.html'; 
+    return null;
   }
   const welcome = document.querySelector('#welcome-message');
   if (welcome) welcome.textContent = `Bienvenido, ${session.user.email}`;
-  supabase.auth.onAuthStateChange((event)=>{ if(event==='SIGNED_OUT') location.href='/frontend/login.html';});
+  supabase.auth.onAuthStateChange((event)=>{ 
+    if(event==='SIGNED_OUT') location.href='../login.html';
+  });
   return { session, role };
 }
 
@@ -24,7 +30,7 @@ function rowHTML(p){
       <td class="px-5 py-3">${p.nombre}</td>
       <td class="px-5 py-3">S/ ${Number(p.precio).toFixed(2)}</td>
       <td class="px-5 py-3">${p.stock}</td>
-      <td class="px-5 py-3">${
+      <td class="px-5 py-3">${ 
         p.stock>0
           ? '<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Disponible</span>'
           : '<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-100">Agotado</span>'
