@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: 'https://codearlo.com/ohmypet/frontend/index.html',
+                    redirectTo: `${window.location.origin}/ohmypet/frontend/index.html`
                 }
             });
 
