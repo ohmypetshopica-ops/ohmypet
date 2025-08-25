@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Manejo del botón de login con Google ---
     if (googleLoginButton) {
         googleLoginButton.addEventListener('click', async () => {
-            const { error } = await supabase.auth.signInWithOAuth({
+            const { data,error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: `${window.location.origin}/ohmypet/frontend/index.html`
