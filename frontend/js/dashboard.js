@@ -30,14 +30,12 @@ async function checkAccess() {
     .maybeSingle();
 
   if (roleError || !roles) {
-    alert('No tienes permisos para acceder al dashboard.');
     window.location.href = 'login.html';
     return;
   }
 
   // 3. Validar rol permitido
   if (roles.role !== 'dueno' && roles.role !== 'empleado') {
-    alert('Acceso restringido.');
     window.location.href = 'login.html';
     return;
   }
@@ -45,58 +43,44 @@ async function checkAccess() {
   // 4. Bienvenida
   welcomeMessage.textContent = `Bienvenido, ${user.email}`;
 
-  // 5. Cargar métricas dinámicas
+  // 5. Cargar métricas
   await loadDashboardData();
 }
 
 async function loadDashboardData() {
   try {
-    // Total ventas del mes
-    const { data: ventas, error: ventasError } = await supabase
+    // Ventas del mes
+    const { data: ventas } = await supabase
       .from('ventas')
       .select('total, fecha')
-      .gte(
-        'fecha',
-        new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
-      );
+      .gte('fecha', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
 
-    if (ventasError) throw ventasError;
     const totalVentas = ventas?.reduce((sum, v) => sum + (v.total || 0), 0) || 0;
-    document.querySelector('#dashboard-view .grid div:nth-child(1) p.text-2xl').textContent =
-      `S/ ${totalVentas.toFixed(2)}`;
+    document.querySelector('#ventas-mes').textContent = totalVentas.toFixed(2);
 
     // Citas programadas
-    const { data: citas, error: citasError } = await supabase
+    const { data: citas } = await supabase
       .from('citas')
       .select('id')
       .gte('fecha', new Date().toISOString());
 
-    if (citasError) throw citasError;
-    document.querySelector('#dashboard-view .grid div:nth-child(2) p.text-2xl').textContent =
-      citas.length;
+    document.querySelector('#citas-programadas').textContent = citas?.length || 0;
 
-    // Clientes nuevos este mes
-    const { data: clientes, error: clientesError } = await supabase
+    // Clientes nuevos del mes
+    const { data: clientes } = await supabase
       .from('auth.users')
       .select('id, created_at')
-      .gte(
-        'created_at',
-        new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
-      );
+      .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
 
-    if (clientesError) throw clientesError;
-    document.querySelector('#dashboard-view .grid div:nth-child(3) p.text-2xl').textContent =
-      clientes.length;
+    document.querySelector('#clientes-nuevos').textContent = clientes?.length || 0;
 
-    // Productos con stock bajo (<5)
-    const { data: productos, error: productosError } = await supabase
+    // Productos con stock bajo
+    const { data: productos } = await supabase
       .from('productos')
       .select('id, stock')
       .lt('stock', 5);
 
-    if (productosError) throw productosError;
-    document.querySelector('#dashboard-view .grid div:nth-child(4) p.text-2xl').textContent =
-      productos.length;
+    document.querySelector('#stock-bajo').textContent = productos?.length || 0;
   } catch (err) {
     console.error('Error cargando dashboard:', err);
   }
