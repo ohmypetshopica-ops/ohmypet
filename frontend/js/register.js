@@ -1,9 +1,11 @@
-// frontend/js/register.js
+// ruta: frontend/js/register.js
+
 import { supabase } from '../supabase-client.js';
 
 const registerForm = document.querySelector('#register-form');
 const googleLoginButton = document.querySelector('#google-login-btn');
 
+// --- Manejo del formulario de registro tradicional ---
 registerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = registerForm.name.value.trim();
@@ -18,7 +20,9 @@ registerForm.addEventListener('submit', async (e) => {
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { nombre: name } }
+        options: { 
+            data: { nombre: name } // Guarda el nombre en los metadatos del usuario
+        }
     });
 
     if (error) {
@@ -29,11 +33,12 @@ registerForm.addEventListener('submit', async (e) => {
     }
 });
 
+// --- Manejo del botón de registro/login con Google ---
 googleLoginButton.addEventListener('click', async () => {
     const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            // CORRECCIÓN: Esta forma de construir la URL es más segura
+            // Es importante definir a dónde volverá el usuario tras el login
             redirectTo: new URL('index.html', window.location.href).href,
         }
     });
