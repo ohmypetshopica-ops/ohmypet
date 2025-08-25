@@ -1,216 +1,47 @@
-// Variable global para guardar todos los productos y no pedirlos cada vez
+// frontend/js/tienda.js
+import { supabase } from '../supabase-client.js';
+
+const productGrid = document.querySelector('#product-grid');
+const noResults = document.querySelector('#no-results');
 let allProducts = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchAndStoreProducts();
-    renderCart();
+async function fetchProducts() {
+  const { data: productos, error } = await supabase.from('productos').select('*');
 
-    // --- MANEJADORES DE EVENTOS ---
-    document.querySelector('#product-grid').addEventListener('click', handleAddToCartClick);
-    document.querySelector('#cart-bubble-btn').addEventListener('click', toggleCart);
-    document.querySelector('#close-cart-btn').addEventListener('click', toggleCart);
-    document.querySelector('#cart-items').addEventListener('click', handleCartActions);
+  if (error) {
+    console.error('Error cargando productos:', error.message);
+    noResults.classList.remove('hidden');
+    return;
+  }
 
-    // Listeners para búsqueda y ordenamiento
-    document.querySelector('#search-input').addEventListener('input', applyFiltersAndSort);
-    document.querySelector('#sort-filter').addEventListener('change', applyFiltersAndSort);
+  if (!productos || productos.length === 0) {
+    noResults.classList.remove('hidden');
+    return;
+  }
 
-    const backdrop = document.querySelector('#backdrop');
-    backdrop.addEventListener('click', () => {
-        if (!document.querySelector('#cart-sidebar').classList.contains('translate-x-full')) {
-            toggleCart();
-        }
-    });
-});
-
-// =================================================================================
-// FUNCIONES DE LA TIENDA
-// =================================================================================
-
-// 1. Carga los productos desde Supabase y los guarda en la variable global
-async function fetchAndStoreProducts() {
-    const { data: productos, error } = await supabase.from('productos').select('*');
-    if (error) {
-        console.error('Error cargando productos:', error);
-        return;
-    }
-    allProducts = productos;
-    renderProducts(allProducts); // Muestra todos los productos inicialmente
+  allProducts = productos;
+  renderProducts(productos);
 }
 
-// 2. Muestra los productos en la cuadrícula
-function renderProducts(productsToDisplay) {
-    const productGrid = document.querySelector('#product-grid');
-    const noResultsMessage = document.querySelector('#no-results');
+function renderProducts(products) {
+  productGrid.innerHTML = '';
 
-    if (!productsToDisplay || productsToDisplay.length === 0) {
-        productGrid.innerHTML = '';
-        noResultsMessage.classList.remove('hidden');
-    } else {
-        noResultsMessage.classList.add('hidden');
-        productGrid.innerHTML = productsToDisplay.map(producto => `
-            <div class="bg-white rounded-xl shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 hover-shadow-lg flex flex-col">
-                <div class="h-56 flex items-center justify-center bg-white p-2">
-                    <img class="max-h-full max-w-full object-contain" src="${producto.imagen_url || 'https://via.placeholder.com/400x300.png?text=Sin+Imagen'}" alt="Imagen de ${producto.nombre}">
-                </div>
-                <div class="p-3 flex flex-col flex-grow">
-                    <h3 class="text-sm font-bold text-gray-800 truncate">${producto.nombre || 'Producto sin nombre'}</h3>
-                    <p class="text-lg font-bold text-teal-800 mt-1">S/ ${parseFloat(producto.precio || 0).toFixed(2)}</p>
-                    <button class="add-to-cart-btn w-full mt-auto pt-2 text-sm bg-green-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-green-600 transition-colors"
-                        data-id="${producto.id}" data-nombre="${producto.nombre}" data-precio="${producto.precio}" data-imagen_url="${producto.imagen_url || ''}">
-                        Agregar
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
+  products.forEach((producto) => {
+    const card = document.createElement('div');
+    card.className = 'bg-white shadow-md rounded-lg p-4';
+
+    card.innerHTML = `
+      <img src="${producto.imagen_url ?? 'https://via.placeholder.com/300x300.png?text=Sin+Imagen'}" 
+           alt="${producto.nombre}" class="w-full h-48 object-cover rounded-md mb-2">
+      <h3 class="text-lg font-semibold">${producto.nombre}</h3>
+      <p class="text-gray-700">$${producto.precio}</p>
+      <button class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        Comprar
+      </button>
+    `;
+
+    productGrid.appendChild(card);
+  });
 }
 
-// 3. ✅ FUNCIÓN CORREGIDA: Aplica los filtros de búsqueda y ordenamiento
-function applyFiltersAndSort() {
-    const searchTerm = document.querySelector('#search-input').value.toLowerCase();
-    const sortValue = document.querySelector('#sort-filter').value;
-
-    let processedProducts = [...allProducts];
-
-    // Primero, filtra por el término de búsqueda (si hay algo escrito)
-    if (searchTerm) {
-        processedProducts = processedProducts.filter(product =>
-            (product.nombre || '').toLowerCase().includes(searchTerm)
-        );
-    }
-
-    // Luego, ordena los resultados ya filtrados
-    switch (sortValue) {
-        case 'price-asc':
-            processedProducts.sort((a, b) => (a.precio || 0) - (b.precio || 0));
-            break;
-        case 'price-desc':
-            processedProducts.sort((a, b) => (b.precio || 0) - (a.precio || 0));
-            break;
-        case 'name-asc':
-            processedProducts.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
-            break;
-        // El caso 'default' no necesita ordenarse, mantiene el original
-    }
-
-    renderProducts(processedProducts);
-}
-
-
-function handleAddToCartClick(event) {
-    const button = event.target.closest('.add-to-cart-btn');
-    if (!button) return;
-
-    const price = parseFloat(button.dataset.precio);
-    if (isNaN(price)) {
-        console.error('Error: El precio del producto es inválido.', button.dataset);
-        return;
-    }
-
-    const product = {
-        id: button.dataset.id,
-        nombre: button.dataset.nombre,
-        precio: price,
-        imagen_url: button.dataset.imagen_url,
-    };
-
-    addProductToCart(product);
-}
-
-// =================================================================================
-// FUNCIONES DEL CARRITO (Sin cambios)
-// =================================================================================
-
-function toggleCart() {
-    document.querySelector('#cart-sidebar').classList.toggle('translate-x-full');
-    document.querySelector('#backdrop').classList.toggle('hidden');
-}
-
-function addProductToCart(product) {
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const existingProductIndex = cart.findIndex(item => String(item.id) === String(product.id));
-
-    if (existingProductIndex > -1) {
-        cart[existingProductIndex].quantity++;
-    } else {
-        cart.push({ ...product, quantity: 1 });
-    }
-
-    localStorage.setItem('cart', JSON.stringify(cart));
-    renderCart();
-    showToast(`"${product.nombre}" fue agregado al carrito.`);
-}
-
-function renderCart() {
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const cartItemsContainer = document.querySelector('#cart-items');
-
-    if (cart.length === 0) {
-        cartItemsContainer.innerHTML = `<div class="text-center mt-10"><p class="text-xl text-gray-600">¡Tu carrito está vacío!</p></div>`;
-    } else {
-        cartItemsContainer.innerHTML = cart.map(item => {
-            const itemPrice = typeof item.precio === 'number' ? item.precio.toFixed(2) : '0.00';
-            return `
-                <div class="flex items-center gap-4 py-2 border-b">
-                    <img src="${item.imagen_url || 'https://via.placeholder.com/150'}" alt="${item.nombre}" class="w-16 h-16 rounded object-cover">
-                    <div class="flex-grow"><p class="font-bold">${item.nombre}</p><p class="text-sm text-gray-600">S/ ${itemPrice}</p></div>
-                    <div class="flex items-center gap-3"><button class="update-quantity-btn text-lg font-bold" data-id="${item.id}" data-change="-1">-</button><span>${item.quantity}</span><button class="update-quantity-btn text-lg font-bold" data-id="${item.id}" data-change="1">+</button></div>
-                    <button class="remove-item-btn text-red-500" data-id="${item.id}"><ion-icon name="trash-outline" class="text-xl"></ion-icon></button>
-                </div>
-            `;
-        }).join('');
-    }
-    updateCartSummary(cart);
-    updateCartBubble(cart);
-}
-
-function handleCartActions(event) {
-    const button = event.target.closest('button');
-    if (!button) return;
-
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const productId = button.dataset.id;
-    if (!productId) return;
-
-    const productIndex = cart.findIndex(item => String(item.id) === String(productId));
-    if (productIndex === -1) return;
-
-    if (button.classList.contains('update-quantity-btn')) {
-        const change = parseInt(button.dataset.change);
-        cart[productIndex].quantity += change;
-        if (cart[productIndex].quantity <= 0) {
-            cart.splice(productIndex, 1);
-        }
-    } else if (button.classList.contains('remove-item-btn')) {
-        cart.splice(productIndex, 1);
-    }
-
-    localStorage.setItem('cart', JSON.stringify(cart));
-    renderCart();
-}
-
-function updateCartSummary(cart) {
-    const total = cart.reduce((sum, item) => {
-        const price = typeof item.precio === 'number' ? item.precio : 0;
-        const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
-        return sum + price * quantity;
-    }, 0);
-    document.querySelector('#cart-total').textContent = `S/ ${total.toFixed(2)}`;
-}
-
-function updateCartBubble(cart) {
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    const bubble = document.querySelector('#cart-item-count');
-    bubble.textContent = totalItems;
-    bubble.style.display = totalItems > 0 ? 'flex' : 'none';
-}
-
-function showToast(message) {
-    const container = document.querySelector('#toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'bg-green-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg';
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => { toast.remove(); }, 3000);
-}
+fetchProducts();

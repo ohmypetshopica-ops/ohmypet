@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,43 +12,53 @@
         .custom-button-gradient {
             background-image: linear-gradient(to bottom right, #34d399, #10b981);
         }
+
         .google-button {
             transition: all 0.3s ease;
         }
+
         .google-button:hover {
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
     </style>
 </head>
+
 <body class="bg-teal-50 h-screen w-screen flex flex-col items-center justify-center font-sans">
 
     <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm">
         <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">LOGIN</h1>
         <p class="text-gray-500 text-center text-sm mb-6">Ingresa tus credenciales para continuar.</p>
-        
+
         <form id="login-form" class="space-y-6">
             <div class="relative">
-                <ion-icon name="mail-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
-                <input type="email" id="email" name="email" placeholder="Correo Electrónico" class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+                <ion-icon name="mail-outline"
+                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
+                <input type="email" id="email" name="email" placeholder="Correo Electrónico"
+                    class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    required>
             </div>
-            
+
             <div class="relative">
-                <ion-icon name="lock-closed-outline" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
-                <input type="password" id="password" name="password" placeholder="Contraseña" class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required>
+                <ion-icon name="lock-closed-outline"
+                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
+                <input type="password" id="password" name="password" placeholder="Contraseña"
+                    class="w-full pl-10 p-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    required>
             </div>
 
             <a href="#" id="forgot-password-link" class="block text-right text-sm text-teal-600 hover:underline -mt-4">
                 ¿Olvidaste tu contraseña?
             </a>
-            
-            <button type="submit" class="w-full p-3 rounded-lg text-white font-bold custom-button-gradient hover:opacity-80 transition-opacity">
+
+            <button type="submit"
+                class="w-full p-3 rounded-lg text-white font-bold custom-button-gradient hover:opacity-80 transition-opacity">
                 Ingresar
             </button>
         </form>
 
         <div class="text-center mt-6">
             <p class="text-sm text-gray-600">
-                ¿No tienes una cuenta? 
+                ¿No tienes una cuenta?
                 <a href="register.html" class="text-teal-600 font-semibold hover:underline">Regístrate</a>
             </p>
         </div>
@@ -55,5 +66,7 @@
 
     <script type="module" src="supabase-client.js"></script>
     <script type="module" src="./js/login.js"></script>
+
 </body>
+
 </html>
