@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (session) {
         // Si hay sesión, solo mostramos el botón de cerrar sesión.
-        // Ya no hay redirección automática.
         loginLink.classList.add('hidden');
         logoutButton.classList.remove('hidden');
     } else {

@@ -1,4 +1,3 @@
-// frontend/js/login.js
 import { supabase } from '../supabase-client.js';
 
 const loginForm = document.querySelector('#login-form');
