@@ -1,4 +1,4 @@
-// register.js
+// js/register.js
 import { supabase } from '../supabase-client.js';
 
 document.getElementById('register-form')?.addEventListener('submit', async (e) => {
@@ -6,13 +6,18 @@ document.getElementById('register-form')?.addEventListener('submit', async (e) =
 
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
-  const nombre = document.getElementById('nombre').value.trim();
+  const nombre = document.getElementById('name').value.trim(); // Corregido para tomar el id 'name' del HTML
 
-  const { data, error } = await supabase.auth.signUp({
+  // Ahora solo necesitamos registrar al usuario.
+  // La base de datos se encargará de asignarle el rol de "cliente" automáticamente.
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { nombre }
+      data: {
+        // Guardamos el nombre en los metadatos del usuario por si lo necesitamos después
+        full_name: nombre 
+      }
     }
   });
 
@@ -21,18 +26,8 @@ document.getElementById('register-form')?.addEventListener('submit', async (e) =
     return;
   }
 
-  alert('Registro exitoso. Revisa tu correo para confirmar.');
-  // ✅ Redirige siempre al login dentro de /ohmypet/frontend/
-  window.location.href = 'https://codearlo.com/ohmypet/frontend/login.html';
-});
-
-// ✅ Botón de registro con Google
-document.getElementById('google-register')?.addEventListener('click', async () => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: 'https://codearlo.com/ohmypet/frontend/index.html', // callback fija
-    },
-  });
-  if (error) alert('Error: ' + error.message);
+  alert('¡Registro exitoso! Revisa tu correo electrónico para confirmar tu cuenta.');
+  
+  // Redirigimos al usuario a la página de login para que pueda iniciar sesión.
+  window.location.href = 'login.html';
 });

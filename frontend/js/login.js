@@ -1,44 +1,43 @@
 // ruta: frontend/js/login.js
 import { supabase } from './../supabase-client.js';
+import { getUserRole } from './models/userRoles.model.js'; // Importamos la función para obtener el rol
 
 document.addEventListener('DOMContentLoaded', () => {
 
     const loginForm = document.querySelector('#login-form');
-    const googleLoginButton = document.querySelector('#google-login-btn');
 
-    // --- Manejo del formulario de login tradicional ---
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = loginForm.email.value.trim();
             const password = loginForm.password.value;
 
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            // 1. Inicia sesión del usuario
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) {
                 alert(`Error al iniciar sesión: ${error.message}`);
+                return;
+            }
+
+            if (!data.user) {
+                alert('No se pudo verificar el usuario. Inténtalo de nuevo.');
+                return;
+            }
+
+            // 2. Si el login es exitoso, obtenemos el rol del usuario
+            const role = await getUserRole(data.user.id);
+
+            // 3. Redirigimos basado en el rol
+            if (role === 'dueno' || role === 'empleado') {
+                // Si es dueño o empleado, va al dashboard
+                window.location.href = './pages/dashboard.html';
             } else {
-                // CORRECCIÓN: Se cambió la ruta para que sea relativa a la página actual.
-                // Esto te enviará a index.html dentro de la carpeta frontend.
-                window.location.href = 'index.html'; 
+                // Si es cliente o no tiene rol, va a la página principal
+                window.location.href = 'index.html';
             }
         });
     }
 
-    // --- Manejo del botón de login con Google ---
-    if (googleLoginButton) {
-        googleLoginButton.addEventListener('click', async () => {
-            const { data,error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: `${window.location.origin}/ohmypet/frontend/index.html`
-                }
-            });
-
-            if (error) {
-                alert(`Error al iniciar sesión con Google: ${error.message}`);
-            }
-        });
-    }
-
+    // --- Se ha eliminado el listener para el botón de login con Google ---
 });
