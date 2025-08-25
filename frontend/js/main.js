@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (error) {
             console.error('Error al cerrar sesión:', error.message);
         } else {
-            window.location.href = 'index.html';
+            window.location.href = ' https://codearlo.com/ohmypet/frontend/index.html';
         }
     });
 });

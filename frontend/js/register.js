@@ -39,7 +39,7 @@ googleLoginButton.addEventListener('click', async () => {
         provider: 'google',
         options: {
             // Es importante definir a dónde volverá el usuario tras el login
-            redirectTo: new URL('index.html', window.location.href).href,
+            redirectTo: 'https://codearlo.com/ohmypet/frontend/index.html',
         }
     });
 
