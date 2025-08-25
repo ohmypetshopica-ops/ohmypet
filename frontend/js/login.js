@@ -1,6 +1,6 @@
 // ruta: frontend/js/login.js
 import { supabase } from './../supabase-client.js';
-import { getUserRole } from './models/userRoles.model.js'; // Importamos la función para obtener el rol
+import { getUserRole } from './models/userRoles.model.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = loginForm.email.value.trim();
             const password = loginForm.password.value;
 
-            // 1. Inicia sesión del usuario
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) {
@@ -25,16 +24,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 2. Si el login es exitoso, obtenemos el rol del usuario
             const role = await getUserRole(data.user.id);
 
-            // 3. Redirigimos basado en el rol
             if (role === 'dueno' || role === 'empleado') {
-                // --- LÍNEA CORREGIDA ---
-                // Si es dueño o empleado, va al dashboard usando la ruta completa y correcta.
-                window.location.href = '/ohmypet/frontend/pages/dashboard.html';
+                // --- SOLUCIÓN DEFINITIVA ---
+                // Se construye la URL completa y correcta para que funcione en cualquier servidor.
+                // En tu servidor, esto creará: "https://codearlo.com/ohmypet/frontend/pages/dashboard.html"
+                const dashboardUrl = `${window.location.origin}/ohmypet/frontend/pages/dashboard.html`;
+                window.location.href = dashboardUrl;
+
             } else {
-                // Si es cliente o no tiene rol, va a la página principal
+                // Para los clientes, la redirección a index.html está bien.
                 window.location.href = 'index.html';
             }
         });
