@@ -1,11 +1,8 @@
 // frontend/js/app.js
-// Boot del dashboard: muestra el shell, hace auth+rol guard y arranca router con RUTAS RELATIVAS.
-
 import { supabase } from '../supabase-client.js';
 import { getUserRole } from './models/userRoles.model.js';
 import { initRouter, navigateTo } from './router.js';
 
-// Mostrar/ocultar por dispositivo (asegurar que el shell se vea aunque haya fallos posteriores)
 const dashboardContainer = document.querySelector('#dashboard-container');
 const mobileBlocker = document.querySelector('#mobile-blocker');
 
@@ -17,16 +14,13 @@ try {
   }
 } catch (e) {
   console.error('Error mostrando shell:', e);
-  // En caso extremo, mostrar el container para no dejar la pantalla en blanco
   dashboardContainer?.classList.remove('hidden');
 }
 
-// ---------- Auth + Role Guard ----------
 async function guard() {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      // Redirige si no hay sesión
       window.location.href = 'login.html';
       return null;
     }
@@ -37,11 +31,9 @@ async function guard() {
       return null;
     }
 
-    // Bienvenida
     const welcome = document.querySelector('#welcome-message');
     if (welcome) welcome.textContent = `Bienvenido, ${session.user.email}`;
 
-    // Si cambia el estado de auth en otra pestaña
     supabase.auth.onAuthStateChange((event, s) => {
       if (event === 'SIGNED_OUT' || !s) window.location.href = 'login.html';
     });
@@ -49,7 +41,6 @@ async function guard() {
     return { session, role };
   } catch (err) {
     console.error('Guard error:', err);
-    // Si falla el guard por un error transitorio, mostrar mensaje en la vista
     const viewRoot = document.querySelector('#view-root');
     viewRoot.innerHTML = `
       <div class="p-6 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl">
@@ -60,12 +51,10 @@ async function guard() {
   }
 }
 
-// ---------- Arranque ----------
 (async () => {
   const auth = await guard();
   if (!auth) return;
 
-  // IMPORTANTE: usar rutas RELATIVAS desde dashboard.html (no comenzar con '/')
   initRouter({
     '#/dashboard': {
       view: 'views/dashboard.html',
@@ -77,7 +66,6 @@ async function guard() {
     },
   });
 
-  // Navegación inicial
   if (!location.hash) navigateTo('#/dashboard');
   else window.dispatchEvent(new HashChangeEvent('hashchange'));
 })();

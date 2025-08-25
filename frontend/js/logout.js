@@ -1,5 +1,6 @@
 // frontend/js/logout.js
 import { supabase } from '../supabase-client.js';
+
 const btn = document.querySelector('#logout-button');
 
 btn?.addEventListener('click', async (e) => {

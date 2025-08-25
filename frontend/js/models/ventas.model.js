@@ -7,6 +7,7 @@ export async function getVentasDelMes() {
     .from('ventas')
     .select('total, fecha')
     .gte('fecha', desde);
+
   if (error) throw error;
   const total = data?.reduce((s, v) => s + (v.total || 0), 0) ?? 0;
   return total;

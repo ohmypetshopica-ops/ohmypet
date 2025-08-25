@@ -6,6 +6,7 @@ export async function getCitasProgramadas() {
     .from('citas')
     .select('id')
     .gte('fecha', new Date().toISOString());
+
   if (error) throw error;
   return data?.length ?? 0;
 }

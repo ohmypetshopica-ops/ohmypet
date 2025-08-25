@@ -7,8 +7,9 @@ export async function getUserRole(userId) {
     .select('role')
     .eq('user_id', userId)
     .maybeSingle();
+
   if (error) {
-    console.error('Error role:', error.message);
+    console.error('Error obteniendo role:', error.message);
     return null;
   }
   return data?.role ?? null;
