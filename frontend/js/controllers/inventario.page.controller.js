@@ -1,7 +1,7 @@
 // controllers/inventario.page.controller.js
 import { getUserRole } from '../models/userRoles.model.js';
 import {
-  listProductos, getProducto, createProducto, updateProducto, deleteProducto,
+  listProductos, getProducto, createProducto, updateProducto,
 } from '../models/productos.model.js';
 import { supabase } from '../../supabase-client.js';
 
@@ -24,23 +24,49 @@ async function guard() {
   return { session, role };
 }
 
+// --- FUNCIÓN DE RENDERIZADO DE FILA ACTUALIZADA ---
 function rowHTML(p){
+  const isEnabled = p.habilitado;
+  
+  const statusBadge = isEnabled
+    ? '<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Habilitado</span>'
+    : '<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-50 text-gray-700 border border-gray-100">Deshabilitado</span>';
+
+  const toggleButton = isEnabled
+    ? `<button class="toggle-status bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg" data-id="${p.id}">Deshabilitar</button>`
+    : `<button class="toggle-status bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg" data-id="${p.id}">Habilitar</button>`;
+
+  // --- N U E V A   L Ó G I C A: Indicador de Stock ---
+  let stockIndicator = '';
+  if (p.stock < 10 && p.stock > 0) {
+    stockIndicator = '<span class="ml-2 inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">Bajo en Stock</span>';
+  } else if (p.stock <= 0) {
+    stockIndicator = '<span class="ml-2 inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">Agotado</span>';
+  }
+
   return `
     <tr>
       <td class="px-5 py-3">${p.nombre}</td>
       <td class="px-5 py-3">S/ ${Number(p.precio).toFixed(2)}</td>
-      <td class="px-5 py-3">${p.stock}</td>
-      <td class="px-5 py-3">${ 
-        p.stock>0
-          ? '<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Disponible</span>'
-          : '<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-100">Agotado</span>'
-      }</td>
+      <td class="px-5 py-3 flex items-center">${p.stock} ${stockIndicator}</td>
+      <td class="px-5 py-3">${statusBadge}</td>
       <td class="px-5 py-3 space-x-2">
         <button class="edit bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-lg" data-id="${p.id}">Editar</button>
-        <button class="del bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg" data-id="${p.id}">Eliminar</button>
+        ${toggleButton}
       </td>
     </tr>
   `;
+}
+
+async function onToggleStatus(id) {
+    try {
+        const producto = await getProducto(id);
+        const nuevoEstado = !producto.habilitado;
+        await updateProducto(id, { habilitado: nuevoEstado });
+        await loadTable();
+    } catch (error) {
+        alert(`Error al cambiar el estado: ${error.message}`);
+    }
 }
 
 async function loadTable() {
@@ -51,7 +77,7 @@ async function loadTable() {
   empty?.classList.toggle('hidden', productos.length>0);
 
   tbody.querySelectorAll('.edit').forEach(b => b.addEventListener('click', () => openEdit(b.dataset.id)));
-  tbody.querySelectorAll('.del').forEach(b => b.addEventListener('click', () => onDelete(b.dataset.id)));
+  tbody.querySelectorAll('.toggle-status').forEach(b => b.addEventListener('click', () => onToggleStatus(b.dataset.id)));
 }
 
 let editingId = null;
@@ -67,6 +93,7 @@ async function openEdit(id){
   document.querySelector('#product-image').value = p.imagen_url ?? '';
   document.querySelector('#product-modal').classList.remove('hidden');
 }
+
 function openNew(){
   editingId = null;
   document.querySelector('#modal-title').textContent = 'Agregar Producto';
@@ -74,14 +101,11 @@ function openNew(){
   document.querySelector('#product-form').reset();
   document.querySelector('#product-modal').classList.remove('hidden');
 }
+
 function closeModal(){
   document.querySelector('#product-modal').classList.add('hidden');
 }
-async function onDelete(id){
-  if(!confirm('¿Eliminar producto?')) return;
-  await deleteProducto(id);
-  await loadTable();
-}
+
 async function onSubmit(e){
   e.preventDefault();
   const payload = {

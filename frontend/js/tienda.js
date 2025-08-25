@@ -54,6 +54,9 @@ function showToast(productName) {
 /**
  * Muestra los productos en la cuadrícula principal con el nuevo color verde.
  */
+/**
+ * Muestra los productos en la cuadrícula principal, mostrando los deshabilitados.
+ */
 function renderProducts(products) {
   productGrid.innerHTML = '';
   if (products.length === 0) {
@@ -64,8 +67,28 @@ function renderProducts(products) {
 
   products.forEach((producto) => {
     const card = document.createElement('div');
-    card.className = 'bg-white shadow-lg rounded-xl p-6 text-center flex flex-col transition-all duration-300 hover:scale-105 hover:shadow-2xl';
+    const isEnabled = producto.habilitado;
+
+    // Aplica una opacidad si el producto está deshabilitado
+    const cardClasses = isEnabled 
+        ? 'bg-white shadow-lg rounded-xl p-6 text-center flex flex-col transition-all duration-300 hover:scale-105 hover:shadow-2xl'
+        : 'bg-white shadow-lg rounded-xl p-6 text-center flex flex-col opacity-50';
     
+    card.className = cardClasses;
+    
+    // Cambia el botón si el producto está deshabilitado
+    const buttonHTML = isEnabled
+        ? `<button 
+            data-id="${producto.id}"
+            class="add-to-cart-btn mt-4 bg-green-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-600 transition-colors w-full">
+            Agregar al Carrito
+           </button>`
+        : `<button 
+            disabled
+            class="mt-4 bg-gray-400 text-white font-semibold px-6 py-2 rounded-lg cursor-not-allowed w-full">
+            No Disponible
+           </button>`;
+
     card.innerHTML = `
       <div class="flex-grow">
         <img src="${producto.imagen_url || 'https://via.placeholder.com/300x300.png?text=Sin+Imagen'}" 
@@ -73,11 +96,7 @@ function renderProducts(products) {
         <h3 class="text-xl font-bold text-gray-800">${producto.nombre}</h3>
         <p class="text-lg text-green-700 font-semibold my-2">S/ ${Number(producto.precio).toFixed(2)}</p>
       </div>
-      <button 
-        data-id="${producto.id}"
-        class="add-to-cart-btn mt-4 bg-green-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-600 transition-colors w-full">
-        Agregar al Carrito
-      </button>
+      ${buttonHTML}
     `;
     productGrid.appendChild(card);
   });
