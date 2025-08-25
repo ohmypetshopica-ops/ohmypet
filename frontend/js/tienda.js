@@ -51,6 +51,9 @@ function showToast(productName) {
 /**
  * Muestra los productos en la cuadrícula principal.
  */
+/**
+ * Muestra los productos en la cuadrícula principal con el nuevo color verde.
+ */
 function renderProducts(products) {
   productGrid.innerHTML = '';
   if (products.length === 0) {
@@ -68,11 +71,11 @@ function renderProducts(products) {
         <img src="${producto.imagen_url || 'https://via.placeholder.com/300x300.png?text=Sin+Imagen'}" 
              alt="${producto.nombre}" class="w-full h-48 object-contain rounded-md mb-4">
         <h3 class="text-xl font-bold text-gray-800">${producto.nombre}</h3>
-        <p class="text-lg text-teal-700 font-semibold my-2">S/ ${Number(producto.precio).toFixed(2)}</p>
+        <p class="text-lg text-green-700 font-semibold my-2">S/ ${Number(producto.precio).toFixed(2)}</p>
       </div>
       <button 
         data-id="${producto.id}"
-        class="add-to-cart-btn mt-4 bg-teal-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-teal-600 transition-colors w-full">
+        class="add-to-cart-btn mt-4 bg-green-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-600 transition-colors w-full">
         Agregar al Carrito
       </button>
     `;
