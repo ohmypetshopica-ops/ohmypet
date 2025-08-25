@@ -1,29 +1,44 @@
-// login.js
+// ruta: frontend/js/login.js
 import { supabase } from '../supabase-client.js';
 
-document.getElementById('login-form')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
 
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
+    const loginForm = document.querySelector('#login-form');
+    const googleLoginButton = document.querySelector('#google-login-btn');
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    alert('Error al iniciar sesión: ' + error.message);
-    return;
-  }
+    // --- Manejo del formulario de login tradicional ---
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = loginForm.email.value.trim();
+            const password = loginForm.password.value;
 
-  // ✅ Redirige siempre a index.html dentro de /ohmypet/frontend/
-  window.location.href = 'https://codearlo.com/ohmypet/frontend/index.html';
-});
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-// ✅ Botón de login con Google
-document.getElementById('google-login')?.addEventListener('click', async () => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: 'https://codearlo.com/ohmypet/frontend/index.html', // callback fija
-    },
-  });
-  if (error) alert('Error: ' + error.message);
+            if (error) {
+                alert(`Error al iniciar sesión: ${error.message}`);
+            } else {
+                // CORRECCIÓN: Se cambió la ruta para que sea relativa a la página actual.
+                // Esto te enviará a index.html dentro de la carpeta frontend.
+                window.location.href = 'index.html'; 
+            }
+        });
+    }
+
+    // --- Manejo del botón de login con Google ---
+    if (googleLoginButton) {
+        googleLoginButton.addEventListener('click', async () => {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: 'https://codearlo.com/ohmypet/frontend/index.html',
+                }
+            });
+
+            if (error) {
+                alert(`Error al iniciar sesión con Google: ${error.message}`);
+            }
+        });
+    }
+
 });
