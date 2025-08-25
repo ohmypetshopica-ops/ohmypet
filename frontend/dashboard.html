@@ -1,259 +1,67 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Oh My Pet</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
-    <style>
-        .sidebar-link-text {
-            white-space: nowrap;
-        }
-
-        .view {
-            display: none;
-        }
-
-        .view.active {
-            display: block;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - Oh My Pet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    .sidebar-link-text{white-space:nowrap;}
+    .nav-link.active{background:#CCFBF1;color:#115E59;}
+  </style>
 </head>
-
 <body class="bg-teal-50">
+  <!-- Bloqueo móvil -->
+  <div id="mobile-blocker" class="hidden h-screen w-full flex-col items-center justify-center bg-gray-100 p-4 text-center">
+    <span class="text-6xl mb-4">🖥️</span>
+    <h1 class="text-3xl font-bold text-red-600">Acceso No Permitido</h1>
+    <p class="mt-2 text-lg text-gray-700">El panel de administración solo está disponible en computadoras de escritorio.</p>
+  </div>
 
-    <!-- Bloqueador en móviles -->
-    <div id="mobile-blocker"
-        class="hidden h-screen w-full flex-col items-center justify-center bg-gray-100 p-4 text-center">
-        <span class="text-6xl mb-4">🖥️</span>
-        <h1 class="text-3xl font-bold text-red-600">Acceso No Permitido</h1>
-        <p class="mt-2 text-lg text-gray-700">El panel de administración solo está disponible en computadoras de
-            escritorio.</p>
-    </div>
+  <!-- App -->
+  <div id="dashboard-container" class="hidden h-screen">
+    <aside class="w-20 hover:w-64 bg-white flex flex-col p-4 shadow-lg transition-all duration-300 overflow-hidden group">
+      <div class="pt-2 pb-6 px-2 group-hover:px-0">
+        <h1 class="text-teal-800 text-2xl font-bold flex items-center">
+          <span class="text-3xl">🐾</span>
+          <span class="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">OH MY PET</span>
+        </h1>
+      </div>
+      <nav id="sidebar-nav" class="flex flex-col space-y-2">
+        <a href="#/dashboard" class="nav-link flex items-center p-3 rounded-lg font-semibold">
+          <ion-icon name="grid-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
+          <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Dashboard</span>
+        </a>
+        <a href="#/inventario" class="nav-link flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
+          <ion-icon name="bag-handle-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
+          <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Inventario</span>
+        </a>
+        <a href="tienda.html" target="_blank" class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
+          <ion-icon name="storefront-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
+          <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Ir a Tienda</span>
+        </a>
+      </nav>
+      <div class="mt-auto">
+        <a href="#" id="logout-button" class="flex items-center p-3 text-red-500 hover:bg-red-100 rounded-lg font-semibold">
+          <ion-icon name="log-out-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
+          <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Cerrar Sesión</span>
+        </a>
+      </div>
+    </aside>
 
-    <!-- Contenedor principal -->
-    <div id="dashboard-container" class="hidden h-screen">
-        <aside
-            class="w-20 hover:w-64 bg-white flex flex-col p-4 shadow-lg transition-all duration-300 ease-in-out overflow-hidden group">
-            <div class="pt-2 pb-6 px-2 group-hover:px-0">
-                <h1 class="text-teal-800 text-2xl font-bold flex items-center">
-                    <span class="text-3xl">🐾</span>
-                    <span
-                        class="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">OH
-                        MY PET</span>
-                </h1>
-            </div>
-            <nav id="sidebar-nav" class="flex flex-col space-y-4">
-                <a href="#dashboard" data-view="dashboard-view"
-                    class="nav-link flex items-center p-3 bg-teal-100 text-teal-800 rounded-lg font-semibold">
-                    <ion-icon name="grid-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
-                    <span
-                        class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Dashboard</span>
-                </a>
-                <a href="#products" data-view="products-view" id="products-link"
-                    class="nav-link hidden items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
-                    <ion-icon name="bag-handle-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
-                    <span
-                        class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Productos</span>
-                </a>
-                <a href="#citas" data-view="citas-view"
-                    class="nav-link flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
-                    <ion-icon name="calendar-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
-                    <span
-                        class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Citas</span>
-                </a>
-                <a href="tienda.html" target="_blank"
-                    class="flex items-center p-3 text-gray-600 hover:bg-gray-200 rounded-lg font-semibold">
-                    <ion-icon name="storefront-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
-                    <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Ir
-                        a Tienda</span>
-                </a>
-            </nav>
-            <div class="mt-auto">
-                <!-- Botón de logout -->
-                <a href="#" id="logout-button"
-                    class="flex items-center p-3 text-red-500 hover:bg-red-100 rounded-lg font-semibold">
-                    <ion-icon name="log-out-outline" class="mr-3 text-2xl flex-shrink-0"></ion-icon>
-                    <span
-                        class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 sidebar-link-text">Cerrar
-                        Sesión</span>
-                </a>
-            </div>
-        </aside>
+    <main class="flex-1 p-8 overflow-y-auto">
+      <h1 id="welcome-message" class="text-3xl font-bold text-gray-800 mb-2">Cargando...</h1>
+      <p class="text-gray-500 mb-6">Aquí tienes un resumen de la actividad de tu tienda.</p>
+      <!-- Aquí se montan las vistas parciales -->
+      <div id="view-root"></div>
+    </main>
+  </div>
 
-        <main class="flex-1 p-8 overflow-y-auto">
-            <!-- Vista Dashboard -->
-            <div id="dashboard-view" class="view active">
-                <div class="w-full max-w-6xl mx-auto">
-                    <h1 id="welcome-message" class="text-3xl font-bold text-gray-800">Cargando...</h1>
-                    <p class="text-gray-500">Aquí tienes un resumen de la actividad de tu tienda.</p>
-
-                    <!-- Métricas -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
-                            <div class="bg-green-100 text-green-600 p-3 rounded-full">
-                                <ion-icon name="cash-outline" class="text-3xl"></ion-icon>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm text-gray-500">Ventas del Mes</p>
-                                <p class="text-2xl font-bold text-gray-800">S/ <span id="ventas-mes">0</span></p>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
-                            <div class="bg-blue-100 text-blue-600 p-3 rounded-full">
-                                <ion-icon name="calendar-outline" class="text-3xl"></ion-icon>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm text-gray-500">Citas Programadas</p>
-                                <p class="text-2xl font-bold text-gray-800"><span id="citas-programadas">0</span></p>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
-                            <div class="bg-yellow-100 text-yellow-600 p-3 rounded-full">
-                                <ion-icon name="person-add-outline" class="text-3xl"></ion-icon>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm text-gray-500">Clientes Nuevos</p>
-                                <p class="text-2xl font-bold text-gray-800"><span id="clientes-nuevos">0</span></p>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
-                            <div class="bg-red-100 text-red-600 p-3 rounded-full">
-                                <ion-icon name="warning-outline" class="text-3xl"></ion-icon>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm text-gray-500">Productos Stock Bajo</p>
-                                <p class="text-2xl font-bold text-gray-800"><span id="stock-bajo">0</span></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actividad reciente (estática de momento) -->
-                    <div class="mt-10 bg-white p-6 rounded-lg shadow-md">
-                        <h2 class="text-xl font-bold text-gray-800 mb-4">Actividad Reciente</h2>
-                        <div class="space-y-4">
-                            <div
-                                class="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
-                                <div class="flex items-center">
-                                    <ion-icon name="bag-handle-outline" class="text-blue-500 text-2xl mr-4"></ion-icon>
-                                    <div>
-                                        <p class="font-semibold">Nuevo pedido de <span class="text-blue-600">Laura
-                                                T.</span></p>
-                                        <p class="text-sm text-gray-500">Pedido #OHMYPET-XF87G</p>
-                                    </div>
-                                </div>
-                                <p class="text-sm text-gray-500">hace 5 minutos</p>
-                            </div>
-                            <div
-                                class="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
-                                <div class="flex items-center">
-                                    <ion-icon name="person-add-outline" class="text-green-500 text-2xl mr-4"></ion-icon>
-                                    <div>
-                                        <p class="font-semibold">Nuevo cliente registrado</p>
-                                        <p class="text-sm text-gray-500">carlos.r@example.com</p>
-                                    </div>
-                                </div>
-                                <p class="text-sm text-gray-500">hace 1 hora</p>
-                            </div>
-                            <div
-                                class="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
-                                <div class="flex items-center">
-                                    <ion-icon name="calendar-outline" class="text-yellow-500 text-2xl mr-4"></ion-icon>
-                                    <div>
-                                        <p class="font-semibold">Nueva cita agendada para <span
-                                                class="text-yellow-600">"Lola"</span></p>
-                                        <p class="text-sm text-gray-500">Mañana a las 10:00 AM</p>
-                                    </div>
-                                </div>
-                                <p class="text-sm text-gray-500">hace 3 horas</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Vista productos / Inventario -->
-            <div id="products-view" class="view">
-                <div class="container mx-auto">
-                    <div class="flex justify-between items-center mb-6">
-                        <h1 class="text-3xl font-bold text-gray-800">Inventario de Productos</h1>
-                        <button id="add-product-btn"
-                            class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
-                            + Agregar Producto
-                        </button>
-                    </div>
-
-                    <!-- Tabla -->
-                    <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                        <table class="min-w-full leading-normal">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nombre
-                                    </th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Precio
-                                    </th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Stock
-                                    </th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Estado
-                                    </th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                        Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="products-table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal de producto -->
-            <div id="product-modal"
-                class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden">
-                <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                    <h2 id="modal-title" class="text-xl font-bold mb-4">Agregar Producto</h2>
-                    <form id="product-form" class="space-y-4">
-                        <input type="hidden" id="product-id">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Nombre</label>
-                            <input type="text" id="product-name" class="mt-1 block w-full border rounded-md p-2"
-                                required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Precio</label>
-                            <input type="number" id="product-price" class="mt-1 block w-full border rounded-md p-2"
-                                step="0.01" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Stock</label>
-                            <input type="number" id="product-stock" class="mt-1 block w-full border rounded-md p-2"
-                                required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Imagen (URL)</label>
-                            <input type="url" id="product-image" class="mt-1 block w-full border rounded-md p-2">
-                        </div>
-                        <div class="flex justify-end space-x-2">
-                            <button type="button" id="cancel-btn"
-                                class="px-4 py-2 bg-gray-200 rounded-lg">Cancelar</button>
-                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg">Guardar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-        </main>
-    </div>
-
-    <!-- Scripts -->
-    <script type="module" src="supabase-client.js"></script>
-    <script type="module" src="./js/dashboard.js"></script>
-    <script type="module" src="./js/logout.js"></script>
+  <!-- Core scripts -->
+  <script type="module" src="supabase-client.js"></script>
+  <script type="module" src="./js/app.js"></script>
+  <script type="module" src="./js/logout.js"></script>
 </body>
-
 </html>
