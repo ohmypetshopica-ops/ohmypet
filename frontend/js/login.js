@@ -34,7 +34,7 @@ googleLoginButton.addEventListener('click', async () => {
         provider: 'google',
         options: {
             // Asegúrate de que esta URL coincida con tu configuración
-            redirectTo: new URL('index.html', window.location.href).href,
+            redirectTo: 'https://codearlo.com/ohmypet/frontend/index.html',
         }
     });
 
