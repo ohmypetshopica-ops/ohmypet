@@ -5,26 +5,40 @@ import { getStockBajo } from '../models/productos.model.js';
 import { supabase } from '../../supabase-client.js';
 
 export default async function init() {
+  // refs seguras
+  const ventasEl = document.querySelector('#ventas-mes');
+  const citasEl = document.querySelector('#citas-programadas');
+  const clientesEl = document.querySelector('#clientes-nuevos');
+  const stockEl = document.querySelector('#stock-bajo');
+
+  if (!ventasEl || !citasEl || !clientesEl || !stockEl) {
+    console.warn('dashboard.controller: Elements not found. ¿Se cargó la vista dashboard.html?');
+    return;
+  }
+
   try {
     // Ventas del mes
     const ventas = await getVentasDelMes();
-    document.querySelector('#ventas-mes').textContent = ventas.toFixed(2);
+    ventasEl.textContent = ventas.toFixed(2);
 
     // Citas programadas
     const citas = await getCitasProgramadas();
-    document.querySelector('#citas-programadas').textContent = citas;
+    citasEl.textContent = citas;
 
     // Clientes nuevos del mes
     const { data: clientes, error } = await supabase
       .from('auth.users')
       .select('id, created_at')
-      .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
+      .gte(
+        'created_at',
+        new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+      );
     if (error) throw error;
-    document.querySelector('#clientes-nuevos').textContent = clientes?.length ?? 0;
+    clientesEl.textContent = clientes?.length ?? 0;
 
     // Stock bajo
     const bajo = await getStockBajo(5);
-    document.querySelector('#stock-bajo').textContent = bajo;
+    stockEl.textContent = bajo;
   } catch (e) {
     console.error('Dashboard error:', e);
   }

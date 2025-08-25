@@ -1,11 +1,9 @@
 // frontend/js/router.js
-// Router tolerante a rutas relativas y con errores visibles.
-
 const viewRoot = document.querySelector('#view-root');
 const sidebar = document.querySelector('#sidebar-nav');
 
-// BASE = carpeta de dashboard.html (p. ej. /ohmypet/frontend/)
-const BASE = new URL('.', window.location.href).pathname;
+// Carpeta base de dashboard.html, p.ej. /ohmypet/frontend/
+const BASE = new URL('.', window.location.href).pathname.replace(/\/+$/, '/') || '/';
 
 let routes = {};
 
@@ -28,15 +26,16 @@ async function onRouteChange() {
   const hash = location.hash || '#/dashboard';
   const route = routes[hash];
   if (!route) {
-    warn(`Ruta no registrada: ${hash}`);
+    viewRoot.innerHTML = errorBox(`Ruta no registrada: <code>${hash}</code>`);
     return;
   }
 
-  // Probar varias variantes de ruta relativa
+  // 🔧 Normaliza (quita slash inicial si lo tuviera)
+  const viewPath = String(route.view || '').replace(/^\/+/, '');
   const candidates = [
-    route.view,                     // "views/dashboard.html"
-    './' + route.view,              // "./views/dashboard.html"
-    BASE.replace(/\/+$/, '/') + route.view, // "/ohmypet/frontend/views/dashboard.html"
+    viewPath,                           // "views/dashboard.html"
+    './' + viewPath,                    // "./views/dashboard.html"
+    BASE + viewPath,                    // "/ohmypet/frontend/views/dashboard.html"
   ];
 
   let html = null, lastErr = null, usedUrl = null;
@@ -50,24 +49,21 @@ async function onRouteChange() {
       break;
     } catch (e) {
       lastErr = e;
-      continue;
     }
   }
 
   if (!html) {
     viewRoot.innerHTML = errorBox(
-      `No se pudo cargar la vista <code>${route.view}</code>.`,
+      `No se pudo cargar la vista <code>${viewPath}</code>.`,
       `Probé: <code>${candidates.join('</code>, <code>')}</code><br>Último error: ${String(lastErr)}`
     );
     console.error('Router fetch error:', lastErr);
     return;
   }
 
-  // Inyectar vista y activar link
   viewRoot.innerHTML = html;
   setActive(hash);
 
-  // Cargar el controlador
   try {
     const mod = await route.controller();
     if (mod && typeof mod.default === 'function') {
@@ -96,4 +92,3 @@ function errorBox(title, details = '') {
     </div>
   `;
 }
-function warn(msg){ console.warn(msg); }

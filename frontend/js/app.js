@@ -55,6 +55,7 @@ async function guard() {
   const auth = await guard();
   if (!auth) return;
 
+  // 👇 IMPORTANTE: sin slash inicial
   initRouter({
     '#/dashboard': {
       view: 'views/dashboard.html',

@@ -1,29 +1,30 @@
 <section class="space-y-6">
-  <!-- Header -->
+  <!-- Título + CTA -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
-      <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900">Inventario de Productos</h1>
+      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Inventario de Productos</h2>
       <p class="text-slate-500">Administra tus productos, precios y stock.</p>
     </div>
     <div class="flex items-center gap-2">
-      <button id="add-product-btn" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors">
+      <button id="add-product-btn" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold px-4 py-2 rounded-xl shadow-soft transition-colors">
         <ion-icon name="add-outline" class="text-xl"></ion-icon>
         Agregar Producto
       </button>
     </div>
   </div>
 
-  <!-- Table wrapper -->
-  <div class="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
-    <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+  <!-- Buscador -->
+  <div class="bg-white border border-slate-100 rounded-2xl shadow-soft">
+    <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/60">
       <div class="flex items-center gap-3">
         <div class="relative w-full max-w-sm">
-          <input id="search-input" type="text" placeholder="Buscar producto..." class="w-full pl-10 pr-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm">
+          <input id="search-input" type="text" placeholder="Buscar producto..." class="w-full pl-10 pr-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm">
           <ion-icon name="search-outline" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></ion-icon>
         </div>
       </div>
     </div>
 
+    <!-- Tabla -->
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm">
         <thead class="bg-slate-50 text-slate-600 uppercase text-xs border-b border-slate-100">
@@ -36,9 +37,18 @@
           </tr>
         </thead>
         <tbody id="products-table-body" class="divide-y divide-slate-100">
-          <!-- filas dinámicas -->
+          <!-- Filas dinámicas -->
         </tbody>
       </table>
+
+      <!-- Empty state (se oculta cuando hay filas) -->
+      <div id="empty-state" class="hidden p-10 text-center text-slate-500">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 mb-3">
+          <ion-icon name="cube-outline" class="text-3xl"></ion-icon>
+        </div>
+        <p class="font-semibold">No hay productos</p>
+        <p class="text-sm">Agrega tu primer producto con el botón “Agregar Producto”.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -49,7 +59,7 @@
   <div class="relative mx-auto mt-16 w-full max-w-md px-4">
     <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-6">
       <div class="flex items-center justify-between mb-3">
-        <h2 id="modal-title" class="text-xl font-bold text-slate-900">Agregar Producto</h2>
+        <h3 id="modal-title" class="text-xl font-bold text-slate-900">Agregar Producto</h3>
         <button id="cancel-btn" class="text-slate-500 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100">
           <ion-icon name="close-outline" class="text-2xl"></ion-icon>
         </button>
@@ -58,25 +68,25 @@
         <input type="hidden" id="product-id"/>
         <div>
           <label class="block text-sm font-medium text-slate-700">Nombre</label>
-          <input type="text" id="product-name" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" required>
+          <input type="text" id="product-name" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" required>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-sm font-medium text-slate-700">Precio (S/)</label>
-            <input type="number" id="product-price" step="0.01" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" required>
+            <input type="number" id="product-price" step="0.01" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" required>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700">Stock</label>
-            <input type="number" id="product-stock" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" required>
+            <input type="number" id="product-stock" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" required>
           </div>
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700">Imagen (URL)</label>
-          <input type="url" id="product-image" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
+          <input type="url" id="product-image" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none">
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" id="cancel-btn-2" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl">Cancelar</button>
-          <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">Guardar</button>
+          <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl">Guardar</button>
         </div>
       </form>
     </div>
