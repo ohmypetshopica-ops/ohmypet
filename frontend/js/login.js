@@ -1,5 +1,5 @@
 // ruta: frontend/js/login.js
-import { supabase } from '../supabase-client.js';
+import { supabase } from './../supabase-client.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
