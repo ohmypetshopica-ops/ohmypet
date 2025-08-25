@@ -18,66 +18,67 @@
 </head>
 <body class="font-sans">
 
-  <!-- Barra lateral flotante -->
-  <div id="sidebar-root"></div>
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar-root"></div>
 
-  <!-- Contenido -->
-  <main class="p-6 md:p-10">
-    <div class="max-w-7xl mx-auto">
-      <header class="mb-8">
-        <h1 id="welcome-message" class="text-3xl md:text-4xl font-extrabold text-teal-900 tracking-tight">Cargando...</h1>
-        <p class="text-gray-600">Aquí tienes un resumen de la actividad de tu tienda.</p>
-      </header>
+    <!-- Contenido -->
+    <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+      <div class="max-w-7xl mx-auto">
+        <header class="mb-8">
+          <h1 id="welcome-message" class="text-3xl md:text-4xl font-extrabold text-teal-900 tracking-tight">Cargando...</h1>
+          <p class="text-gray-600">Aquí tienes un resumen de la actividad de tu tienda.</p>
+        </header>
 
-      <section class="space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Inventario de Productos</h2>
-            <p class="text-slate-500">Administra tus productos, precios y stock.</p>
-          </div>
-          <div>
-            <button id="add-product-btn" class="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-xl shadow transition-colors">
-              <ion-icon name="add-outline" class="text-xl"></ion-icon> Agregar Producto
-            </button>
-          </div>
-        </div>
-
-        <div class="bg-white border border-slate-100 rounded-2xl shadow">
-          <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/60">
-            <div class="relative w-full max-w-sm">
-              <input id="search-input" type="text" placeholder="Buscar producto..."
-                     class="w-full pl-10 pr-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm">
-              <ion-icon name="search-outline" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></ion-icon>
+        <!-- Inventario -->
+        <section class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Inventario de Productos</h2>
+              <p class="text-slate-500">Administra tus productos, precios y stock.</p>
+            </div>
+            <div>
+              <button id="add-product-btn" class="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-xl shadow transition-colors">
+                <ion-icon name="add-outline" class="text-xl"></ion-icon> Agregar Producto
+              </button>
             </div>
           </div>
 
-          <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-              <thead class="bg-slate-50 text-slate-600 uppercase text-xs border-b border-slate-100">
-                <tr>
-                  <th class="px-5 py-3 text-left font-semibold">Nombre</th>
-                  <th class="px-5 py-3 text-left font-semibold">Precio</th>
-                  <th class="px-5 py-3 text-left font-semibold">Stock</th>
-                  <th class="px-5 py-3 text-left font-semibold">Estado</th>
-                  <th class="px-5 py-3 text-left font-semibold">Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="products-table-body" class="divide-y divide-slate-100">
-                <!-- filas -->
-              </tbody>
-            </table>
-            <div id="empty-state" class="hidden p-10 text-center text-slate-500">
-              <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 mb-3">
-                <ion-icon name="cube-outline" class="text-3xl"></ion-icon>
+          <div class="bg-white border border-slate-100 rounded-2xl shadow">
+            <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/60">
+              <div class="relative w-full max-w-sm">
+                <input id="search-input" type="text" placeholder="Buscar producto..."
+                       class="w-full pl-10 pr-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm">
+                <ion-icon name="search-outline" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></ion-icon>
               </div>
-              <p class="font-semibold">No hay productos</p>
-              <p class="text-sm">Agrega tu primer producto con el botón “Agregar Producto”.</p>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600 uppercase text-xs border-b border-slate-100">
+                  <tr>
+                    <th class="px-5 py-3 text-left font-semibold">Nombre</th>
+                    <th class="px-5 py-3 text-left font-semibold">Precio</th>
+                    <th class="px-5 py-3 text-left font-semibold">Stock</th>
+                    <th class="px-5 py-3 text-left font-semibold">Estado</th>
+                    <th class="px-5 py-3 text-left font-semibold">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="products-table-body" class="divide-y divide-slate-100"></tbody>
+              </table>
+              <div id="empty-state" class="hidden p-10 text-center text-slate-500">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 mb-3">
+                  <ion-icon name="cube-outline" class="text-3xl"></ion-icon>
+                </div>
+                <p class="font-semibold">No hay productos</p>
+                <p class="text-sm">Agrega tu primer producto con el botón “Agregar Producto”.</p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-    </div>
-  </main>
+        </section>
+      </div>
+    </main>
+  </div>
 
   <!-- Modal -->
   <div id="product-modal" class="fixed inset-0 z-50 hidden">
