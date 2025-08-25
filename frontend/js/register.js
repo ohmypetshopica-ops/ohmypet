@@ -1,54 +1,49 @@
 // ruta: frontend/js/register.js
+
 import { supabase } from '../supabase-client.js';
 
-// ---- Solución: Espera a que todo el HTML esté listo ----
-document.addEventListener('DOMContentLoaded', () => {
+const registerForm = document.querySelector('#register-form');
+const googleLoginButton = document.querySelector('#google-login-btn');
 
-    const registerForm = document.querySelector('#register-form');
-    const googleLoginButton = document.querySelector('#google-login-btn');
+// --- Manejo del formulario de registro tradicional ---
+registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = registerForm.name.value.trim();
+    const email = registerForm.email.value.trim();
+    const password = registerForm.password.value;
 
-    // --- Manejo del formulario de registro tradicional ---
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = registerForm.name.value.trim();
-            const email = registerForm.email.value.trim();
-            const password = registerForm.password.value;
-
-            if (!name || !email || !password) {
-                alert('Por favor completa todos los campos.');
-                return;
-            }
-
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: { data: { nombre: name } }
-            });
-
-            if (error) {
-                alert(`Error en registro: ${error.message}`);
-            } else {
-                alert('¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.');
-                window.location.href = 'login.html';
-            }
-        });
+    if (!name || !email || !password) {
+        alert('Por favor completa todos los campos.');
+        return;
     }
 
-    // --- Manejo del botón de registro con Google ---
-    if (googleLoginButton) {
-        googleLoginButton.addEventListener('click', async () => {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: 'https://codearlo.com/ohmypet/frontend/index.html',
-                }
-            });
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { 
+            data: { nombre: name } // Guarda el nombre en los metadatos del usuario
+        }
+    });
 
-            if (error) {
-                alert(`Error al registrarse con Google: ${error.message}`);
-            }
-        });
+    if (error) {
+        alert(`Error en registro: ${error.message}`);
+    } else {
+        alert('¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.');
+        window.location.href = 'login.html';
     }
+});
 
-}); // <-- Fin del 'DOMContentLoaded'
+// --- Manejo del botón de registro/login con Google ---
+googleLoginButton.addEventListener('click', async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+            // Es importante definir a dónde volverá el usuario tras el login
+            redirectTo: new URL('index.html', window.location.href).href,
+        }
+    });
+
+    if (error) {
+        alert(`Error al registrarse con Google: ${error.message}`);
+    }
+});
