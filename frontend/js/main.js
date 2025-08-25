@@ -1,35 +1,44 @@
 // frontend/js/main.js
 import { supabase } from '../supabase-client.js';
+import { getUserRole } from './models/userRoles.model.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const loginLink = document.querySelector('#login-link');
     const logoutButton = document.querySelector('#logout-button');
 
-    // 1. Verificar el estado de la sesión al cargar la página
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session) {
-        // Si hay una sesión activa, el usuario ha iniciado sesión
-        loginLink.classList.add('hidden'); // Ocultar "Iniciar Sesión"
-        logoutButton.classList.remove('hidden'); // Mostrar "Cerrar Sesión"
+        // Usuario ha iniciado sesión.
+        
+        // 1. VERIFICAMOS EL ROL PARA REDIRIGIR SI ES NECESARIO
+        const role = await getUserRole(session.user.id);
+        const isAdminPage = window.location.pathname.includes('/pages/');
+
+        if ((role === 'dueno' || role === 'empleado') && !isAdminPage) {
+            // Si es admin Y NO está en una página de admin, lo redirigimos
+            window.location.replace('./pages/dashboard.html');
+            return; // Detenemos la ejecución para que la redirección ocurra
+        }
+
+        // 2. MOSTRAMOS EL BOTÓN DE LOGOUT EN PÁGINAS PÚBLICAS
+        loginLink.classList.add('hidden');
+        logoutButton.classList.remove('hidden');
     } else {
-        // Si no hay sesión, el usuario no ha iniciado sesión
-        loginLink.classList.remove('hidden'); // Mostrar "Iniciar Sesión"
-        logoutButton.classList.add('hidden'); // Ocultar "Cerrar Sesión"
+        // Usuario NO ha iniciado sesión
+        loginLink.classList.remove('hidden');
+        logoutButton.classList.add('hidden');
     }
 
-    // 2. Añadir funcionalidad al botón de cerrar sesión
+    // 3. Añadir funcionalidad al botón de cerrar sesión
     logoutButton.addEventListener('click', async (event) => {
-        event.preventDefault(); // Prevenir que el enlace recargue la página por defecto
-        
+        event.preventDefault();
         const { error } = await supabase.auth.signOut();
-
         if (error) {
             console.error('Error al cerrar sesión:', error.message);
         } else {
-            // Cuando la sesión se cierra correctamente, recargamos la página
-            // para que la vista se actualice y muestre "Iniciar Sesión" de nuevo.
-            window.location.reload();
+            // Al cerrar sesión, siempre volvemos a la página principal
+            window.location.href = '/frontend/index.html';
         }
     });
 });
