@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 3. Redirigimos basado en el rol
             if (role === 'dueno' || role === 'empleado') {
                 // Si es dueño o empleado, va al dashboard
-                window.location.href = './pages/dashboard.html';
+                window.location.href = '/ohmypet/frontend/pages/dashboard.html';
             } else {
                 // Si es cliente o no tiene rol, va a la página principal
                 window.location.href = 'index.html';
