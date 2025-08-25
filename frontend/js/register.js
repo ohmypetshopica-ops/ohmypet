@@ -2,7 +2,9 @@
 import { supabase } from '../supabase-client.js';
 
 const registerForm = document.querySelector('#register-form');
+const googleLoginButton = document.querySelector('#google-login-btn');
 
+// --- Manejo del formulario de registro tradicional ---
 registerForm.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -30,4 +32,20 @@ registerForm.addEventListener('submit', async (e) => {
     alert('¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.');
     window.location.href = 'login.html';
   }
+});
+
+// --- Manejo del botón de registro/login con Google ---
+googleLoginButton.addEventListener('click', async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          // AQUÍ ESTÁ EL CAMBIO
+          redirectTo: window.location.origin + '/frontend/index.html',
+        }
+    });
+
+    if (error) {
+        alert(`Error al registrarse con Google: ${error.message}`);
+        console.error('Error detallado:', error);
+    }
 });
