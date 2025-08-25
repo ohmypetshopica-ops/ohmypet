@@ -1,5 +1,8 @@
 // ruta: frontend/js/login.js
-import { supabase } from './../supabase-client.js';
+
+// --- CORRECCIÓN DE IMPORTACIÓN ---
+// Usamos la ruta completa desde la raíz para asegurar que encuentre el archivo del cliente de Supabase.
+import { supabase } from '/ohmypet/frontend/supabase-client.js';
 import { getUserRole } from './models/userRoles.model.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,7 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
+            // Previene el comportamiento por defecto del formulario (que es lo que te pasa ahora)
             e.preventDefault();
+            
             const email = loginForm.email.value.trim();
             const password = loginForm.password.value;
 
@@ -27,14 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const role = await getUserRole(data.user.id);
 
             if (role === 'dueno' || role === 'empleado') {
-                // --- SOLUCIÓN DEFINITIVA ---
-                // Se construye la URL completa y correcta para que funcione en cualquier servidor.
-                // En tu servidor, esto creará: "https://codearlo.com/ohmypet/frontend/pages/dashboard.html"
+                // --- CORRECCIÓN DE REDIRECCIÓN ---
+                // Se construye la URL completa para que funcione en cualquier servidor.
                 const dashboardUrl = `${window.location.origin}/ohmypet/frontend/pages/dashboard.html`;
                 window.location.href = dashboardUrl;
 
             } else {
-                // Para los clientes, la redirección a index.html está bien.
                 window.location.href = 'index.html';
             }
         });
