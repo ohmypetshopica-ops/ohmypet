@@ -8,7 +8,7 @@ if (!root) {
   const BASE = new URL('.', window.location.href).pathname.replace(/\/+$/, '/') || '/';
   const candidates = [
     '/frontend/partials/sidebar.html', // absoluto (ajusta si cambias carpeta)
-    'partials/sidebar.html',
+    `${window.location.origin}/ohmypet/frontend/partials/sidebar.html`,
     './partials/sidebar.html',
     BASE + 'partials/sidebar.html',
     '../partials/sidebar.html',

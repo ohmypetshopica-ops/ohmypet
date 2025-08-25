@@ -17,7 +17,7 @@ function displayOrderSummary() {
 
     if (!summaryContainer || !totalAmountElement || cart.length === 0) {
         // Si no hay nada en el carrito, redirige a la tienda.
-        window.location.href = 'tienda.html';
+        window.location.href = `${window.location.origin}/ohmypet/frontend/tienda.html`;
         return;
     }
 

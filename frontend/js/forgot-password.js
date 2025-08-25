@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = form.email.value;
 
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin + '/update-password.html',
+                redirectTo: `${window.location.origin}/ohmypet/frontend/update-password.html`,
             });
 
             if (error) {

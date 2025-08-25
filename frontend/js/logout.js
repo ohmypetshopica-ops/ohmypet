@@ -6,5 +6,5 @@ document.addEventListener('click', async (e) => {
   e.preventDefault();
   const { error } = await supabase.auth.signOut();
   if (error) alert(`Error al cerrar sesión: ${error.message}`);
-  else window.location.href = '/frontend/login.html';
+  else window.location.href = `${window.location.origin}/ohmypet/frontend/login.html`;
 });

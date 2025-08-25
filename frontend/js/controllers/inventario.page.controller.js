@@ -8,18 +8,18 @@ import { supabase } from '../../supabase-client.js';
 async function guard() {
   const { data:{ session } } = await supabase.auth.getSession();
   if (!session) { 
-    window.location.href='../login.html'; 
+    window.location.href = `${window.location.origin}/ohmypet/frontend/login.html`;
     return null; 
   }
   const role = await getUserRole(session.user.id);
   if (!role || !['dueno','empleado'].includes(role)) {
-    window.location.href='../login.html'; 
+    window.location.href = `${window.location.origin}/ohmypet/frontend/login.html`;
     return null;
   }
   const welcome = document.querySelector('#welcome-message');
   if (welcome) welcome.textContent = `Bienvenido, ${session.user.email}`;
   supabase.auth.onAuthStateChange((event)=>{ 
-    if(event==='SIGNED_OUT') location.href='../login.html';
+    if(event==='SIGNED_OUT') window.location.href = `${window.location.origin}/ohmypet/frontend/login.html`;
   });
   return { session, role };
 }
