@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventario - Oh My Pet</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+
+  <style>
+    .sidebar-link-text{white-space:nowrap}
+    .nav-link.active{background-color:rgb(240 253 250);color:rgb(20 126 89)}
+    body{min-height:100vh;background:linear-gradient(to bottom,#f0fdfa,#ffffff)}
+  </style>
+</head>
+<body class="font-sans">
+
+  <!-- Barra lateral flotante -->
+  <div id="sidebar-root"></div>
+
+  <!-- Contenido -->
+  <main class="p-6 md:p-10">
+    <div class="max-w-7xl mx-auto">
+      <header class="mb-8">
+        <h1 id="welcome-message" class="text-3xl md:text-4xl font-extrabold text-teal-900 tracking-tight">Cargando...</h1>
+        <p class="text-gray-600">Aquí tienes un resumen de la actividad de tu tienda.</p>
+      </header>
+
+      <section class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Inventario de Productos</h2>
+            <p class="text-slate-500">Administra tus productos, precios y stock.</p>
+          </div>
+          <div>
+            <button id="add-product-btn" class="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-xl shadow transition-colors">
+              <ion-icon name="add-outline" class="text-xl"></ion-icon> Agregar Producto
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-100 rounded-2xl shadow">
+          <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/60">
+            <div class="relative w-full max-w-sm">
+              <input id="search-input" type="text" placeholder="Buscar producto..."
+                     class="w-full pl-10 pr-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm">
+              <ion-icon name="search-outline" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></ion-icon>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-slate-50 text-slate-600 uppercase text-xs border-b border-slate-100">
+                <tr>
+                  <th class="px-5 py-3 text-left font-semibold">Nombre</th>
+                  <th class="px-5 py-3 text-left font-semibold">Precio</th>
+                  <th class="px-5 py-3 text-left font-semibold">Stock</th>
+                  <th class="px-5 py-3 text-left font-semibold">Estado</th>
+                  <th class="px-5 py-3 text-left font-semibold">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="products-table-body" class="divide-y divide-slate-100">
+                <!-- filas -->
+              </tbody>
+            </table>
+            <div id="empty-state" class="hidden p-10 text-center text-slate-500">
+              <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 mb-3">
+                <ion-icon name="cube-outline" class="text-3xl"></ion-icon>
+              </div>
+              <p class="font-semibold">No hay productos</p>
+              <p class="text-sm">Agrega tu primer producto con el botón “Agregar Producto”.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="product-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
+    <div class="relative mx-auto mt-16 w-full max-w-md px-4">
+      <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 id="modal-title" class="text-xl font-bold text-slate-900">Agregar Producto</h3>
+          <button id="cancel-btn" class="text-slate-500 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100">
+            <ion-icon name="close-outline" class="text-2xl"></ion-icon>
+          </button>
+        </div>
+        <form id="product-form" class="space-y-4">
+          <input type="hidden" id="product-id"/>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Nombre</label>
+            <input type="text" id="product-name" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" required>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-700">Precio (S/)</label>
+              <input type="number" id="product-price" step="0.01" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700">Stock</label>
+              <input type="number" id="product-stock" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none" required>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Imagen (URL)</label>
+            <input type="url" id="product-image" class="mt-1 block w-full border border-slate-200 rounded-xl p-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none">
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" id="cancel-btn-2" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl">Cancelar</button>
+            <button type="submit" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="../supabase-client.js"></script>
+  <script type="module" src="../js/sidebar.js"></script>
+  <script type="module">
+    import { initInventarioPage } from '../js/controllers/inventario.page.controller.js';
+    import '../js/logout.js';
+    initInventarioPage();
+  </script>
+</body>
+</html>
