@@ -30,7 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 3. Redirigimos basado en el rol
             if (role === 'dueno' || role === 'empleado') {
-                // Si es dueño o empleado, va al dashboard
+                // --- LÍNEA CORREGIDA ---
+                // Si es dueño o empleado, va al dashboard usando la ruta completa y correcta.
                 window.location.href = '/ohmypet/frontend/pages/dashboard.html';
             } else {
                 // Si es cliente o no tiene rol, va a la página principal
@@ -38,6 +39,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // --- Se ha eliminado el listener para el botón de login con Google ---
 });
