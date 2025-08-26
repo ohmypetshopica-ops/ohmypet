@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OhMyPet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.7/dist/umd/supabase.min.js"></script>
+  <script type="module" src="/assets/js/env.js"></script>
+  <script type="module" src="/assets/js/supabaseClient.js"></script>
+</head>
+<body class="min-h-screen">
+  <main class="p-6">
+    <h1 class="text-2xl font-semibold">OhMyPet</h1>
+    <p class="text-sm text-gray-600">Redirigiendo…</p>
+  </main>
+  <script type="module">
+    import { supabase } from '/assets/js/supabaseClient.js';
+    const { data: { session } } = await supabase.auth.getSession();
+    location.replace(session ? 'dashboard.html' : 'login.html');
+  </script>
+</body>
+</html>

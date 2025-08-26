@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Productos — OhMyPet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.7/dist/umd/supabase.min.js"></script>
+  <script type="module" src="/assets/js/env.js"></script>
+  <script type="module" src="/assets/js/supabaseClient.js"></script>
+  <script type="module" src="/assets/js/guard.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <!-- Sidebar -->
+  <div id="sidebar-root"
+       class="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40">
+  </div>
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/30 hidden z-30" onclick="toggleSidebar(false)"></div>
+
+  <div class="md:pl-64">
+    <div id="topbar-root"></div>
+    <main class="p-6">
+      <div class="max-w-6xl mx-auto space-y-6">
+        <!-- header + search -->
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold text-gray-800">Productos</h2>
+          <div class="flex gap-2">
+            <input id="q" placeholder="Buscar producto..."
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            <button id="btn-search"
+              class="px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition">
+              Buscar
+            </button>
+          </div>
+        </div>
+
+        <!-- banner de error -->
+        <div id="error-banner" class="hidden rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm px-4 py-2"></div>
+
+        <!-- tabla -->
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
+              <tr>
+                <th class="px-3 py-2 text-left">Nombre</th>
+                <th class="px-3 py-2 text-left">Precio</th>
+                <th class="px-3 py-2 text-left">Stock</th>
+                <th class="px-3 py-2 text-left">Vence</th>
+                <th class="px-3 py-2 text-left">Activo</th>
+                <th class="px-3 py-2 text-left">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody" class="divide-y divide-gray-200"></tbody>
+          </table>
+
+          <!-- estado vacío -->
+          <div id="empty-state" class="hidden p-10 text-center text-sm text-gray-600">
+            <p class="mb-2">No se encontraron productos para mostrar.</p>
+            <p class="text-gray-500">Si sabes que existen, probablemente **las políticas RLS** no permiten leerlos con tu usuario.</p>
+          </div>
+        </div>
+
+        <!-- formulario -->
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+          <h3 id="form-title" class="text-lg font-semibold text-gray-800 mb-4">Nuevo producto</h3>
+          <form id="form" class="grid md:grid-cols-2 gap-4">
+            <label class="text-sm">Nombre
+              <input name="nombre" required
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <label class="text-sm">Precio
+              <input name="precio" type="number" step="0.01"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <label class="text-sm">Stock
+              <input name="stock" type="number"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <label class="text-sm">Fecha vencimiento
+              <input name="fecha_vencimiento" type="date"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <label class="text-sm">Imagen URL
+              <input name="imagen_url"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <label class="text-sm">Activo
+              <select name="habilitado" data-bool
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-emerald-500">
+                <option value="1" selected>Sí</option>
+                <option value="0">No</option>
+              </select>
+            </label>
+            <div class="md:col-span-2 flex gap-2">
+              <button id="btn-submit" type="submit"
+                class="px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition">
+                Guardar
+              </button>
+              <button id="btn-cancel" type="button"
+                class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition hidden">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="/assets/js/ui.js"></script>
+  <script type="module">
+    import { initProductos } from '/assets/js/modules/productos.js';
+    initProductos();
+  </script>
+  <script>
+    function toggleSidebar(show) {
+      const s = document.getElementById('sidebar-root');
+      const o = document.getElementById('sidebar-overlay');
+      if (show) { s.classList.remove('-translate-x-full'); o.classList.remove('hidden'); }
+      else { s.classList.add('-translate-x-full'); o.classList.add('hidden'); }
+    }
+    window.toggleSidebar = toggleSidebar;
+  </script>
+</body>
+</html>

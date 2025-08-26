@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Autenticando…</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.7/dist/umd/supabase.min.js"></script>
+  <script type="module" src="/assets/js/env.js"></script>
+  <script type="module" src="/assets/js/supabaseClient.js"></script>
+</head>
+<body class="min-h-screen">
+  <main class="p-6">
+    <h2 class="text-xl font-semibold mb-2">Procesando autenticación…</h2>
+    <p id="msg" class="text-sm text-gray-600">Espera un momento.</p>
+  </main>
+
+  <script type="module">
+    import { handleAuthCallback } from '/assets/js/modules/auth.js';
+    handleAuthCallback().catch(err => {
+      document.getElementById('msg').textContent = 'Error: ' + err.message;
+      console.error(err);
+    });
+  </script>
+</body>
+</html>
