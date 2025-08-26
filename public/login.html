@@ -7,13 +7,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.7/dist/umd/supabase.min.js"></script>
 
-  <!-- ⚙️ IMPORTS RELATIVOS -->
+  <!-- IMPORTS RELATIVOS -->
   <script type="module" src="../assets/js/env.js"></script>
   <script type="module" src="../assets/js/supabaseClient.js"></script>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100">
   <div class="min-h-screen grid md:grid-cols-2">
-    <!-- LADO IZQUIERDO (hero) -->
     <section class="relative hidden md:block">
       <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-emerald-400/10 to-indigo-500/20"></div>
       <div class="absolute inset-0" style="background-image: radial-gradient(200px 200px at 20% 30%, rgba(16,185,129,.25), transparent 60%), radial-gradient(300px 300px at 70% 60%, rgba(99,102,241,.25), transparent 60%);"></div>
@@ -29,7 +28,6 @@
       </div>
     </section>
 
-    <!-- LADO DERECHO (form) -->
     <section class="flex items-center justify-center p-6 md:p-10">
       <main class="w-full max-w-md">
         <h2 class="text-2xl font-bold mb-6">Iniciar sesión</h2>
@@ -58,69 +56,79 @@
             Entrar
           </button>
         </form>
-
-        <p class="mt-6 text-[11px] text-slate-500">
-          Clientes irán a la landing y personal al panel. Usa <span class="text-slate-300 font-medium">Salir</span> para cerrar sesión.
-        </p>
       </main>
     </section>
   </div>
 
-  <!-- LÓGICA DE LOGIN -->
   <script type="module">
     import { supabase } from '../assets/js/supabaseClient.js';
 
-    // Normaliza roles igual que en guard.js
-    const normalizeRole = (s) =>
+    const normalize = (s) =>
       (s ?? '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+    const canonicalRole = (r) => {
+      const n = normalize(r);
+      if (['dueno','duenio','owner','admin','administrator'].includes(n)) return 'dueno';
+      if (['empleado','staff','worker','colaborador'].includes(n)) return 'empleado';
+      if (['cliente','customer','usuario','user'].includes(n)) return 'cliente';
+      return n;
+    };
+
+    async function fetchRoles() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return ['cliente'];
+
+      const tries = [
+        { table: 'roles_usuarios', userCol: 'user_id' },
+        { table: 'user_roles',     userCol: 'user_id' },
+        { table: 'roles_users',    userCol: 'user_id' },
+        { table: 'roles',          userCol: 'user_id' }
+      ];
+      for (const t of tries) {
+        try {
+          const { data, error } = await supabase
+            .from(t.table)
+            .select('role, rol, name, nombre')
+            .eq(t.userCol, session.user.id);
+          if (error) continue;
+          if (Array.isArray(data) && data.length) {
+            const roles = data
+              .map(r => r.role ?? r.rol ?? r.name ?? r.nombre)
+              .filter(Boolean)
+              .map(canonicalRole);
+            if (roles.length) return roles;
+          }
+        } catch {}
+      }
+      return ['cliente'];
+    }
+
+    function showErr(msg) {
+      const err = document.getElementById('err');
+      if (!msg) { err.classList.add('hidden'); err.textContent = ''; return; }
+      err.textContent = msg; err.classList.remove('hidden');
+    }
+    function routeTo(roles) {
+      const next = new URLSearchParams(location.search).get('next');
+      if (next) { location.replace(next); return; }
+      if (roles.includes('dueno') || roles.includes('empleado')) {
+        location.replace('dashboard.html');
+      } else {
+        location.replace('index.html');
+      }
+    }
 
     const form   = document.getElementById('form');
     const email  = document.getElementById('email');
     const pass   = document.getElementById('password');
     const btn    = document.getElementById('btn');
-    const err    = document.getElementById('err');
     const toggle = document.getElementById('toggle');
 
-    const nextParam = () => new URLSearchParams(location.search).get('next');
-
-    async function myRoles() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return [];
-      // 👇 MISMA TABLA QUE EN guard.js
-      const { data, error } = await supabase
-        .from('roles_usuarios')
-        .select('role')
-        .eq('user_id', session.user.id);
-
-      if (error) return ['cliente'];
-      const roles = (data?.length ? data.map(r => normalizeRole(r.role)) : ['cliente']);
-      return roles;
-    }
-
-    function showErr(msg) {
-      if (!msg) { err.classList.add('hidden'); err.textContent = ''; return; }
-      err.textContent = msg; err.classList.remove('hidden');
-    }
-
-    function routeTo(roleList) {
-      const next = nextParam();
-      if (next) { location.replace(next); return; }
-      // acepta 'dueño' o 'dueno' tras normalizar
-      if (roleList.includes('dueno') || roleList.includes('empleado')) {
-        location.replace('dashboard.html');
-      } else {
-        location.replace('index.html'); // landing cliente
-      }
-    }
-
-    // toggle ver/ocultar contraseña
     toggle.addEventListener('click', () => {
       const is = pass.type === 'password';
       pass.type = is ? 'text' : 'password';
       toggle.textContent = is ? '🙈' : '👁️';
     });
 
-    // submit login
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       showErr('');
@@ -140,15 +148,15 @@
         return;
       }
 
-      const roles = await myRoles();
+      const roles = await fetchRoles();
       routeTo(roles);
     });
 
-    // Si ya hay sesión, enruta directo
+    // si ya hay sesión, enruta directo
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const roles = await myRoles();
+        const roles = await fetchRoles();
         routeTo(roles);
       }
     })();
