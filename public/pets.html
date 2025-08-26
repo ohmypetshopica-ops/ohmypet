@@ -10,55 +10,121 @@
   <script type="module" src="/assets/js/supabaseClient.js"></script>
   <script type="module" src="/assets/js/guard.js"></script>
 </head>
-<body class="min-h-screen">
-  <div id="sidebar-root"></div>
-  <div class="pl-0 md:pl-72">
+<body class="bg-gray-50 min-h-screen">
+  <!-- Sidebar (colapsable con animación) -->
+  <div id="sidebar-root"
+    class="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40">
+  </div>
+
+  <!-- Overlay para móviles -->
+  <div id="sidebar-overlay"
+    class="fixed inset-0 bg-black/30 hidden z-30"
+    onclick="toggleSidebar(false)">
+  </div>
+
+  <!-- Contenido -->
+  <div class="md:pl-64">
     <div id="topbar-root"></div>
+
     <main class="p-6">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-semibold">Mascotas</h2>
-        <div class="flex gap-2">
-          <input id="q" class="border rounded px-3 py-2 text-sm" placeholder="Buscar por nombre..." />
-          <button id="btn-search" class="px-3 py-2 border rounded text-sm">Buscar</button>
-        </div>
-      </div>
-
-      <div class="mt-4 overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead><tr class="border-b">
-            <th class="p-2 text-left">Nombre</th>
-            <th class="p-2 text-left">Especie</th>
-            <th class="p-2 text-left">Raza</th>
-            <th class="p-2 text-left">Edad</th>
-            <th class="p-2 text-left">Peso</th>
-            <th class="p-2 text-left">Notas</th>
-            <th class="p-2 text-left">Acciones</th>
-          </tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-
-      <div class="mt-6 border rounded-2xl p-4">
-        <h3 id="form-title" class="font-semibold mb-3">Nueva mascota</h3>
-        <form id="form" class="grid md:grid-cols-2 gap-3">
-          <label class="text-sm">Nombre <input name="nombre" class="mt-1 w-full border rounded px-3 py-2" required /></label>
-          <label class="text-sm">Especie <input name="especie" class="mt-1 w-full border rounded px-3 py-2" /></label>
-          <label class="text-sm">Raza <input name="raza" class="mt-1 w-full border rounded px-3 py-2" /></label>
-          <label class="text-sm">Edad <input name="edad" type="number" class="mt-1 w-full border rounded px-3 py-2" /></label>
-          <label class="text-sm">Peso <input name="peso" type="number" step="0.01" class="mt-1 w-full border rounded px-3 py-2" /></label>
-          <label class="text-sm">Notas <input name="notas" class="mt-1 w-full border rounded px-3 py-2" /></label>
-          <div class="md:col-span-2 flex gap-2">
-            <button id="btn-submit" class="px-3 py-2 border rounded" type="submit">Crear</button>
-            <button id="btn-cancel" class="px-3 py-2 border rounded hidden" type="button">Cancelar</button>
+      <div class="max-w-6xl mx-auto space-y-6">
+        <!-- Título + buscador -->
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold text-gray-800">Mascotas</h2>
+          <div class="flex gap-2">
+            <input id="q" placeholder="Buscar por nombre..."
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            <button id="btn-search"
+              class="px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition"
+              type="button">
+              Buscar
+            </button>
           </div>
-        </form>
+        </div>
+
+        <!-- Tabla -->
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
+              <tr>
+                <th class="px-3 py-2 text-left">Nombre</th>
+                <th class="px-3 py-2 text-left">Especie</th>
+                <th class="px-3 py-2 text-left">Raza</th>
+                <th class="px-3 py-2 text-left">Edad</th>
+                <th class="px-3 py-2 text-left">Peso</th>
+                <th class="px-3 py-2 text-left">Notas</th>
+                <th class="px-3 py-2 text-left">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody" class="divide-y divide-gray-200"></tbody>
+          </table>
+        </div>
+
+        <!-- Formulario -->
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+          <h3 id="form-title" class="text-lg font-semibold text-gray-800 mb-4">Nueva mascota</h3>
+          <form id="form" class="grid md:grid-cols-2 gap-4">
+            <label class="text-sm">Nombre
+              <input name="nombre" required
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <label class="text-sm">Especie
+              <input name="especie"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <label class="text-sm">Raza
+              <input name="raza"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <label class="text-sm">Edad
+              <input name="edad" type="number"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <label class="text-sm">Peso
+              <input name="peso" type="number" step="0.01"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <label class="text-sm">Notas
+              <input name="notas"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+            </label>
+            <div class="md:col-span-2 flex gap-2">
+              <button id="btn-submit" type="submit"
+                class="px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition">
+                Guardar
+              </button>
+              <button id="btn-cancel" type="button"
+                class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition hidden">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </main>
   </div>
+
+  <!-- UI (inyecta sidebar/topbar y maneja logout) -->
   <script type="module" src="/assets/js/ui.js"></script>
+  <!-- Lógica de mascotas -->
   <script type="module">
     import { initMascotas } from '/assets/js/modules/mascotas.js';
     initMascotas();
+  </script>
+  <!-- Sidebar toggle SIN placeholders -->
+  <script>
+    function toggleSidebar(show) {
+      const s = document.getElementById('sidebar-root');
+      const o = document.getElementById('sidebar-overlay');
+      if (show) {
+        s.classList.remove('-translate-x-full');
+        o.classList.remove('hidden');
+      } else {
+        s.classList.add('-translate-x-full');
+        o.classList.add('hidden');
+      }
+    }
+    window.toggleSidebar = toggleSidebar;
   </script>
 </body>
 </html>
