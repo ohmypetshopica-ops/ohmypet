@@ -26,6 +26,28 @@ export async function sendMagicLink(email) {
   if (error) throw error;
 }
 
+export async function registerEmailPassword({ email, password, full_name }) {
+  const redirectTo = SITE_URL + '/public/auth-callback.html';
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: redirectTo,
+      data: { full_name }
+    }
+  });
+  if (error) throw error;
+
+  // Si tu proyecto NO requiere confirmación por email, data.session vendrá con sesión creada:
+  if (data?.session) {
+    location.href = 'dashboard.html';
+  } else {
+    alert('Registro creado. Revisa tu correo para confirmar la cuenta.');
+    location.href = 'login.html';
+  }
+}
+
+// --- CALLBACK (no cambia) ---
 function parseHashTokens() {
   const hash = location.hash.slice(1);
   const p = new URLSearchParams(hash);
