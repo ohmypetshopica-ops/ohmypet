@@ -1,17 +1,7 @@
 <header class="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm h-14 flex items-center justify-between px-4 md:px-6">
   <!-- Botón hamburguesa móvil -->
-  <button class="md:hidden text-gray-600" onclick="toggleSidebar(true)">
+  <button class="md:hidden text-gray-600" onclick="toggleSidebar(true)" aria-label="Abrir menú">
     ☰
   </button>
-
   <div class="flex-1"></div>
-
-  <!-- Usuario -->
-  <div class="flex items-center gap-4 text-sm">
-    <span id="ohmy-user-email" class="text-gray-600 font-medium"></span>
-    <button id="ohmy-logout"
-      class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 transition">
-      Salir
-    </button>
-  </div>
 </header>
