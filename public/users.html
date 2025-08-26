@@ -10,41 +10,79 @@
   <script type="module" src="/assets/js/supabaseClient.js"></script>
   <script type="module" src="/assets/js/guard.js"></script>
 </head>
-<body class="min-h-screen">
-  <div id="sidebar-root"></div>
-  <div class="pl-0 md:pl-72">
+<body class="bg-gray-50 min-h-screen">
+  <!-- Sidebar -->
+  <div id="sidebar-root"
+    class="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40">
+  </div>
+
+  <!-- Overlay para móviles -->
+  <div id="sidebar-overlay"
+    class="fixed inset-0 bg-black/30 hidden z-30"
+    onclick="toggleSidebar(false)">
+  </div>
+
+  <!-- Contenido principal -->
+  <div class="md:pl-64">
     <div id="topbar-root"></div>
     <main class="p-6">
-      <h2 class="text-xl font-semibold">Usuarios / Roles</h2>
+      <div class="max-w-5xl mx-auto space-y-6">
+        <h2 class="text-2xl font-bold text-gray-800">Usuarios / Roles</h2>
 
-      <div class="mt-4 overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead><tr class="border-b">
-            <th class="p-2 text-left">User ID</th>
-            <th class="p-2 text-left">Rol</th>
-            <th class="p-2 text-left">Creado</th>
-            <th class="p-2 text-left">Acciones</th>
-          </tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
+        <!-- tabla -->
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
+              <tr>
+                <th class="px-3 py-2 text-left">User ID</th>
+                <th class="px-3 py-2 text-left">Rol</th>
+                <th class="px-3 py-2 text-left">Creado</th>
+                <th class="px-3 py-2 text-left">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody" class="divide-y divide-gray-200"></tbody>
+          </table>
+        </div>
 
-      <div class="mt-6 border rounded-2xl p-4">
-        <h3 class="font-semibold mb-3">Asignar rol</h3>
-        <form id="form-role" class="grid md:grid-cols-3 gap-3">
-          <label class="text-sm">User ID <input name="user_id" class="mt-1 w-full border rounded px-3 py-2" required /></label>
-          <label class="text-sm">Rol <input name="role" class="mt-1 w-full border rounded px-3 py-2" placeholder="admin/empleado/cliente" required /></label>
-          <div class="md:col-span-3">
-            <button class="px-3 py-2 border rounded" type="submit">Guardar</button>
-          </div>
-        </form>
+        <!-- form -->
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Asignar rol</h3>
+          <form id="form-role" class="grid md:grid-cols-3 gap-4">
+            <label class="text-sm">User ID
+              <input name="user_id" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500" />
+            </label>
+            <label class="text-sm">Rol
+              <input name="role" placeholder="admin/empleado/cliente"
+                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500" />
+            </label>
+            <div class="flex items-end">
+              <button class="px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition">
+                Guardar
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </main>
   </div>
+
   <script type="module" src="/assets/js/ui.js"></script>
   <script type="module">
     import { initUsuarios } from '/assets/js/modules/usuarios.js';
     initUsuarios();
+  </script>
+  <script>
+    function toggleSidebar(show) {
+      const sidebar = document.getElementById('sidebar-root');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (show) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
+    }
   </script>
 </body>
 </html>
