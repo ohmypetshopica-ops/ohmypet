@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Usuarios/Roles — OhMyPet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.7/dist/umd/supabase.min.js"></script>
+  <script type="module" src="/assets/js/env.js"></script>
+  <script type="module" src="/assets/js/supabaseClient.js"></script>
+  <script type="module" src="/assets/js/guard.js"></script>
+</head>
+<body class="min-h-screen">
+  <div id="sidebar-root"></div>
+  <div class="pl-0 md:pl-72">
+    <div id="topbar-root"></div>
+    <main class="p-6">
+      <h2 class="text-xl font-semibold">Usuarios / Roles</h2>
+
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b">
+            <th class="p-2 text-left">User ID</th>
+            <th class="p-2 text-left">Rol</th>
+            <th class="p-2 text-left">Creado</th>
+            <th class="p-2 text-left">Acciones</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="mt-6 border rounded-2xl p-4">
+        <h3 class="font-semibold mb-3">Asignar rol</h3>
+        <form id="form-role" class="grid md:grid-cols-3 gap-3">
+          <label class="text-sm">User ID <input name="user_id" class="mt-1 w-full border rounded px-3 py-2" required /></label>
+          <label class="text-sm">Rol <input name="role" class="mt-1 w-full border rounded px-3 py-2" placeholder="admin/empleado/cliente" required /></label>
+          <div class="md:col-span-3">
+            <button class="px-3 py-2 border rounded" type="submit">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="/assets/js/ui.js"></script>
+  <script type="module">
+    import { initUsuarios } from '/assets/js/modules/usuarios.js';
+    initUsuarios();
+  </script>
+</body>
+</html>

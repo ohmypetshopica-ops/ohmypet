@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login — OhMyPet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.7/dist/umd/supabase.min.js"></script>
+  <script type="module" src="/assets/js/env.js"></script>
+  <script type="module" src="/assets/js/supabaseClient.js"></script>
+</head>
+<body class="min-h-screen bg-white">
+  <main class="min-h-screen grid place-items-center">
+    <div class="w-full max-w-md border rounded-2xl p-6 shadow">
+      <h2 class="text-xl font-semibold mb-4">Iniciar sesión</h2>
+      <form id="form-login" class="grid gap-3">
+        <div>
+          <label class="text-sm text-gray-700">Correo</label>
+          <input id="email" type="email" required class="mt-1 w-full border rounded px-3 py-2" />
+        </div>
+        <div>
+          <label class="text-sm text-gray-700">Contraseña</label>
+          <input id="password" type="password" required class="mt-1 w-full border rounded px-3 py-2" />
+        </div>
+        <div class="flex gap-2">
+          <button class="px-3 py-2 border rounded" type="submit">Entrar</button>
+          <button class="px-3 py-2 border rounded" type="button" id="btn-magic">Magic Link</button>
+        </div>
+      </form>
+      <div class="my-4 border-t"></div>
+      <button class="px-3 py-2 border rounded" type="button" id="btn-google">Entrar con Google</button>
+      <p class="text-xs text-gray-500 mt-3">Si algo falla, visita <a class="underline" href="auth-callback.html">/auth-callback</a>.</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { loginWithPassword, loginWithGoogle, sendMagicLink } from '/assets/js/modules/auth.js';
+
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      try { await loginWithPassword(email, password); } catch (e) { alert(e.message); }
+    });
+
+    document.getElementById('btn-google').addEventListener('click', async () => {
+      try { await loginWithGoogle(); } catch (e) { alert(e.message); }
+    });
+
+    document.getElementById('btn-magic').addEventListener('click', async () => {
+      const email = document.getElementById('email').value;
+      if (!email) return alert('Ingresa tu correo.');
+      try { await sendMagicLink(email); alert('Revisa tu correo.'); } catch (e) { alert(e.message); }
+    });
+  </script>
+</body>
+</html>

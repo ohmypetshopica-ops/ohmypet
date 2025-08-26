@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Promociones — OhMyPet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.7/dist/umd/supabase.min.js"></script>
+  <script type="module" src="/assets/js/env.js"></script>
+  <script type="module" src="/assets/js/supabaseClient.js"></script>
+  <script type="module" src="/assets/js/guard.js"></script>
+</head>
+<body class="min-h-screen">
+  <div id="sidebar-root"></div>
+  <div class="pl-0 md:pl-72">
+    <div id="topbar-root"></div>
+    <main class="p-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">Promociones</h2>
+        <div class="flex gap-2">
+          <input id="q" class="border rounded px-3 py-2 text-sm" placeholder="Buscar por nombre..." />
+          <button id="btn-search" class="px-3 py-2 border rounded text-sm">Buscar</button>
+        </div>
+      </div>
+
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b">
+            <th class="p-2 text-left">Nombre</th>
+            <th class="p-2 text-left">Tipo</th>
+            <th class="p-2 text-left">Valor</th>
+            <th class="p-2 text-left">Activo</th>
+            <th class="p-2 text-left">Inicio</th>
+            <th class="p-2 text-left">Fin</th>
+            <th class="p-2 text-left">Acciones</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="mt-6 border rounded-2xl p-4">
+        <h3 id="form-title" class="font-semibold mb-3">Nueva promoción</h3>
+        <form id="form" class="grid md:grid-cols-3 gap-3">
+          <label class="text-sm">Nombre <input name="nombre" class="mt-1 w-full border rounded px-3 py-2" required /></label>
+          <label class="text-sm">Tipo <input name="tipo" class="mt-1 w-full border rounded px-3 py-2" /></label>
+          <label class="text-sm">Valor <input name="valor" type="number" step="0.01" class="mt-1 w-full border rounded px-3 py-2" /></label>
+          <label class="text-sm">Activo
+            <select name="activo" data-bool class="mt-1 w-full border rounded px-3 py-2">
+              <option value="1" selected>Sí</option>
+              <option value="0">No</option>
+            </select>
+          </label>
+          <label class="text-sm">Inicio <input name="fecha_inicio" type="date" class="mt-1 w-full border rounded px-3 py-2" /></label>
+          <label class="text-sm">Fin <input name="fecha_fin" type="date" class="mt-1 w-full border rounded px-3 py-2" /></label>
+          <div class="md:col-span-3 flex gap-2">
+            <button id="btn-submit" class="px-3 py-2 border rounded" type="submit">Crear</button>
+            <button id="btn-cancel" class="px-3 py-2 border rounded hidden" type="button">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="/assets/js/ui.js"></script>
+  <script type="module">
+    import { initPromociones } from '/assets/js/modules/promociones.js';
+    initPromociones();
+  </script>
+</body>
+</html>
