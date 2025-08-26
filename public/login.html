@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.7/dist/umd/supabase.min.js"></script>
 
-  <!-- ⚙️ IMPORTS RELATIVOS (antes estaban como /assets/...) -->
+  <!-- ⚙️ IMPORTS RELATIVOS -->
   <script type="module" src="../assets/js/env.js"></script>
   <script type="module" src="../assets/js/supabaseClient.js"></script>
 </head>
@@ -60,15 +60,19 @@
         </form>
 
         <p class="mt-6 text-[11px] text-slate-500">
-          Clientes irán a la landing y personal al panel. Usa el botón <span class="text-slate-300 font-medium">Salir</span> para cerrar sesión.
+          Clientes irán a la landing y personal al panel. Usa <span class="text-slate-300 font-medium">Salir</span> para cerrar sesión.
         </p>
       </main>
     </section>
   </div>
 
-  <!-- LÓGICA: IMPORT RELATIVO AL CLIENTE SUPABASE -->
+  <!-- LÓGICA DE LOGIN -->
   <script type="module">
     import { supabase } from '../assets/js/supabaseClient.js';
+
+    // Normaliza roles igual que en guard.js
+    const normalizeRole = (s) =>
+      (s ?? '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 
     const form   = document.getElementById('form');
     const email  = document.getElementById('email');
@@ -82,10 +86,15 @@
     async function myRoles() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return [];
-      // Ajusta el nombre de la tabla de roles si es necesario
-      const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id);
+      // 👇 MISMA TABLA QUE EN guard.js
+      const { data, error } = await supabase
+        .from('roles_usuarios')
+        .select('role')
+        .eq('user_id', session.user.id);
+
       if (error) return ['cliente'];
-      return (data?.length ? data.map(r => r.role) : ['cliente']);
+      const roles = (data?.length ? data.map(r => normalizeRole(r.role)) : ['cliente']);
+      return roles;
     }
 
     function showErr(msg) {
@@ -96,11 +105,11 @@
     function routeTo(roleList) {
       const next = nextParam();
       if (next) { location.replace(next); return; }
-      // ruta por rol (ajusta a tus necesidades)
+      // acepta 'dueño' o 'dueno' tras normalizar
       if (roleList.includes('dueno') || roleList.includes('empleado')) {
         location.replace('dashboard.html');
       } else {
-        location.replace('index.html'); // landing de clientes
+        location.replace('index.html'); // landing cliente
       }
     }
 
@@ -131,12 +140,11 @@
         return;
       }
 
-      // Decide destino por rol
       const roles = await myRoles();
       routeTo(roles);
     });
 
-    // Si ya está logueado, redirige
+    // Si ya hay sesión, enruta directo
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
