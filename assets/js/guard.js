@@ -10,9 +10,10 @@ function normalize(s) {
     .toLowerCase()
     .trim();
 }
+
 function canonicalRole(r) {
   const n = normalize(r);
-  if (['dueno','duenio','owner','admin','administrator'].includes(n)) return 'dueno';
+  if (['dueno','dueño','duenio','owner','admin','administrator'].includes(n)) return 'dueno';
   if (['empleado','staff','worker','colaborador'].includes(n)) return 'empleado';
   if (['cliente','customer','usuario','user'].includes(n)) return 'cliente';
   return n;
@@ -29,64 +30,32 @@ export async function requireAuth() {
   return session;
 }
 
-/* Obtiene roles del usuario probando varias tablas/columnas ------------- */
+/* Obtiene roles del usuario desde la tabla user_roles ------------------- */
 export async function getMyRoles() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return ['cliente'];
 
-  // Tablas y columnas posibles en tu proyecto
-  const tables = [
-    { table: 'roles_usuarios', userCol: 'user_id' },
-    { table: 'user_roles',     userCol: 'user_id' },
-    { table: 'roles_users',    userCol: 'user_id' },
-    { table: 'roles',          userCol: 'user_id' }
-  ];
+  // Buscar en la tabla user_roles
+  const { data: rows, error } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id);
 
-  for (const t of tables) {
-    try {
-      // Pedimos varias columnas: Supabase devolverá solo las que existan
-      const { data, error } = await supabase
-        .from(t.table)
-        .select('role, rol, name, nombre')
-        .eq(t.userCol, user.id);
-
-      if (error) continue;
-      if (Array.isArray(data) && data.length) {
-        const roles = data
-          .map(r => r.role ?? r.rol ?? r.name ?? r.nombre)
-          .filter(Boolean)
-          .map(canonicalRole);
-        if (roles.length) return roles;
-      }
-    } catch {
-      /* probar siguiente tabla */
-    }
+  if (error || !rows || rows.length === 0) {
+    console.warn('No se pudo obtener rol desde user_roles, asignando cliente:', error);
+    return ['cliente'];
   }
-  // Fallback
-  return ['cliente'];
+
+  // Mapear roles a formato canónico
+  return rows.map(r => canonicalRole(r.role));
 }
 
-/* Exige al menos uno de los roles indicados ----------------------------- */
-export async function requireRole(allowed) {
-  const session = await requireAuth();
-  const need = (Array.isArray(allowed) ? allowed : [allowed]).map(canonicalRole);
-  const mine = (await getMyRoles()).map(canonicalRole);
-
-  const ok = mine.some(r => need.includes(r));
-  if (!ok) {
-    const url = new URL('unauthorized.html', location.href);
-    url.searchParams.set('need', need.join(','));
-    url.searchParams.set('have', mine.join(','));
-    location.replace(url.toString());
-    throw new Error('redirect:no-role');
+/* Verifica si el usuario tiene rol requerido ---------------------------- */
+export async function requireRole(requiredRole) {
+  const roles = await getMyRoles();
+  const required = canonicalRole(requiredRole);
+  if (!roles.includes(required)) {
+    location.replace('unauthorized.html');
+    throw new Error(`redirect:role-mismatch (${roles} vs ${required})`);
   }
-  return { session, roles: mine };
-}
-
-/* Guarda de página ------------------------------------------------------ */
-export async function guardPage(config = {}) {
-  if (config.roles && config.roles.length) {
-    return requireRole(config.roles);
-  }
-  return requireAuth();
 }
