@@ -8,71 +8,172 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         :root { font-family: 'Inter', sans-serif; }
+        /* Estilos personalizados para el scrollbar, si es necesario */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1; /* Color de fondo de la pista del scrollbar */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888; /* Color del thumb del scrollbar */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555; /* Color del thumb al pasar el ratón */
+        }
     </style>
 </head>
-<body class="bg-white">
+<body class="bg-gray-100 text-black">
 
-<div class="flex h-screen">
-    <aside class="w-20 hover:w-64 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out flex flex-col">
-        <div class="h-16 flex items-center justify-center">
-             <span class="text-2xl font-bold text-green-600">O P</span>
+<div class="flex h-screen overflow-hidden">
+    <aside class="w-20 hover:w-64 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out flex flex-col group relative z-20">
+        <div class="h-16 flex items-center justify-center border-b border-gray-200 px-4">
+             <span class="text-3xl font-extrabold text-green-600 block group-hover:hidden">O</span>
+             <span class="text-3xl font-extrabold text-green-600 hidden group-hover:block">OhMyPet</span>
         </div>
 
-        <nav class="flex-1 px-4 py-4 space-y-2">
-            <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-green-100 group">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+            <a href="#" class="flex items-center p-2 rounded-lg text-gray-700 bg-green-100 hover:bg-green-200 group-item">
+                <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
-                <span class="ml-4 text-sm font-semibold hidden group-hover:block">Dashboard</span>
+                <span class="ml-4 text-sm font-medium hidden group-hover:block">Dashboard</span>
             </a>
             
-            <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-green-100 group">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            <a href="#" class="flex items-center p-2 rounded-lg text-gray-700 hover:bg-gray-100 group-item">
+                <svg class="h-6 w-6 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                 </svg>
-                <span class="ml-4 text-sm font-semibold hidden group-hover:block">Inbox</span>
+                <span class="ml-4 text-sm font-medium hidden group-hover:block">Products</span>
             </a>
 
-            <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-green-100 group">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            <a href="#" class="flex items-center p-2 rounded-lg text-gray-700 hover:bg-gray-100 group-item">
+                <svg class="h-6 w-6 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h2m3-2v2m0-12V5a2 2 0 012-2h4a2 2 0 012 2v5m-4 5h-4" />
                 </svg>
-                <span class="ml-4 text-sm font-semibold hidden group-hover:block">Tasks</span>
+                <span class="ml-4 text-sm font-medium hidden group-hover:block">Customers</span>
+            </a>
+
+            <a href="#" class="flex items-center p-2 rounded-lg text-gray-700 hover:bg-gray-100 group-item">
+                <svg class="h-6 w-6 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span class="ml-4 text-sm font-medium hidden group-hover:block">Income</span>
+            </a>
+            
+            <a href="#" class="flex items-center p-2 rounded-lg text-gray-700 hover:bg-gray-100 group-item">
+                <svg class="h-6 w-6 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="ml-4 text-sm font-medium hidden group-hover:block">Promote</span>
             </a>
         </nav>
 
-        <div class="px-4 py-4 border-t">
-            <a href="#" id="logout-button" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-green-100 group">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="px-4 py-4 border-t border-gray-200 mt-auto space-y-1">
+            <a href="#" class="flex items-center p-2 rounded-lg text-gray-700 hover:bg-gray-100 group-item">
+                <svg class="h-6 w-6 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.527.2.146.404.146 1.066z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="ml-4 text-sm font-medium hidden group-hover:block">Settings</span>
+            </a>
+            <a href="#" id="logout-button" class="flex items-center p-2 rounded-lg text-red-600 hover:bg-red-100 group-item">
+                <svg class="h-6 w-6 text-red-500 group-hover:text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                <span class="ml-4 text-sm font-semibold hidden group-hover:block">Logout</span>
+                <span class="ml-4 text-sm font-medium hidden group-hover:block">Logout</span>
             </a>
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-            <div>
-                <h1 class="text-xl font-semibold text-black">Dashboard</h1>
-            </div>
-            <div>
-                <span class="font-semibold text-black">Hola, Dueño/Empleado</span>
+    <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10">
+            <h1 class="text-xl font-semibold text-gray-800">Dashboard</h1>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" placeholder="Search anything..." class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                
+                <button class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">Create</button>
+
+                <div class="flex items-center space-x-3">
+                    <button class="p-2 rounded-full hover:bg-gray-100">
+                        <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                    </button>
+                    <button class="p-2 rounded-full hover:bg-gray-100">
+                        <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                    <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-xs font-semibold">JR</div>
+                </div>
             </div>
         </header>
 
-        <div class="flex-1 p-6 overflow-y-auto">
-            <h2 class="text-2xl font-bold mb-6 text-black">Bienvenido al Panel de Administración</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="bg-slate-50 p-6 rounded-lg border border-gray-200">Tarjeta 1</div>
-                <div class="bg-slate-50 p-6 rounded-lg border border-gray-200">Tarjeta 2</div>
-                <div class="bg-slate-50 p-6 rounded-lg border border-gray-200">Tarjeta 3</div>
-                <div class="bg-slate-50 p-6 rounded-lg border border-gray-200 col-span-1 lg:col-span-2">Tarjeta Ancha</div>
-                <div class="bg-slate-50 p-6 rounded-lg border border-gray-200">Tarjeta 4</div>
-            </div>
+        <div class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+            <section class="mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Overview</h2>
+                    <select class="border border-gray-300 rounded-lg p-2 text-sm">
+                        <option>Last month</option>
+                        <option>Last 6 months</option>
+                        <option>Last year</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-medium text-gray-600">Customers</h3>
+                            <div class="p-1 rounded-full bg-green-100 text-green-600">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M10 12H8m4 0h4m-4 0v4m-2 2h6M4 20h16a2 2 0 002-2V6a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-4xl font-bold text-gray-900 mb-1">1,293</p>
+                        <p class="text-sm text-gray-500">vs last month</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-medium text-gray-600">Balance</h3>
+                             <div class="p-1 rounded-full bg-green-100 text-green-600">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-4xl font-bold text-gray-900 mb-1">256k</p>
+                        <p class="text-sm text-gray-500">vs last month</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Popular Products / Sales Chart</h3>
+                    <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400">
+                        (Gráfico o Contenido de Productos Populares)
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Latest Customers / Activity Feed</h3>
+                    <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400">
+                        (Lista de Clientes o Actividad)
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
-
 </div>
 
 <script type="module" src="../../core/auth.js"></script>
