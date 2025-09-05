@@ -3,59 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OhMyPet - Tienda para Mascotas</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>OhMyPet - El Mejor Cuidado para tu Mascota</title>
+    <link rel="icon" type="image/png" href="/public/assets/images/favicon.png"> <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-100 text-gray-900">
 
     <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-30"></div>
 
     <aside id="sidebar" class="fixed top-0 left-0 w-64 h-full bg-white shadow-xl transform -translate-x-full transition-transform duration-300 ease-in-out z-40">
         <div class="p-5 border-b">
-            <h2 class="text-2xl font-bold text-blue-600">OhMyPet Menú</h2>
+            <h2 class="text-2xl font-bold text-green-600">OhMyPet Menú</h2>
         </div>
         <nav class="mt-4">
-            <a href="/public/modules/store/store.html" class="block px-5 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-medium">
+            <a href="/public/modules/store/store.html" class="block px-5 py-3 text-gray-700 hover:bg-green-100 hover:text-green-600 font-medium">
                 🐾 Tienda
             </a>
-            <a href="/public/modules/appointments/schedule.html" class="block px-5 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-medium">
+            <a href="/public/modules/appointments/schedule.html" class="block px-5 py-3 text-gray-700 hover:bg-green-100 hover:text-green-600 font-medium">
                 🗓️ Agendar Cita
             </a>
-            </nav>
+        </nav>
     </aside>
+
     <header class="bg-white shadow-sm">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <button id="menu-button" class="text-gray-600 hover:text-blue-600 focus:outline-none">
+                <button id="menu-button" class="text-gray-600 hover:text-green-600 focus:outline-none">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
-                <a href="/public/index.html" class="text-2xl font-bold text-blue-600">OhMyPet</a>
+                <a href="/public/index.html" class="text-2xl font-bold text-green-600">OhMyPet</a>
             </div>
             
             <div class="flex items-center space-x-4">
-                <div id="guest-nav">
-                    <a href="/public/modules/login/client-login.html" class="text-gray-600 hover:text-blue-600">Login</a>
-                    <a href="/public/register.html" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Registro</a>
+                <div id="guest-nav" class="relative">
+                    <button id="profile-menu-button" class="p-2 rounded-full hover:bg-gray-100 focus:outline-none">
+                        <img src="/public/assets/icons/user.svg" alt="Ícono de perfil" class="h-7 w-7 text-gray-600">
+                    </button>
+                    <div id="profile-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+                        <a href="/public/register.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-bold text-green-600">
+                            Registrarse
+                        </a>
+                        <a href="/public/modules/login/client-login.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            Iniciar Sesión
+                        </a>
+                    </div>
                 </div>
 
                 <div id="user-nav" class="hidden items-center space-x-4">
                     <span id="user-name" class="text-gray-700 font-medium"></span>
-                    <button id="logout-button" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">Cerrar Sesión</button>
-                </div>
+                    
+                    <button id="logout-button" title="Cerrar Sesión" class="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-100 transition-colors duration-200">
+                        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </button>
+                    </div>
             </div>
         </nav>
     </header>
 
-    <main class="container mx-auto px-6 py-12">
-        <div class="text-center">
-            <h1 class="text-4xl font-extrabold text-gray-800">El mejor cuidado para tu mejor amigo</h1>
-            <p class="mt-4 text-lg text-gray-600">Encuentra todo lo que necesitas para tu mascota en un solo lugar.</p>
-        </div>
+    <main>
+        <section class="relative bg-cover bg-center py-32 md:py-48 text-center text-white" 
+                 style="background-image: url('/public/assets/images/banner-perritos.jpg');">
+            
+            <div class="absolute inset-0 bg-gray-900 bg-opacity-50"></div>
+            
+            <div class="relative z-10 container mx-auto px-6">
+                <h1 class="text-4xl md:text-6xl font-extrabold leading-tight">
+                    El mejor cuidado para tu mejor amigo
+                </h1>
+                <p class="mt-4 text-xl md:text-2xl font-light max-w-2xl mx-auto">
+                    Encuentra todo lo que necesitas para tu mascota en un solo lugar.
+                </p>
+                <a href="/public/register.html" class="mt-8 inline-block bg-green-500 text-white text-lg font-bold py-3 px-8 rounded-full shadow-lg hover:bg-green-600 transition-colors duration-300">
+                    Únete a la Familia
+                </a>
+            </div>
+        </section>
+
+        <section class="py-16 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800">Nuestros Servicios</h2>
+                <p class="mt-4 text-gray-600 max-w-3xl mx-auto">
+                    Ofrecemos una amplia gama de productos y servicios para asegurar el bienestar de tu mascota.
+                </p>
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="p-6 bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <svg class="h-16 w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-800">Tienda Online</h3>
+                        <p class="mt-2 text-gray-600">
+                            Encuentra alimentos, juguetes y accesorios de las mejores marcas para consentir a tu mascota.
+                        </p>
+                    </div>
+                    <div class="p-6 bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <svg class="h-16 w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-800">Citas para Grooming</h3>
+                        <p class="mt-2 text-gray-600">
+                            Agenda fácilmente una cita para el baño, corte de pelo y cuidado de tu mascota.
+                        </p>
+                    </div>
+                    <div class="p-6 bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <svg class="h-16 w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M10 12H8m4 0h4m-4 0v4m-2 2h6M4 20h16a2 2 0 002-2V6a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-800">Atención Veterinaria</h3>
+                        <p class="mt-2 text-gray-600">
+                            Profesionales capacitados para consultas, vacunas y chequeos de rutina.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+         <section class="relative bg-cover bg-bottom py-24 md:py-32 text-center text-white"
+                 style="background-image: url('/public/assets/images/banner-perritos.jpg');">
+            <div class="absolute inset-0 bg-green-900 bg-opacity-70"></div>
+            <div class="relative z-10 container mx-auto px-6">
+                <h2 class="text-4xl md:text-5xl font-bold leading-tight">
+                    Dale a tu mascota el cariño que se merece
+                </h2>
+                <p class="mt-4 text-xl md:text-2xl font-light max-w-2xl mx-auto">
+                    Reserva una cita para grooming o una consulta veterinaria hoy mismo.
+                </p>
+                <a href="/public/modules/appointments/schedule.html" class="mt-8 inline-block bg-white text-green-600 text-lg font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition-colors duration-300">
+                    Agendar Cita
+                </a>
+            </div>
+        </section>
     </main>
 
-    <script type="module" src="/public/js/main.js"></script>
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 OhMyPet. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 
+    <script type="module" src="/public/js/main.js"></script>
+    <script>
+        const profileMenuButton = document.getElementById('profile-menu-button');
+        const profileMenu = document.getElementById('profile-menu');
+        
+        profileMenuButton.addEventListener('click', () => {
+            profileMenu.classList.toggle('hidden');
+        });
+
+        // Ocultar el menú si se hace clic fuera de él
+        window.addEventListener('click', (event) => {
+            if (!profileMenuButton.contains(event.target) && !profileMenu.contains(event.target)) {
+                profileMenu.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>
