@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - OhMyPet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <nav class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-2xl font-bold text-gray-800">OhMyPet Dashboard</h1>
+                </div>
+                <div>
+                    <button id="logout-button" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="bg-white p-8 rounded-lg shadow">
+                <h2 class="text-2xl font-bold mb-4">¡Bienvenido!</h2>
+                <p class="text-gray-700">Has iniciado sesión correctamente.</p>
+                
+                <div id="user-info" class="mt-6 border-t pt-4">
+                    <p><strong>Cargando tu información...</strong></p>
+                </div>
+
+                <div id="owner-content" class="hidden mt-6">
+                    <h3 class="text-xl font-semibold text-blue-600">Panel del Dueño</h3>
+                    <p>Aquí irá el contenido exclusivo para el dueño.</p>
+                </div>
+
+                <div id="employee-content" class="hidden mt-6">
+                    <h3 class="text-xl font-semibold text-green-600">Panel del Empleado</h3>
+                    <p>Aquí irá el contenido exclusivo para los empleados.</p>
+                </div>
+
+                <div id="client-content" class="hidden mt-6">
+                    <h3 class="text-xl font-semibold text-purple-600">Panel del Cliente</h3>
+                    <p>Aquí irá el contenido exclusivo para los clientes.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="../../core/auth.js"></script> <script type="module" src="dashboard.js"></script>   </body>
+</html>
