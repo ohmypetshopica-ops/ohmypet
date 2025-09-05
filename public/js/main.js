@@ -57,3 +57,20 @@ logoutButton.addEventListener('click', async () => {
 // --- INICIALIZACIÓN ---
 // Llamamos a la función para configurar la UI cuando la página se carga
 document.addEventListener('DOMContentLoaded', setupUI);
+
+
+// --- INICIO: LÓGICA PARA EL SIDEBAR DESPLEGABLE ---
+const menuButton = document.querySelector('#menu-button');
+const sidebar = document.querySelector('#sidebar');
+const overlay = document.querySelector('#overlay');
+
+// Función para mostrar/ocultar el sidebar
+const toggleSidebar = () => {
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+};
+
+// Event listeners para abrir y cerrar el menú
+menuButton.addEventListener('click', toggleSidebar);
+overlay.addEventListener('click', toggleSidebar);
+// --- FIN: LÓGICA PARA EL SIDEBAR ---

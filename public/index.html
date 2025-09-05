@@ -8,12 +8,33 @@
 </head>
 <body class="bg-gray-50">
 
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-30"></div>
+
+    <aside id="sidebar" class="fixed top-0 left-0 w-64 h-full bg-white shadow-xl transform -translate-x-full transition-transform duration-300 ease-in-out z-40">
+        <div class="p-5 border-b">
+            <h2 class="text-2xl font-bold text-blue-600">OhMyPet Menú</h2>
+        </div>
+        <nav class="mt-4">
+            <a href="/public/modules/store/store.html" class="block px-5 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-medium">
+                🐾 Tienda
+            </a>
+            <a href="/public/modules/appointments/schedule.html" class="block px-5 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-medium">
+                🗓️ Agendar Cita
+            </a>
+            </nav>
+    </aside>
     <header class="bg-white shadow-sm">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="/public/index.html" class="text-2xl font-bold text-blue-600">OhMyPet</a>
+            <div class="flex items-center space-x-4">
+                <button id="menu-button" class="text-gray-600 hover:text-blue-600 focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <a href="/public/index.html" class="text-2xl font-bold text-blue-600">OhMyPet</a>
+            </div>
             
             <div class="flex items-center space-x-4">
-                
                 <div id="guest-nav">
                     <a href="/public/modules/login/client-login.html" class="text-gray-600 hover:text-blue-600">Login</a>
                     <a href="/public/register.html" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Registro</a>
@@ -31,7 +52,7 @@
         <div class="text-center">
             <h1 class="text-4xl font-extrabold text-gray-800">El mejor cuidado para tu mejor amigo</h1>
             <p class="mt-4 text-lg text-gray-600">Encuentra todo lo que necesitas para tu mascota en un solo lugar.</p>
-            </div>
+        </div>
     </main>
 
     <script type="module" src="/public/js/main.js"></script>
