@@ -1,6 +1,6 @@
-// Este script protege las rutas que requieren autenticación
+// Este script protege las rutas y verifica el ROL del usuario.
 
-// Importamos el cliente de supabase. OJO: la ruta es relativa al archivo HTML que lo carga.
+// Importamos el cliente de supabase.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 // ---- RECUERDA USAR TUS PROPIAS CLAVES ----
@@ -9,14 +9,46 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Función que se ejecuta automáticamente para verificar la sesión
-(async () => {
-    // Obtenemos la sesión actual
-    const { data: { session } } = await supabase.auth.getSession();
+// --- FUNCIÓN DE SEGURIDAD AUTOEJECUTABLE ---
+const checkUserRole = async () => {
+    // 1. Verificamos si hay un usuario logueado
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!session) {
-        // Si NO hay una sesión activa, redirigimos al usuario a la página de login
-        console.log("Acceso denegado. No hay sesión activa. Redirigiendo a /");
-        window.location.href = '/public/modules/login/login.html'; // Redirige a la raíz del proyecto (index.html o login.html)
+    if (!user) {
+        // Si NO hay usuario, lo redirigimos al login
+        console.log("Acceso denegado (sin sesión). Redirigiendo...");
+        window.location.href = '/public/modules/login/login.html';
+        return; // Detenemos la ejecución
     }
-})();
+
+    // 2. Si hay usuario, buscamos su perfil para obtener su rol
+    const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (error) {
+        console.error('Error al obtener el perfil para verificar el rol:', error);
+        // Si hay un error, por seguridad, cerramos sesión y redirigimos
+        await supabase.auth.signOut();
+        window.location.href = '/public/modules/login/login.html';
+        return;
+    }
+
+    // 3. Verificamos si el rol es 'cliente'
+    if (profile && profile.role === 'cliente') {
+        // Si es un cliente, cerramos su sesión y lo redirigimos
+        console.log("Acceso denegado para el rol 'cliente'. Redirigiendo...");
+        await supabase.auth.signOut();
+        alert('Acceso denegado. El dashboard es solo para administración.'); // Mensaje opcional
+        window.location.href = '/public/modules/login/login.html';
+    } else {
+        // Si el rol es 'dueño' o 'empleado', no hacemos nada y permitimos que vea la página.
+        console.log("Acceso permitido. Rol:", profile.role);
+    }
+};
+
+// --- INICIALIZACIÓN ---
+// Ejecutamos la función de seguridad al cargar el script
+checkUserRole();

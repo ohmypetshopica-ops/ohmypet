@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OhMyPet - Tienda para Mascotas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+
+    <header class="bg-white shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/public/index.html" class="text-2xl font-bold text-blue-600">OhMyPet</a>
+            
+            <div class="flex items-center space-x-4">
+                
+                <div id="guest-nav">
+                    <a href="/public/modules/login/client-login.html" class="text-gray-600 hover:text-blue-600">Login</a>
+                    <a href="/public/register.html" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Registro</a>
+                </div>
+
+                <div id="user-nav" class="hidden items-center space-x-4">
+                    <span id="user-name" class="text-gray-700 font-medium"></span>
+                    <button id="logout-button" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">Cerrar Sesión</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <div class="text-center">
+            <h1 class="text-4xl font-extrabold text-gray-800">El mejor cuidado para tu mejor amigo</h1>
+            <p class="mt-4 text-lg text-gray-600">Encuentra todo lo que necesitas para tu mascota en un solo lugar.</p>
+            </div>
+    </main>
+
+    <script type="module" src="/public/js/main.js"></script>
+
+</body>
+</html>
