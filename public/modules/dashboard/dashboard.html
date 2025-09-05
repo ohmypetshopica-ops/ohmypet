@@ -5,51 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - OhMyPet</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-white">
 
-    <nav class="bg-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex-shrink-0">
-                    <h1 class="text-2xl font-bold text-gray-800">OhMyPet Dashboard</h1>
-                </div>
-                <div>
-                    <button id="logout-button" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                        Cerrar Sesión
-                    </button>
-                </div>
-            </div>
+<div class="flex h-screen">
+    <aside class="w-20 hover:w-64 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out flex flex-col">
+        <div class="h-16 flex items-center justify-center">
+             <span class="text-2xl font-bold text-green-600">O P</span>
         </div>
-    </nav>
 
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div class="px-4 py-6 sm:px-0">
-            <div class="bg-white p-8 rounded-lg shadow">
-                <h2 class="text-2xl font-bold mb-4">¡Bienvenido!</h2>
-                <p class="text-gray-700">Has iniciado sesión correctamente.</p>
-                
-                <div id="user-info" class="mt-6 border-t pt-4">
-                    <p><strong>Cargando tu información...</strong></p>
-                </div>
+        <nav class="flex-1 px-4 py-4 space-y-2">
+            <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-green-100 group">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span class="ml-4 text-sm font-semibold hidden group-hover:block">Dashboard</span>
+            </a>
+            
+            <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-green-100 group">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span class="ml-4 text-sm font-semibold hidden group-hover:block">Inbox</span>
+            </a>
 
-                <div id="owner-content" class="hidden mt-6">
-                    <h3 class="text-xl font-semibold text-blue-600">Panel del Dueño</h3>
-                    <p>Aquí irá el contenido exclusivo para el dueño.</p>
-                </div>
+            <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-green-100 group">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                <span class="ml-4 text-sm font-semibold hidden group-hover:block">Tasks</span>
+            </a>
+        </nav>
 
-                <div id="employee-content" class="hidden mt-6">
-                    <h3 class="text-xl font-semibold text-green-600">Panel del Empleado</h3>
-                    <p>Aquí irá el contenido exclusivo para los empleados.</p>
-                </div>
+        <div class="px-4 py-4 border-t">
+            <a href="#" id="logout-button" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-green-100 group">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span class="ml-4 text-sm font-semibold hidden group-hover:block">Logout</span>
+            </a>
+        </div>
+    </aside>
 
-                <div id="client-content" class="hidden mt-6">
-                    <h3 class="text-xl font-semibold text-purple-600">Panel del Cliente</h3>
-                    <p>Aquí irá el contenido exclusivo para los clientes.</p>
-                </div>
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+            <div>
+                <h1 class="text-xl font-semibold text-black">Dashboard</h1>
+            </div>
+            <div>
+                <span class="font-semibold text-black">Hola, Dueño/Empleado</span>
+            </div>
+        </header>
+
+        <div class="flex-1 p-6 overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-6 text-black">Bienvenido al Panel de Administración</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-slate-50 p-6 rounded-lg border border-gray-200">Tarjeta 1</div>
+                <div class="bg-slate-50 p-6 rounded-lg border border-gray-200">Tarjeta 2</div>
+                <div class="bg-slate-50 p-6 rounded-lg border border-gray-200">Tarjeta 3</div>
+                <div class="bg-slate-50 p-6 rounded-lg border border-gray-200 col-span-1 lg:col-span-2">Tarjeta Ancha</div>
+                <div class="bg-slate-50 p-6 rounded-lg border border-gray-200">Tarjeta 4</div>
             </div>
         </div>
     </main>
 
-    <script type="module" src="../../core/auth.js"></script> <script type="module" src="dashboard.js"></script>   </body>
+</div>
+
+<script type="module" src="../../core/auth.js"></script>
+<script type="module" src="dashboard.js"></script>
+
+</body>
 </html>

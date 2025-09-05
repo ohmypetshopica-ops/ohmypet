@@ -1,39 +1,55 @@
-// Importamos el cliente de Supabase que creamos en login.api.js
+// public/modules/login/login.js
+
 import { supabase } from './login.api.js';
 
 // --- ELEMENTOS DEL DOM ---
-// Obtenemos el formulario y el contenedor del mensaje de error
 const loginForm = document.querySelector('#login-form');
 const errorMessage = document.querySelector('#error-message');
 
 // --- EVENT LISTENER ---
-// Añadimos un 'escuchador' al formulario para cuando el usuario intente enviarlo
 loginForm.addEventListener('submit', async (event) => {
-    // Prevenimos el comportamiento por defecto del formulario (que es recargar la página)
     event.preventDefault();
-
-    // Ocultamos cualquier mensaje de error previo
     errorMessage.classList.add('hidden');
 
-    // Obtenemos los valores de los campos de email y contraseña
     const email = loginForm.email.value;
     const password = loginForm.password.value;
 
-    // --- AUTENTICACIÓN CON SUPABASE ---
-    // Usamos el método signInWithPassword de Supabase para intentar iniciar sesión
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // 1. Intenta iniciar sesión
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
     });
 
-    // --- MANEJO DE LA RESPUESTA ---
-    if (error) {
-        // Si Supabase devuelve un error, lo mostramos
-        console.error('Error al iniciar sesión:', error.message);
-        errorMessage.classList.remove('hidden'); // Mostramos el div de error
+    if (loginError) {
+        // Si las credenciales son incorrectas, muestra error y detente
+        console.error('Error al iniciar sesión:', loginError.message);
+        errorMessage.classList.remove('hidden');
+        return;
+    }
+
+    // 2. Si el login es exitoso, busca el perfil para obtener el rol
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', loginData.user.id)
+        .single();
+
+    if (profileError) {
+        console.error('Error al obtener el perfil:', profileError.message);
+        errorMessage.classList.remove('hidden');
+        // Por seguridad, cerramos la sesión si no se encuentra el perfil
+        await supabase.auth.signOut();
+        return;
+    }
+
+    // 3. Redirige según el rol
+    if (profile.role === 'dueño' || profile.role === 'empleado') {
+        // Si es admin o empleado, va al dashboard
+        window.location.href = '/public/modules/dashboard/dashboard.html';
     } else {
-        // Si el inicio de sesión es exitoso, redirigimos al dashboard
-        console.log('Inicio de sesión exitoso:', data.user);
-        window.location.href = '/public/modules/dashboard/dashboard.html'; // Redirige a la página principal
+        // Si es cualquier otro rol (ej. cliente), lo deslogueamos y lo mandamos al login de clientes
+        console.log("Intento de acceso de un cliente al panel de admin. Redirigiendo...");
+        await supabase.auth.signOut();
+        window.location.href = '/public/modules/login/client-login.html';
     }
 });
