@@ -1,6 +1,10 @@
 // public/modules/login/login.js
 
 import { supabase } from './login.api.js';
+import { redirectToDashboard } from '../../core/redirect.js';
+
+// --- REDIRECCIÓN INMEDIATA SI YA ESTÁ LOGUEADO ---
+document.addEventListener('DOMContentLoaded', redirectToDashboard);
 
 // --- ELEMENTOS DEL DOM ---
 const loginForm = document.querySelector('#login-form');
