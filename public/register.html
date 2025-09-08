@@ -38,8 +38,11 @@
     </div>
 
     <div class="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12 relative">
-        <a href="/public/modules/login/client-login.html" class="absolute top-8 right-8 bg-white border border-green-600 text-green-600 hover:bg-green-50 font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
-            Iniciar Sesión
+        <a href="/public/index.html" class="absolute top-8 left-8 text-green-600 hover:text-green-800 font-semibold text-sm transition-colors duration-200 flex items-center">
+            <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Volver al inicio
         </a>
         <div class="w-full max-w-md">
             <div class="mb-10 text-center lg:text-left">
@@ -88,6 +91,12 @@
                     Registrarme
                 </button>
             </form>
+            <div class="text-center text-sm mt-4">
+                <p class="font-semibold text-gray-600">
+                    ¿Ya tienes una cuenta?
+                    <a href="/public/modules/login/client-login.html" class="text-green-600 hover:text-green-800 transition-colors duration-200">Inicia sesión aquí</a>
+                </p>
+            </div>
         </div>
     </div>
 
