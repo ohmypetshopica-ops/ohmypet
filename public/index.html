@@ -34,16 +34,16 @@
                     </div>
                 </div>
 
-                <div id="user-nav" class="hidden items-center space-x-4">
-                    <span id="user-name" class="text-gray-700 font-medium"></span>
-                    
-                    <button id="logout-button" title="Cerrar Sesión" class="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-100 transition-colors duration-200">
-                        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
+                <div id="user-nav" class="hidden items-center space-x-4 relative">
+                    <button id="user-profile-button" class="flex items-center justify-center h-9 w-9 bg-green-500 rounded-full text-white font-bold text-lg hover:bg-green-600 transition-colors duration-200 focus:outline-none">
+                        <span id="user-initial"></span>
                     </button>
+                    <div id="user-profile-menu" class="absolute right-0 top-12 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+                        <a href="/public/modules/profile/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-bold text-green-600">Mi Perfil</a>
+                        <button id="logout-button" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-100 transition-colors duration-200">Cerrar Sesión</button>
+                    </div>
                 </div>
-
+                
                 <a href="/public/modules/store/store.html" title="Tienda" class="text-gray-600 hover:text-green-600 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
                     <img src="/public/assets/icons/carrito.svg" alt="Ícono de carrito de compras" class="h-7 w-7 text-gray-600">
                 </a>

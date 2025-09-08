@@ -9,7 +9,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // --- ELEMENTOS DEL DOM ---
 const guestNav = document.querySelector('#guest-nav');
 const userNav = document.querySelector('#user-nav');
-const userNameSpan = document.querySelector('#user-name');
+const userProfileButton = document.querySelector('#user-profile-button');
+const userProfileMenu = document.querySelector('#user-profile-menu');
+const userInitialElement = document.querySelector('#user-initial');
 const logoutButton = document.querySelector('#logout-button');
 
 // --- FUNCIÓN PARA ACTUALIZAR LA UI ---
@@ -30,8 +32,10 @@ const setupUI = async () => {
             .eq('id', user.id)
             .single();
 
-        if (profile) {
-            userNameSpan.textContent = `Hola, ${profile.full_name}`;
+        if (profile && profile.full_name) {
+            // Obtenemos la primera letra del nombre
+            const firstInitial = profile.full_name.charAt(0).toUpperCase();
+            userInitialElement.textContent = firstInitial;
         }
 
     } else {
@@ -42,14 +46,26 @@ const setupUI = async () => {
     }
 };
 
-// --- MANEJO DEL LOGOUT ---
-logoutButton.addEventListener('click', async () => {
+// --- MANEJO DEL LOGOUT Y MENÚ DE PERFIL ---
+userProfileButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    userProfileMenu.classList.toggle('hidden');
+});
+
+logoutButton.addEventListener('click', async (event) => {
+    event.preventDefault();
     const { error } = await supabase.auth.signOut();
     if (error) {
         console.error('Error al cerrar sesión:', error);
     } else {
-        // Refrescamos la página para que la UI se actualice al estado de "invitado"
         window.location.reload();
+    }
+});
+
+// Cierra el menú de perfil si se hace clic fuera de él
+window.addEventListener('click', (event) => {
+    if (!userNav.contains(event.target)) {
+        userProfileMenu.classList.add('hidden');
     }
 });
 
@@ -57,20 +73,3 @@ logoutButton.addEventListener('click', async () => {
 // --- INICIALIZACIÓN ---
 // Llamamos a la función para configurar la UI cuando la página se carga
 document.addEventListener('DOMContentLoaded', setupUI);
-
-
-// --- INICIO: LÓGICA PARA EL SIDEBAR DESPLEGABLE ---
-const menuButton = document.querySelector('#menu-button');
-const sidebar = document.querySelector('#sidebar');
-const overlay = document.querySelector('#overlay');
-
-// Función para mostrar/ocultar el sidebar
-const toggleSidebar = () => {
-    sidebar.classList.toggle('-translate-x-full');
-    overlay.classList.toggle('hidden');
-};
-
-// Event listeners para abrir y cerrar el menú
-menuButton.addEventListener('click', toggleSidebar);
-overlay.addEventListener('click', toggleSidebar);
-// --- FIN: LÓGICA PARA EL SIDEBAR ---
