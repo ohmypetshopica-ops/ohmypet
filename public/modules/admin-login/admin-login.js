@@ -1,6 +1,6 @@
-// public/modules/login/login.js
+// public/modules/admin-login/admin-login.js
 
-import { supabase } from './login.api.js';
+import { supabase } from './admin-login.api.js';
 import { redirectToDashboard } from '../../core/redirect.js';
 
 // --- REDIRECCIÓN INMEDIATA SI YA ESTÁ LOGUEADO ---
@@ -54,6 +54,6 @@ loginForm.addEventListener('submit', async (event) => {
         // Si es cualquier otro rol (ej. cliente), lo deslogueamos y lo mandamos al login de clientes
         console.log("Intento de acceso de un cliente al panel de admin. Redirigiendo...");
         await supabase.auth.signOut();
-        window.location.href = '/public/modules/admin-login/admin-login.html';
+        window.location.href = '/public/modules/login/login.html';
     }
 });
