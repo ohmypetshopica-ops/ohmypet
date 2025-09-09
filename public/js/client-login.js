@@ -1,4 +1,4 @@
-import { supabase } from '../modules/login/login.api.js';
+import { supabase } from '../core/supabase.js';
 import { redirectToDashboard } from '../core/redirect.js';
 
 // --- REDIRECCIÓN INMEDIATA SI YA ESTÁ LOGUEADO ---
