@@ -79,6 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const whatsappUrl = `https://wa.me/${ownerPhoneNumber}?text=${encodedMessage}`;
 
             window.open(whatsappUrl, '_blank');
+            
+            // --- ¡NUEVO! Redirigir a la página de inicio con un parámetro ---
+            window.location.href = '/public/index.html?from=schedule';
         });
     }
 });

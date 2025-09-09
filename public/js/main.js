@@ -7,6 +7,7 @@ const userProfileButton = document.querySelector('#user-profile-button');
 const userProfileMenu = document.querySelector('#user-profile-menu');
 const userInitialElement = document.querySelector('#user-initial');
 const logoutButton = document.querySelector('#logout-button');
+const notificationBanner = document.querySelector('#notification-banner');
 
 // --- FUNCIÓN PARA ACTUALIZAR LA UI ---
 const setupUI = async () => {
@@ -64,6 +65,36 @@ window.addEventListener('click', (event) => {
 });
 
 
+// --- ¡NUEVO! LÓGICA PARA LA NOTIFICACIÓN ---
+
+// Función que muestra la notificación
+const showNotification = () => {
+    if (!notificationBanner) return;
+
+    // Mostramos el banner con un efecto de deslizamiento
+    notificationBanner.classList.remove('hidden', 'translate-x-full');
+    notificationBanner.classList.add('translate-x-0');
+
+    // Lo ocultamos después de 5 segundos
+    setTimeout(() => {
+        notificationBanner.classList.remove('translate-x-0');
+        notificationBanner.classList.add('translate-x-full');
+    }, 5000);
+};
+
+// Función que revisa la URL para ver si debe mostrar la notificación
+const checkForNotification = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('from') === 'schedule') {
+        showNotification();
+        // Limpiamos la URL para que la notificación no aparezca si el usuario recarga la página
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+};
+
+
 // --- INICIALIZACIÓN ---
-// Llamamos a la función para configurar la UI cuando la página se carga
-document.addEventListener('DOMContentLoaded', setupUI);
+document.addEventListener('DOMContentLoaded', () => {
+    setupUI();
+    checkForNotification(); // Revisamos si hay que mostrar la notificación
+});
