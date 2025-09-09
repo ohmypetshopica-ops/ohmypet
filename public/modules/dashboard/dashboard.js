@@ -1,71 +1,69 @@
-// Lógica principal para la página del dashboard
+// public/modules/dashboard/dashboard.js
 
-// Importamos el cliente de supabase desde la misma fuente que auth.js
 import { supabase } from '../../core/supabase.js';
+import { getClientCount, getPetCount, getProducts, getServices, getAppointments } from './dashboard.api.js';
+import { createProductRow, createServiceRow, createAppointmentRow } from './dashboard.utils.js';
 
 // --- ELEMENTOS DEL DOM ---
-const userInfoDiv = document.querySelector('#user-info');
-const ownerContent = document.querySelector('#owner-content');
-const employeeContent = document.querySelector('#employee-content');
-const clientContent = document.querySelector('#client-content');
+const clientCountElement = document.querySelector('#client-count');
+const petCountElement = document.querySelector('#pet-count');
+const productsTableBody = document.querySelector('#products-table-body');
+const servicesTableBody = document.querySelector('#services-table-body');
+const appointmentsTableBody = document.querySelector('#appointments-table-body');
 const logoutButton = document.querySelector('#logout-button');
 
-// --- FUNCIÓN PARA OBTENER DATOS DEL USUARIO ---
-const loadUserProfile = async () => {
-    // 1. Obtenemos el usuario autenticado
-    const { data: { user } } = await supabase.auth.getUser();
+// --- FUNCIÓN PARA CARGAR Y MOSTRAR DATOS ---
+const loadDashboardData = async () => {
+    // Cargar y mostrar conteo de clientes y mascotas
+    const clientCount = await getClientCount();
+    const petCount = await getPetCount();
+    clientCountElement.textContent = clientCount;
+    petCountElement.textContent = petCount;
 
-    if (user) {
-        // 2. Si hay un usuario, buscamos su perfil en nuestra tabla "profiles"
-        const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('full_name, role') // Pedimos solo el nombre completo y el rol
-            .eq('id', user.id)         // Donde el ID coincida
-            .single();                 // Esperamos solo un resultado
+    // Cargar y mostrar productos
+    const products = await getProducts();
+    if (products.length > 0) {
+        products.forEach(product => {
+            productsTableBody.innerHTML += createProductRow(product);
+        });
+    } else {
+        productsTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">No hay productos para mostrar.</td></tr>`;
+    }
 
-        if (error) {
-            console.error('Error al obtener el perfil:', error);
-            userInfoDiv.innerHTML = `<p class="text-red-500">No se pudo cargar el perfil.</p>`;
-            return;
-        }
+    // Cargar y mostrar servicios
+    const services = await getServices();
+    if (services.length > 0) {
+        services.forEach(service => {
+            servicesTableBody.innerHTML += createServiceRow(service);
+        });
+    } else {
+        servicesTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">No hay servicios para mostrar.</td></tr>`;
+    }
 
-        if (profile) {
-            // 3. Mostramos la información básica del perfil
-            userInfoDiv.innerHTML = `
-                <p><strong>Email:</strong> ${user.email}</p>
-                <p><strong>Nombre:</strong> ${profile.full_name || 'No especificado'}</p>
-                <p><strong>Rol:</strong> <span class="font-bold capitalize">${profile.role}</span></p>
-            `;
-
-            // 4. Mostramos el contenido según el rol del usuario
-            switch (profile.role) {
-                case 'dueño':
-                    ownerContent.classList.remove('hidden');
-                    break;
-                case 'empleado':
-                    employeeContent.classList.remove('hidden');
-                    break;
-                case 'cliente':
-                    clientContent.classList.remove('hidden');
-                    break;
-            }
-        }
+    // Cargar y mostrar citas
+    const appointments = await getAppointments();
+    if (appointments.length > 0) {
+        appointments.forEach(appointment => {
+            appointmentsTableBody.innerHTML += createAppointmentRow(appointment);
+        });
+    } else {
+        appointmentsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">No hay citas para mostrar.</td></tr>`;
     }
 };
 
 // --- MANEJO DEL LOGOUT ---
 logoutButton.addEventListener('click', async (event) => {
     event.preventDefault();
-    const { error } = await supabase.auth.signOut(); // Cerramos la sesión en Supabase
+    const { error } = await supabase.auth.signOut();
 
     if (error) {
         console.error('Error al cerrar sesión:', error);
     } else {
-        // Si el logout es exitoso, limpiamos la sesión y redirigimos al login
         window.location.href = '/public/modules/login/login.html';
     }
 });
 
 // --- INICIALIZACIÓN ---
-// Llamamos a la función para cargar los datos del perfil cuando la página se carga
-loadUserProfile();
+document.addEventListener('DOMContentLoaded', loadDashboardData);
+
+// El código que verifica el rol del usuario se mantiene en auth.js y se ejecuta automáticamente al cargar la página.

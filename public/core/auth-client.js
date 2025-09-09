@@ -7,7 +7,8 @@ const checkUserSession = async () => {
 
     if (!user) {
         // Si no hay usuario logueado, redirige al login de clientes
-        window.location.href = '/public/modules/login/client-login.html';
+        // CORRECCIÓN: Apuntamos al archivo correcto "login.html"
+        window.location.href = '/public/modules/login/login.html';
     }
 };
 
