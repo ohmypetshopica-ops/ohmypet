@@ -19,14 +19,18 @@ addPetForm.addEventListener('submit', async (event) => {
     // Recolección de datos del formulario
     const formData = new FormData(addPetForm);
     const newPet = {
-        user_id: user.id,
+        // CORRECCIÓN: Usamos 'owner_id' en lugar de 'user_id'
+        owner_id: user.id, 
         name: formData.get('name'),
+        // CORRECCIÓN: Agregamos un valor por defecto para 'species'
+        species: 'Perro', 
         breed: formData.get('breed'),
         size: formData.get('size'),
         weight: formData.get('weight') ? parseFloat(formData.get('weight')) : null,
         sex: formData.get('sex'),
         age: formData.get('age') ? parseInt(formData.get('age')) : null,
-        observations: formData.get('observations')
+        // CORRECCIÓN: Ahora esta columna existe en la base de datos
+        observations: formData.get('observations') 
     };
 
     // Inserción en la base de datos

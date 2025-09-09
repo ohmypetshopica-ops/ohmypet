@@ -50,6 +50,9 @@ const loadUserProfile = async () => {
                     petsContainer.innerHTML = ''; // Limpiamos el marcador de posición
                     profile.pets.forEach(pet => {
                         const petCard = petCardTemplate.content.cloneNode(true);
+                        // Añadimos el link a la nueva página de detalles con el ID de la mascota
+                        const petLink = petCard.querySelector('.pet-link');
+                        petLink.href = `/public/modules/profile/pet-details.html?id=${pet.id}`;
                         petCard.querySelector('[data-pet-name]').textContent = pet.name;
                         petCard.querySelector('[data-pet-breed]').textContent = pet.breed;
                         petsContainer.appendChild(petCard);

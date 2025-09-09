@@ -57,22 +57,24 @@
                         </div>
 
                         <template id="pet-card-template">
-                            <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg shadow-sm">
-                                <div class="flex items-center">
-                                    <span class="p-2 rounded-full bg-green-100 text-green-600 mr-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.004 7.683c-.023.003-.046.007-.069.01M12 4v4m-4 4l-1.5 1.5M15 15l-1.5 1.5M21 12a9 9 0 11-18 0 9 9 0 0118 0zM10.5 7.5l-4 4M13.5 10.5l4 4" />
-                                        </svg>
-                                    </span>
-                                    <div>
-                                        <h4 class="text-sm font-medium text-gray-800" data-pet-name></h4>
-                                        <p class="text-xs text-gray-600">Raza: <span data-pet-breed></span></p>
+                            <a href="#" class="pet-link block">
+                                <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg shadow-sm hover:bg-gray-100 transition-colors duration-200">
+                                    <div class="flex items-center">
+                                        <span class="p-2 rounded-full bg-green-100 text-green-600 mr-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.004 7.683c-.023.003-.046.007-.069.01M12 4v4m-4 4l-1.5 1.5M15 15l-1.5 1.5M21 12a9 9 0 11-18 0 9 9 0 0118 0zM10.5 7.5l-4 4M13.5 10.5l4 4" />
+                                            </svg>
+                                        </span>
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-800" data-pet-name></h4>
+                                            <p class="text-xs text-gray-600">Raza: <span data-pet-breed></span></p>
+                                        </div>
                                     </div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
                                 </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </div>
+                            </a>
                         </template>
 
                         <div class="space-y-3 pt-4 border-t border-gray-100">
