@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendar Cita - Mister Jugo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-orange-50 text-gray-900 font-sans h-screen flex items-center justify-center">
+
+  <!-- Contenedor principal -->
+  <div class="w-full h-full md:h-auto md:max-w-md bg-white md:rounded-2xl shadow-xl flex flex-col">
+
+    <!-- Header estilo Mister Jugo -->
+    <header class="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-5 text-center shadow-md">
+      <h1 class="text-2xl font-extrabold">📅 Agendar Cita</h1>
+      <p class="text-sm opacity-90">Tipo aplicación móvil</p>
+    </header>
+
+    <!-- Contenido -->
+    <main class="flex-1 p-6 overflow-y-auto">
+      
+      <!-- Paso 1 -->
+      <div class="step active" id="step-1">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">🐶 Selecciona tu mascota</h2>
+        <div id="pet-options" class="flex flex-wrap gap-3 justify-center"></div>
+        <button class="next-btn w-full bg-orange-500 text-white py-3 rounded-full mt-6 font-bold hover:bg-orange-600 transition">
+          Siguiente ➡️
+        </button>
+      </div>
+
+      <!-- Paso 2 -->
+      <div class="step hidden" id="step-2">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">📆 Elige la fecha</h2>
+        <input type="date" id="appointment-date" class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-orange-500">
+        <div class="flex justify-between mt-6">
+          <button class="prev-btn bg-gray-200 px-5 py-2 rounded-full font-medium">⬅️ Atrás</button>
+          <button class="next-btn bg-orange-500 text-white px-5 py-2 rounded-full font-bold hover:bg-orange-600">Siguiente ➡️</button>
+        </div>
+      </div>
+
+      <!-- Paso 3 -->
+      <div class="step hidden" id="step-3">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">⏰ Elige la hora</h2>
+        <div id="time-options" class="flex flex-wrap gap-3 justify-center"></div>
+        <div class="flex justify-between mt-6">
+          <button class="prev-btn bg-gray-200 px-5 py-2 rounded-full font-medium">⬅️ Atrás</button>
+          <button class="next-btn bg-orange-500 text-white px-5 py-2 rounded-full font-bold hover:bg-orange-600">Siguiente ➡️</button>
+        </div>
+      </div>
+
+      <!-- Paso 4 -->
+      <div class="step hidden" id="step-4">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">📝 Notas adicionales</h2>
+        <textarea id="extra-notes" placeholder="Escribe alguna nota..." 
+          class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-orange-500"></textarea>
+        <div class="flex justify-between mt-6">
+          <button class="prev-btn bg-gray-200 px-5 py-2 rounded-full font-medium">⬅️ Atrás</button>
+          <button id="confirm-btn" class="bg-green-500 text-white px-5 py-2 rounded-full font-bold hover:bg-green-600">✅ Confirmar</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 text-center py-3 text-sm text-gray-600">
+      © 2025 Mister Jugo 🍊
+    </footer>
+  </div>
+
+  <script src="schedule-app.js"></script>
+</body>
+</html>
