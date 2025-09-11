@@ -13,6 +13,7 @@ const createProductCard = (product) => {
     return `
         <div class="bg-white rounded-lg shadow-md overflow-hidden transform hover:-translate-y-2 transition-transform duration-300">
             <img class="w-full h-48 object-cover" src="${product.image_url || 'https://via.placeholder.com/300x200'}" alt="Imagen de ${product.name}">
+            
             <div class="p-4">
                 <h3 class="text-lg font-bold text-gray-800 truncate">${product.name}</h3>
                 <p class="text-sm text-gray-600 mt-1 h-10">${product.description || 'Descripción no disponible.'}</p>
@@ -62,4 +63,3 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     setupEventListeners();
 });
-
