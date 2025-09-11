@@ -3,14 +3,10 @@
 import { supabase } from '../../core/supabase.js';
 
 /**
- * Obtiene el conteo total de clientes de la tabla 'profiles'.
- * @returns {Promise<number>} El conteo de clientes.
+ * Obtiene el conteo total de clientes.
  */
 const getClientCount = async () => {
-    const { count, error } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
-
+    const { count, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
     if (error) {
         console.error('Error al obtener el conteo de clientes:', error);
         return 0;
@@ -19,14 +15,10 @@ const getClientCount = async () => {
 };
 
 /**
- * Obtiene el conteo total de mascotas de la tabla 'pets'.
- * @returns {Promise<number>} El conteo de mascotas.
+ * Obtiene el conteo total de mascotas.
  */
 const getPetCount = async () => {
-    const { count, error } = await supabase
-        .from('pets')
-        .select('*', { count: 'exact', head: true });
-
+    const { count, error } = await supabase.from('pets').select('*', { count: 'exact', head: true });
     if (error) {
         console.error('Error al obtener el conteo de mascotas:', error);
         return 0;
@@ -35,14 +27,10 @@ const getPetCount = async () => {
 };
 
 /**
- * Obtiene todos los productos de la tabla 'products'.
- * @returns {Promise<Array<Object>>} Lista de productos.
+ * Obtiene todos los productos.
  */
 const getProducts = async () => {
-    const { data, error } = await supabase
-        .from('products')
-        .select('*');
-
+    const { data, error } = await supabase.from('products').select('*');
     if (error) {
         console.error('Error al obtener productos:', error);
         return [];
@@ -51,14 +39,10 @@ const getProducts = async () => {
 };
 
 /**
- * Obtiene todos los servicios de la tabla 'services'.
- * @returns {Promise<Array<Object>>} Lista de servicios.
+ * Obtiene todos los servicios.
  */
 const getServices = async () => {
-    const { data, error } = await supabase
-        .from('services')
-        .select('*');
-
+    const { data, error } = await supabase.from('services').select('*');
     if (error) {
         console.error('Error al obtener servicios:', error);
         return [];
@@ -67,20 +51,12 @@ const getServices = async () => {
 };
 
 /**
- * Obtiene todas las citas, incluyendo datos relacionados de mascotas y perfiles.
- * @returns {Promise<Array<Object>>} Lista de citas.
+ * Obtiene todas las citas con datos relacionados.
  */
 const getAppointments = async () => {
-    // --- CORRECCIÓN APLICADA ---
-    // Se eliminó la conexión a 'services' y el '.order()' que causaban el error.
     const { data, error } = await supabase
         .from('appointments')
-        .select(`
-            *,
-            pets ( name ),
-            profiles ( full_name )
-        `);
-
+        .select(`*, pets ( name ), profiles ( full_name )`);
     if (error) {
         console.error('Error al obtener citas:', error);
         return [];
@@ -88,4 +64,22 @@ const getAppointments = async () => {
     return data;
 };
 
-export { getClientCount, getPetCount, getProducts, getServices, getAppointments };
+/**
+ * Inserta un nuevo producto en la base de datos.
+ * @param {Object} productData - Los datos del nuevo producto.
+ * @returns {Promise<Object>} El resultado de la inserción.
+ */
+const addProduct = async (productData) => {
+    const { data, error } = await supabase
+        .from('products')
+        .insert([productData])
+        .select(); // .select() devuelve el registro insertado
+
+    if (error) {
+        console.error('Error al agregar el producto:', error);
+        return { success: false, error };
+    }
+    return { success: true, data };
+};
+
+export { getClientCount, getPetCount, getProducts, getServices, getAppointments, addProduct };

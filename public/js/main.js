@@ -1,4 +1,5 @@
 import { supabase } from '../core/supabase.js';
+import { updateCartBadge } from './cart.js'; // CORRECCIÓN: Se importa la función del carrito.
 
 // --- ELEMENTOS DEL DOM ---
 const guestNav = document.querySelector('#guest-nav');
@@ -42,32 +43,36 @@ const setupUI = async () => {
 };
 
 // --- MANEJO DEL LOGOUT Y MENÚ DE PERFIL ---
-userProfileButton.addEventListener('click', (event) => {
-    event.stopPropagation();
-    userProfileMenu.classList.toggle('hidden');
-});
+// CORRECCIÓN: Se añaden comprobaciones para evitar errores.
+if (userProfileButton) {
+    userProfileButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        userProfileMenu.classList.toggle('hidden');
+    });
+}
 
-logoutButton.addEventListener('click', async (event) => {
-    event.preventDefault();
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-        console.error('Error al cerrar sesión:', error);
-    } else {
-        window.location.reload();
-    }
-});
+if (logoutButton) {
+    logoutButton.addEventListener('click', async (event) => {
+        event.preventDefault();
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Error al cerrar sesión:', error);
+        } else {
+            window.location.reload();
+        }
+    });
+}
 
 // Cierra el menú de perfil si se hace clic fuera de él
 window.addEventListener('click', (event) => {
-    if (!userNav.contains(event.target)) {
+    // CORRECCIÓN: Se añade comprobación para evitar errores.
+    if (userNav && !userNav.contains(event.target) && userProfileMenu) {
         userProfileMenu.classList.add('hidden');
     }
 });
 
 
-// --- ¡NUEVO! LÓGICA PARA LA NOTIFICACIÓN ---
-
-// Función que muestra la notificación
+// --- LÓGICA PARA LA NOTIFICACIÓN ---
 const showNotification = () => {
     if (!notificationBanner) return;
 
@@ -82,7 +87,6 @@ const showNotification = () => {
     }, 5000);
 };
 
-// Función que revisa la URL para ver si debe mostrar la notificación
 const checkForNotification = () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('from') === 'schedule') {
@@ -97,4 +101,5 @@ const checkForNotification = () => {
 document.addEventListener('DOMContentLoaded', () => {
     setupUI();
     checkForNotification(); // Revisamos si hay que mostrar la notificación
+    updateCartBadge();      // CORRECCIÓN: Actualizamos la insignia del carrito al cargar cualquier página.
 });
