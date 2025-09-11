@@ -47,8 +47,8 @@
         <div class="w-full max-w-md">
             <div class="mb-10 text-center lg:text-left">
                 <h2 class="text-4xl font-bold text-gray-900 mb-2">OhMyPet</h2>
-                <h3 class="text-2xl font-semibold text-gray-800">¡Bienvenido de nuevo!</h3>
-                <p class="text-gray-600 mt-2 text-sm">
+                <h3 id="form-title" class="text-2xl font-semibold text-gray-800">¡Bienvenido de nuevo!</h3>
+                <p id="form-subtitle" class="text-gray-600 mt-2 text-sm">
                     Inicia sesión en tu cuenta para continuar.
                 </p>
             </div>
@@ -79,13 +79,37 @@
                            placeholder="Contraseña" required>
                 </div>
                 <div class="text-right mb-6 text-sm">
-                    <a href="#" class="font-semibold text-gray-600 hover:text-gray-800 transition-colors duration-200">¿Olvidaste tu contraseña? <span class="text-green-600">Haz clic aquí</span></a>
+                    <button type="button" id="forgot-password-link" class="font-semibold text-gray-600 hover:text-gray-800 transition-colors duration-200">¿Olvidaste tu contraseña? <span class="text-green-600">Haz clic aquí</span></button>
                 </div>
 
                 <button type="submit"
                         class="bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:shadow-outline w-full mb-4 transition-colors duration-200 transform hover:scale-105">
                     Iniciar Sesión
                 </button>
+            </form>
+
+            <form id="forgot-password-form" novalidate class="hidden">
+                <div id="reset-message" class="hidden mb-6 p-4 rounded-md font-medium"></div>
+
+                <div class="mb-6 relative">
+                    <label for="reset-email" class="sr-only">Correo Electrónico</label>
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <img src="/public/assets/icons/envelope-solid.svg" alt="Email Icon" class="h-5 w-5 text-gray-400">
+                    </div>
+                    <input type="email" id="reset-email" name="email"
+                           class="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-3 pl-10 pr-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200"
+                           placeholder="Ingresa tu correo" required>
+                </div>
+
+                <button type="submit"
+                        class="bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:shadow-outline w-full mb-4 transition-colors duration-200 transform hover:scale-105">
+                    Enviar Enlace de Recuperación
+                </button>
+                <div class="text-center text-sm">
+                    <button type="button" id="back-to-login-link" class="font-semibold text-gray-600 hover:text-gray-800 transition-colors duration-200">
+                        ¿Recordaste tu contraseña? <span class="text-green-600">Volver a Iniciar Sesión</span>
+                    </button>
+                </div>
             </form>
 
             <div class="text-center text-sm mt-4">
