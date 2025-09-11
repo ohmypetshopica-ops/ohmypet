@@ -67,19 +67,19 @@ const getServices = async () => {
 };
 
 /**
- * Obtiene todas las citas, incluyendo datos relacionados de servicios, mascotas y perfiles.
+ * Obtiene todas las citas, incluyendo datos relacionados de mascotas y perfiles.
  * @returns {Promise<Array<Object>>} Lista de citas.
  */
 const getAppointments = async () => {
+    // --- CORRECCIÓN APLICADA ---
+    // Se eliminó la conexión a 'services' y el '.order()' que causaban el error.
     const { data, error } = await supabase
         .from('appointments')
         .select(`
             *,
-            services ( name ),
             pets ( name ),
             profiles ( full_name )
-        `)
-        .order('appointment_date', { ascending: false });
+        `);
 
     if (error) {
         console.error('Error al obtener citas:', error);

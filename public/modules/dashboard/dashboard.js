@@ -12,40 +12,48 @@ const servicesTableBody = document.querySelector('#services-table-body');
 const appointmentsTableBody = document.querySelector('#appointments-table-body');
 const logoutButton = document.querySelector('#logout-button');
 
-// --- FUNCIÓN PARA CARGAR Y MOSTRAR DATOS ---
+// --- FUNCIÓN OPTIMIZADA PARA CARGAR Y MOSTRAR DATOS ---
 const loadDashboardData = async () => {
-    // Cargar y mostrar conteo de clientes y mascotas
-    const clientCount = await getClientCount();
-    const petCount = await getPetCount();
+    const [
+        clientCount,
+        petCount,
+        products,
+        services,
+        appointments
+    ] = await Promise.all([
+        getClientCount(),
+        getPetCount(),
+        getProducts(),
+        getServices(),
+        getAppointments()
+    ]);
+
+    // --- Rellenar Resumen ---
     clientCountElement.textContent = clientCount;
     petCountElement.textContent = petCount;
 
-    // Cargar y mostrar productos
-    const products = await getProducts();
-    if (products.length > 0) {
-        products.forEach(product => {
-            productsTableBody.innerHTML += createProductRow(product);
-        });
+    // --- Rellenar Tabla de Productos ---
+    if (products && products.length > 0) {
+        productsTableBody.innerHTML = products.map(createProductRow).join('');
     } else {
         productsTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">No hay productos para mostrar.</td></tr>`;
     }
 
-    // Cargar y mostrar servicios
-    const services = await getServices();
-    if (services.length > 0) {
-        services.forEach(service => {
-            servicesTableBody.innerHTML += createServiceRow(service);
-        });
+    // --- Rellenar Tabla de Servicios ---
+    if (services && services.length > 0) {
+        servicesTableBody.innerHTML = services.map(createServiceRow).join('');
     } else {
         servicesTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">No hay servicios para mostrar.</td></tr>`;
     }
 
-    // Cargar y mostrar citas
-    const appointments = await getAppointments();
-    if (appointments.length > 0) {
-        appointments.forEach(appointment => {
-            appointmentsTableBody.innerHTML += createAppointmentRow(appointment);
-        });
+    // --- Rellenar Tabla de Citas ---
+    if (appointments && appointments.length > 0) {
+        // --- CORRECCIÓN APLICADA AQUÍ ---
+        // Ordenamos las citas usando JavaScript por fecha, de la más nueva a la más antigua.
+        appointments.sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
+
+        const appointmentsHtml = appointments.map(createAppointmentRow).join('');
+        appointmentsTableBody.innerHTML = appointmentsHtml;
     } else {
         appointmentsTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">No hay citas para mostrar.</td></tr>`;
     }
@@ -55,15 +63,12 @@ const loadDashboardData = async () => {
 logoutButton.addEventListener('click', async (event) => {
     event.preventDefault();
     const { error } = await supabase.auth.signOut();
-
     if (error) {
         console.error('Error al cerrar sesión:', error);
     } else {
-        window.location.href = '/public/modules/login/login.html';
+        window.location.href = '/public/modules/admin-login/admin-login.html';
     }
 });
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', loadDashboardData);
-
-// El código que verifica el rol del usuario se mantiene en auth.js y se ejecuta automáticamente al cargar la página.

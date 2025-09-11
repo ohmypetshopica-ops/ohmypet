@@ -11,7 +11,7 @@ const createProductRow = (product) => {
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 h-10 w-10">
-                        <img class="h-10 w-10 rounded-full" src="${product.image_url || 'https://via.placeholder.com/40'}" alt="">
+                        <img class="h-10 w-10 rounded-full" src="${product.image_url || 'https://via.placeholder.com/40'}" alt="Imagen del producto">
                     </div>
                     <div class="ml-4">
                         <div class="text-sm font-medium text-gray-900">${product.name}</div>
@@ -65,7 +65,11 @@ const createServiceRow = (service) => {
  * @returns {string} El HTML de la fila de la tabla.
  */
 const createAppointmentRow = (appointment) => {
-    const serviceName = appointment.services?.name || 'Servicio no disponible';
+    // --- CORRECCIÓN CLAVE AQUÍ ---
+    // Leemos el nombre del servicio directamente de la columna 'service' del objeto appointment.
+    const serviceName = appointment.service || 'Servicio no especificado';
+    
+    // Las demás lecturas ya eran correctas, ya que sí se conectan con las tablas 'pets' y 'profiles'.
     const petName = appointment.pets?.name || 'Mascota no disponible';
     const ownerName = appointment.profiles?.full_name || 'Dueño no disponible';
 
