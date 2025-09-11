@@ -21,29 +21,6 @@ Este proyecto es una solución web para la gestión de servicios de estética y 
 
 ---
 
-## 📦 Cómo Iniciar el Proyecto
-
-1.  **Clona el repositorio:**
-    ```bash
-    git clone [URL_DEL_REPOSITORIO]
-    cd ohmypetshopica-ops/ohmypet/ohmypet-ef8011efaceda99faaaf56342ddc7bdbce6e9036/
-    ```
-
-2.  **Configura Supabase:**
-    * Crea un nuevo proyecto en Supabase.
-    * Crea las tablas necesarias: `profiles`, `pets`, `products`, `services`, y `appointments`.
-    * Asegúrate de configurar los permisos de lectura/escritura (RLS) apropiadamente.
-    * Copia tus claves `SUPABASE_URL` y `SUPABASE_ANON_KEY` y pégalas en el archivo `/public/core/supabase.js`.
-
-3.  **Ejecuta la Aplicación:**
-    * Dado que es un proyecto de solo front-end, no necesitas un servidor Node.js.
-    * Simplemente abre los archivos HTML en tu navegador. Por ejemplo:
-        * `index.html` para la página principal.
-        * `public/modules/login/login.html` para el inicio de sesión del cliente.
-        * `public/modules/admin-login/admin-login.html` para el inicio de sesión administrativo.
-
----
-
 ## 📄 Estructura de Archivos
 
 * `public/`: Contiene todos los archivos estáticos de la aplicación.
