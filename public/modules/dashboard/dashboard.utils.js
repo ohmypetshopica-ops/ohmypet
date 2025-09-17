@@ -1,16 +1,10 @@
 // public/modules/dashboard/dashboard.utils.js
 
-/**
- * Genera el HTML para un item de la lista de próximas citas.
- * @param {Object} appointment - La cita.
- * @returns {string} El HTML del item.
- */
 const createUpcomingAppointmentItem = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
     const ownerName = appointment.profiles?.full_name || 'N/A';
-    
-    // Formatear la fecha para que sea más legible
-    const date = new Date(appointment.appointment_date + 'T00:00:00-05:00'); // Asumir zona horaria local
+    const dateParts = appointment.appointment_date.split('-');
+    const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
     const formattedDate = date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
     return `
@@ -28,17 +22,9 @@ const createUpcomingAppointmentItem = (appointment) => {
 const createClientRow = (client) => {
     return `
         <tr>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">${client.full_name}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                    ${client.role}
-                </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <a href="#" class="text-green-600 hover:text-green-900">Ver Detalles</a>
-            </td>
+            <td class="px-6 py-4"><div class="text-sm font-medium text-gray-900">${client.full_name}</div></td>
+            <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${client.role}</span></td>
+            <td class="px-6 py-4 text-right text-sm font-medium"><a href="#" class="text-green-600 hover:text-green-900">Ver Detalles</a></td>
         </tr>
     `;
 };
@@ -46,28 +32,10 @@ const createClientRow = (client) => {
 const createProductRow = (product) => {
     return `
         <tr>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 h-10 w-10">
-                        <img class="h-10 w-10 rounded-full" src="${product.image_url || 'https://via.placeholder.com/40'}" alt="Imagen del producto">
-                    </div>
-                    <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-900">${product.name}</div>
-                        <div class="text-sm text-gray-500">${product.description || 'Sin descripción'}</div>
-                    </div>
-                </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">$${product.price}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                    ${product.stock > 0 ? 'En Stock' : 'Sin Stock'}
-                </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <a href="#" class="text-green-600 hover:text-green-900">Editar</a>
-            </td>
+            <td class="px-6 py-4"><div class="flex items-center"><div class="flex-shrink-0 h-10 w-10"><img class="h-10 w-10 rounded-full" src="${product.image_url || 'https://via.placeholder.com/40'}" alt="Imagen del producto"></div><div class="ml-4"><div class="text-sm font-medium text-gray-900">${product.name}</div><div class="text-sm text-gray-500">${product.description || 'Sin descripción'}</div></div></div></td>
+            <td class="px-6 py-4"><div class="text-sm text-gray-900">$${product.price}</div></td>
+            <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${product.stock > 0 ? 'En Stock' : 'Sin Stock'}</span></td>
+            <td class="px-6 py-4 text-right text-sm font-medium"><a href="#" class="text-green-600 hover:text-green-900">Editar</a></td>
         </tr>
     `;
 };
@@ -75,47 +43,50 @@ const createProductRow = (product) => {
 const createServiceRow = (service) => {
     return `
         <tr>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">${service.name}</div>
-                <div class="text-sm text-gray-500">${service.description || 'Sin descripción'}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">$${service.price}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                ${service.duration_minutes} min
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <a href="#" class="text-green-600 hover:text-green-900">Editar</a>
-            </td>
+            <td class="px-6 py-4"><div class="text-sm font-medium text-gray-900">${service.name}</div><div class="text-sm text-gray-500">${service.description || 'Sin descripción'}</div></td>
+            <td class="px-6 py-4"><div class="text-sm text-gray-900">$${service.price}</div></td>
+            <td class="px-6 py-4 text-sm text-gray-500">${service.duration_minutes} min</td>
+            <td class="px-6 py-4 text-right text-sm font-medium"><a href="#" class="text-green-600 hover:text-green-900">Editar</a></td>
         </tr>
     `;
 };
 
 const createAppointmentRow = (appointment) => {
-    const serviceName = appointment.service || 'Servicio no especificado';
-    const petName = appointment.pets?.name || 'Mascota no disponible';
-    const ownerName = appointment.profiles?.full_name || 'Dueño no disponible';
+    const petName = appointment.pets?.name || 'N/A';
+    const ownerName = appointment.profiles?.full_name || 'N/A';
+    const status = (appointment.status || 'pendiente').toLowerCase().trim();
+    const statusStyles = {
+        pendiente: { text: 'Pendiente', bg: 'bg-yellow-100', text_color: 'text-yellow-800' },
+        confirmada: { text: 'Confirmada', bg: 'bg-blue-100', text_color: 'text-blue-800' },
+        completada: { text: 'Completada', bg: 'bg-green-100', text_color: 'text-green-800' },
+        rechazada: { text: 'Rechazada', bg: 'bg-red-100', text_color: 'text-red-800' },
+    };
+    const currentStyle = statusStyles[status] || statusStyles.pendiente;
+    let actionButtons = '';
+    if (status === 'pendiente') {
+        actionButtons = `<button data-action="confirmar" class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">Confirmar</button> <button data-action="rechazar" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Rechazar</button>`;
+    } else if (status === 'confirmada') {
+        actionButtons = `<button data-action="completar" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">Completar</button>`;
+    }
 
     return `
-        <tr>
+        <tr data-appointment-id="${appointment.id}">
             <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">${appointment.appointment_date}</div>
+                <div class="text-sm font-medium text-gray-900">${appointment.appointment_date}</div>
+                <div class="text-sm text-gray-500">${appointment.appointment_time}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">${appointment.appointment_time}</div>
+            <td class="px-6 py-4">
+                <div class="text-sm font-medium text-gray-900">${ownerName}</div>
+                <div class="text-sm text-gray-500">${petName}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">${serviceName}</div>
+            <td class="px-6 py-4 text-sm text-gray-700">${appointment.service}</td>
+            <td class="px-6 py-4">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${currentStyle.bg} ${currentStyle.text_color}">${currentStyle.text}</span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                ${petName}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                ${ownerName}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <a href="#" class="text-green-600 hover:text-green-900">Ver detalles</a>
+            <td class="px-6 py-4 text-right text-sm font-medium">
+                <div class="flex flex-col sm:flex-row gap-1 justify-end">
+                    ${actionButtons}
+                </div>
             </td>
         </tr>
     `;

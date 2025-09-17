@@ -9,7 +9,7 @@ const deletePetButton = document.querySelector('#delete-pet-button');
 const serviceHistoryContainer = document.querySelector('#service-history-container');
 const photoGalleryContainer = document.querySelector('#photo-gallery-container');
 const photoUploadInput = document.querySelector('#photo-upload');
-
+const petMainPhoto = document.querySelector('#pet-main-photo'); // <-- Nuevo selector
 
 // --- ID DE LA MASCOTA DESDE LA URL ---
 const urlParams = new URLSearchParams(window.location.search);
@@ -125,6 +125,14 @@ const loadPetDetails = async () => {
 
     // Rellenar el formulario con los datos de la mascota
     petNameTitle.textContent = pet.name;
+    // <-- INICIO DE LA MODIFICACIÓN -->
+    if (pet.image_url) {
+        petMainPhoto.src = pet.image_url;
+    } else {
+        // Si no hay foto, puedes poner una imagen por defecto
+        petMainPhoto.src = 'https://via.placeholder.com/150'; 
+    }
+    // <-- FIN DE LA MODIFICACIÓN -->
     editPetForm.name.value = pet.name;
     editPetForm.breed.value = pet.breed;
     editPetForm.size.value = pet.size;
@@ -166,19 +174,42 @@ editPetForm.addEventListener('submit', async (event) => {
     }
 });
 
-// --- MANEJO DE LA ELIMINACIÓN ---
+// --- MANEJO DE LA ELIMINACIÓN (CON MEJORES ALERTAS DE ERROR) ---
 deletePetButton.addEventListener('click', async () => {
-    if (confirm('¿Estás seguro de que quieres eliminar esta mascota? Esta acción no se puede deshacer.')) {
-        const { error } = await supabase
-            .from('pets')
-            .delete()
-            .eq('id', petId);
+    if (confirm('¿Estás seguro? Esta acción no se puede deshacer y borrará también su historial de citas y su galería de fotos.')) {
+        
+        // Paso 1: Eliminar las citas asociadas
+        const { error: appointmentsError } = await supabase.from('appointments').delete().eq('pet_id', petId);
+        if (appointmentsError) {
+            console.error('Error eliminando citas:', appointmentsError);
+            alert('Error (Paso 1/3): No se pudieron eliminar las citas. Revisa las políticas de seguridad (RLS) de la tabla "appointments".');
+            return;
+        }
 
-        if (error) {
-            console.error('Error al eliminar la mascota:', error);
-            alert('Hubo un error al eliminar la mascota.');
+        // Paso 2: Eliminar las fotos de la galería
+        const { data: files, error: listError } = await supabase.storage.from('pet_galleries').list(petId);
+        if (listError) {
+            console.error('Error listando fotos:', listError);
+            alert('Error (Paso 2/3): No se pudieron listar las fotos para eliminar. Revisa las políticas del Storage.');
+            return;
+        }
+        if (files && files.length > 0) {
+            const filePaths = files.map(file => `${petId}/${file.name}`);
+            const { error: removeError } = await supabase.storage.from('pet_galleries').remove(filePaths);
+            if (removeError) {
+                console.error('Error eliminando fotos:', removeError);
+                alert('Error (Paso 2/3): No se pudieron eliminar las fotos. Revisa las políticas del Storage.');
+                return;
+            }
+        }
+        
+        // Paso 3: Eliminar la mascota
+        const { error: petError } = await supabase.from('pets').delete().eq('id', petId);
+        if (petError) {
+            console.error('Error eliminando la mascota:', petError);
+            alert('Error (Paso 3/3): No se pudo eliminar la mascota. Revisa las políticas de seguridad (RLS) de la tabla "pets".');
         } else {
-            alert('Mascota eliminada con éxito.');
+            alert('¡Mascota y todos sus datos han sido eliminados con éxito!');
             window.location.href = '/public/modules/profile/profile.html';
         }
     }

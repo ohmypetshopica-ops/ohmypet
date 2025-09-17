@@ -8,47 +8,54 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         :root { font-family: 'Inter', sans-serif; }
+        .step { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
+        .step.hidden { display: none; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-purple-100 text-gray-900 antialiased flex flex-col items-center justify-center min-h-screen p-4">
 
     <main class="w-full max-w-xl mx-auto bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 animate-fade-in">
-        <div class="mb-8 flex items-center justify-between">
+        <div class="mb-8">
             <a href="/public/modules/profile/profile.html" class="flex items-center text-sm font-semibold text-green-600 hover:text-green-800 transition-colors duration-200">
                 <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 Volver a mi perfil
             </a>
-            <span class="text-xs text-gray-500">OhMyPet</span>
         </div>
 
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-extrabold text-gray-800 leading-tight">¡Registra a tu nuevo amigo!</h1>
-            <p class="mt-3 text-lg text-gray-600">Completa los detalles de tu mascota y únete a nuestra comunidad.</p>
+            <h1 id="form-title" class="text-3xl font-extrabold text-gray-800 leading-tight">Cuéntanos sobre tu mascota</h1>
+            <p id="form-subtitle" class="mt-2 text-lg text-gray-600">Comencemos con lo básico.</p>
+        </div>
+
+        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8">
+            <div id="progress-bar" class="bg-green-500 h-2.5 rounded-full" style="width: 25%; transition: width 0.3s ease-in-out;"></div>
         </div>
 
         <form id="add-pet-form" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div id="step-1" class="step space-y-6">
                 <div>
                     <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                    <input type="text" id="name" name="name" required 
-                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                           placeholder="Ej: Max">
+                    <input type="text" id="name" name="name" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ej: Max">
                 </div>
                 <div>
                     <label for="breed" class="block text-sm font-medium text-gray-700 mb-1">Raza</label>
-                    <input type="text" id="breed" name="breed" required 
-                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                           placeholder="Ej: Golden Retriever">
+                    <input type="text" id="breed" name="breed" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ej: Golden Retriever">
+                </div>
+                <div>
+                    <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Edad (años)</label>
+                    <input type="number" id="age" name="age" min="0" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ej: 3">
+                </div>
+                 <div class="flex justify-end pt-4">
+                    <button type="button" class="next-btn bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg">Siguiente</button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
+            <div id="step-2" class="step hidden space-y-6">
+                 <div>
                     <label for="size" class="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
-                    <select id="size" name="size" 
-                            class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 transition-all duration-200">
+                    <select id="size" name="size" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
                         <option value="Muy pequeño">Muy pequeño (~40 cm)</option>
                         <option value="Pequeño">Pequeño</option>
                         <option value="Mediano" selected>Mediano</option>
@@ -58,42 +65,45 @@
                 </div>
                 <div>
                     <label for="weight" class="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
-                    <input type="number" id="weight" name="weight" step="0.1" 
-                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                           placeholder="Ej: 15.5">
+                    <input type="number" id="weight" name="weight" step="0.1" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ej: 15.5">
                 </div>
                 <div>
-                    <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Edad (años)</label>
-                    <input type="number" id="age" name="age" min="0" 
-                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                           placeholder="Ej: 3">
+                    <label for="sex" class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
+                    <select id="sex" name="sex" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+                        <option value="Macho">Macho</option>
+                        <option value="Hembra">Hembra</option>
+                    </select>
+                </div>
+                 <div class="flex justify-between pt-4">
+                    <button type="button" class="prev-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg">Anterior</button>
+                    <button type="button" class="next-btn bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg">Siguiente</button>
                 </div>
             </div>
 
-            <div>
-                <label for="sex" class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
-                <select id="sex" name="sex" 
-                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 transition-all duration-200">
-                    <option value="Macho">Macho</option>
-                    <option value="Hembra">Hembra</option>
-                </select>
+            <div id="step-3" class="step hidden space-y-6">
+                <div>
+                    <label for="observations" class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                    <textarea id="observations" name="observations" rows="6" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="¿Algo especial sobre tu mascota? (alergias, miedos, gustos)"></textarea>
+                </div>
+                <div class="flex justify-between pt-4">
+                    <button type="button" class="prev-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg">Anterior</button>
+                    <button type="button" class="next-btn bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg">Siguiente</button>
+                </div>
             </div>
-            
-            <div>
-                <label for="observations" class="block text-sm font-medium text-gray-700 mb-1">Observaciones (alergias, miedos, gustos)</label>
-                <textarea id="observations" name="observations" rows="4" 
-                          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                          placeholder="Cuentanos algo especial sobre tu mascota..."></textarea>
-            </div>
-            
-            <div class="flex justify-end pt-4">
-                <button type="submit" 
-                        class="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200">
-                    <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
-                    </svg>
-                    Guardar Mascota
-                </button>
+
+            <div id="step-4" class="step hidden space-y-6">
+                 <div class="text-center">
+                    <label for="photo" class="block text-sm font-medium text-gray-700 mb-4">Sube una foto (opcional)</label>
+                    <img id="image-preview" src="https://via.placeholder.com/150" alt="Vista previa de la imagen" class="mx-auto h-40 w-40 rounded-full object-cover border-4 border-gray-200 mb-4">
+                    <input type="file" id="photo" name="photo" class="hidden" accept="image/*">
+                    <button type="button" onclick="document.getElementById('photo').click()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">
+                        Seleccionar Foto
+                    </button>
+                </div>
+                <div class="flex justify-between pt-4">
+                    <button type="button" class="prev-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg">Anterior</button>
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg">¡Guardar Mascota!</button>
+                </div>
             </div>
         </form>
     </main>
