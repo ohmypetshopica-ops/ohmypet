@@ -7,11 +7,18 @@ const petNameTitle = document.querySelector('#pet-name-title');
 const editPetForm = document.querySelector('#edit-pet-form');
 const deletePetButton = document.querySelector('#delete-pet-button');
 const petMainPhoto = document.querySelector('#pet-main-photo');
-const historyButton = document.querySelector('#history-button'); // <-- Nuevo selector
+const historyButton = document.querySelector('#history-button');
+const photoUploadInput = document.querySelector('#photo-upload');
+const sizeButtons = document.querySelectorAll('.size-btn');
+const hiddenSizeInput = document.querySelector('input#size');
+const sexButtons = document.querySelectorAll('.sex-btn');
+const hiddenSexInput = document.querySelector('input#sex');
 
 // --- ID DE LA MASCOTA DESDE LA URL ---
 const urlParams = new URLSearchParams(window.location.search);
 const petId = urlParams.get('id');
+let currentUser = null;
+let photoFile = null;
 
 // --- FUNCIÓN PARA CARGAR LOS DATOS DE LA MASCOTA ---
 const loadPetDetails = async () => {
@@ -25,6 +32,7 @@ const loadPetDetails = async () => {
         window.location.href = '/public/modules/login/login.html';
         return;
     }
+    currentUser = user;
 
     const { data: pet, error } = await supabase
         .from('pets')
@@ -34,75 +42,118 @@ const loadPetDetails = async () => {
         .single();
 
     if (error || !pet) {
-        console.error('Error al cargar la mascota o mascota no encontrada:', error);
         alert('Mascota no encontrada o no tienes permiso para verla.');
         window.location.href = '/public/modules/profile/profile.html';
         return;
     }
 
-    // Rellenar el formulario y la UI con los datos
+    // Rellenar formulario
     petNameTitle.textContent = pet.name;
-    if (pet.image_url) {
-        petMainPhoto.src = pet.image_url;
-    } else {
-        petMainPhoto.src = 'https://via.placeholder.com/150';
-    }
+    petMainPhoto.src = pet.image_url || 'https://via.placeholder.com/150';
     editPetForm.name.value = pet.name;
     editPetForm.breed.value = pet.breed;
-    editPetForm.size.value = pet.size;
-    editPetForm.weight.value = pet.weight || '';
-    editPetForm.sex.value = pet.sex;
     editPetForm.age.value = pet.age || '';
+    editPetForm.weight.value = pet.weight || '';
     editPetForm.observations.value = pet.observations || '';
 
-    // Configurar el enlace del botón de historial
+    // Seleccionar botones de sexo
+    hiddenSexInput.value = pet.sex;
+    sexButtons.forEach(button => {
+        button.classList.remove('selected-male', 'selected-female');
+        if (button.dataset.sex === pet.sex) {
+            button.classList.add(pet.sex === 'Macho' ? 'selected-male' : 'selected-female');
+        }
+    });
+
+    // Seleccionar botones de tamaño
+    hiddenSizeInput.value = pet.size;
+    sizeButtons.forEach(button => {
+        button.classList.remove('selected');
+        if (button.dataset.size === pet.size) {
+            button.classList.add('selected');
+        }
+    });
+
     historyButton.href = `/public/modules/profile/service-history.html?id=${petId}`;
 };
+
+// --- MANEJO DE EVENTOS DE BOTONES ---
+sizeButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        sizeButtons.forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
+        hiddenSizeInput.value = button.dataset.size;
+    });
+});
+
+sexButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        sexButtons.forEach(btn => btn.classList.remove('selected-male', 'selected-female'));
+        const selectedSex = button.dataset.sex;
+        button.classList.add(selectedSex === 'Macho' ? 'selected-male' : 'selected-female');
+        hiddenSexInput.value = selectedSex;
+    });
+});
+
+photoUploadInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        photoFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => { petMainPhoto.src = e.target.result; };
+        reader.readAsDataURL(file);
+    }
+});
 
 // --- MANEJO DEL FORMULARIO DE EDICIÓN ---
 editPetForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+
+    let imageUrl = petMainPhoto.src;
+    if (photoFile) {
+        const fileName = `${currentUser.id}/${petId}/${Date.now()}_${photoFile.name}`;
+        const { error: uploadError } = await supabase.storage.from('pet_galleries').upload(fileName, photoFile, {
+            upsert: true // Permite reemplazar la foto si se sube una nueva
+        });
+        if (uploadError) {
+            alert('Hubo un error al subir la nueva foto. Se mantendrá la anterior.');
+        } else {
+            const { publicUrl } = supabase.storage.from('pet_galleries').getPublicUrl(fileName).data;
+            imageUrl = publicUrl;
+        }
+    }
+
     const updatedPet = {
         name: editPetForm.name.value,
         breed: editPetForm.breed.value,
-        size: editPetForm.size.value,
+        size: hiddenSizeInput.value,
+        sex: hiddenSexInput.value,
         weight: editPetForm.weight.value ? parseFloat(editPetForm.weight.value) : null,
-        sex: editPetForm.sex.value,
         age: editPetForm.age.value ? parseInt(editPetForm.age.value) : null,
-        observations: editPetForm.observations.value
+        observations: editPetForm.observations.value,
+        image_url: imageUrl,
     };
 
-    const { error } = await supabase
-        .from('pets')
-        .update(updatedPet)
-        .eq('id', petId);
+    const { error } = await supabase.from('pets').update(updatedPet).eq('id', petId);
 
     if (error) {
-        console.error('Error al guardar cambios:', error);
         alert('Hubo un error al guardar los cambios.');
     } else {
         alert('¡Cambios guardados con éxito!');
         petNameTitle.textContent = updatedPet.name;
+        photoFile = null; // Resetear el archivo de foto
     }
 });
 
 // --- MANEJO DE LA ELIMINACIÓN ---
 deletePetButton.addEventListener('click', async () => {
-    if (confirm('¿Estás seguro? Esta acción no se puede deshacer y borrará también su historial de citas.')) {
-        
-        const { error: appointmentsError } = await supabase.from('appointments').delete().eq('pet_id', petId);
-        if (appointmentsError) {
-            console.error('Error eliminando citas:', appointmentsError);
-            alert('Error (Paso 1/2): No se pudieron eliminar las citas. Revisa las políticas de seguridad (RLS) de la tabla "appointments".');
-            return;
-        }
-
+    if (confirm('¿Estás seguro? Se borrará la mascota y su historial de citas.')) {
+        await supabase.from('appointments').delete().eq('pet_id', petId);
         const { error: petError } = await supabase.from('pets').delete().eq('id', petId);
         if (petError) {
-            console.error('Error eliminando la mascota:', petError);
-            alert('Error (Paso 2/2): No se pudo eliminar la mascota. Revisa las políticas de seguridad (RLS) de la tabla "pets".');
+            alert('Error al eliminar la mascota.');
         } else {
-            alert('¡Mascota y todos sus datos han sido eliminados con éxito!');
+            alert('Mascota eliminada con éxito.');
             window.location.href = '/public/modules/profile/profile.html';
         }
     }
