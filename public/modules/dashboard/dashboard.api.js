@@ -57,25 +57,13 @@ const getAppointments = async () => {
     return data || [];
 };
 
-/**
- * NUEVA FUNCIÓN: Obtiene citas basadas en filtros de estado y/o fecha.
- * @param {object} filters - Un objeto con los filtros a aplicar.
- * @returns {Promise<Array<Object>>} La lista de citas filtradas.
- */
 const filterAppointments = async (filters) => {
     let query = supabase
         .from('appointments')
         .select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name )`);
-
-    if (filters.status) {
-        query = query.eq('status', filters.status);
-    }
-    if (filters.date) {
-        query = query.eq('appointment_date', filters.date);
-    }
-
+    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.date) query = query.eq('appointment_date', filters.date);
     const { data, error } = await query.order('appointment_date', { ascending: false });
-
     if (error) {
         console.error('Error al filtrar citas:', error);
         return [];
@@ -83,11 +71,41 @@ const filterAppointments = async (filters) => {
     return data || [];
 };
 
+// --- FUNCIONES CRUD PARA PRODUCTOS ---
 const addProduct = async (productData) => {
     const { data, error } = await supabase.from('products').insert([productData]).select();
     if (error) return { success: false, error };
     return { success: true, data };
 };
+const updateProduct = async (productId, productData) => {
+    const { data, error } = await supabase.from('products').update(productData).eq('id', productId).select();
+    if (error) return { success: false, error };
+    return { success: true, data };
+};
+const deleteProduct = async (productId) => {
+    const { error } = await supabase.from('products').delete().eq('id', productId);
+    if (error) return { success: false, error };
+    return { success: true };
+};
+
+// --- FUNCIONES CRUD PARA SERVICIOS ---
+const addService = async (serviceData) => {
+    const { data, error } = await supabase.from('services').insert([serviceData]).select();
+    if (error) return { success: false, error };
+    return { success: true, data };
+};
+const updateService = async (serviceId, serviceData) => {
+    const { data, error } = await supabase.from('services').update(serviceData).eq('id', serviceId).select();
+    if (error) return { success: false, error };
+    return { success: true, data };
+};
+const deleteService = async (serviceId) => {
+    const { error } = await supabase.from('services').delete().eq('id', serviceId);
+    if (error) return { success: false, error };
+    return { success: true };
+};
+
+// --- OTRAS FUNCIONES ---
 const updateAppointmentStatus = async (appointmentId, newStatus) => {
     const { data, error } = await supabase.from('appointments').update({ status: newStatus }).eq('id', appointmentId).select();
     if (error) return { success: false, error };
@@ -98,5 +116,7 @@ export {
     getClientCount, getPetCount, getAppointmentsCount, getProductsCount,
     getUpcomingAppointments, getClients, searchClients, getProducts, getServices,
     getAppointments, addProduct, updateAppointmentStatus,
-    filterAppointments // <-- Exportamos la nueva función
+    filterAppointments,
+    updateProduct, deleteProduct,
+    addService, updateService, deleteService // <-- Exportamos las nuevas funciones
 };

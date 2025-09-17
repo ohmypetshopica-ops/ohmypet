@@ -12,6 +12,10 @@ const formTitle = document.querySelector('#form-title');
 const formSubtitle = document.querySelector('#form-subtitle');
 const photoInput = document.querySelector('#photo');
 const imagePreview = document.querySelector('#image-preview');
+const sizeButtons = document.querySelectorAll('.size-btn');
+const hiddenSizeInput = document.querySelector('input#size');
+const sexButtons = document.querySelectorAll('.sex-btn');
+const hiddenSexInput = document.querySelector('input#sex');
 
 // --- ESTADO DEL FORMULARIO ---
 let currentStep = 1;
@@ -32,12 +36,11 @@ const formSubtitles = [
     "Sube una foto para su perfil (opcional)."
 ];
 
-// --- FUNCIONES DE NAVEGACIÓN ---
+// --- FUNCIONES DE NAVEGÁCIÓN ---
 const showStep = (stepNumber) => {
     steps.forEach(step => step.classList.add('hidden'));
     document.querySelector(`#step-${stepNumber}`).classList.remove('hidden');
     
-    // Actualizar progreso y títulos
     const progress = (stepNumber / totalSteps) * 100;
     progressBar.style.width = `${progress}%`;
     formTitle.textContent = formTitles[stepNumber - 1];
@@ -47,10 +50,10 @@ const showStep = (stepNumber) => {
 
 const validateStep = (stepNumber) => {
     const currentStepElement = document.querySelector(`#step-${stepNumber}`);
-    const inputs = currentStepElement.querySelectorAll('input[required], select[required]');
+    const inputs = currentStepElement.querySelectorAll('input[required]');
     for (let input of inputs) {
         if (!input.value) {
-            alert(`Por favor, completa el campo "${input.previousElementSibling.textContent}".`);
+            alert(`Por favor, completa todos los campos requeridos.`);
             return false;
         }
     }
@@ -93,17 +96,39 @@ photoInput.addEventListener('change', (event) => {
     if (file) {
         photoFile = file;
         const reader = new FileReader();
-        reader.onload = (e) => {
-            imagePreview.src = e.target.result;
-        };
+        reader.onload = (e) => { imagePreview.src = e.target.result; };
         reader.readAsDataURL(file);
     }
+});
+
+sizeButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        sizeButtons.forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
+        hiddenSizeInput.value = button.dataset.size;
+    });
+});
+
+sexButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        sexButtons.forEach(btn => {
+            btn.classList.remove('selected-male', 'selected-female');
+        });
+        const selectedSex = button.dataset.sex;
+        if (selectedSex === 'Macho') {
+            button.classList.add('selected-male');
+        } else {
+            button.classList.add('selected-female');
+        }
+        hiddenSexInput.value = selectedSex;
+    });
 });
 
 
 // --- MANEJO DEL ENVÍO FINAL ---
 addPetForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+    collectStepData(currentStep);
     const submitButton = addPetForm.querySelector('button[type="submit"]');
     submitButton.disabled = true;
     submitButton.textContent = 'Guardando...';
@@ -115,14 +140,10 @@ addPetForm.addEventListener('submit', async (event) => {
         return;
     }
 
-    // Paso 1: Subir la foto si existe
     let imageUrl = null;
     if (photoFile) {
         const fileName = `${user.id}/${Date.now()}_${photoFile.name}`;
-        const { data, error } = await supabase.storage
-            .from('pet_galleries')
-            .upload(fileName, photoFile);
-        
+        const { error } = await supabase.storage.from('pet_galleries').upload(fileName, photoFile);
         if (error) {
             console.error('Error al subir la foto:', error);
             alert('Hubo un error al subir la foto. Se guardará la mascota sin imagen.');
@@ -132,19 +153,22 @@ addPetForm.addEventListener('submit', async (event) => {
         }
     }
 
-    // Paso 2: Consolidar y guardar los datos de la mascota
     const finalPetData = {
         ...petData,
         owner_id: user.id,
-        species: 'Perro', // Valor por defecto
+        species: 'Perro',
         image_url: imageUrl,
         weight: petData.weight ? parseFloat(petData.weight) : null,
         age: petData.age ? parseInt(petData.age) : null,
     };
     
-    const { error: insertError } = await supabase
-        .from('pets')
-        .insert([finalPetData]);
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Eliminamos la propiedad 'photo' que viene del input de archivo,
+    // ya que no corresponde a una columna en la base de datos.
+    delete finalPetData.photo;
+    // --- FIN DE LA CORRECCIÓN ---
+
+    const { error: insertError } = await supabase.from('pets').insert([finalPetData]);
 
     if (insertError) {
         console.error('Error al agregar la mascota:', insertError);

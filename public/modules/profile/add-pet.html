@@ -10,6 +10,27 @@
         :root { font-family: 'Inter', sans-serif; }
         .step { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
         .step.hidden { display: none; }
+        .size-btn.selected {
+            border-color: #22c55e; /* green-500 */
+            background-color: #f0fdf4; /* green-50 */
+        }
+        .size-btn.selected img {
+            filter: invert(39%) sepia(61%) saturate(2068%) hue-rotate(117deg) brightness(91%) contrast(86%);
+        }
+        .sex-btn.selected-male {
+            border-color: #3b82f6; /* blue-500 */
+            background-color: #eff6ff; /* blue-50 */
+        }
+        .sex-btn.selected-female {
+            border-color: #ec4899; /* pink-500 */
+            background-color: #fdf2f8; /* pink-50 */
+        }
+        .sex-btn.selected-male img {
+            filter: invert(49%) sepia(87%) saturate(2500%) hue-rotate(204deg) brightness(98%) contrast(95%);
+        }
+        .sex-btn.selected-female img {
+            filter: invert(41%) sepia(50%) saturate(3000%) hue-rotate(295deg) brightness(96%) contrast(91%);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-purple-100 text-gray-900 antialiased flex flex-col items-center justify-center min-h-screen p-4">
@@ -44,6 +65,20 @@
                     <input type="text" id="breed" name="breed" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ej: Golden Retriever">
                 </div>
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sexo</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button type="button" class="sex-btn p-4 border-2 border-gray-200 rounded-lg flex items-center justify-center space-x-3 focus:outline-none transition-colors duration-200" data-sex="Macho">
+                            <img src="/public/assets/icons/man-icon.svg" class="h-6 w-6">
+                            <span class="font-medium text-gray-800">Macho</span>
+                        </button>
+                        <button type="button" class="sex-btn p-4 border-2 border-gray-200 rounded-lg flex items-center justify-center space-x-3 focus:outline-none transition-colors duration-200" data-sex="Hembra">
+                            <img src="/public/assets/icons/fem-icon.svg" class="h-6 w-6">
+                            <span class="font-medium text-gray-800">Hembra</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="sex" name="sex" required>
+                </div>
+                <div>
                     <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Edad (años)</label>
                     <input type="number" id="age" name="age" min="0" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ej: 3">
                 </div>
@@ -54,25 +89,29 @@
 
             <div id="step-2" class="step hidden space-y-6">
                  <div>
-                    <label for="size" class="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
-                    <select id="size" name="size" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
-                        <option value="Muy pequeño">Muy pequeño (~40 cm)</option>
-                        <option value="Pequeño">Pequeño</option>
-                        <option value="Mediano" selected>Mediano</option>
-                        <option value="Grande">Grande</option>
-                        <option value="Muy grande">Muy grande</option>
-                    </select>
+                    <label class="block text-sm font-medium text-gray-700 mb-4 text-center">Tamaño</label>
+                    <div class="flex justify-around items-stretch space-x-2 sm:space-x-4">
+                        <button type="button" class="size-btn p-3 border-2 border-gray-200 rounded-lg flex flex-col items-center justify-center space-y-2 flex-1 focus:outline-none transition-all duration-200" data-size="Pequeño">
+                             <img src="/public/assets/icons/dog-icon.svg" class="h-8 text-gray-600">
+                            <span class="text-sm font-medium text-gray-800">Pequeño</span>
+                            <span class="text-xs text-gray-500">15 - 40 cm</span>
+                        </button>
+                        <button type="button" class="size-btn p-3 border-2 border-gray-200 rounded-lg flex flex-col items-center justify-center space-y-2 flex-1 focus:outline-none transition-all duration-200 selected" data-size="Mediano">
+                            <img src="/public/assets/icons/dog-icon.svg" class="h-12 text-gray-600">
+                           <span class="text-sm font-medium text-gray-800">Mediano</span>
+                           <span class="text-xs text-gray-500">40 - 60 cm</span>
+                        </button>
+                        <button type="button" class="size-btn p-3 border-2 border-gray-200 rounded-lg flex flex-col items-center justify-center space-y-2 flex-1 focus:outline-none transition-all duration-200" data-size="Grande">
+                             <img src="/public/assets/icons/dog-icon.svg" class="h-16 text-gray-600">
+                            <span class="text-sm font-medium text-gray-800">Grande</span>
+                            <span class="text-xs text-gray-500">+60 cm</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="size" name="size" value="Mediano" required>
                 </div>
                 <div>
                     <label for="weight" class="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
                     <input type="number" id="weight" name="weight" step="0.1" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ej: 15.5">
-                </div>
-                <div>
-                    <label for="sex" class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
-                    <select id="sex" name="sex" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
-                        <option value="Macho">Macho</option>
-                        <option value="Hembra">Hembra</option>
-                    </select>
                 </div>
                  <div class="flex justify-between pt-4">
                     <button type="button" class="prev-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg">Anterior</button>
