@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Servicios - OhMyPet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 sm:p-6 md:p-8">
+
+    <main class="max-w-2xl mx-auto">
+        <div class="mb-6">
+            <a id="back-button" href="#" class="flex items-center text-sm font-semibold text-green-600 hover:text-green-800 transition-colors duration-200">
+                <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Volver a Detalles
+            </a>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <div class="text-center mb-8">
+                <h1 id="pet-name-header" class="text-3xl font-extrabold text-gray-800">Historial de Servicios</h1>
+                <p class="mt-2 text-gray-600">Aquí puedes ver todas las citas pasadas.</p>
+            </div>
+
+            <div id="history-container" class="space-y-4">
+                <p class="text-center text-gray-500 py-8">Cargando historial...</p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="../../core/auth-client.js"></script>
+    <script type="module" src="./service-history.js"></script>
+</body>
+</html>
