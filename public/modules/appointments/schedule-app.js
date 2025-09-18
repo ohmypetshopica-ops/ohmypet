@@ -30,11 +30,15 @@ const loadUserDataAndPets = async () => {
     currentUser = user;
     
     const [{ data: profile }, { data: pets }] = await Promise.all([
-        supabase.from('profiles').select('full_name').eq('id', user.id).single(),
+        supabase.from('profiles').select('full_name, first_name, last_name').eq('id', user.id).single(),
         supabase.from('pets').select('id, name').eq('owner_id', user.id)
     ]);
     
-    if (profile) clientFullName = profile.full_name;
+    if (profile) {
+        clientFullName = (profile.first_name && profile.last_name)
+            ? `${profile.first_name} ${profile.last_name}`
+            : profile.full_name || 'Cliente';
+    }
     
     if (pets && pets.length > 0) {
         noPetsMessage.classList.add('hidden');
@@ -108,7 +112,6 @@ const handleDateChange = async () => {
         return;
     }
     
-    // CORRECCIÓN FINAL: Se cortan los segundos de la hora
     const bookedTimes = appointments.map(app => app.appointment_time.slice(0, 5));
     renderTimeOptions(bookedTimes);
 };

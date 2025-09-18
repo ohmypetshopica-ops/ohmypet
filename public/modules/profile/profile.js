@@ -27,7 +27,7 @@ const loadUserProfile = async () => {
     const [profileResponse, petsResponse] = await Promise.all([
         supabase
             .from('profiles')
-            .select('full_name, role')
+            .select('full_name, first_name, last_name, role')
             .eq('id', user.id)
             .single(),
         supabase
@@ -42,7 +42,6 @@ const loadUserProfile = async () => {
 
     if (profileError) {
         console.error('Error al obtener el perfil:', profileError);
-        // Dejamos los valores por defecto si falla
     }
 
     if (petsError) {
@@ -51,7 +50,10 @@ const loadUserProfile = async () => {
 
     // 4. Actualizamos el HTML con toda la información a la vez
     if (profile) {
-        if (fullNameElement) fullNameElement.textContent = profile.full_name || 'No especificado';
+        const displayName = (profile.first_name && profile.last_name) 
+            ? `${profile.first_name} ${profile.last_name}` 
+            : profile.full_name;
+        if (fullNameElement) fullNameElement.textContent = displayName || 'No especificado';
         if (emailElement) emailElement.textContent = user.email;
         if (roleElement) roleElement.textContent = profile.role;
     }
@@ -68,7 +70,6 @@ const loadUserProfile = async () => {
                 petsContainer.appendChild(petCard);
             });
         } else {
-            // Si no hay mascotas o hubo un error, se muestra el mensaje por defecto.
             petsContainer.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">Aún no tienes mascotas registradas.</p>`;
         }
     }

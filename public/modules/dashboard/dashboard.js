@@ -62,7 +62,18 @@ const loadDashboardData = async () => {
 
 // --- FUNCIONES DE MODALES ---
 const openProductModalForNew = () => { productModalTitle.textContent = 'Nuevo Producto'; productForm.reset(); productForm.querySelector('#product-id').value = ''; productModal.classList.remove('hidden'); };
-const openProductModalForEdit = (product) => { productModalTitle.textContent = 'Editar Producto'; productForm.reset(); productForm.querySelector('#product-id').value = product.id; productForm.querySelector('#product-name').value = product.name; productForm.querySelector('#product-description').value = product.description || ''; productForm.querySelector('#product-price').value = product.price; productForm.querySelector('#product-stock').value = product.stock; productForm.querySelector('#product-image-url').value = product.image_url || ''; productModal.classList.remove('hidden'); };
+const openProductModalForEdit = (product) => {
+    productModalTitle.textContent = 'Editar Producto';
+    productForm.reset();
+    productForm.querySelector('#product-id').value = product.id;
+    productForm.querySelector('#product-name').value = product.name;
+    productForm.querySelector('#product-description').value = product.description || '';
+    productForm.querySelector('#product-price').value = product.price;
+    productForm.querySelector('#product-stock').value = product.stock;
+    // Guardamos la URL de la imagen actual en un campo oculto
+    productForm.querySelector('#product-image-url-hidden').value = product.image_url || '';
+    productModal.classList.remove('hidden');
+};
 const closeProductModal = () => productModal.classList.add('hidden');
 const openServiceModalForNew = () => { serviceModalTitle.textContent = 'Nuevo Servicio'; serviceForm.reset(); serviceForm.querySelector('#service-id').value = ''; serviceModal.classList.remove('hidden'); };
 const openServiceModalForEdit = (service) => { serviceModalTitle.textContent = 'Editar Servicio'; serviceForm.reset(); serviceForm.querySelector('#service-id').value = service.id; serviceForm.querySelector('#service-name').value = service.name; serviceForm.querySelector('#service-description').value = service.description || ''; serviceForm.querySelector('#service-price').value = service.price; serviceForm.querySelector('#service-duration').value = service.duration_minutes; serviceModal.classList.remove('hidden'); };
@@ -110,12 +121,50 @@ const setupProductModal = () => {
     addProductButton.addEventListener('click', openProductModalForNew);
     closeProductModalButton.addEventListener('click', closeProductModal);
     productModal.addEventListener('click', (e) => { if (e.target === productModal) closeProductModal(); });
+
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const submitButton = productForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Guardando...';
+
         const formData = new FormData(productForm);
         const productId = formData.get('id');
-        const productData = { name: formData.get('name'), description: formData.get('description'), price: parseFloat(formData.get('price')), stock: parseInt(formData.get('stock')), image_url: formData.get('image_url') };
+        const imageFile = formData.get('image_file');
+        
+        let imageUrl = formData.get('image_url_hidden'); // URL de la imagen existente
+
+        if (imageFile && imageFile.size > 0) {
+            // Si se subió un nuevo archivo, lo procesamos
+            const fileName = `products/${Date.now()}_${imageFile.name}`;
+            const { error: uploadError } = await supabase.storage
+                .from('product_images') // Nombre de tu bucket
+                .upload(fileName, imageFile);
+
+            if (uploadError) {
+                alert('Error al subir la imagen: ' + uploadError.message);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Guardar Producto';
+                return;
+            }
+
+            // Obtenemos la URL pública del archivo recién subido
+            const { data } = supabase.storage
+                .from('product_images')
+                .getPublicUrl(fileName);
+            imageUrl = data.publicUrl;
+        }
+
+        const productData = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            price: parseFloat(formData.get('price')),
+            stock: parseInt(formData.get('stock')),
+            image_url: imageUrl,
+        };
+
         const result = productId ? await updateProduct(productId, productData) : await addProduct(productData);
+        
         if (result.success) {
             alert(`¡Producto ${productId ? 'actualizado' : 'agregado'} con éxito!`);
             closeProductModal();
@@ -124,6 +173,9 @@ const setupProductModal = () => {
         } else {
             alert(`Error al guardar el producto: ${result.error.message}`);
         }
+        
+        submitButton.disabled = false;
+        submitButton.textContent = 'Guardar Producto';
     });
 };
 const setupServiceModal = () => {

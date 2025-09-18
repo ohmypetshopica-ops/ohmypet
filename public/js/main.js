@@ -1,5 +1,5 @@
 import { supabase } from '../core/supabase.js';
-import { updateCartBadge } from './cart.js'; // CORRECCIÓN: Se importa la función del carrito.
+import { updateCartBadge } from './cart.js';
 
 // --- ELEMENTOS DEL DOM ---
 const guestNav = document.querySelector('#guest-nav');
@@ -8,7 +8,6 @@ const userProfileButton = document.querySelector('#user-profile-button');
 const userProfileMenu = document.querySelector('#user-profile-menu');
 const userInitialElement = document.querySelector('#user-initial');
 const logoutButton = document.querySelector('#logout-button');
-const notificationBanner = document.querySelector('#notification-banner');
 
 // --- FUNCIÓN PARA ACTUALIZAR LA UI ---
 const setupUI = async () => {
@@ -43,7 +42,6 @@ const setupUI = async () => {
 };
 
 // --- MANEJO DEL LOGOUT Y MENÚ DE PERFIL ---
-// CORRECCIÓN: Se añaden comprobaciones para evitar errores.
 if (userProfileButton) {
     userProfileButton.addEventListener('click', (event) => {
         event.stopPropagation();
@@ -65,33 +63,59 @@ if (logoutButton) {
 
 // Cierra el menú de perfil si se hace clic fuera de él
 window.addEventListener('click', (event) => {
-    // CORRECCIÓN: Se añade comprobación para evitar errores.
     if (userNav && !userNav.contains(event.target) && userProfileMenu) {
         userProfileMenu.classList.add('hidden');
     }
 });
 
 
-// --- LÓGICA PARA LA NOTIFICACIÓN ---
-const showNotification = () => {
+// --- LÓGICA PARA LA NOTIFICACIÓN DE CITA AGENDADA ---
+const showScheduleNotification = () => {
+    const notificationBanner = document.querySelector('#notification-banner');
     if (!notificationBanner) return;
 
-    // Mostramos el banner con un efecto de deslizamiento
     notificationBanner.classList.remove('hidden', 'translate-x-full');
     notificationBanner.classList.add('translate-x-0');
 
-    // Lo ocultamos después de 5 segundos
     setTimeout(() => {
         notificationBanner.classList.remove('translate-x-0');
         notificationBanner.classList.add('translate-x-full');
     }, 5000);
 };
 
+// --- INICIO DE LA CORRECCIÓN ---
+// Función de notificación global que podemos usar en cualquier parte.
+export const showAppNotification = (message, type = 'success') => {
+    const notification = document.querySelector('#app-notification');
+    const messageElement = document.querySelector('#app-notification-message');
+    if (!notification || !messageElement) return;
+
+    // Asignar mensaje y estilo
+    messageElement.textContent = message;
+    notification.classList.remove('bg-green-600', 'bg-red-600');
+    if (type === 'success') {
+        notification.classList.add('bg-green-600');
+    } else {
+        notification.classList.add('bg-red-600');
+    }
+
+    // Mostrar banner
+    notification.classList.remove('hidden', 'translate-x-full');
+    notification.classList.add('translate-x-0');
+
+    // Ocultar después de 3 segundos
+    setTimeout(() => {
+        notification.classList.remove('translate-x-0');
+        notification.classList.add('translate-x-full');
+    }, 3000);
+};
+// --- FIN DE LA CORRECCIÓN ---
+
+
 const checkForNotification = () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('from') === 'schedule') {
-        showNotification();
-        // Limpiamos la URL para que la notificación no aparezca si el usuario recarga la página
+        showScheduleNotification();
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 };
@@ -100,6 +124,6 @@ const checkForNotification = () => {
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
     setupUI();
-    checkForNotification(); // Revisamos si hay que mostrar la notificación
-    updateCartBadge();      // CORRECCIÓN: Actualizamos la insignia del carrito al cargar cualquier página.
+    checkForNotification();
+    updateCartBadge();
 });

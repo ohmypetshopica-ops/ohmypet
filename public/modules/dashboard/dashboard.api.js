@@ -27,17 +27,17 @@ const getProductsCount = async () => {
 // --- FUNCIONES PARA LAS LISTAS Y BÚSQUEDA ---
 const getUpcomingAppointments = async () => {
     const today = new Date().toISOString().slice(0, 10);
-    const { data, error } = await supabase.from('appointments').select(`*, pets ( name ), profiles ( full_name )`).eq('status', 'confirmada').gte('appointment_date', today).order('appointment_date', { ascending: true }).order('appointment_time', { ascending: true }).limit(5);
+    const { data, error } = await supabase.from('appointments').select(`*, pets ( name ), profiles ( full_name, first_name, last_name )`).eq('status', 'confirmada').gte('appointment_date', today).order('appointment_date', { ascending: true }).order('appointment_time', { ascending: true }).limit(5);
     if (error) console.error('Error al obtener próximas citas:', error);
     return data || [];
 };
 const getClients = async () => {
-    const { data, error } = await supabase.from('profiles').select('full_name, role').eq('role', 'cliente');
+    const { data, error } = await supabase.from('profiles').select('full_name, first_name, last_name, role').eq('role', 'cliente');
     if (error) console.error('Error al obtener los clientes:', error);
     return data || [];
 };
 const searchClients = async (searchTerm) => {
-    const { data, error } = await supabase.from('profiles').select('full_name, role').eq('role', 'cliente').ilike('full_name', `%${searchTerm}%`);
+    const { data, error } = await supabase.from('profiles').select('full_name, first_name, last_name, role').eq('role', 'cliente').ilike('full_name', `%${searchTerm}%`);
     if (error) console.error('Error al buscar clientes:', error);
     return data || [];
 };
@@ -52,7 +52,7 @@ const getServices = async () => {
     return data || [];
 };
 const getAppointments = async () => {
-    const { data, error } = await supabase.from('appointments').select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name )`).order('appointment_date', { ascending: false });
+    const { data, error } = await supabase.from('appointments').select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`).order('appointment_date', { ascending: false });
     if (error) console.error('Error al obtener citas:', error);
     return data || [];
 };
@@ -60,7 +60,7 @@ const getAppointments = async () => {
 const filterAppointments = async (filters) => {
     let query = supabase
         .from('appointments')
-        .select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name )`);
+        .select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`);
     if (filters.status) query = query.eq('status', filters.status);
     if (filters.date) query = query.eq('appointment_date', filters.date);
     const { data, error } = await query.order('appointment_date', { ascending: false });
@@ -118,5 +118,5 @@ export {
     getAppointments, addProduct, updateAppointmentStatus,
     filterAppointments,
     updateProduct, deleteProduct,
-    addService, updateService, deleteService // <-- Exportamos las nuevas funciones
+    addService, updateService, deleteService
 };

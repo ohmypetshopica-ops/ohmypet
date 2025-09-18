@@ -36,25 +36,46 @@ backToLoginLink.addEventListener('click', () => {
 // --- MANEJO DEL FORMULARIO DE INICIO DE SESIÓN ---
 clientLoginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-
     errorMessage.classList.add('hidden');
 
     const email = clientLoginForm.email.value;
     const password = clientLoginForm.password.value;
 
-    // --- AUTENTICACIÓN CON SUPABASE ---
+    // 1. AUTENTICACIÓN CON SUPABASE
     const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
     });
 
-    // --- MANEJO DE LA RESPUESTA ---
     if (error) {
         console.error('Error al iniciar sesión:', error.message);
         errorMessage.classList.remove('hidden');
-    } else {
-        console.log('Inicio de sesión de cliente exitoso:', data.user);
-        window.location.href = '/public/index.html';
+        return; // Detenemos si las credenciales son incorrectas
+    }
+
+    // 2. VERIFICACIÓN DEL ONBOARDING
+    if (data.user) {
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('onboarding_completed')
+            .eq('id', data.user.id)
+            .single();
+
+        if (profileError) {
+            console.error('Error al obtener el perfil:', profileError);
+            // Si hay un error, por seguridad lo enviamos al inicio
+            window.location.href = '/public/index.html';
+            return;
+        }
+
+        // 3. REDIRECCIÓN BASADA EN EL ESTADO DEL ONBOARDING
+        if (profile && profile.onboarding_completed) {
+            // Si ya completó el onboarding, va a la página principal
+            window.location.href = '/public/index.html';
+        } else {
+            // Si no, va a la página de onboarding para completar su perfil
+            window.location.href = '/public/modules/profile/onboarding.html';
+        }
     }
 });
 
@@ -72,8 +93,6 @@ forgotPasswordForm.addEventListener('submit', async (event) => {
         resetMessage.textContent = 'Si tu correo existe en nuestro sistema, recibirás un enlace de recuperación en breve.';
         resetMessage.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
     } else {
-        // En un entorno de producción, para evitar la enumeración de usuarios,
-        // no se debe dar una pista si el correo existe o no.
         resetMessage.textContent = 'Hubo un problema al procesar tu solicitud. Inténtalo de nuevo.';
         resetMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
     }

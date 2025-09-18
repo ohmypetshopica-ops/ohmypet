@@ -2,7 +2,10 @@
 
 const createUpcomingAppointmentItem = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
-    const ownerName = appointment.profiles?.full_name || 'N/A';
+    const ownerProfile = appointment.profiles;
+    const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
+        ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
+        : ownerProfile?.full_name || 'N/A';
     const dateParts = appointment.appointment_date.split('-');
     const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
     const formattedDate = date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -18,9 +21,12 @@ const createUpcomingAppointmentItem = (appointment) => {
 };
 
 const createClientRow = (client) => {
+    const displayName = (client.first_name && client.last_name) 
+        ? `${client.first_name} ${client.last_name}` 
+        : client.full_name;
     return `
         <tr>
-            <td class="px-6 py-4"><div class="text-sm font-medium text-gray-900">${client.full_name}</div></td>
+            <td class="px-6 py-4"><div class="text-sm font-medium text-gray-900">${displayName}</div></td>
             <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${client.role}</span></td>
             <td class="px-6 py-4 text-right text-sm font-medium"><a href="#" class="text-green-600 hover:text-green-900">Ver Detalles</a></td>
         </tr>
@@ -53,7 +59,10 @@ const createServiceRow = (service) => {
 
 const createAppointmentRow = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
-    const ownerName = appointment.profiles?.full_name || 'N/A';
+    const ownerProfile = appointment.profiles;
+    const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
+        ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
+        : ownerProfile?.full_name || 'N/A';
     const status = (appointment.status || 'pendiente').toLowerCase().trim();
     const statusStyles = { pendiente: { text: 'Pendiente', bg: 'bg-yellow-100', text_color: 'text-yellow-800' }, confirmada: { text: 'Confirmada', bg: 'bg-blue-100', text_color: 'text-blue-800' }, completada: { text: 'Completada', bg: 'bg-green-100', text_color: 'text-green-800' }, rechazada: { text: 'Rechazada', bg: 'bg-red-100', text_color: 'text-red-800' } };
     const currentStyle = statusStyles[status] || statusStyles.pendiente;

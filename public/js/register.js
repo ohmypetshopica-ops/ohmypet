@@ -16,6 +16,14 @@ registerForm.addEventListener('submit', async (event) => {
     const email = registerForm.email.value;
     const password = registerForm.password.value;
 
+    // --- MEJORA ---
+    // Añadimos una validación explícita para la contraseña.
+    if (password.length < 6) {
+        formMessage.textContent = 'Error: La contraseña debe tener al menos 6 caracteres.';
+        formMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
+        return; // Detenemos la ejecución si la contraseña es muy corta
+    }
+
     // --- REGISTRO CON SUPABASE ---
     // Usamos el método signUp de Supabase
     const { data, error } = await supabase.auth.signUp({
