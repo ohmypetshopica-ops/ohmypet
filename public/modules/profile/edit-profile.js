@@ -2,9 +2,18 @@ import { supabase } from './profile.api.js';
 
 // --- ELEMENTOS DEL DOM ---
 const editProfileForm = document.querySelector('#edit-profile-form');
-const fullNameInput = document.querySelector('#full_name');
-const emailInput = document.querySelector('#email');
 const formMessage = document.querySelector('#form-message');
+const profileFullName = document.querySelector('#profile-full-name');
+const profileEmail = document.querySelector('#profile-email');
+const userInitial = document.querySelector('#user-initial');
+
+// Inputs
+const firstNameInput = document.querySelector('#first_name');
+const lastNameInput = document.querySelector('#last_name');
+const phoneInput = document.querySelector('#phone');
+const districtInput = document.querySelector('#district');
+const emergencyContactNameInput = document.querySelector('#emergency_contact_name');
+const emergencyContactPhoneInput = document.querySelector('#emergency_contact_phone');
 
 let currentUser = null;
 
@@ -19,7 +28,7 @@ const loadUserProfile = async () => {
 
     const { data: profile, error } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('full_name, first_name, last_name, phone, district, emergency_contact_name, emergency_contact_phone')
         .eq('id', user.id)
         .single();
 
@@ -32,28 +41,46 @@ const loadUserProfile = async () => {
     }
 
     if (profile) {
-        fullNameInput.value = profile.full_name || '';
+        // Rellenar cabecera
+        const displayName = (profile.first_name && profile.last_name) 
+            ? `${profile.first_name} ${profile.last_name}` 
+            : profile.full_name;
+        profileFullName.textContent = displayName || 'Usuario';
+        userInitial.textContent = (displayName || 'U').charAt(0).toUpperCase();
+        
+        // Rellenar formulario
+        firstNameInput.value = profile.first_name || '';
+        lastNameInput.value = profile.last_name || '';
+        phoneInput.value = profile.phone || '';
+        districtInput.value = profile.district || '';
+        emergencyContactNameInput.value = profile.emergency_contact_name || '';
+        emergencyContactPhoneInput.value = profile.emergency_contact_phone || '';
     }
-    emailInput.value = user.email;
+    profileEmail.textContent = user.email;
 };
 
 // --- MANEJO DEL FORMULARIO DE EDICIÓN ---
 editProfileForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     formMessage.classList.add('hidden');
+    
+    const submitButton = editProfileForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Guardando...';
 
-    const newFullName = fullNameInput.value.trim();
-
-    if (!newFullName) {
-        formMessage.textContent = 'El nombre no puede estar vacío.';
-        formMessage.className = 'p-4 rounded-md font-medium text-sm bg-red-100 text-red-700';
-        formMessage.classList.remove('hidden');
-        return;
-    }
+    const updatedProfile = {
+        first_name: firstNameInput.value.trim(),
+        last_name: lastNameInput.value.trim(),
+        full_name: `${firstNameInput.value.trim()} ${lastNameInput.value.trim()}`,
+        phone: phoneInput.value.trim(),
+        district: districtInput.value,
+        emergency_contact_name: emergencyContactNameInput.value.trim(),
+        emergency_contact_phone: emergencyContactPhoneInput.value.trim(),
+    };
 
     const { error } = await supabase
         .from('profiles')
-        .update({ full_name: newFullName })
+        .update(updatedProfile)
         .eq('id', currentUser.id);
 
     if (error) {
@@ -63,8 +90,14 @@ editProfileForm.addEventListener('submit', async (event) => {
     } else {
         formMessage.textContent = '¡Perfil actualizado con éxito!';
         formMessage.className = 'p-4 rounded-md font-medium text-sm bg-green-100 text-green-700';
+        // Actualizar la cabecera dinámicamente
+        profileFullName.textContent = updatedProfile.full_name;
+        userInitial.textContent = updatedProfile.first_name.charAt(0).toUpperCase();
     }
+    
     formMessage.classList.remove('hidden');
+    submitButton.disabled = false;
+    submitButton.textContent = 'Guardar Cambios';
 });
 
 // --- INICIALIZACIÓN ---

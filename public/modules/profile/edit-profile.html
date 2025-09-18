@@ -10,10 +10,10 @@
         :root { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gradient-to-br from-green-50 to-purple-100 text-gray-900 antialiased flex flex-col items-center justify-center min-h-screen p-4">
 
-    <main class="w-full max-w-lg mx-auto bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-        <div class="mb-6">
+    <main class="w-full max-w-xl mx-auto bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 animate-fade-in">
+        <div class="mb-8">
             <a href="/public/modules/profile/profile.html" class="flex items-center text-sm font-semibold text-green-600 hover:text-green-800 transition-colors duration-200">
                 <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -22,44 +22,86 @@
             </a>
         </div>
 
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-extrabold text-gray-800">Editar Perfil</h1>
-            <p class="mt-2 text-gray-600">Actualiza tu información personal.</p>
-        </div>
-
-        <form id="edit-profile-form" novalidate class="space-y-6">
+        <form id="edit-profile-form" class="space-y-6">
+            <div class="text-center mb-8">
+                 <div id="user-avatar-initials" class="mx-auto h-32 w-32 rounded-full bg-green-500 flex items-center justify-center border-4 border-green-200 shadow-md mb-4">
+                    <span id="user-initial" class="text-5xl font-bold text-white"></span>
+                 </div>
+                 <h1 id="profile-full-name" class="text-4xl font-extrabold text-gray-800 leading-tight mt-2">Cargando...</h1>
+                 <p id="profile-email" class="text-gray-500">cargando@email.com</p>
+            </div>
+            
             <div id="form-message" class="hidden p-4 rounded-md font-medium text-sm"></div>
 
-            <div>
-                <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <img src="/public/assets/icons/user-solid.svg" alt="User Icon" class="h-5 w-5 text-gray-400">
-                    </div>
-                    <input type="text" id="full_name" name="full_name"
-                           class="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-3 pl-10 pr-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200"
-                           placeholder="Tu nombre completo" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                    <input type="text" id="first_name" name="first_name" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div>
+                    <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                    <input type="text" id="last_name" name="last_name" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
                 </div>
             </div>
 
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
-                <div class="relative">
-                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <img src="/public/assets/icons/envelope-solid.svg" alt="Email Icon" class="h-5 w-5 text-gray-400">
-                    </div>
-                    <input type="email" id="email" name="email"
-                           class="bg-gray-100 cursor-not-allowed shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-3 pl-10 pr-4 text-gray-500 leading-tight"
-                           disabled>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Teléfono / WhatsApp</label>
+                    <input type="tel" id="phone" name="phone" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
                 </div>
-                <p class="text-xs text-gray-500 mt-1">El correo electrónico no se puede modificar.</p>
+                <div>
+                    <label for="district" class="block text-sm font-medium text-gray-700 mb-1">Distrito</label>
+                    <select id="district" name="district" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 bg-white">
+                        <option value="" disabled>Selecciona tu distrito</option>
+                        <option value="Ica">Ica (Cercado)</option>
+                        <option value="La Tinguiña">La Tinguiña</option>
+                        <option value="Los Aquijes">Los Aquijes</option>
+                        <option value="Ocucaje">Ocucaje</option>
+                        <option value="Pachacutec">Pachacutec</option>
+                        <option value="Parcona">Parcona</option>
+                        <option value="Pueblo Nuevo">Pueblo Nuevo</option>
+                        <option value="Salas">Salas</option>
+                        <option value="San José de los Molinos">San José de los Molinos</option>
+                        <option value="San Juan Bautista">San Juan Bautista</option>
+                        <option value="Santiago">Santiago</option>
+                        <option value="Subtanjalla">Subtanjalla</option>
+                        <option value="Tate">Tate</option>
+                        <option value="Yauca del Rosario">Yauca del Rosario</option>
+                    </select>
+                </div>
+            </div>
+
+             <div>
+                <h3 class="text-lg font-semibold text-gray-800 border-t pt-6">Contacto de Emergencia</h3>
+            </div>
+
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="emergency_contact_name" class="block text-sm font-medium text-gray-700 mb-1">Nombre de Contacto</label>
+                    <input type="text" id="emergency_contact_name" name="emergency_contact_name" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div>
+                    <label for="emergency_contact_phone" class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Contacto</label>
+                    <input type="tel" id="emergency_contact_phone" name="emergency_contact_phone" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+                </div>
             </div>
 
             <div class="pt-4 border-t border-gray-100">
-                <button type="submit"
-                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:shadow-outline w-full transition-colors duration-200 transform hover:scale-105">
-                    Guardar Cambios
-                </button>
+                 <a href="/public/modules/login/update-password.html" class="block w-full">
+                    <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg shadow-sm hover:bg-gray-100">
+                        <div class="flex items-center">
+                            <span class="p-2 rounded-full bg-blue-100 text-blue-600 mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-4a6 6 0 016-6h4a6 6 0 016 6z" /></svg>
+                            </span>
+                            <p class="text-sm font-medium text-gray-700">Cambiar Contraseña</p>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                    </div>
+                </a>
+            </div>
+
+            <div class="flex justify-end items-center pt-4">
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg">Guardar Cambios</button>
             </div>
         </form>
     </main>
