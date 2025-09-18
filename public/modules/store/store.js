@@ -1,7 +1,8 @@
 // public/modules/store/store.js
 
 import { getStoreProducts } from './store.api.js';
-import { addProductToCart } from '../../js/cart.js';
+// CORRECCIÓN: Importamos las funciones necesarias del carrito
+import { addProductToCart, setupCartEventListeners } from '../../js/cart.js';
 
 // --- ELEMENTOS DEL DOM ---
 const productsContainer = document.querySelector('#products-container');
@@ -21,7 +22,7 @@ const createProductCard = (product) => {
                     <span class="text-2xl font-extrabold text-green-600">$${product.price}</span>
                     <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">En Stock</span>
                 </div>
-                <button class="w-full mt-4 bg-emerald-600 text-white py-2 rounded-lg font-bold hover:bg-emerald-700 transition-colors duration-300">
+                <button class="w-full mt-4 bg-emerald-600 text-white py-2 rounded-lg font-bold hover:bg-emerald-700 transition-colors duration-300 add-to-cart-btn">
                     Agregar al Carrito
                 </button>
             </div>
@@ -34,32 +35,42 @@ const createProductCard = (product) => {
  */
 const loadProducts = async () => {
     const products = await getStoreProducts();
-    if (products && products.length > 0) {
-        productsContainer.innerHTML = products.map(createProductCard).join('');
-    } else {
-        productsContainer.innerHTML = `<p class="col-span-full text-center py-12 text-gray-500">No hay productos disponibles en este momento.</p>`;
+    if (productsContainer) {
+        if (products && products.length > 0) {
+            productsContainer.innerHTML = products.map(createProductCard).join('');
+        } else {
+            productsContainer.innerHTML = `<p class="col-span-full text-center py-12 text-gray-500">No hay productos disponibles en este momento.</p>`;
+        }
     }
 };
 
 /**
  * Configura los event listeners para los botones de agregar.
  */
-const setupEventListeners = async () => {
+const setupProductAddListeners = async () => {
+    // Esperamos a que los productos se carguen en la API para tener la data disponible
     const products = await getStoreProducts();
-    productsContainer.addEventListener('click', (event) => {
-        if (event.target.tagName === 'BUTTON' && event.target.textContent.includes('Agregar al Carrito')) {
-            const card = event.target.closest('.bg-white');
-            const productName = card.querySelector('h3').textContent;
-            const productToAdd = products.find(p => p.name === productName);
-            if (productToAdd) {
-                addProductToCart(productToAdd);
+    
+    if (productsContainer) {
+        productsContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('add-to-cart-btn')) {
+                const card = event.target.closest('.bg-white');
+                const productName = card.querySelector('h3').textContent;
+                const productToAdd = products.find(p => p.name === productName);
+                if (productToAdd) {
+                    addProductToCart(productToAdd);
+                }
             }
-        }
-    });
+        });
+    }
 };
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
-    setupEventListeners();
+    setupProductAddListeners();
+    
+    // --- CORRECCIÓN CLAVE ---
+    // Se inicializan los eventos del modal del carrito para que los botones de abrir/cerrar y de eliminar funcionen.
+    setupCartEventListeners(); 
 });
