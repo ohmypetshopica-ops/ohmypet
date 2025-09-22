@@ -13,7 +13,8 @@ const redirectToDashboard = async () => {
             .single();
 
         if (profile && (profile.role === 'dueño' || profile.role === 'empleado')) {
-            window.location.href = '/public/modules/dashboard/dashboard.html';
+            // CORRECCIÓN: Redirige al nuevo archivo del dashboard
+            window.location.href = '/public/modules/dashboard/dashboard-overview.html';
         } else {
             window.location.href = '/public/index.html';
         }

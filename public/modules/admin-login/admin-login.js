@@ -48,8 +48,8 @@ loginForm.addEventListener('submit', async (event) => {
 
     // 3. Redirige según el rol
     if (profile.role === 'dueño' || profile.role === 'empleado') {
-        // Si es admin o empleado, va al dashboard
-        window.location.href = '/public/modules/dashboard/dashboard.html';
+        // CORRECCIÓN: Redirige directamente al nuevo archivo del dashboard
+        window.location.href = '/public/modules/dashboard/dashboard-overview.html';
     } else {
         // Si es cualquier otro rol (ej. cliente), lo deslogueamos y lo mandamos al login de clientes
         console.log("Intento de acceso de un cliente al panel de admin. Redirigiendo...");
