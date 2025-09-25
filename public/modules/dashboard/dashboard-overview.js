@@ -1,12 +1,7 @@
 // public/modules/dashboard/dashboard-overview.js
 
-import { supabase } from '../../core/supabase.js';
-import {
-    getClientCount, getPetCount, getAppointmentsCount, getProductsCount, getUpcomingAppointments
-} from './dashboard.api.js';
-import {
-    createUpcomingAppointmentItem
-} from './dashboard.utils.js';
+import { getDashboardStats, getUpcomingAppointments } from './dashboard.api.js';
+import { createUpcomingAppointmentItem } from './dashboard.utils.js';
 
 // --- ELEMENTOS DEL DOM ---
 const clientCountElement = document.querySelector('#client-count');
@@ -16,35 +11,31 @@ const productsCountElement = document.querySelector('#products-count');
 const upcomingAppointmentsList = document.querySelector('#upcoming-appointments-list');
 const headerTitle = document.querySelector('#header-title');
 
-// --- RENDERIZADO DE DATOS ---
+// --- RENDERIZADO DE DATOS OPTIMIZADO ---
 const loadOverviewData = async () => {
-    // Verificamos si el elemento existe antes de acceder a su propiedad
     if (headerTitle) {
         headerTitle.textContent = 'Dashboard';
     }
 
-    const [clientCount, petCount, appointmentsCount, productsCount, upcomingAppointments] = await Promise.all([getClientCount(), getPetCount(), getAppointmentsCount(), getProductsCount(), getUpcomingAppointments()]);
+    // Hacemos las dos llamadas en paralelo para máxima velocidad
+    const [stats, upcomingAppointments] = await Promise.all([
+        getDashboardStats(),
+        getUpcomingAppointments()
+    ]);
 
-    // Validamos cada elemento antes de actualizar su contenido
-    if (clientCountElement) {
-        clientCountElement.textContent = clientCount;
-    }
-    if (petCountElement) {
-        petCountElement.textContent = petCount;
-    }
-    if (appointmentsCountElement) {
-        appointmentsCountElement.textContent = appointmentsCount;
-    }
-    if (productsCountElement) {
-        productsCountElement.textContent = productsCount;
-    }
+    // Actualizamos los contadores con la data de la única llamada RPC
+    if (clientCountElement) clientCountElement.textContent = stats.clients;
+    if (petCountElement) petCountElement.textContent = stats.pets;
+    if (appointmentsCountElement) appointmentsCountElement.textContent = stats.appointments;
+    if (productsCountElement) productsCountElement.textContent = stats.products;
 
+    // Actualizamos la lista de próximas citas
     if (upcomingAppointmentsList) {
-        upcomingAppointmentsList.innerHTML = upcomingAppointments.length > 0 ? upcomingAppointments.map(createUpcomingAppointmentItem).join('') : `<p class="text-sm text-gray-500 text-center py-4">No hay citas programadas.</p>`;
+        upcomingAppointmentsList.innerHTML = upcomingAppointments.length > 0 
+            ? upcomingAppointments.map(createUpcomingAppointmentItem).join('') 
+            : `<p class="text-sm text-gray-500 text-center py-4">No hay citas programadas.</p>`;
     }
 };
 
 // --- INICIALIZACIÓN ---
-document.addEventListener('DOMContentLoaded', () => {
-    loadOverviewData();
-});
+document.addEventListener('DOMContentLoaded', loadOverviewData);

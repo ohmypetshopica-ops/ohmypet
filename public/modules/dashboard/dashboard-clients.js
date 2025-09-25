@@ -1,6 +1,5 @@
 // public/modules/dashboard/dashboard-clients.js
 
-import { supabase } from '../../core/supabase.js';
 import { getClients, searchClients } from './dashboard.api.js';
 import { createClientRow } from './dashboard.utils.js';
 
@@ -10,23 +9,38 @@ const clientSearchInput = document.querySelector('#client-search-input');
 const headerTitle = document.querySelector('#header-title');
 
 // --- RENDERIZADO DE DATOS ---
-const renderClientsTable = async (clients) => {
-    clientsTableBody.innerHTML = clients.length > 0 ? clients.map(createClientRow).join('') : `<tr><td colspan="3" class="text-center py-4 text-gray-500">No hay clientes registrados.</td></tr>`;
+const renderClientsTable = (clients) => {
+    if (!clientsTableBody) return;
+    clientsTableBody.innerHTML = clients.length > 0 
+        ? clients.map(createClientRow).join('') 
+        : `<tr><td colspan="3" class="text-center py-4 text-gray-500">No hay clientes registrados.</td></tr>`;
 };
 
-// --- MANEJO DE EVENTOS Y ACCIONES ---
+// --- LÓGICA DE BÚSQUEDA ---
 const setupClientSearch = () => {
-    clientSearchInput.addEventListener('input', async (event) => {
-        const searchTerm = event.target.value.trim();
-        const clients = searchTerm ? await searchClients(searchTerm) : await getClients();
-        renderClientsTable(clients);
+    if (!clientSearchInput) return;
+    
+    let debounceTimer;
+    clientSearchInput.addEventListener('input', (event) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+            const searchTerm = event.target.value.trim();
+            clientsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-500">Buscando...</td></tr>`;
+            const clients = searchTerm ? await searchClients(searchTerm) : await getClients();
+            renderClientsTable(clients);
+        }, 300); // Pequeña espera para no buscar en cada tecla
     });
 };
 
-// --- INICIALIZACIÓN ---
-document.addEventListener('DOMContentLoaded', async () => {
-    headerTitle.textContent = 'Gestión de Clientes';
-    const clients = await getClients();
-    renderClientsTable(clients);
+// --- INICIALIZACIÓN DE LA SECCIÓN ---
+const initializeClientsSection = async () => {
+    if (headerTitle) {
+        headerTitle.textContent = 'Gestión de Clientes';
+    }
+    
+    const initialClients = await getClients();
+    renderClientsTable(initialClients);
     setupClientSearch();
-});
+};
+
+document.addEventListener('DOMContentLoaded', initializeClientsSection);

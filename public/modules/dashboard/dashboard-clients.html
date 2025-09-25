@@ -1,15 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clientes - OhMyPet</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <style>
-        :root { font-family: 'Inter', sans-serif; }
-    </style>
-</head>
+    </head>
 <body class="bg-gray-100 text-black">
     <div class="flex h-screen overflow-hidden">
         <div id="sidebar-container"></div>
@@ -23,7 +15,14 @@
             </div>
         </main>
     </div>
-    <script type="module" src="../../core/auth.js"></script>
-    <script type="module" src="./dashboard-clients.js"></script>
+    
+    <script type="module" defer>
+        async function loadComponent(url, containerId) { /* ... función de carga ... */ }
+        await loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container');
+        await loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container');
+    </script>
+    
+    <script type="module" src="../../core/auth.js" defer></script>
+    <script type="module" src="./dashboard-clients.js" defer></script>
 </body>
 </html>

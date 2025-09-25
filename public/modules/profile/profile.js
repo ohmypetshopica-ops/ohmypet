@@ -6,12 +6,19 @@ import { supabase } from './profile.api.js';
 const fullNameElement = document.querySelector('#profile-full-name');
 const emailElement = document.querySelector('#profile-email');
 const roleElement = document.querySelector('#profile-role');
-const userAvatar = document.querySelector('#user-avatar'); // El elemento img del avatar
+const userAvatar = document.querySelector('#user-avatar');
 const petsContainer = document.querySelector('#pets-container');
 const petCardTemplate = document.querySelector('#pet-card-template');
+const petCardSkeletonTemplate = document.querySelector('#pet-card-skeleton-template'); // Nuevo
 
 // --- FUNCIÓN OPTIMIZADA PARA OBTENER DATOS ---
 const loadUserProfile = async () => {
+    // 1. Mostrar el esqueleto de carga inmediatamente
+    petsContainer.innerHTML = ''; // Limpiar
+    for (let i = 0; i < 2; i++) { // Mostrar 2 esqueletos de ejemplo
+        petsContainer.append(petCardSkeletonTemplate.content.cloneNode(true));
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -19,10 +26,11 @@ const loadUserProfile = async () => {
         return;
     }
 
+    // 2. Cargar los datos en paralelo como antes
     const [profileResponse, petsResponse] = await Promise.all([
         supabase
             .from('profiles')
-            .select('full_name, first_name, last_name, role, avatar_url') // Pedimos la URL del avatar
+            .select('full_name, first_name, last_name, role, avatar_url')
             .eq('id', user.id)
             .single(),
         supabase
@@ -31,9 +39,8 @@ const loadUserProfile = async () => {
             .eq('owner_id', user.id)
     ]);
 
+    // 3. Renderizar datos del perfil
     const { data: profile } = profileResponse;
-    const { data: pets } = petsResponse;
-
     if (profile) {
         const displayName = (profile.first_name && profile.last_name) 
             ? `${profile.first_name} ${profile.last_name}` 
@@ -43,7 +50,6 @@ const loadUserProfile = async () => {
         emailElement.textContent = user.email;
         roleElement.textContent = profile.role;
 
-        // Mostramos el avatar si existe, si não, el placeholder con la inicial
         if (profile.avatar_url) {
             userAvatar.src = profile.avatar_url;
         } else {
@@ -52,8 +58,10 @@ const loadUserProfile = async () => {
         }
     }
 
+    // 4. Renderizar la lista de mascotas, reemplazando el esqueleto
+    const { data: pets } = petsResponse;
+    petsContainer.innerHTML = ''; // Limpiar los esqueletos
     if (pets && pets.length > 0) {
-        petsContainer.innerHTML = '';
         pets.forEach(pet => {
             const petCard = petCardTemplate.content.cloneNode(true);
             petCard.querySelector('.pet-link').href = `/public/modules/profile/pet-details.html?id=${pet.id}`;
