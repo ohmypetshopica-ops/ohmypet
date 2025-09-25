@@ -8,6 +8,8 @@ const prevButtons = document.querySelectorAll('.prev-btn');
 const progressBar = document.querySelector('#progress-bar');
 const formTitle = document.querySelector('#form-title');
 const formSubtitle = document.querySelector('#form-subtitle');
+const avatarSelectionContainer = document.querySelector('#avatar-selection');
+const avatarUrlInput = document.querySelector('#avatar_url');
 
 // --- ESTADO DEL FORMULARIO ---
 let currentStep = 1;
@@ -15,8 +17,8 @@ const totalSteps = steps.length;
 const onboardingData = {};
 let currentUser = null;
 
-const formTitles = ["Crea tu perfil", "Datos de contacto", "Contacto de emergencia"];
-const formSubtitles = ["Cuéntanos un poco sobre ti.", "Necesitamos estos datos para coordinar los servicios.", "Es importante en caso no podamos contactarte."];
+const formTitles = ["Crea tu perfil", "Datos de contacto", "Contacto de emergencia", "Elige tu avatar"];
+const formSubtitles = ["Cuéntanos un poco sobre ti.", "Necesitamos estos datos para coordinar los servicios.", "Es importante en caso no podamos contactarte.", "Selecciona una imagen para tu perfil."];
 
 // --- FUNCIONES DE NAVEGACIÓN ---
 const showStep = (stepNumber) => {
@@ -68,8 +70,10 @@ const initializeOnboarding = async () => {
         document.querySelector('#first_name').value = nameParts[0] || '';
         document.querySelector('#last_name').value = nameParts.slice(1).join(' ') || '';
     }
+    showStep(1); // Aseguramos que inicie en el paso 1
 };
 
+// --- MANEJO DE EVENTOS ---
 nextButtons.forEach(button => {
     button.addEventListener('click', () => {
         if (validateStep(currentStep)) {
@@ -88,6 +92,16 @@ prevButtons.forEach(button => {
         }
     });
 });
+
+if (avatarSelectionContainer) {
+    avatarSelectionContainer.addEventListener('click', (event) => {
+        if (event.target.tagName === 'IMG') {
+            avatarSelectionContainer.querySelectorAll('.avatar-option').forEach(img => img.classList.remove('selected'));
+            event.target.classList.add('selected');
+            avatarUrlInput.value = event.target.src;
+        }
+    });
+}
 
 onboardingForm.addEventListener('submit', async (event) => {
     event.preventDefault();

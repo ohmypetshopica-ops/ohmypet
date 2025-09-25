@@ -8,21 +8,32 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         :root { font-family: 'Inter', sans-serif; }
+        /* Estilo simple para el estado de carga */
+        .loading-placeholder { min-height: 80vh; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="bg-gray-100 text-black">
     <div class="flex h-screen overflow-hidden">
         
-        <div id="sidebar-container" class="h-full"></div>
+        <div id="sidebar-container" class="h-full">
+            <div class="w-20 sm:w-64 bg-white h-full"></div>
+        </div>
+
         <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
-            <div id="header-container"></div>
+            <div id="header-container">
+                <div class="h-16 bg-white border-b"></div>
+            </div>
             <div id="main-content" class="flex-1 p-6 overflow-y-auto custom-scrollbar">
-                <section id="overview" class="space-y-6">
+                <div id="loading-state" class="loading-placeholder">
+                    <p class="text-gray-500">Cargando datos del dashboard...</p>
+                </div>
+
+                <section id="overview" class="hidden space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><h3 class="font-medium text-gray-600">Clientes</h3><p class="text-4xl font-bold text-gray-900 mb-1" id="client-count">...</p></div>
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><h3 class="font-medium text-gray-600">Mascotas</h3><p class="text-4xl font-bold text-gray-900 mb-1" id="pet-count">...</p></div>
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><h3 class="font-medium text-gray-600">Citas Pendientes</h3><p class="text-4xl font-bold text-gray-900 mb-1" id="appointments-count">...</p></div>
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><h3 class="font-medium text-gray-600">Productos</h3><p class="text-4xl font-bold text-gray-900 mb-1" id="products-count">...</p></div>
+                       <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><h3 class="font-medium text-gray-600">Clientes</h3><p class="text-4xl font-bold text-gray-900 mb-1" id="client-count">...</p></div>
+                       <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><h3 class="font-medium text-gray-600">Mascotas</h3><p class="text-4xl font-bold text-gray-900 mb-1" id="pet-count">...</p></div>
+                       <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><h3 class="font-medium text-gray-600">Citas Pendientes</h3><p class="text-4xl font-bold text-gray-900 mb-1" id="appointments-count">...</p></div>
+                       <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><h3 class="font-medium text-gray-600">Productos</h3><p class="text-4xl font-bold text-gray-900 mb-1" id="products-count">...</p></div>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200"><h3 class="text-lg font-semibold text-gray-800 mb-4">📅 Próximas Citas</h3><div id="upcoming-appointments-list" class="space-y-4"></div></div>
@@ -33,28 +44,37 @@
         </main>
     </div>
 
-    <script>
+    <script type="module">
+        // Función de carga de componentes mejorada
         async function loadComponent(url, containerId) {
             try {
                 const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
                 const html = await response.text();
                 document.getElementById(containerId).innerHTML = html;
             } catch (error) {
-                console.error(`Error loading component from ${url}:`, error);
-                document.getElementById(containerId).innerHTML = `<div class="p-4 text-red-500">Error al cargar el componente.</div>`;
+                console.error(`Error al cargar ${url}:`, error);
+                document.getElementById(containerId).innerHTML = `<div class="p-4 text-red-500">Error al cargar componente.</div>`;
             }
         }
-        document.addEventListener('DOMContentLoaded', () => {
-            loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container');
-            loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container');
+        
+        // Carga los componentes y el contenido principal en paralelo
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Promise.all([
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            ]);
+            
+            // Importa y ejecuta el script principal del dashboard DESPUÉS de cargar la UI base
+            const module = await import('./dashboard-overview.js');
+            // Suponiendo que el script se auto-ejecuta al importarlo
+            
+            // Oculta el estado de carga y muestra el contenido
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('overview').classList.remove('hidden');
         });
     </script>
     
     <script type="module" src="../../core/auth.js"></script>
-    <script type="module" src="./dashboard-overview.js"></script>
-
 </body>
 </html>
