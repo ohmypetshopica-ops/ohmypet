@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         :root { font-family: 'Inter', sans-serif; }
-        /* Estilos para la transición de la notificación */
         #notification-banner {
             transition: transform 0.5s ease-in-out;
         }
@@ -22,43 +21,7 @@
         <p class="text-sm">En breve nos comunicaremos para confirmar.</p>
     </div>
 
-    <header class="bg-white shadow-sm sticky top-0 z-20">
-        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <a href="/public/index.html" class="text-2xl font-bold text-green-600">OhMyPet</a>
-            </div>
-            
-            <div class="flex items-center space-x-4">
-                <div id="guest-nav" class="relative">
-                    <button id="profile-menu-button" class="p-2 rounded-full hover:bg-gray-100 focus:outline-none">
-                        <img src="/public/assets/icons/user.svg" alt="Ícono de perfil" class="h-7 w-7 text-gray-600">
-                    </button>
-                    <div id="profile-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
-                        <a href="/public/register.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-bold text-green-600">
-                            Registrarse
-                        </a>
-                        <a href="/public/modules/login/login.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            Iniciar Sesión
-                        </a>
-                    </div>
-                </div>
-
-                <div id="user-nav" class="hidden items-center space-x-4 relative">
-                    <button id="user-profile-button" class="flex items-center justify-center h-9 w-9 bg-green-500 rounded-full text-white font-bold text-lg hover:bg-green-600 transition-colors duration-200 focus:outline-none">
-                        <span id="user-initial"></span>
-                    </button>
-                    <div id="user-profile-menu" class="absolute right-0 top-12 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
-                        <a href="/public/modules/profile/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-bold text-green-600">Mi Perfil</a>
-                        <button id="logout-button" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-100 transition-colors duration-200">Cerrar Sesión</button>
-                    </div>
-                </div>
-                
-                <a href="/public/modules/store/store.html" title="Tienda" class="text-gray-600 hover:text-green-600 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
-                    <img src="/public/assets/icons/carrito.svg" alt="Ícono de carrito de compras" class="h-7 w-7 text-gray-600">
-                </a>
-            </div>
-        </nav>
-    </header>
+    <div id="header-container"></div>
 
     <main>
         <section class="relative bg-white py-24 md:py-32 text-center text-white overflow-hidden">
@@ -164,30 +127,9 @@
 
     </main>
 
-    <footer class="bg-gray-800 text-white py-8">
-        <div class="container mx-auto px-6 text-center">
-            <p>© 2025 OhMyPet. Todos los derechos reservados.</p>
-        </div>
-    </footer>
+    <div id="footer-container"></div>
 
-    <a href="https://wa.me/51904343849" target="_blank" rel="noopener noreferrer" class="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 transition-colors duration-300 rounded-full p-4 shadow-xl transform hover:scale-110">
-        <img src="/public/assets/icons/whatsapp.svg" alt="Ícono de WhatsApp" class="h-8 w-8 text-white">
-    </a>
-
+    <script type="module" src="/public/js/layout.js"></script>
     <script type="module" src="/public/js/main.js"></script>
-    <script>
-        const profileMenuButton = document.getElementById('profile-menu-button');
-        const profileMenu = document.getElementById('profile-menu');
-        
-        profileMenuButton.addEventListener('click', () => {
-            profileMenu.classList.toggle('hidden');
-        });
-
-        window.addEventListener('click', (event) => {
-            if (!profileMenuButton.contains(event.target) && !profileMenu.contains(event.target)) {
-                profileMenu.classList.add('hidden');
-            }
-        });
-    </script>
 </body>
 </html>

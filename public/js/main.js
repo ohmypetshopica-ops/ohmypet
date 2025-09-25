@@ -1,116 +1,88 @@
 import { supabase } from '../core/supabase.js';
 import { updateCartBadge } from './cart.js';
 
-// --- ELEMENTOS DEL DOM ---
-const guestNav = document.querySelector('#guest-nav');
-const userNav = document.querySelector('#user-nav');
-const userProfileButton = document.querySelector('#user-profile-button');
-const userProfileMenu = document.querySelector('#user-profile-menu');
-const userInitialElement = document.querySelector('#user-initial');
-const logoutButton = document.querySelector('#logout-button');
+/**
+ * Actualiza la UI del header según el estado de autenticación del usuario.
+ * @param {Object|null} user - El objeto de usuario de Supabase, o null si no está logueado.
+ */
+const setupUI = async (user) => {
+    // Se seleccionan los elementos aquí para garantizar que ya existen en el DOM.
+    const guestNav = document.getElementById('guest-nav');
+    const userNav = document.getElementById('user-nav');
+    const userInitialElement = document.getElementById('user-initial');
 
-// --- FUNCIÓN PARA ACTUALIZAR LA UI ---
-const setupUI = async () => {
-    // 1. Obtenemos el usuario actual
-    const { data: { user } } = await supabase.auth.getUser();
+    if (!guestNav || !userNav) return; // Si los elementos no existen, no hace nada.
 
     if (user) {
-        // --- Si hay un usuario logueado ---
+        // --- Usuario logueado ---
         guestNav.classList.add('hidden');
         userNav.classList.remove('hidden');
-        userNav.classList.add('flex'); // Tailwind usa flex para alinear items
+        userNav.classList.add('flex');
 
-        // Buscamos su nombre en la tabla 'profiles'
-        const { data: profile, error } = await supabase
+        const { data: profile } = await supabase
             .from('profiles')
             .select('full_name')
             .eq('id', user.id)
             .single();
 
-        if (profile && profile.full_name) {
-            // Obtenemos la primera letra del nombre
-            const firstInitial = profile.full_name.charAt(0).toUpperCase();
-            userInitialElement.textContent = firstInitial;
+        if (userInitialElement && profile && profile.full_name) {
+            userInitialElement.textContent = profile.full_name.charAt(0).toUpperCase();
+        } else if (userInitialElement) {
+            userInitialElement.textContent = '👤'; // Ícono por defecto
         }
 
     } else {
-        // --- Si NO hay un usuario logueado ---
+        // --- Usuario no logueado ---
         guestNav.classList.remove('hidden');
         userNav.classList.add('hidden');
         userNav.classList.remove('flex');
     }
 };
 
-// --- MANEJO DEL LOGOUT Y MENÚ DE PERFIL ---
-if (userProfileButton) {
-    userProfileButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        userProfileMenu.classList.toggle('hidden');
-    });
-}
+/**
+ * Configura los listeners para los menús desplegables y el botón de logout en el header.
+ * Usa delegación de eventos para funcionar con contenido cargado dinámicamente.
+ */
+const setupHeaderEventListeners = () => {
+    document.body.addEventListener('click', async (event) => {
+        const profileMenuButton = document.getElementById('profile-menu-button');
+        const profileMenu = document.getElementById('profile-menu');
+        const userProfileButton = document.getElementById('user-profile-button');
+        const userProfileMenu = document.getElementById('user-profile-menu');
+        
+        // Lógica para abrir/cerrar menús
+        if (profileMenuButton?.contains(event.target)) {
+            profileMenu.classList.toggle('hidden');
+        } else if (userProfileButton?.contains(event.target)) {
+            userProfileMenu.classList.toggle('hidden');
+        }
 
-if (logoutButton) {
-    logoutButton.addEventListener('click', async (event) => {
-        event.preventDefault();
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            console.error('Error al cerrar sesión:', error);
-        } else {
-            window.location.reload();
+        // Lógica para cerrar menús al hacer clic fuera
+        if (profileMenu && !profileMenu.classList.contains('hidden') && !profileMenuButton?.contains(event.target)) {
+            profileMenu.classList.add('hidden');
+        }
+        if (userProfileMenu && !userProfileMenu.classList.contains('hidden') && !userProfileButton?.contains(event.target)) {
+            userProfileMenu.classList.add('hidden');
+        }
+        
+        // Lógica para cerrar sesión
+        if (event.target.matches('#logout-button')) {
+            event.preventDefault();
+            await supabase.auth.signOut();
+            window.location.href = '/public/index.html';
         }
     });
-}
+};
 
-// Cierra el menú de perfil si se hace clic fuera de él
-window.addEventListener('click', (event) => {
-    if (userNav && !userNav.contains(event.target) && userProfileMenu) {
-        userProfileMenu.classList.add('hidden');
-    }
-});
-
-
-// --- LÓGICA PARA LA NOTIFICACIÓN DE CITA AGENDADA ---
 const showScheduleNotification = () => {
     const notificationBanner = document.querySelector('#notification-banner');
     if (!notificationBanner) return;
-
     notificationBanner.classList.remove('hidden', 'translate-x-full');
     notificationBanner.classList.add('translate-x-0');
-
     setTimeout(() => {
-        notificationBanner.classList.remove('translate-x-0');
         notificationBanner.classList.add('translate-x-full');
     }, 5000);
 };
-
-// --- INICIO DE LA CORRECCIÓN ---
-// Función de notificación global que podemos usar en cualquier parte.
-export const showAppNotification = (message, type = 'success') => {
-    const notification = document.querySelector('#app-notification');
-    const messageElement = document.querySelector('#app-notification-message');
-    if (!notification || !messageElement) return;
-
-    // Asignar mensaje y estilo
-    messageElement.textContent = message;
-    notification.classList.remove('bg-green-600', 'bg-red-600');
-    if (type === 'success') {
-        notification.classList.add('bg-green-600');
-    } else {
-        notification.classList.add('bg-red-600');
-    }
-
-    // Mostrar banner
-    notification.classList.remove('hidden', 'translate-x-full');
-    notification.classList.add('translate-x-0');
-
-    // Ocultar después de 3 segundos
-    setTimeout(() => {
-        notification.classList.remove('translate-x-0');
-        notification.classList.add('translate-x-full');
-    }, 3000);
-};
-// --- FIN DE LA CORRECCIÓN ---
-
 
 const checkForNotification = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -120,10 +92,19 @@ const checkForNotification = () => {
     }
 };
 
+/**
+ * Punto de entrada principal que se ejecuta una vez que el layout está listo.
+ */
+const initialize = () => {
+    // Escucha cambios de autenticación (login/logout) y actualiza la UI.
+    supabase.auth.onAuthStateChange((_event, session) => {
+        setupUI(session?.user);
+    });
 
-// --- INICIALIZACIÓN ---
-document.addEventListener('DOMContentLoaded', () => {
-    setupUI();
+    setupHeaderEventListeners();
     checkForNotification();
     updateCartBadge();
-});
+};
+
+// Espera a que el layout (header/footer) se cargue antes de inicializar la lógica.
+document.addEventListener('layoutReady', initialize);
