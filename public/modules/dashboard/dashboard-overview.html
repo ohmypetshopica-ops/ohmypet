@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         :root { font-family: 'Inter', sans-serif; }
-        /* Estilo simple para el estado de carga */
         .loading-placeholder { min-height: 80vh; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
@@ -45,7 +44,8 @@
     </div>
 
     <script type="module">
-        // Función de carga de componentes mejorada
+        import { setupSidebarLogout } from './dashboard-sidebar.js';
+        
         async function loadComponent(url, containerId) {
             try {
                 const response = await fetch(url);
@@ -58,18 +58,17 @@
             }
         }
         
-        // Carga los componentes y el contenido principal en paralelo
         document.addEventListener('DOMContentLoaded', async () => {
             await Promise.all([
                 loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
                 loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
             ]);
             
-            // Importa y ejecuta el script principal del dashboard DESPUÉS de cargar la UI base
-            const module = await import('./dashboard-overview.js');
-            // Suponiendo que el script se auto-ejecuta al importarlo
+            // Después de cargar el sidebar, inicializamos el botón de logout
+            setupSidebarLogout();
             
-            // Oculta el estado de carga y muestra el contenido
+            const module = await import('./dashboard-overview.js');
+            
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('overview').classList.remove('hidden');
         });

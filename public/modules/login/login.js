@@ -50,31 +50,37 @@ clientLoginForm.addEventListener('submit', async (event) => {
     if (error) {
         console.error('Error al iniciar sesión:', error.message);
         errorMessage.classList.remove('hidden');
-        return; // Detenemos si las credenciales son incorrectas
+        return;
     }
 
-    // 2. VERIFICACIÓN DEL ONBOARDING
+    // 2. VERIFICACIÓN DEL ROL Y ONBOARDING
     if (data.user) {
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('onboarding_completed')
+            .select('onboarding_completed, role')
             .eq('id', data.user.id)
             .single();
 
         if (profileError) {
             console.error('Error al obtener el perfil:', profileError);
-            // Si hay un error, por seguridad lo enviamos al inicio
             window.location.href = '/public/index.html';
             return;
         }
 
-        // 3. REDIRECCIÓN BASADA EN EL ESTADO DEL ONBOARDING
-        if (profile && profile.onboarding_completed) {
-            // Si ya completó el onboarding, va a la página principal
-            window.location.href = '/public/index.html';
+        // 3. REDIRECCIÓN BASADA EN EL ROL
+        if (profile.role === 'dueño' || profile.role === 'empleado') {
+            // Usuarios administrativos van directo al dashboard
+            window.location.href = '/public/modules/dashboard/dashboard-overview.html';
+        } else if (profile.role === 'cliente') {
+            // Clientes verifican si completaron onboarding
+            if (profile.onboarding_completed) {
+                window.location.href = '/public/index.html';
+            } else {
+                window.location.href = '/public/modules/profile/onboarding.html';
+            }
         } else {
-            // Si no, va a la página de onboarding para completar su perfil
-            window.location.href = '/public/modules/profile/onboarding.html';
+            // Rol desconocido, por seguridad va al inicio
+            window.location.href = '/public/index.html';
         }
     }
 });
@@ -86,7 +92,6 @@ forgotPasswordForm.addEventListener('submit', async (event) => {
 
     const email = document.querySelector('#reset-email').value;
     
-    // Aquí usamos la nueva función de API
     const { success, error } = await recoverPassword(email);
 
     if (success) {
@@ -96,4 +101,5 @@ forgotPasswordForm.addEventListener('submit', async (event) => {
         resetMessage.textContent = 'Hubo un problema al procesar tu solicitud. Inténtalo de nuevo.';
         resetMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
     }
+    resetMessage.classList.remove('hidden');
 });
