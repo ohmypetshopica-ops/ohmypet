@@ -1,15 +1,11 @@
-
-
 const CART_KEY = 'ohmypet_cart';
-
 
 const getCart = () => JSON.parse(localStorage.getItem(CART_KEY)) || [];
 const saveCart = (cart) => localStorage.setItem(CART_KEY, JSON.stringify(cart));
 
-
 export const addProductToCart = (product) => {
     const cart = getCart();
-    const existingProduct = cart.find(item => item.id === product.id);
+    const existingProduct = cart.find(item => item.id == product.id);
 
     if (existingProduct) {
         existingProduct.quantity += 1;
@@ -22,25 +18,30 @@ export const addProductToCart = (product) => {
     saveCart(cart);
     updateCartBadge();
     
-    renderCartItems();
+    // Se llama a renderCartItems solo si el carrito está abierto
+    const cartModal = document.querySelector('#cart-modal');
+    if (cartModal && !cartModal.classList.contains('hidden')) {
+        renderCartItems();
+    }
 };
-
 
 const removeProductFromCart = (productId) => {
     let cart = getCart();
-    cart = cart.filter(item => item.id !== productId);
+    // --- CORRECCIÓN ---
+    // Se cambia a != para comparar correctamente aunque los tipos de ID no coincidan (texto vs número).
+    cart = cart.filter(item => item.id != productId);
     saveCart(cart);
     updateCartBadge();
     renderCartItems();
 };
 
-
 const updateProductQuantity = (productId, newQuantity) => {
     const cart = getCart();
-    const product = cart.find(item => item.id === productId);
+    // --- CORRECCIÓN ---
+    // Se cambia a == para encontrar el producto aunque los tipos de ID no coincidan.
+    const product = cart.find(item => item.id == productId);
 
     if (product) {
-        
         product.quantity = newQuantity > 0 ? newQuantity : 1;
     }
     
@@ -57,7 +58,6 @@ export const updateCartBadge = () => {
     badge.textContent = totalItems;
     badge.classList.toggle('hidden', totalItems === 0);
 };
-
 
 const renderCartItems = () => {
     const cart = getCart();
@@ -79,7 +79,7 @@ const renderCartItems = () => {
         return `
             <div class="flex items-center justify-between py-3 border-b" data-product-id="${item.id}">
                 <div class="flex items-center">
-                    <img src="${item.image_url || 'https://via.placeholder.com/100'}" alt="${item.name}" class="h-16 w-16 object-cover rounded-md mr-4">
+                    <img src="${item.image_url || 'https://placehold.co/100x100'}" alt="${item.name}" class="h-16 w-16 object-cover rounded-md mr-4">
                     <div>
                         <p class="font-bold text-gray-800">${item.name}</p>
                         <p class="text-sm text-gray-600">S/${item.price.toFixed(2)}</p>
@@ -96,7 +96,6 @@ const renderCartItems = () => {
     }).join('');
     subtotalElement.textContent = `S/${subtotal.toFixed(2)}`;
 };
-
 
 export const setupCartEventListeners = () => {
     const cartModal = document.querySelector('#cart-modal');
@@ -128,12 +127,12 @@ export const setupCartEventListeners = () => {
     });
 
     if (cartContainer) {
-        
         cartContainer.addEventListener('input', (e) => {
             if (e.target.classList.contains('quantity-input')) {
                 const itemElement = e.target.closest('[data-product-id]');
                 if (itemElement) {
-                    updateProductQuantity(parseInt(itemElement.dataset.productId), parseInt(e.target.value));
+                    // Se usa `parseInt` para asegurar que se envían números a la función.
+                    updateProductQuantity(itemElement.dataset.productId, parseInt(e.target.value));
                 }
             }
         });
@@ -143,7 +142,7 @@ export const setupCartEventListeners = () => {
             if (removeButton) {
                 const itemElement = removeButton.closest('[data-product-id]');
                 if (itemElement) {
-                    const productId = parseInt(itemElement.dataset.productId);
+                    const productId = itemElement.dataset.productId;
                     if (confirm('¿Seguro que quieres eliminar este producto del carrito?')) {
                         removeProductFromCart(productId);
                     }
