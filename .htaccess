@@ -1,12 +1,86 @@
-# Forzar recarga sin caché para archivos del dashboard
-<FilesMatch "\.(html|js|css)$">
+# ============================================
+# SISTEMA DE CACHÉ AUTOMÁTICO
+# ============================================
+
+# Desactivar caché completamente para archivos del dashboard
+<FilesMatch "dashboard.*\.(html|js|css)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
     Header set Expires "0"
+    Header unset ETag
+    FileETag None
 </FilesMatch>
 
-# Específicamente para archivos del dashboard
+# Desactivar caché para todos los archivos JS y HTML en general
+<FilesMatch "\.(html|js)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+    Header unset ETag
+    FileETag None
+</FilesMatch>
+
+# CSS con caché muy corto (1 minuto)
+<FilesMatch "\.css$">
+    Header set Cache-Control "public, max-age=60, must-revalidate"
+</FilesMatch>
+
+# Imágenes con caché de 1 hora (se actualizan menos frecuentemente)
+<FilesMatch "\.(jpg|jpeg|png|gif|svg|ico)$">
+    Header set Cache-Control "public, max-age=3600"
+</FilesMatch>
+
+# ============================================
+# AGREGAR MODIFICACIÓN AUTOMÁTICA A URLs
+# ============================================
+
+# Esto hace que el navegador siempre pida la última versión
+# basándose en la fecha de modificación del archivo
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Si el archivo existe, agregar timestamp automático
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^(.+)\.(js|css|html)$ $1.$2 [L,E=MODIFIED:%{SCRIPT_FILENAME}]
+</IfModule>
+
+# ============================================
+# HEADERS DE SEGURIDAD ADICIONALES
+# ============================================
+
+# Prevenir que los navegadores guarden caché en disco
+<IfModule mod_headers.c>
+    Header set Cache-Control "no-store, no-cache, must-revalidate" env=no-cache
+</IfModule>
+
+# ============================================
+# CONFIGURACIÓN ESPECÍFICA POR CARPETA
+# ============================================
+
+# Dashboard - Sin caché NUNCA
 <LocationMatch "^/public/modules/dashboard/">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, post-check=0, pre-check=0, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+    Header unset ETag
+</LocationMatch>
+
+# Core - Sin caché (archivos de configuración críticos)
+<LocationMatch "^/public/core/">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</LocationMatch>
+
+# Módulos - Sin caché
+<LocationMatch "^/public/modules/">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</LocationMatch>
+
+# JS general - Sin caché
+<LocationMatch "^/public/js/">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
     Header set Pragma "no-cache"
     Header set Expires "0"
