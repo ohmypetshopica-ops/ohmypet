@@ -101,8 +101,53 @@
         </main>
     </div>
 
+    <script>
+        const CACHE_VERSION = Date.now();
+        
+        async function loadComponent(url, containerId) {
+            try {
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const html = await response.text();
+                document.getElementById(containerId).innerHTML = html;
+                console.log(`✓ ${url} cargado (v${CACHE_VERSION})`);
+            } catch (error) {
+                console.error(`Error cargando ${url}:`, error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('=== Iniciando Dashboard Overview ===');
+            console.log('Cache Version:', CACHE_VERSION);
+            
+            await Promise.all([
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            ]);
+            
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            try {
+                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
+                if (sidebarModule?.initSidebar) {
+                    sidebarModule.initSidebar();
+                    console.log('✓ Sidebar inicializado');
+                }
+            } catch (error) {
+                console.error('Error inicializando sidebar:', error);
+            }
+        });
+    </script>
+
     <script type="module" src="../../core/auth.js"></script>
-    <script type="module" src="./dashboard-loader.js"></script>
     <script type="module" src="./dashboard-overview.js"></script>
 </body>
 </html>

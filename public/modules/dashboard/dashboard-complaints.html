@@ -26,8 +26,7 @@
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200" id="complaints-table-body">
-                                </tbody>
+                            <tbody class="bg-white divide-y divide-gray-200" id="complaints-table-body"></tbody>
                         </table>
                     </div>
                 </section>
@@ -35,14 +34,43 @@
         </main>
     </div>
     
-    <script type="module">
+    <script>
+        const CACHE_VERSION = Date.now();
+        
         async function loadComponent(url, containerId) {
-            const response = await fetch(url);
-            const html = await response.text();
-            document.getElementById(containerId).innerHTML = html;
+            try {
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const html = await response.text();
+                document.getElementById(containerId).innerHTML = html;
+            } catch (error) {
+                console.error(`Error cargando ${url}:`, error);
+            }
         }
-        await loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container');
-        await loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Promise.all([
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            ]);
+            
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            try {
+                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
+                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
     </script>
     
     <script type="module" src="../../core/auth.js"></script>
