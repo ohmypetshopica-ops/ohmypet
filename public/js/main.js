@@ -6,15 +6,13 @@ import { updateCartBadge } from './cart.js';
  * @param {Object|null} user - El objeto de usuario de Supabase, o null si no está logueado.
  */
 const setupUI = async (user) => {
-    // Se seleccionan los elementos aquí para garantizar que ya existen en el DOM.
     const guestNav = document.getElementById('guest-nav');
     const userNav = document.getElementById('user-nav');
     const userInitialElement = document.getElementById('user-initial');
 
-    if (!guestNav || !userNav) return; // Si los elementos no existen, no hace nada.
+    if (!guestNav || !userNav) return;
 
     if (user) {
-        // --- Usuario logueado ---
         guestNav.classList.add('hidden');
         userNav.classList.remove('hidden');
         userNav.classList.add('flex');
@@ -28,11 +26,10 @@ const setupUI = async (user) => {
         if (userInitialElement && profile && profile.full_name) {
             userInitialElement.textContent = profile.full_name.charAt(0).toUpperCase();
         } else if (userInitialElement) {
-            userInitialElement.textContent = '👤'; // Ícono por defecto
+            userInitialElement.textContent = '👤';
         }
 
     } else {
-        // --- Usuario no logueado ---
         guestNav.classList.remove('hidden');
         userNav.classList.add('hidden');
         userNav.classList.remove('flex');
@@ -40,36 +37,94 @@ const setupUI = async (user) => {
 };
 
 /**
- * Configura los listeners para los menús desplegables y el botón de logout en el header.
- * Usa delegación de eventos para funcionar con contenido cargado dinámicamente.
+ * Configura el botón de logout de manera directa
+ */
+const setupLogoutButton = () => {
+    setTimeout(() => {
+        const logoutButton = document.getElementById('logout-button');
+        
+        if (logoutButton) {
+            // Removemos cualquier listener previo clonando el botón
+            const newLogoutButton = logoutButton.cloneNode(true);
+            logoutButton.parentNode.replaceChild(newLogoutButton, logoutButton);
+            
+            // Agregamos el nuevo listener
+            newLogoutButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('Cerrando sesión...');
+                
+                try {
+                    // Primero limpiar cualquier estado local
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    // Intentar cerrar sesión en Supabase
+                    const { error } = await supabase.auth.signOut({ scope: 'local' });
+                    
+                    // Incluso si hay un error, redirigir (porque ya limpiamos el storage)
+                    if (error) {
+                        console.warn('Advertencia al cerrar sesión:', error.message);
+                    }
+                    
+                    console.log('Sesión cerrada, redirigiendo...');
+                    
+                    // Redirigir a la página de inicio
+                    window.location.href = '/public/index.html';
+                    
+                } catch (error) {
+                    console.error('Error al cerrar sesión:', error);
+                    
+                    // Aún así intentar limpiar y redirigir
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '/public/index.html';
+                }
+            });
+            
+            console.log('Listener de logout configurado correctamente');
+        } else {
+            console.warn('No se encontró el botón de logout');
+        }
+    }, 500);
+};
+
+/**
+ * Configura los listeners para los menús desplegables
  */
 const setupHeaderEventListeners = () => {
-    document.body.addEventListener('click', async (event) => {
+    document.body.addEventListener('click', (event) => {
         const profileMenuButton = document.getElementById('profile-menu-button');
         const profileMenu = document.getElementById('profile-menu');
         const userProfileButton = document.getElementById('user-profile-button');
         const userProfileMenu = document.getElementById('user-profile-menu');
         
-        // Lógica para abrir/cerrar menús
+        // Toggle menú de invitado
         if (profileMenuButton?.contains(event.target)) {
-            profileMenu.classList.toggle('hidden');
-        } else if (userProfileButton?.contains(event.target)) {
-            userProfileMenu.classList.toggle('hidden');
-        }
-
-        // Lógica para cerrar menús al hacer clic fuera
-        if (profileMenu && !profileMenu.classList.contains('hidden') && !profileMenuButton?.contains(event.target)) {
-            profileMenu.classList.add('hidden');
-        }
-        if (userProfileMenu && !userProfileMenu.classList.contains('hidden') && !userProfileButton?.contains(event.target)) {
-            userProfileMenu.classList.add('hidden');
+            event.preventDefault();
+            event.stopPropagation();
+            profileMenu?.classList.toggle('hidden');
+            return;
         }
         
-        // Lógica para cerrar sesión
-        if (event.target.matches('#logout-button')) {
+        // Toggle menú de usuario
+        if (userProfileButton?.contains(event.target)) {
             event.preventDefault();
-            await supabase.auth.signOut();
-            window.location.href = '/public/index.html';
+            event.stopPropagation();
+            userProfileMenu?.classList.toggle('hidden');
+            return;
+        }
+
+        // Cerrar menús al hacer clic fuera
+        if (profileMenu && !profileMenu.classList.contains('hidden') && 
+            !profileMenuButton?.contains(event.target) && !profileMenu.contains(event.target)) {
+            profileMenu.classList.add('hidden');
+        }
+        
+        if (userProfileMenu && !userProfileMenu.classList.contains('hidden') && 
+            !userProfileButton?.contains(event.target) && !userProfileMenu.contains(event.target)) {
+            userProfileMenu.classList.add('hidden');
         }
     });
 };
@@ -96,12 +151,17 @@ const checkForNotification = () => {
  * Punto de entrada principal que se ejecuta una vez que el layout está listo.
  */
 const initialize = () => {
-    // Escucha cambios de autenticación (login/logout) y actualiza la UI.
     supabase.auth.onAuthStateChange((_event, session) => {
         setupUI(session?.user);
+        
+        // Configurar logout button después de actualizar la UI
+        if (session?.user) {
+            setupLogoutButton();
+        }
     });
 
     setupHeaderEventListeners();
+    setupLogoutButton();
     checkForNotification();
     updateCartBadge();
 };
