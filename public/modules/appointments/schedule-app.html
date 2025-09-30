@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Cita - OhMyPet</title>
+    <link rel="icon" type="image/png" href="/public/assets/images/favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen">
+
+    <header class="bg-white shadow-sm sticky top-0 z-20">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="/public/index.html" class="text-2xl font-bold text-green-600">OhMyPet</a>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div id="guest-nav" class="relative">
+                    <button id="profile-menu-button" class="p-2 rounded-full hover:bg-gray-100 focus:outline-none">
+                        <img src="/public/assets/icons/user.svg" alt="Ícono de perfil" class="h-7 w-7 text-gray-600">
+                    </button>
+                    <div id="profile-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+                        <a href="/public/register.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-bold text-green-600">Registrarse</a>
+                        <a href="/public/modules/login/login.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Iniciar Sesión</a>
+                    </div>
+                </div>
+                <div id="user-nav" class="hidden items-center space-x-4 relative">
+                    <button id="user-profile-button" class="flex items-center justify-center h-9 w-9 bg-green-500 rounded-full text-white font-bold text-lg hover:bg-green-600 transition-colors duration-200 focus:outline-none">
+                        <span id="user-initial"></span>
+                    </button>
+                    <div id="user-profile-menu" class="absolute right-0 top-12 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+                        <a href="/public/modules/profile/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-bold text-green-600">Mi Perfil</a>
+                        <button id="logout-button" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-100 transition-colors duration-200">Cerrar Sesión</button>
+                    </div>
+                </div>
+                <a href="/public/modules/store/store.html" title="Tienda" class="text-gray-600 hover:text-green-600 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                    <img src="/public/assets/icons/carrito.svg" alt="Ícono de carrito de compras" class="h-7 w-7 text-gray-600">
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center py-16 md:py-24">
+        <div class="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+            <header class="text-center mb-8">
+                <h1 class="text-3xl font-extrabold text-gray-800">📅 Agenda tu Cita</h1>
+                <p class="text-gray-600 mt-2">Sigue los pasos para reservar un espacio para tu mascota.</p>
+            </header>
+
+            <div class="overflow-hidden">
+                <div class="step" id="step-1">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-700 text-center">Paso 1: Selecciona tu mascota</h2>
+                    <div id="pet-options" class="flex flex-wrap gap-4 justify-center"></div>
+                    
+                    <div id="no-pets-message" class="hidden text-center mt-4">
+                        <p class="text-gray-600 mb-4">Aún no tienes mascotas registradas para agendar una cita.</p>
+                        <a href="/public/modules/profile/add-pet.html" class="inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            + Agregar Mascota
+                        </a>
+                    </div>
+
+                    <button id="next-btn-step1" class="next-btn w-full bg-emerald-600 text-white py-3 rounded-lg mt-8 font-bold hover:bg-emerald-700 transition-colors duration-300 transform hover:scale-105">
+                        Siguiente ➡️
+                    </button>
+                </div>
+
+                <div class="step hidden" id="step-2">
+                    <h2 class="text-lg font-semibold mb-6 text-gray-700 text-center">Paso 2: Elige fecha y hora</h2>
+                    <div class="space-y-6">
+                        <div>
+                            <label for="appointment-date" class="block text-sm font-medium text-gray-600 mb-2">Fecha</label>
+                            <input type="date" id="appointment-date" class="w-full border border-gray-300 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 transition-colors duration-200">
+                        </div>
+                        <div>
+                             <label class="block text-sm font-medium text-gray-600 mb-2">Hora</label>
+                            <div id="time-options" class="flex flex-wrap gap-3 justify-center"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between mt-8">
+                        <button class="prev-btn bg-gray-200 px-6 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">⬅️ Atrás</button>
+                        <button class="next-btn bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-emerald-700 transition-colors duration-200">Siguiente ➡️</button>
+                    </div>
+                </div>
+
+                <div class="step hidden" id="step-3">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-700 text-center">Paso 3: Notas adicionales</h2>
+                    <textarea id="extra-notes" placeholder="Ej: Mi perro es alérgico, tiene miedo a la secadora, etc." rows="4"
+                        class="w-full border border-gray-300 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 transition-colors duration-200"></textarea>
+                    <div class="flex justify-between mt-8">
+                        <button class="prev-btn bg-gray-200 px-6 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">⬅️ Atrás</button>
+                        <button id="confirm-btn" class="flex items-center bg-green-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-600 transition-colors duration-200">
+                            <img src="/public/assets/icons/whatsapp.svg" alt="WhatsApp" class="h-5 w-5 mr-2">
+                            Confirmar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>© 2025 OhMyPet. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script type="module" src="/public/js/main.js"></script>
+    <script src="schedule-app.js" type="module"></script>
+</body>
+</html>

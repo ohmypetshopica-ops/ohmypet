@@ -1,0 +1,31 @@
+# ============================================
+# SISTEMA DE CACHÉ AUTOMÁTICO
+# ============================================
+
+# Desactivar caché completamente para archivos del dashboard
+<FilesMatch "dashboard.*\.(html|js|css)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+    Header unset ETag
+    FileETag None
+</FilesMatch>
+
+# Desactivar caché para todos los archivos JS y HTML en general
+<FilesMatch "\.(html|js)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+    Header unset ETag
+    FileETag None
+</FilesMatch>
+
+# CSS con caché muy corto (1 minuto)
+<FilesMatch "\.css$">
+    Header set Cache-Control "public, max-age=60, must-revalidate"
+</FilesMatch>
+
+# Imágenes con caché de 1 hora (se actualizan menos frecuentemente)
+<FilesMatch "\.(jpg|jpeg|png|gif|svg|ico)$">
+    Header set Cache-Control "public, max-age=3600"
+</FilesMatch>

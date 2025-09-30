@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Reclamos - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>:root { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 text-black">
+    <div class="flex h-screen overflow-hidden">
+        <div id="sidebar-container"></div>
+        <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
+            <div id="header-container"></div>
+            <div id="main-content" class="flex-1 p-6 overflow-y-auto">
+                <section id="complaints">
+                    <div class="w-full bg-white p-6 rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
+                        <table class="w-full table-auto divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="complaints-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        const CACHE_VERSION = Date.now();
+        
+        async function loadComponent(url, containerId) {
+            try {
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const html = await response.text();
+                document.getElementById(containerId).innerHTML = html;
+            } catch (error) {
+                console.error(`Error cargando ${url}:`, error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Promise.all([
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            ]);
+            
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            try {
+                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
+                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+    
+    <script type="module" src="../../core/auth.js"></script>
+    <script type="module" src="./dashboard-complaints.js"></script>
+</body>
+</html>

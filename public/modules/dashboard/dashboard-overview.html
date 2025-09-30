@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - OhMyPet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        
+        .sidebar-scrollable nav::-webkit-scrollbar { width: 6px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+    </style>
+</head>
+<body class="bg-gray-50 text-black">
+    <div class="flex h-screen overflow-hidden">
+        <div id="sidebar-container"></div>
+
+        <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+            <div id="header-container"></div>
+            
+            <div id="main-content" class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+                <section id="overview" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                           <div class="flex items-center justify-between mb-4">
+                               <h3 class="text-sm font-medium text-gray-600">Clientes</h3>
+                               <div class="p-2 bg-blue-50 rounded-lg">
+                                   <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                   </svg>
+                               </div>
+                           </div>
+                           <p class="text-3xl font-bold text-gray-900" id="client-count">-</p>
+                           <p class="text-xs text-gray-500 mt-2">Total registrados</p>
+                       </div>
+                       
+                       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                           <div class="flex items-center justify-between mb-4">
+                               <h3 class="text-sm font-medium text-gray-600">Mascotas</h3>
+                               <div class="p-2 bg-green-50 rounded-lg">
+                                   <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                   </svg>
+                               </div>
+                           </div>
+                           <p class="text-3xl font-bold text-gray-900" id="pet-count">-</p>
+                           <p class="text-xs text-gray-500 mt-2">Total registradas</p>
+                       </div>
+                       
+                       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                           <div class="flex items-center justify-between mb-4">
+                               <h3 class="text-sm font-medium text-gray-600">Citas Pendientes</h3>
+                               <div class="p-2 bg-yellow-50 rounded-lg">
+                                   <svg class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                   </svg>
+                               </div>
+                           </div>
+                           <p class="text-3xl font-bold text-gray-900" id="appointments-count">-</p>
+                           <p class="text-xs text-gray-500 mt-2">Por confirmar</p>
+                       </div>
+                       
+                       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                           <div class="flex items-center justify-between mb-4">
+                               <h3 class="text-sm font-medium text-gray-600">Productos</h3>
+                               <div class="p-2 bg-purple-50 rounded-lg">
+                                   <svg class="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                   </svg>
+                               </div>
+                           </div>
+                           <p class="text-3xl font-bold text-gray-900" id="products-count">-</p>
+                           <p class="text-xs text-gray-500 mt-2">En inventario</p>
+                       </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <svg class="h-5 w-5 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Próximas Citas
+                            </h3>
+                            <div id="upcoming-appointments-list" class="space-y-3">
+                                <p class="text-sm text-gray-500 text-center py-8">Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const CACHE_VERSION = Date.now();
+        
+        async function loadComponent(url, containerId) {
+            try {
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const html = await response.text();
+                document.getElementById(containerId).innerHTML = html;
+                console.log(`✓ ${url} cargado (v${CACHE_VERSION})`);
+            } catch (error) {
+                console.error(`Error cargando ${url}:`, error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('=== Iniciando Dashboard Overview ===');
+            console.log('Cache Version:', CACHE_VERSION);
+            
+            await Promise.all([
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            ]);
+            
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            try {
+                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
+                if (sidebarModule?.initSidebar) {
+                    sidebarModule.initSidebar();
+                    console.log('✓ Sidebar inicializado');
+                }
+            } catch (error) {
+                console.error('Error inicializando sidebar:', error);
+            }
+        });
+    </script>
+
+    <script type="module" src="../../core/auth.js"></script>
+    <script type="module" src="./dashboard-overview.js"></script>
+</body>
+</html>

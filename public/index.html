@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!doctype html>
 <html lang="es">
 <head>
@@ -21,3 +22,141 @@
   </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OhMyPet - Estética Canina y Felina</title>
+    <link rel="icon" type="image/png" href="/public/assets/images/favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+        #notification-banner {
+            transition: transform 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased">
+
+    <div id="notification-banner" class="hidden fixed top-24 right-5 bg-green-600 text-white py-3 px-6 rounded-lg shadow-xl z-50 transform translate-x-full">
+        <p class="font-bold">¡Solicitud Enviada!</p>
+        <p class="text-sm">En breve nos comunicaremos para confirmar.</p>
+    </div>
+
+    <div id="header-container"></div>
+
+    <main>
+        <section class="relative bg-white py-24 md:py-32 text-center text-white overflow-hidden">
+            <div class="absolute inset-0 z-0">
+                <img src="/public/assets/images/hero-banner.jpg" alt="Banner de OhMyPet" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black opacity-40"></div>
+            </div>
+            <div class="relative z-10 container mx-auto px-6 max-w-4xl">
+                <h1 class="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight drop-shadow-lg animate-fade-in-down">
+                    Transformamos el estilo de tu Mascota
+                </h1>
+                <p class="mt-6 text-xl md:text-2xl font-light max-w-2xl mx-auto drop-shadow-md animate-fade-in-up delay-200">
+                    Servicios de estética y cuidado profesional para el bienestar de tu mejor amigo.
+                </p>
+                <a href="/public/modules/appointments/schedule-app.html" class="mt-10 inline-block bg-white text-emerald-700 text-lg font-bold py-3 px-8 rounded-full shadow-lg hover:bg-emerald-100 transition-all duration-300 transform hover:scale-105 animate-pop-in delay-400">
+                    ¡Agenda tu Cita Ahora!
+                </a>
+            </div>
+        </section>
+
+        <section class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6 text-center max-w-6xl">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">Nuestro Servicio de Estética Integral</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto mb-12">
+                    Ofrecemos un cuidado completo para que tu mascota luzca radiante y se sienta feliz.
+                </p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div class="grid grid-cols-2 gap-6 p-4 bg-emerald-50 rounded-2xl shadow-lg ring-1 ring-emerald-100">
+                        <div class="overflow-hidden rounded-xl shadow-md">
+                            <img src="/public/assets/images/grooming-1.jpg" alt="Perro antes del aseo" class="w-full h-auto object-cover transition-transform duration-300 hover:scale-105">
+                            <p class="text-center font-semibold text-emerald-700 mt-2">Antes</p>
+                        </div>
+                        <div class="overflow-hidden rounded-xl shadow-md">
+                            <img src="/public/assets/images/grooming-3.jpg" alt="Perro después del aseo" class="w-full h-auto object-cover transition-transform duration-300 hover:scale-105">
+                            <p class="text-center font-semibold text-emerald-700 mt-2">Después</p>
+                        </div>
+                    </div>
+                    <div class="text-left bg-emerald-50 p-8 rounded-2xl shadow-lg ring-1 ring-emerald-100">
+                        <h3 class="text-2xl font-bold text-emerald-800 mb-6">Cada sesión incluye:</h3>
+                        <ul class="space-y-4 text-gray-700 text-lg">
+                            <li class="flex items-center">
+                                <svg class="h-6 w-6 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="font-medium">Secado y cepillado profesional</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-6 w-6 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="font-medium">Doble shampoo especializado (según tipo de pelaje)</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-6 w-6 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="font-medium">Acondicionamiento para un pelaje suave y brillante</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-6 w-6 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="font-medium">Corte de uñas seguro y preciso</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-6 w-6 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="font-medium">Limpieza de oídos profunda</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-6 w-6 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="font-medium">Limpieza y humectación de almohadillas</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-6 w-6 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="font-medium">Corte higiénico para mayor comodidad</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-6 w-6 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="font-medium">Corte estético personalizado</span>
+                            </li>
+                        </ul>
+                        <div class="mt-8 text-center">
+                            <p class="text-xl font-semibold text-emerald-700 mb-4">¡Agenda tu cita previa!</p>
+                            <a href="https://wa.me/51904343849" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center bg-emerald-600 text-white text-xl font-bold py-3 px-8 rounded-full shadow-lg hover:bg-emerald-700 transition-colors duration-300 transform hover:scale-105">
+                                <img src="/public/assets/icons/whatsapp.svg" alt="Ícono de WhatsApp" class="h-6 w-6 mr-3">
+                                904 343 849
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white text-gray-900 py-16 md:py-20 text-center relative overflow-hidden">
+            <div class="relative z-10 container mx-auto px-6 max-w-4xl">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6 text-gray-800">¡Visítanos en Ica!</h2>
+                <p class="text-lg md:text-xl mb-8 text-gray-600">
+                    Encuéntranos para darle a tu mascota el cuidado experto que necesita.
+                </p>
+                
+                <div class="bg-gray-100 rounded-xl shadow-lg p-6 md:p-8 inline-block max-w-full w-full">
+                    <p class="text-xl md:text-2xl font-semibold mb-4 text-emerald-700">
+                        <svg class="h-7 w-7 inline-block mr-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Residencial Ica - Calle Cardo B 8, Ica
+                    </p>
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d61930.0212677287!2d-75.7891773713009!3d-14.04015026373637!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9110e303b3534291%3A0x8422714530306da7!2sOH%20MY%20PET%20-%20pet%20shop%20%26%20grooming!5e0!3m2!1sen!2spe!4v1757461940997!5m2!1sen!2spe" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" class="rounded-xl mt-4"></iframe>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="footer-container"></div>
+
+    <script type="module" src="/public/js/layout.js" defer></script>
+    <script type="module" src="/public/js/main.js" defer></script>
+</body>
+</html>
+>>>>>>> 89b0be6f173d7ff032e06aa870d48fda69897c04
