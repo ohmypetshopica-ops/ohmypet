@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libro de Reclamaciones - OhMyPet</title>
+    <link rel="icon" type="image/png" href="/public/assets/images/favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen" style="font-family: 'Inter', sans-serif;">
+
+    <div id="header-container"></div>
+
+    <main class="w-full px-4 py-12 flex-grow">
+        <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-2xl shadow-lg border border-gray-200">
+            
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800">Libro de Reclamaciones</h1>
+            </div>
+
+            <div class="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <h2 class="text-lg font-bold text-gray-800">OhMyPet</h2>
+                <p class="text-sm text-gray-600"><strong>RUC:</strong> 20123456789</p>
+                <p class="text-sm text-gray-600"><strong>Dirección:</strong> Residencial Ica - Calle Cardo B 8, Ica, Perú</p>
+            </div>
+
+            <form id="complaint-form" class="space-y-8">
+                
+                <section>
+                    <h3 class="text-2xl font-bold text-gray-700 mb-6 border-b pb-2">Datos de la Persona que presenta el Reclamo</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="doc_type" class="block mb-2 font-medium text-gray-700">Tipo de Documento <span class="text-red-500">*</span></label>
+                            <select id="doc_type" name="doc_type" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition">
+                                <option>DNI</option>
+                                <option>Carnet de Extranjería</option>
+                                <option>Pasaporte</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="doc_num" class="block mb-2 font-medium text-gray-700">Nro de Documento <span class="text-red-500">*</span></label>
+                            <input type="text" id="doc_num" name="doc_num" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition" required>
+                        </div>
+                        <div>
+                            <label for="first_name" class="block mb-2 font-medium text-gray-700">Nombres <span class="text-red-500">*</span></label>
+                            <input type="text" id="first_name" name="first_name" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition" required>
+                        </div>
+                        <div>
+                            <label for="last_name" class="block mb-2 font-medium text-gray-700">Apellido Paterno <span class="text-red-500">*</span></label>
+                            <input type="text" id="last_name" name="last_name" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition" required>
+                        </div>
+                        <div>
+                            <label for="mother_last_name" class="block mb-2 font-medium text-gray-700">Apellido Materno <span class="text-red-500">*</span></label>
+                            <input type="text" id="mother_last_name" name="mother_last_name" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition" required>
+                        </div>
+                        <div>
+                            <label for="email" class="block mb-2 font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
+                            <input type="email" id="email" name="email" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition" required>
+                        </div>
+                         <div>
+                            <label for="phone" class="block mb-2 font-medium text-gray-700">Teléfono</label>
+                            <input type="tel" id="phone" name="phone" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition">
+                        </div>
+                        <div>
+                            <label for="district" class="block mb-2 font-medium text-gray-700">Distrito</label>
+                            <input type="text" id="district" name="district" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition">
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3 class="text-2xl font-bold text-gray-700 mb-6 border-b pb-2">Información General</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block mb-2 font-medium text-gray-700">Identificación del bien contratado <span class="text-red-500">*</span></label>
+                            <div class="flex items-center space-x-6 mt-2">
+                                <label class="flex items-center"><input type="radio" name="bien_contratado" value="producto" class="mr-2 h-4 w-4 text-green-600 focus:ring-green-500" required> Producto</label>
+                                <label class="flex items-center"><input type="radio" name="bien_contratado" value="servicio" class="mr-2 h-4 w-4 text-green-600 focus:ring-green-500"> Servicio</label>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="monto" class="block mb-2 font-medium text-gray-700">Monto reclamado (S/.)</label>
+                            <input type="number" step="0.01" id="monto" name="monto" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition" placeholder="0.00">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="description" class="block mb-2 font-medium text-gray-700">Descripción <span class="text-red-500">*</span></label>
+                            <textarea id="description" name="description" rows="3" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition" placeholder="Describa el producto o servicio..." required></textarea>
+                        </div>
+                    </div>
+                </section>
+                
+                <section>
+                    <h3 class="text-2xl font-bold text-gray-700 mb-6 border-b pb-2">Detalle de su reclamo</h3>
+                    <div>
+                        <label class="block mb-2 font-medium text-gray-700">Tipo <span class="text-red-500">*</span></label>
+                        <div class="flex items-center space-x-6 mt-2">
+                            <label class="flex items-center"><input type="radio" name="tipo_reclamo" value="reclamo" class="mr-2 h-4 w-4 text-green-600 focus:ring-green-500" required> Reclamo</label>
+                            <label class="flex items-center"><input type="radio" name="tipo_reclamo" value="queja" class="mr-2 h-4 w-4 text-green-600 focus:ring-green-500"> Queja</label>
+                            </div>
+                    </div>
+                    <div class="mt-6">
+                        <label for="detalle_reclamo" class="block mb-2 font-medium text-gray-700">Detalle del reclamo <span class="text-red-500">*</span></label>
+                        <textarea id="detalle_reclamo" name="detalle_reclamo" rows="5" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition" required></textarea>
+                    </div>
+                    <div class="mt-6">
+                        <label for="pedido" class="block mb-2 font-medium text-gray-700">Pedido <span class="text-red-500">*</span></label>
+                        <textarea id="pedido" name="pedido" rows="3" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:outline-none transition" placeholder="Ej: Solicitud de reembolso, cambio de producto, etc." required></textarea>
+                    </div>
+                </section>
+
+                <section class="border-t pt-8 space-y-6 text-sm text-gray-600">
+                    <div class="bg-gray-50 p-4 rounded-lg border">
+                        <p class="font-semibold">La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante el INDECOPI.</p>
+                        <p class="mt-2">El proveedor deberá dar respuesta al reclamo y/o queja en un plazo no mayor a quince (15) días hábiles improrrogables.</p>
+                    </div>
+
+                    <div>
+                        <label class="flex items-start">
+                            <input type="checkbox" name="consentimiento_datos" class="mt-1 mr-3 h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500" required>
+                            <span class="flex-1">Al enviar este formulario acepto el flujo transfronterizo de mis datos personales, según la Ley de Protección de Datos Personales. <span class="text-red-500">*</span></span>
+                        </label>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="bg-green-600 text-white font-bold py-3 px-10 rounded-lg hover:bg-green-700 transition-colors text-lg disabled:bg-gray-400">
+                            Enviar
+                        </button>
+                    </div>
+                </section>
+
+            </form>
+        </div>
+    </main>
+
+    <div id="footer-container"></div>
+    
+    <script type="module" src="/public/js/layout.js" defer></script>
+    <script type="module" src="/public/js/main.js" defer></script>
+    <script type="module" src="./libro-de-reclamaciones.js"></script>
+</body>
+</html>
