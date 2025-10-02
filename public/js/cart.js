@@ -1,6 +1,7 @@
 const CART_KEY = 'ohmypet_cart';
 
 let notificationTimeout;
+let productIdToDelete = null; // Variable para guardar el ID del producto a eliminar
 
 /**
  * Muestra una notificación temporal en la pantalla.
@@ -10,14 +11,11 @@ const showNotification = (message) => {
     const notification = document.querySelector('#add-to-cart-notification');
     if (!notification) return;
 
-    // Limpiar cualquier notificación anterior para reiniciar el temporizador
     clearTimeout(notificationTimeout);
 
-    // Actualizar mensaje y mostrar
     notification.querySelector('p').textContent = message;
     notification.classList.remove('translate-y-20', 'opacity-0');
 
-    // Ocultar después de 3 segundos
     notificationTimeout = setTimeout(() => {
         notification.classList.add('translate-y-20', 'opacity-0');
     }, 3000);
@@ -32,11 +30,9 @@ export const addProductToCart = (product) => {
 
     if (existingProduct) {
         existingProduct.quantity += 1;
-        // ===== LÍNEA MODIFICADA =====
         showNotification(`Se agregó otra unidad de ${product.name}.`);
     } else {
         cart.push({ ...product, quantity: 1 });
-        // ===== LÍNEA MODIFICADA =====
         showNotification(`¡${product.name} agregado al carrito!`);
     }
 
@@ -124,8 +120,13 @@ export const setupCartEventListeners = () => {
     const closeBtn = document.querySelector('#close-cart-button');
     const cartContainer = document.querySelector('#cart-items-container');
     const checkoutBtn = document.querySelector('#checkout-button');
+    
+    // ===== ELEMENTOS DEL NUEVO MODAL DE CONFIRMACIÓN =====
+    const deleteModal = document.querySelector('#delete-confirm-modal');
+    const confirmDeleteBtn = document.querySelector('#modal-confirm-btn');
+    const cancelDeleteBtn = document.querySelector('#modal-cancel-btn');
 
-    if (!cartModal || !openBtn || !closeBtn) return;
+    if (!cartModal || !openBtn || !closeBtn || !deleteModal) return;
 
     const openCart = () => {
         renderCartItems();
@@ -139,11 +140,32 @@ export const setupCartEventListeners = () => {
         if (cartModalContent) cartModalContent.classList.add('translate-x-full');
         setTimeout(() => cartModal.classList.add('hidden'), 300);
     };
+
+    // ===== NUEVAS FUNCIONES PARA EL MODAL DE CONFIRMACIÓN =====
+    const openDeleteModal = (productId) => {
+        productIdToDelete = productId;
+        deleteModal.classList.remove('hidden');
+    };
     
+    const closeDeleteModal = () => {
+        productIdToDelete = null;
+        deleteModal.classList.add('hidden');
+    };
+
     openBtn.addEventListener('click', (e) => { e.preventDefault(); openCart(); });
     closeBtn.addEventListener('click', closeCart);
-    cartModal.addEventListener('click', (e) => {
-        if (e.target === cartModal) closeCart();
+    cartModal.addEventListener('click', (e) => { if (e.target === cartModal) closeCart(); });
+    
+    // Listeners para los botones del nuevo modal
+    cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+    deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) closeDeleteModal(); });
+    
+    confirmDeleteBtn.addEventListener('click', () => {
+        if (productIdToDelete) {
+            removeProductFromCart(productIdToDelete);
+            showNotification("Producto eliminado del carrito.");
+        }
+        closeDeleteModal();
     });
 
     if (cartContainer) {
@@ -162,9 +184,8 @@ export const setupCartEventListeners = () => {
                 const itemElement = removeButton.closest('[data-product-id]');
                 if (itemElement) {
                     const productId = itemElement.dataset.productId;
-                    if (confirm('¿Seguro que quieres eliminar este producto del carrito?')) {
-                        removeProductFromCart(productId);
-                    }
+                    // ===== LÍNEA MODIFICADA: YA NO USA confirm(), AHORA ABRE EL MODAL =====
+                    openDeleteModal(productId);
                 }
             }
         });
@@ -174,7 +195,6 @@ export const setupCartEventListeners = () => {
         checkoutBtn.addEventListener('click', () => {
             const cart = getCart();
             if (cart.length === 0) {
-                // En lugar de una alerta, podríamos usar nuestra nueva notificación
                 showNotification('Tu carrito está vacío.');
                 return;
             }

@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         :root { font-family: 'Inter', sans-serif; }
-        /* ===== ESTILOS AÑADIDOS PARA LA NOTIFICACIÓN ===== */
         #add-to-cart-notification {
             transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
         }
@@ -76,10 +75,7 @@
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
-
-            <div id="cart-items-container" class="p-4 overflow-y-auto h-[calc(100%-200px)]">
-                </div>
-
+            <div id="cart-items-container" class="p-4 overflow-y-auto h-[calc(100%-200px)]"></div>
             <div class="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-lg font-medium text-gray-700">Subtotal:</span>
@@ -94,6 +90,26 @@
     
     <div id="add-to-cart-notification" class="fixed bottom-5 left-1/2 -translate-x-1/2 transform translate-y-20 opacity-0 bg-gray-900 text-white py-3 px-6 rounded-lg shadow-xl z-50">
         <p class="font-medium">¡Producto agregado!</p>
+    </div>
+
+    <div id="delete-confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 text-center">
+            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mt-4">Eliminar Producto</h3>
+            <p class="text-gray-600 mt-2">¿Estás seguro de que quieres eliminar este producto del carrito?</p>
+            <div class="mt-6 flex justify-center gap-4">
+                <button id="modal-cancel-btn" class="py-2 px-6 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300">
+                    No, Cancelar
+                </button>
+                <button id="modal-confirm-btn" class="py-2 px-6 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700">
+                    Sí, Eliminar
+                </button>
+            </div>
+        </div>
     </div>
     <script type="module" src="/public/js/main.js"></script>
     <script type="module" src="./store.js"></script>
