@@ -8,12 +8,10 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         :root { font-family: 'Inter', sans-serif; }
-        
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
-        
         .sidebar-scrollable nav::-webkit-scrollbar { width: 6px; }
         .sidebar-scrollable nav::-webkit-scrollbar-track { background: transparent; }
         .sidebar-scrollable nav::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
@@ -21,7 +19,16 @@
     </style>
 </head>
 <body class="bg-gray-50 text-black">
-    <div class="flex h-screen overflow-hidden">
+    
+    <div class="md:hidden flex flex-col items-center justify-center h-screen bg-gray-100 p-4 text-center">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">Acceso no permitido</h1>
+        <p class="text-gray-600">El panel de administración solo está disponible en dispositivos de escritorio (computadoras o laptops).</p>
+        <a href="/public/index.html" class="mt-6 bg-green-600 text-white font-bold py-2 px-4 rounded-lg">
+            Volver al inicio
+        </a>
+    </div>
+
+    <div class="hidden md:flex h-screen overflow-hidden">
         <div id="sidebar-container"></div>
 
         <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
@@ -103,50 +110,30 @@
 
     <script>
         const CACHE_VERSION = Date.now();
-        
         async function loadComponent(url, containerId) {
             try {
-                const response = await fetch(`${url}?v=${CACHE_VERSION}`, {
-                    cache: 'no-store',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    }
-                });
-                
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
                 document.getElementById(containerId).innerHTML = html;
-                console.log(`✓ ${url} cargado (v${CACHE_VERSION})`);
             } catch (error) {
                 console.error(`Error cargando ${url}:`, error);
             }
         }
-
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('=== Iniciando Dashboard Overview ===');
-            console.log('Cache Version:', CACHE_VERSION);
-            
             await Promise.all([
                 loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
                 loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
             ]);
-            
             await new Promise(resolve => setTimeout(resolve, 200));
-            
             try {
                 const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
-                if (sidebarModule?.initSidebar) {
-                    sidebarModule.initSidebar();
-                    console.log('✓ Sidebar inicializado');
-                }
+                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
             } catch (error) {
                 console.error('Error inicializando sidebar:', error);
             }
         });
     </script>
-
     <script type="module" src="../../core/auth.js"defer></script>
     <script type="module" src="./dashboard-overview.js"defer></script>
 </body>
