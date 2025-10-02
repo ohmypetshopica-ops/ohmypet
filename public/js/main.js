@@ -44,48 +44,28 @@ const setupLogoutButton = () => {
         const logoutButton = document.getElementById('logout-button');
         
         if (logoutButton) {
-            // Removemos cualquier listener previo clonando el botón
             const newLogoutButton = logoutButton.cloneNode(true);
             logoutButton.parentNode.replaceChild(newLogoutButton, logoutButton);
             
-            // Agregamos el nuevo listener
             newLogoutButton.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                console.log('Cerrando sesión...');
-                
                 try {
-                    // Primero limpiar cualquier estado local
                     localStorage.clear();
                     sessionStorage.clear();
                     
-                    // Intentar cerrar sesión en Supabase
-                    const { error } = await supabase.auth.signOut({ scope: 'local' });
+                    await supabase.auth.signOut({ scope: 'local' });
                     
-                    // Incluso si hay un error, redirigir (porque ya limpiamos el storage)
-                    if (error) {
-                        console.warn('Advertencia al cerrar sesión:', error.message);
-                    }
-                    
-                    console.log('Sesión cerrada, redirigiendo...');
-                    
-                    // Redirigir a la página de inicio
                     window.location.href = '/public/index.html';
                     
                 } catch (error) {
                     console.error('Error al cerrar sesión:', error);
-                    
-                    // Aún así intentar limpiar y redirigir
                     localStorage.clear();
                     sessionStorage.clear();
                     window.location.href = '/public/index.html';
                 }
             });
-            
-            console.log('Listener de logout configurado correctamente');
-        } else {
-            console.warn('No se encontró el botón de logout');
         }
     }, 500);
 };
@@ -100,7 +80,6 @@ const setupHeaderEventListeners = () => {
         const userProfileButton = document.getElementById('user-profile-button');
         const userProfileMenu = document.getElementById('user-profile-menu');
         
-        // Toggle menú de invitado
         if (profileMenuButton?.contains(event.target)) {
             event.preventDefault();
             event.stopPropagation();
@@ -108,7 +87,6 @@ const setupHeaderEventListeners = () => {
             return;
         }
         
-        // Toggle menú de usuario
         if (userProfileButton?.contains(event.target)) {
             event.preventDefault();
             event.stopPropagation();
@@ -116,7 +94,6 @@ const setupHeaderEventListeners = () => {
             return;
         }
 
-        // Cerrar menús al hacer clic fuera
         if (profileMenu && !profileMenu.classList.contains('hidden') && 
             !profileMenuButton?.contains(event.target) && !profileMenu.contains(event.target)) {
             profileMenu.classList.add('hidden');
@@ -129,15 +106,20 @@ const setupHeaderEventListeners = () => {
     });
 };
 
+// ===== FUNCIÓN DE NOTIFICACIÓN CORREGIDA =====
 const showScheduleNotification = () => {
     const notificationBanner = document.querySelector('#notification-banner');
     if (!notificationBanner) return;
-    notificationBanner.classList.remove('hidden', 'translate-x-full');
-    notificationBanner.classList.add('translate-x-0');
+
+    // 1. Mostrar la notificación (deslizar y hacer visible)
+    notificationBanner.classList.remove('opacity-0', 'translate-x-full', 'pointer-events-none');
+
+    // 2. Ocultar la notificación después de 4 segundos
     setTimeout(() => {
-        notificationBanner.classList.add('translate-x-full');
-    }, 5000);
+        notificationBanner.classList.add('opacity-0', 'translate-x-full', 'pointer-events-none');
+    }, 4000);
 };
+// ===== FIN DE LA CORRECCIÓN =====
 
 const checkForNotification = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -154,7 +136,6 @@ const initialize = () => {
     supabase.auth.onAuthStateChange((_event, session) => {
         setupUI(session?.user);
         
-        // Configurar logout button después de actualizar la UI
         if (session?.user) {
             setupLogoutButton();
         }
@@ -166,5 +147,4 @@ const initialize = () => {
     updateCartBadge();
 };
 
-// Espera a que el layout (header/footer) se cargue antes de inicializar la lógica.
 document.addEventListener('layoutReady', initialize);
