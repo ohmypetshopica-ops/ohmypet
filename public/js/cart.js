@@ -1,5 +1,28 @@
 const CART_KEY = 'ohmypet_cart';
 
+let notificationTimeout;
+
+/**
+ * Muestra una notificación temporal en la pantalla.
+ * @param {string} message - El mensaje que se mostrará en la notificación.
+ */
+const showNotification = (message) => {
+    const notification = document.querySelector('#add-to-cart-notification');
+    if (!notification) return;
+
+    // Limpiar cualquier notificación anterior para reiniciar el temporizador
+    clearTimeout(notificationTimeout);
+
+    // Actualizar mensaje y mostrar
+    notification.querySelector('p').textContent = message;
+    notification.classList.remove('translate-y-20', 'opacity-0');
+
+    // Ocultar después de 3 segundos
+    notificationTimeout = setTimeout(() => {
+        notification.classList.add('translate-y-20', 'opacity-0');
+    }, 3000);
+};
+
 const getCart = () => JSON.parse(localStorage.getItem(CART_KEY)) || [];
 const saveCart = (cart) => localStorage.setItem(CART_KEY, JSON.stringify(cart));
 
@@ -9,16 +32,17 @@ export const addProductToCart = (product) => {
 
     if (existingProduct) {
         existingProduct.quantity += 1;
-        alert(`Se agregó otra unidad de ${product.name}.`);
+        // ===== LÍNEA MODIFICADA =====
+        showNotification(`Se agregó otra unidad de ${product.name}.`);
     } else {
         cart.push({ ...product, quantity: 1 });
-        alert(`¡${product.name} agregado al carrito!`);
+        // ===== LÍNEA MODIFICADA =====
+        showNotification(`¡${product.name} agregado al carrito!`);
     }
 
     saveCart(cart);
     updateCartBadge();
     
-    // Se llama a renderCartItems solo si el carrito está abierto
     const cartModal = document.querySelector('#cart-modal');
     if (cartModal && !cartModal.classList.contains('hidden')) {
         renderCartItems();
@@ -27,8 +51,6 @@ export const addProductToCart = (product) => {
 
 const removeProductFromCart = (productId) => {
     let cart = getCart();
-    // --- CORRECCIÓN ---
-    // Se cambia a != para comparar correctamente aunque los tipos de ID no coincidan (texto vs número).
     cart = cart.filter(item => item.id != productId);
     saveCart(cart);
     updateCartBadge();
@@ -37,8 +59,6 @@ const removeProductFromCart = (productId) => {
 
 const updateProductQuantity = (productId, newQuantity) => {
     const cart = getCart();
-    // --- CORRECCIÓN ---
-    // Se cambia a == para encontrar el producto aunque los tipos de ID no coincidan.
     const product = cart.find(item => item.id == productId);
 
     if (product) {
@@ -131,7 +151,6 @@ export const setupCartEventListeners = () => {
             if (e.target.classList.contains('quantity-input')) {
                 const itemElement = e.target.closest('[data-product-id]');
                 if (itemElement) {
-                    // Se usa `parseInt` para asegurar que se envían números a la función.
                     updateProductQuantity(itemElement.dataset.productId, parseInt(e.target.value));
                 }
             }
@@ -155,7 +174,8 @@ export const setupCartEventListeners = () => {
         checkoutBtn.addEventListener('click', () => {
             const cart = getCart();
             if (cart.length === 0) {
-                alert('Tu carrito está vacío.');
+                // En lugar de una alerta, podríamos usar nuestra nueva notificación
+                showNotification('Tu carrito está vacío.');
                 return;
             }
 
