@@ -1,5 +1,4 @@
 // public/modules/dashboard/dashboard.utils.js
-// VERSIÓN FINAL Y UNIFICADA
 
 const createUpcomingAppointmentItem = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
@@ -66,6 +65,7 @@ const createProductRow = (product) => {
     `;
 };
 
+// ===== FUNCIÓN createAppointmentRow COMPLETAMENTE REESCRITA =====
 const createAppointmentRow = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
     const ownerProfile = appointment.profiles;
@@ -86,20 +86,51 @@ const createAppointmentRow = (appointment) => {
 
     let actionButtons = '';
     if (status === 'pendiente') {
-        actionButtons = `<button data-action="confirmar" class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition-colors">Confirmar</button> <button data-action="rechazar" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors">Rechazar</button>`;
+        actionButtons = `
+            <button data-action="confirmar" class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition-colors">Confirmar</button>
+            <button data-action="rechazar" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors">Rechazar</button>`;
     } else if (status === 'confirmada') {
         actionButtons = `<button data-action="completar" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors">Completar</button>`;
     } else {
         actionButtons = `<span class="text-xs text-gray-400">Sin acciones</span>`;
     }
 
+    // El <tr> se convierte en un contenedor de tarjeta en móvil (con `block`) y en una fila de tabla en desktop (`md:table-row`)
     return `
-        <tr data-appointment-id="${appointment.id}" class="block md:table-row border-b md:border-b-0">
-            <td data-label="Fecha y Hora:" class="px-6 py-3 block md:table-cell md:text-left"><div class="flex-end-content"><div class="text-sm font-medium text-gray-900">${appointment.appointment_date}</div><div class="text-sm text-gray-500">${appointment.appointment_time}</div></div></td>
-            <td data-label="Cliente y Mascota:" class="px-6 py-3 block md:table-cell md:text-left"><div class="flex-end-content"><div class="text-sm font-medium text-gray-900">${ownerName}</div><div class="text-sm text-gray-500">${petName}</div></div></td>
-            <td data-label="Servicio/Notas:" class="px-6 py-3 block md:table-cell md:text-left text-sm text-gray-700 truncate" title="${appointment.service}"><div class="flex-end-content">${appointment.service}</div></td>
-            <td data-label="Estado:" class="px-6 py-3 block md:table-cell md:text-left"><div class="flex-end-content"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${currentStyle.bg} ${currentStyle.textColor}">${currentStyle.text}</span></div></td>
-            <td data-label="Acciones:" class="px-6 py-3 block md:table-cell md:text-center"><div class="flex-end-content flex items-center justify-end md:justify-center gap-2">${actionButtons}</div></td>
+        <tr data-appointment-id="${appointment.id}" class="block md:table-row">
+            
+            <td class="p-4 flex justify-between items-center border-t md:border-t-0 md:table-cell md:px-6 md:py-4">
+                <span class="font-bold text-sm text-gray-600 md:hidden">Cliente:</span>
+                <div class="text-right md:text-left">
+                    <div class="text-sm font-medium text-gray-900">${ownerName}</div>
+                    <div class="text-sm text-gray-500">${petName}</div>
+                </div>
+            </td>
+
+            <td class="p-4 flex justify-between items-center border-t md:border-t-0 md:table-cell md:px-6 md:py-4">
+                <span class="font-bold text-sm text-gray-600 md:hidden">Fecha:</span>
+                <div class="text-right md:text-left">
+                    <div class="text-sm font-medium text-gray-900">${appointment.appointment_date}</div>
+                    <div class="text-sm text-gray-500">${appointment.appointment_time}</div>
+                </div>
+            </td>
+            
+            <td class="p-4 flex justify-between items-center border-t md:border-t-0 md:table-cell md:px-6 md:py-4">
+                <span class="font-bold text-sm text-gray-600 md:hidden">Notas:</span>
+                <p class="text-sm text-gray-700 truncate text-right md:text-left" title="${appointment.service}">${appointment.service}</p>
+            </td>
+
+            <td class="p-4 flex justify-between items-center border-t md:border-t-0 md:table-cell md:px-6 md:py-4">
+                <span class="font-bold text-sm text-gray-600 md:hidden">Estado:</span>
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${currentStyle.bg} ${currentStyle.textColor}">${currentStyle.text}</span>
+            </td>
+
+            <td class="p-4 flex justify-between items-center border-t md:border-t-0 md:table-cell md:px-6 md:py-4 md:text-center">
+                <span class="font-bold text-sm text-gray-600 md:hidden">Acciones:</span>
+                <div class="flex items-center justify-end gap-2">
+                    ${actionButtons}
+                </div>
+            </td>
         </tr>
     `;
 };

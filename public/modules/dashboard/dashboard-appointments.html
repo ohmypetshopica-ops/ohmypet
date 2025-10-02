@@ -9,19 +9,6 @@
     
     <style>
         :root { font-family: 'Inter', sans-serif; }
-        /* Estilos para la tabla responsiva en móvil */
-        @media (max-width: 768px) {
-            .responsive-table td:before {
-                content: attr(data-label);
-                font-weight: 600;
-                margin-right: 0.5rem;
-                color: #4a5568; /* gray-700 */
-                float: left;
-            }
-            .responsive-table td .flex-end-content {
-                float: right;
-            }
-        }
     </style>
 </head>
 <body class="bg-gray-100 text-black">
@@ -49,11 +36,11 @@
                     </div>
 
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <table class="w-full responsive-table">
+                        <table class="w-full">
                             <thead class="bg-gray-50 hidden md:table-header-group">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha y Hora</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente y Mascota</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha y Hora</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio/Notas</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
