@@ -1,23 +1,31 @@
 // public/modules/profile/my-appointments.js
-// VERSIÓN CORREGIDA CON VERIFICACIÓN DE SEGURIDAD PARA FOTOS
-
 import { supabase, getUserAppointments, cancelAppointment, getBookedTimes, rescheduleAppointment, getUserProfile } from './profile.api.js';
 
 // --- ELEMENTOS DEL DOM ---
 const appointmentsContainer = document.querySelector('#appointments-container');
+// Modal de reprogramación
 const rescheduleModal = document.querySelector('#reschedule-modal');
 const closeModalBtn = document.querySelector('#close-modal-btn');
 const dateInput = document.querySelector('#reschedule-date');
 const timeOptionsContainer = document.querySelector('#reschedule-time-options');
 const confirmRescheduleBtn = document.querySelector('#confirm-reschedule-btn');
+// NUEVO: Modal de detalles de cita completada
+const detailsModal = document.querySelector('#details-modal');
+const closeDetailsModalBtn = document.querySelector('#close-details-modal-btn');
+const modalPetName = document.querySelector('#modal-pet-name');
+const modalArrivalPhoto = document.querySelector('#modal-arrival-photo');
+const modalDeparturePhoto = document.querySelector('#modal-departure-photo');
+const modalStylistNotes = document.querySelector('#modal-stylist-notes');
+
 
 // --- ESTADO ---
+let allAppointments = []; // Guardaremos todas las citas aquí
 let selectedTime = null;
 let appointmentToRescheduleId = null;
 let clientFullName = 'Cliente';
 let petNameForReschedule = '';
 
-// --- LÓGICA DEL MODAL (sin cambios) ---
+// --- LÓGICA DEL MODAL (REPROGRAMACIÓN) ---
 const openModal = (appointmentId, petName) => {
     appointmentToRescheduleId = appointmentId;
     petNameForReschedule = petName;
@@ -29,6 +37,7 @@ const openModal = (appointmentId, petName) => {
     rescheduleModal.classList.remove('hidden');
 };
 const closeModal = () => rescheduleModal.classList.add('hidden');
+// (Resto de la lógica del modal de reprogramación sin cambios...)
 const renderTimeOptions = (bookedTimes = []) => {
     const hours = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"];
     timeOptionsContainer.innerHTML = '';
@@ -79,13 +88,35 @@ confirmRescheduleBtn.addEventListener('click', async () => {
     confirmRescheduleBtn.textContent = 'Confirmar Reprogramación';
 });
 
-// --- RENDERIZADO DE CITAS (FUNCIÓN MEJORADA) ---
+
+// --- NUEVO: LÓGICA DEL MODAL DE DETALLES ---
+const openDetailsModal = (appointment) => {
+    const petName = appointment.pets?.name || 'Mascota';
+    const photos = appointment.appointment_photos || [];
+    const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
+    const departurePhoto = photos.find(p => p.photo_type === 'departure');
+    
+    modalPetName.textContent = `Servicio para ${petName}`;
+    modalArrivalPhoto.src = arrivalPhoto ? arrivalPhoto.image_url : 'https://via.placeholder.com/150/F3F4F6/9CA3AF?text=Antes';
+    modalDeparturePhoto.src = departurePhoto ? departurePhoto.image_url : 'https://via.placeholder.com/150/F3F4F6/9CA3AF?text=Despu%C3%A9s';
+    modalStylistNotes.textContent = appointment.final_observations || 'No se dejaron observaciones.';
+    
+    detailsModal.classList.remove('hidden');
+};
+const closeDetailsModal = () => detailsModal.classList.add('hidden');
+
+
+// --- RENDERIZADO DE CITAS (FUNCIÓN MODIFICADA) ---
 const createAppointmentCard = (appointment) => {
     const petName = appointment.pets?.name || 'Mascota';
     const petImage = appointment.pets?.image_url || 'https://via.placeholder.com/150';
     const status = (appointment.status || 'pendiente').toLowerCase();
-    const canCancel = ['pendiente', 'confirmada'].includes(status);
     
+    // Solo se pueden cancelar o reprogramar citas pendientes o confirmadas
+    const canTakeAction = ['pendiente', 'confirmada'].includes(status);
+    // Solo se pueden ver detalles en citas completadas
+    const canViewDetails = status === 'completada';
+
     const statusStyles = {
         pendiente: { text: 'Pendiente', bg: 'bg-yellow-100', text_color: 'text-yellow-800' },
         confirmada: { text: 'Confirmada', bg: 'bg-blue-100', text_color: 'text-blue-800' },
@@ -95,40 +126,16 @@ const createAppointmentCard = (appointment) => {
     };
     const currentStyle = statusStyles[status] || statusStyles.pendiente;
 
-    let completedContent = '';
-    if (status === 'completada') {
-        // ================ INICIO DE LA CORRECCIÓN ===================
-        // Añadimos una verificación: si 'appointment_photos' no existe, lo tratamos como una lista vacía.
-        const photos = appointment.appointment_photos || []; 
-        // ================= FIN DE LA CORRECCIÓN =====================
-
-        const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
-        const departurePhoto = photos.find(p => p.photo_type === 'departure');
-
-        completedContent = `
-            <div class="mt-4 pt-4 border-t border-gray-200">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Resultado del Servicio:</h4>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <img src="${arrivalPhoto ? arrivalPhoto.image_url : 'https://via.placeholder.com/150/F3F4F6/9CA3AF?text=Antes'}" alt="Foto de llegada" class="rounded-lg object-cover w-full h-32">
-                                <p class="text-xs text-center text-gray-500 mt-1">Llegada</p>
-                            </div>
-                            <div>
-                                <img src="${departurePhoto ? departurePhoto.image_url : 'https://via.placeholder.com/150/F3F4F6/9CA3AF?text=Despu%C3%A9s'}" alt="Foto de salida" class="rounded-lg object-cover w-full h-32">
-                                <p class="text-xs text-center text-gray-500 mt-1">Salida</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Notas del Estilista:</h4>
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 h-full">
-                            <p class="text-sm text-gray-800">${appointment.final_observations || 'No se dejaron observaciones.'}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    // Generar botones según el estado de la cita
+    let actionButtons = '';
+    if (canTakeAction) {
+        actionButtons = `
+            <button data-appointment-id="${appointment.id}" data-pet-name="${petName}" class="reschedule-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm">Reprogramar</button>
+            <button data-appointment-id="${appointment.id}" class="cancel-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg text-sm">Cancelar</button>
+        `;
+    } else if (canViewDetails) {
+        actionButtons = `
+            <button data-appointment-id="${appointment.id}" class="view-details-btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-sm">Ver Resultado</button>
         `;
     }
 
@@ -144,13 +151,10 @@ const createAppointmentCard = (appointment) => {
                     <p class="text-gray-600 mt-1 font-semibold">${appointment.appointment_date} a las ${appointment.appointment_time}</p>
                     <p class="text-sm text-gray-500 mt-2">${appointment.service || 'Servicio de estética.'}</p>
                 </div>
-                ${canCancel ? `
                 <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto self-start sm:self-center">
-                    <button data-appointment-id="${appointment.id}" data-pet-name="${petName}" class="reschedule-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Reprogramar</button>
-                    <button data-appointment-id="${appointment.id}" class="cancel-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                </div>` : ''}
+                    ${actionButtons}
+                </div>
             </div>
-            ${completedContent}
         </div>
     `;
 };
@@ -161,7 +165,8 @@ const loadAppointments = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [profile, appointments] = await Promise.all([
+    // Usar Promise.all para cargar perfil y citas al mismo tiempo
+    const [profile, appointmentsData] = await Promise.all([
         getUserProfile(user.id),
         getUserAppointments(user.id)
     ]);
@@ -172,8 +177,10 @@ const loadAppointments = async () => {
             : profile.full_name;
     }
 
-    if (appointments && appointments.length > 0) {
-        appointmentsContainer.innerHTML = appointments.map(createAppointmentCard).join('');
+    allAppointments = appointmentsData; // Guardar citas en el estado global
+
+    if (allAppointments && allAppointments.length > 0) {
+        appointmentsContainer.innerHTML = allAppointments.map(createAppointmentCard).join('');
     } else {
         appointmentsContainer.innerHTML = '<p class="text-center text-gray-500 py-8">Aún no tienes ninguna cita registrada.</p>';
     }
@@ -183,7 +190,9 @@ const loadAppointments = async () => {
 appointmentsContainer.addEventListener('click', async (event) => {
     const target = event.target.closest('button');
     if (!target) return;
+    
     const appointmentId = target.dataset.appointmentId;
+
     if (target.classList.contains('cancel-btn')) {
         if (confirm('¿Estás seguro de que quieres cancelar esta cita?')) {
             const { success } = await cancelAppointment(appointmentId);
@@ -195,12 +204,26 @@ appointmentsContainer.addEventListener('click', async (event) => {
     } else if (target.classList.contains('reschedule-btn')) {
         const petName = target.dataset.petName;
         openModal(appointmentId, petName);
+    } else if (target.classList.contains('view-details-btn')) {
+        // NUEVO: Manejar clic en "Ver Resultado"
+        const appointment = allAppointments.find(app => app.id == appointmentId);
+        if (appointment) {
+            openDetailsModal(appointment);
+        }
     }
 });
+
+// Listeners para cerrar los modales
 closeModalBtn.addEventListener('click', closeModal);
 rescheduleModal.addEventListener('click', (e) => {
     if (e.target === rescheduleModal) closeModal();
 });
+
+closeDetailsModalBtn.addEventListener('click', closeDetailsModal);
+detailsModal.addEventListener('click', (e) => {
+    if (e.target === detailsModal) closeDetailsModal();
+});
+
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', loadAppointments);
