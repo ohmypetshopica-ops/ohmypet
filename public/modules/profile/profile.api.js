@@ -64,16 +64,21 @@ export const cancelAppointment = async (appointmentId) => {
 
 /**
  * Obtiene los horarios ya reservados Y bloqueados para una fecha específica.
+ * SOLO considera citas con estados que realmente ocupan el horario:
+ * - pendiente, confirmada, completada (ocupan horario)
+ * - cancelada, rechazada (NO ocupan horario)
+ * 
  * @param {string} date - La fecha en formato YYYY-MM-DD.
  * @returns {Promise<Array>} Una lista de horarios ocupados (ej: ["09:00", "10:30"]).
  */
 export const getBookedTimes = async (date) => {
-    // Obtener citas reservadas
+    // Obtener SOLO citas que realmente ocupan el horario
+    // Excluimos 'cancelada' y 'rechazada'
     const { data: appointments, error: appointmentsError } = await supabase
         .from('appointments')
         .select('appointment_time')
         .eq('appointment_date', date)
-        .in('status', ['pendiente', 'confirmada']);
+        .in('status', ['pendiente', 'confirmada', 'completada']);
 
     if (appointmentsError) {
         console.error("Error al verificar horarios de citas:", appointmentsError);

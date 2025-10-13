@@ -21,12 +21,13 @@ let currentUser = null;
 
 // --- FUNCIÓN PARA OBTENER HORARIOS OCUPADOS (citas + bloqueados) ---
 const getBookedTimes = async (date) => {
-    // Obtener citas reservadas
+    // Obtener SOLO citas que realmente ocupan el horario
+    // Excluimos 'cancelada' y 'rechazada' para liberar esos horarios
     const { data: appointments, error: appointmentsError } = await supabase
         .from('appointments')
         .select('appointment_time')
         .eq('appointment_date', date)
-        .in('status', ['pendiente', 'confirmada']);
+        .in('status', ['pendiente', 'confirmada', 'completada']);
 
     if (appointmentsError) {
         console.error("Error al verificar horarios de citas:", appointmentsError);
@@ -132,7 +133,7 @@ const handleDateChange = async () => {
     }
     timeOptionsContainer.innerHTML = '<p class="text-sm text-gray-500">Cargando disponibilidad...</p>';
     
-    // Usar la nueva función que incluye bloqueados
+    // Usar la función que excluye citas canceladas y rechazadas
     const bookedTimes = await getBookedTimes(selectedDate);
     renderTimeOptions(bookedTimes);
 };
