@@ -46,18 +46,16 @@
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
                         <table class="w-full">
                             <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mascota</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hora</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio</th>
+                                <tr class="hidden md:table-row">
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente / Mascota</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha / Hora</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notas del Cliente</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="appointments-table-body" class="divide-y divide-gray-200">
-                                <tr><td colspan="7" class="text-center py-8 text-gray-500">Cargando citas...</td></tr>
+                                <tr><td colspan="5" class="block md:table-cell text-center py-8 text-gray-500">Cargando citas...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -66,145 +64,47 @@
         </main>
     </div>
 
-    <!-- Modal de Fotos de la Cita -->
-    <div id="photos-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 z-10">
-                <h3 class="text-lg font-semibold text-gray-800">Fotos de la Cita</h3>
-                <p id="photos-modal-subtitle" class="text-sm text-gray-500 mt-1">Sube las fotos de llegada y salida de la mascota</p>
-            </div>
+    <div id="completion-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
             
-            <div class="px-6 py-6 space-y-6">
-                <!-- Foto de Llegada -->
-                <div class="space-y-3">
-                    <h4 class="font-semibold text-gray-700">Foto de Llegada</h4>
-                    <div id="arrival-photo-container" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                        <p class="text-gray-500 mb-3">No hay foto de llegada</p>
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800">Completar Cita</h3>
+                <p id="completion-modal-subtitle" class="text-sm text-gray-500 mt-1">Sube las fotos y agrega las observaciones finales del servicio.</p>
+            </div>
+
+            <div class="flex-1 p-6 space-y-6 overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">1. Foto de Llegada</h4>
+                        <label for="arrival-photo-input" id="arrival-photo-container" class="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-64 flex items-center justify-center text-center hover:bg-gray-50 transition-colors">
+                            <p class="text-sm text-gray-500">Clic para subir foto de llegada</p>
+                        </label>
                         <input type="file" id="arrival-photo-input" accept="image/*" class="hidden">
-                        <button type="button" onclick="document.getElementById('arrival-photo-input').click()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">
-                            Subir Foto de Llegada
-                        </button>
                     </div>
-                </div>
 
-                <!-- Foto de Salida -->
-                <div class="space-y-3">
-                    <h4 class="font-semibold text-gray-700">Foto de Salida</h4>
-                    <div id="departure-photo-container" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                        <p class="text-gray-500 mb-3">No hay foto de salida</p>
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">2. Foto de Salida</h4>
+                        <label for="departure-photo-input" id="departure-photo-container" class="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-64 flex items-center justify-center text-center hover:bg-gray-50 transition-colors">
+                            <p class="text-sm text-gray-500">Clic para subir foto de salida</p>
+                        </label>
                         <input type="file" id="departure-photo-input" accept="image/*" class="hidden">
-                        <button type="button" onclick="document.getElementById('departure-photo-input').click()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">
-                            Subir Foto de Salida
-                        </button>
                     </div>
                 </div>
 
-                <div id="upload-message" class="hidden p-4 rounded-lg"></div>
-            </div>
-
-            <div class="sticky bottom-0 bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t border-gray-200">
-                <button type="button" id="close-photos-modal-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cerrar</button>
-                <button type="button" id="done-photos-modal-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Listo</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Finalización de Cita -->
-    <div id="completion-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-800">Finalizar Cita</h3>
-                <p class="text-sm text-gray-500 mt-1">Agrega observaciones finales antes de completar</p>
-            </div>
-            
-            <div class="px-6 py-4">
-                <label for="final-observations-textarea" class="block text-sm font-medium text-gray-700 mb-2">
-                    Observaciones Finales
-                </label>
-                <textarea 
-                    id="final-observations-textarea" 
-                    rows="4"
-                    placeholder="Escribe cualquier observación relevante sobre el servicio..."
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                ></textarea>
-            </div>
-            
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
-                <button 
-                    type="button" 
-                    id="cancel-completion-btn" 
-                    class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors"
-                >
-                    Cancelar
-                </button>
-                <button 
-                    type="button" 
-                    id="confirm-completion-btn" 
-                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-                >
-                    Completar Cita
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Registro de Peso -->
-    <div id="weight-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-800">Registrar Peso de <span id="weight-pet-name" class="text-green-600"></span></h3>
-                <p class="text-sm text-gray-500 mt-1">Ingresa el peso actual de la mascota</p>
-            </div>
-            
-            <div class="px-6 py-4 space-y-4">
                 <div>
-                    <label for="weight-input" class="block text-sm font-medium text-gray-700 mb-1">
-                        Peso (kg) <span class="text-red-500">*</span>
-                    </label>
-                    <input 
-                        type="number" 
-                        id="weight-input" 
-                        step="0.01" 
-                        min="0.1" 
-                        max="200"
-                        placeholder="Ej: 12.50"
-                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        required
-                    >
+                    <h4 class="font-semibold text-gray-700 mb-2">3. Observaciones Finales</h4>
+                    <textarea id="final-observations-textarea" rows="4" placeholder="Escribe cualquier observación relevante sobre el servicio, comportamiento de la mascota, etc." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-vertical"></textarea>
                 </div>
-                
-                <div>
-                    <label for="weight-notes-input" class="block text-sm font-medium text-gray-700 mb-1">
-                        Notas (opcional)
-                    </label>
-                    <textarea 
-                        id="weight-notes-input" 
-                        rows="3"
-                        placeholder="Observaciones sobre el peso..."
-                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                    ></textarea>
-                </div>
+
+                <div id="upload-message" class="hidden"></div>
             </div>
-            
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
-                <button 
-                    type="button" 
-                    id="skip-weight-btn" 
-                    class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors"
-                >
-                    Omitir
-                </button>
-                <button 
-                    type="button" 
-                    id="save-weight-btn" 
-                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-                >
-                    Guardar Peso
-                </button>
+
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t">
+                <button type="button" id="cancel-completion-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors">Cancelar</button>
+                <button type="button" id="confirm-completion-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:bg-gray-400">Confirmar y Completar</button>
             </div>
         </div>
     </div>
-
     <script>
         const CACHE_VERSION = Date.now();
         async function loadComponent(url, containerId) {
@@ -213,9 +113,7 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
                 document.getElementById(containerId).innerHTML = html;
-            } catch (error) {
-                console.error(`Error cargando ${url}:`, error);
-            }
+            } catch (error) { console.error(`Error cargando ${url}:`, error); }
         }
         document.addEventListener('DOMContentLoaded', async () => {
             await Promise.all([
@@ -226,9 +124,7 @@
             try {
                 const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
                 if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
-            } catch (error) {
-                console.error('Error inicializando sidebar:', error);
-            }
+            } catch (error) { console.error('Error inicializando sidebar:', error); }
         });
     </script>
 
