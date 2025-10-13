@@ -1,4 +1,3 @@
-// public/modules/profile/profile.api.js
 import { supabase } from '../../core/supabase.js';
 
 export const getUserProfile = async (userId) => {
@@ -16,14 +15,12 @@ export const getUserProfile = async (userId) => {
 };
 
 export const getUserAppointments = async (userId) => {
-    // --- CORRECCIÓN CLAVE ---
-    // Añadimos 'appointment_photos(*)' para que la consulta también traiga las fotos de cada cita.
     const { data, error } = await supabase
         .from('appointments')
         .select(`
             *,
             pets ( name, image_url ),
-            appointment_photos ( * )
+            appointment_photos ( photo_type, image_url )
         `)
         .eq('user_id', userId)
         .order('appointment_date', { ascending: false });
@@ -55,14 +52,18 @@ export const getBookedTimes = async (date) => {
         .eq('appointment_date', date)
         .in('status', ['pendiente', 'confirmada', 'completada']);
 
-    if (appointmentsError) console.error("Error al verificar horarios de citas:", appointmentsError);
+    if (appointmentsError) {
+        console.error("Error al verificar horarios de citas:", appointmentsError);
+    }
 
     const { data: blockedSlots, error: blockedError } = await supabase
         .from('blocked_slots')
         .select('blocked_time')
         .eq('blocked_date', date);
 
-    if (blockedError) console.error("Error al verificar horarios bloqueados:", blockedError);
+    if (blockedError) {
+        console.error("Error al verificar horarios bloqueados:", blockedError);
+    }
 
     const bookedFromAppointments = appointments ? appointments.map(app => app.appointment_time.slice(0, 5)) : [];
     const bookedFromBlocked = blockedSlots ? blockedSlots.map(slot => slot.blocked_time.slice(0, 5)) : [];

@@ -125,30 +125,42 @@
             </div>
         </div>
     </div>
-    <script>
+
+    <script type="module">
         const CACHE_VERSION = Date.now();
+        
         async function loadComponent(url, containerId) {
             try {
                 const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
-                document.getElementById(containerId).innerHTML = html;
-            } catch (error) { console.error(`Error cargando ${url}:`, error); }
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = html;
+                }
+            } catch (error) { 
+                console.error(`Error cargando ${url}:`, error); 
+            }
         }
+        
         document.addEventListener('DOMContentLoaded', async () => {
             await Promise.all([
                 loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
                 loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
             ]);
+            
             await new Promise(resolve => setTimeout(resolve, 100));
+            
             try {
                 const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
                 if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
-            } catch (error) { console.error('Error inicializando sidebar:', error); }
+            } catch (error) { 
+                console.error('Error inicializando sidebar:', error); 
+            }
         });
     </script>
 
-    <script type="module" src="../../core/auth.js"></script>
-    <script type="module" src="./dashboard-appointments.js"></script>
+    <script type="module" src="/public/core/auth.js"></script>
+    <script type="module" src="/public/modules/dashboard/dashboard-appointments.js"></script>
 </body>
 </html>
