@@ -1,10 +1,9 @@
 // public/modules/dashboard/dashboard-appointments.js
-// VERSIÓN CON MODAL DE FINALIZACIÓN Y REGISTRO DE PESO
+// VERSIÓN FINAL Y COMPLETA
 
 import { supabase } from '../../core/supabase.js';
 import { getAppointments, updateAppointmentStatus, getAppointmentPhotos, uploadAppointmentPhoto } from './dashboard.api.js';
 import { createAppointmentRow } from './dashboard.utils.js';
-import { addWeightRecord } from './pet-weight.api.js';
 
 // --- ELEMENTOS DEL DOM ---
 const appointmentsTableBody = document.querySelector('#appointments-table-body');
@@ -14,308 +13,202 @@ const dateFilter = document.querySelector('#appointment-date-filter');
 const clearFiltersButton = document.querySelector('#clear-filters-button');
 const headerTitle = document.querySelector('#header-title');
 
-// Modal de Fotos
-const photosModal = document.querySelector('#photos-modal');
-const closePhotosModalBtn = document.querySelector('#close-photos-modal-btn');
-const donePhotosModalBtn = document.querySelector('#done-photos-modal-btn');
-const photosModalSubtitle = document.querySelector('#photos-modal-subtitle');
+// Modal Unificado de Finalización
+const completionModal = document.querySelector('#completion-modal');
+const completionModalSubtitle = document.querySelector('#completion-modal-subtitle');
+const finalObservationsTextarea = document.querySelector('#final-observations-textarea');
+const cancelCompletionBtn = document.querySelector('#cancel-completion-btn');
+const confirmCompletionBtn = document.querySelector('#confirm-completion-btn');
 const arrivalPhotoContainer = document.querySelector('#arrival-photo-container');
 const departurePhotoContainer = document.querySelector('#departure-photo-container');
 const arrivalPhotoInput = document.querySelector('#arrival-photo-input');
 const departurePhotoInput = document.querySelector('#departure-photo-input');
 const uploadMessage = document.querySelector('#upload-message');
 
-// Modal de Finalización
-const completionModal = document.querySelector('#completion-modal');
-const finalObservationsTextarea = document.querySelector('#final-observations-textarea');
-const cancelCompletionBtn = document.querySelector('#cancel-completion-btn');
-const confirmCompletionBtn = document.querySelector('#confirm-completion-btn');
-
-// Modal de Peso
-const weightModal = document.querySelector('#weight-modal');
-const petNameSpan = document.querySelector('#weight-pet-name');
-const weightInput = document.querySelector('#weight-input');
-const weightNotesInput = document.querySelector('#weight-notes-input');
-const skipWeightBtn = document.querySelector('#skip-weight-btn');
-const saveWeightBtn = document.querySelector('#save-weight-btn');
-
 // --- ESTADO ---
 let allAppointments = [];
 let currentAppointmentId = null;
-let currentPetId = null;
-let currentCompletedAppointmentId = null;
+let arrivalPhotoFile = null;
+let departurePhotoFile = null;
 
 // --- RENDERIZADO Y FILTRADO ---
 const renderAppointmentsTable = (appointments) => {
     if (!appointmentsTableBody) return;
-    appointmentsTableBody.innerHTML = appointments.length > 0 
-        ? appointments.map(createAppointmentRow).join('') 
-        : `<tr><td colspan="7" class="text-center py-8 text-gray-500">No hay citas que coincidan con los filtros.</td></tr>`;
+    appointmentsTableBody.innerHTML = appointments.length > 0 ? appointments.map(createAppointmentRow).join('') : `<tr><td colspan="5" class="block md:table-cell text-center py-8 text-gray-500">No se encontraron citas.</td></tr>`;
 };
-
-const applyFilters = () => {
-    const searchTerm = searchInput.value.toLowerCase();
+const applyFiltersAndSearch = () => {
+    const searchTerm = searchInput.value.toLowerCase().trim();
     const selectedStatus = statusFilter.value;
     const selectedDate = dateFilter.value;
-
-    const filtered = allAppointments.filter(apt => {
-        const matchesSearch = 
-            (apt.profiles?.full_name || apt.profiles?.first_name || apt.profiles?.last_name || '').toLowerCase().includes(searchTerm) ||
-            (apt.pets?.name || '').toLowerCase().includes(searchTerm);
-        
-        const matchesStatus = !selectedStatus || apt.status === selectedStatus;
-        const matchesDate = !selectedDate || apt.appointment_date === selectedDate;
-
-        return matchesSearch && matchesStatus && matchesDate;
+    let filteredAppointments = allAppointments;
+    if (selectedStatus) filteredAppointments = filteredAppointments.filter(app => app.status === selectedStatus);
+    if (selectedDate) filteredAppointments = filteredAppointments.filter(app => app.appointment_date === selectedDate);
+    if (searchTerm) filteredAppointments = filteredAppointments.filter(app => {
+        const ownerName = (app.profiles?.full_name || `${app.profiles?.first_name} ${app.profiles?.last_name}`).toLowerCase();
+        const petName = app.pets?.name.toLowerCase();
+        return ownerName.includes(searchTerm) || petName.includes(searchTerm);
     });
-
-    renderAppointmentsTable(filtered);
+    renderAppointmentsTable(filteredAppointments);
 };
 
-// --- CARGA DE CITAS ---
-const loadAppointments = async () => {
-    allAppointments = await getAppointments();
-    applyFilters();
-};
-
-// --- MANEJO DE ACCIONES ---
-const handleConfirm = async (appointmentId) => {
-    if (!confirm('¿Confirmar esta cita?')) return;
-    const result = await updateAppointmentStatus(appointmentId, 'confirmada');
-    if (result.success) {
-        alert('Cita confirmada exitosamente.');
-        await loadAppointments();
-    } else {
-        alert('Error al confirmar la cita.');
-    }
-};
-
-const handleReject = async (appointmentId) => {
-    if (!confirm('¿Rechazar esta cita?')) return;
-    const result = await updateAppointmentStatus(appointmentId, 'rechazada');
-    if (result.success) {
-        alert('Cita rechazada.');
-        await loadAppointments();
-    } else {
-        alert('Error al rechazar la cita.');
-    }
-};
-
-const handleComplete = async (appointmentId) => {
+// --- LÓGICA DEL MODAL UNIFICADO ---
+const openCompletionModal = async (appointmentId) => {
     currentAppointmentId = appointmentId;
-    finalObservationsTextarea.value = '';
+    const appointment = allAppointments.find(app => app.id == appointmentId);
+    if (!appointment) return;
+
+    finalObservationsTextarea.value = appointment.final_observations || '';
+    arrivalPhotoFile = null;
+    departurePhotoFile = null;
+    arrivalPhotoInput.value = '';
+    departurePhotoInput.value = '';
+    uploadMessage.classList.add('hidden');
+    
+    const ownerName = (appointment.profiles?.first_name && appointment.profiles?.last_name) ? `${appointment.profiles.first_name} ${appointment.profiles.last_name}` : appointment.profiles?.full_name;
+    completionModalSubtitle.textContent = `Mascota: ${appointment.pets.name} | Dueño: ${ownerName}`;
+
     completionModal.classList.remove('hidden');
-};
 
-const handleCancel = async (appointmentId) => {
-    if (!confirm('¿Cancelar esta cita?')) return;
-    const result = await updateAppointmentStatus(appointmentId, 'cancelada');
-    if (result.success) {
-        alert('Cita cancelada.');
-        await loadAppointments();
-    } else {
-        alert('Error al cancelar la cita.');
-    }
-};
-
-const handleViewPhotos = async (appointmentId) => {
-    currentAppointmentId = appointmentId;
-    const appointment = allAppointments.find(apt => apt.id === appointmentId);
+    arrivalPhotoContainer.innerHTML = `<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>`;
+    departurePhotoContainer.innerHTML = `<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>`;
     
-    if (appointment) {
-        const petName = appointment.pets?.name || 'la mascota';
-        photosModalSubtitle.textContent = `Fotos de ${petName}`;
-    }
-
     const photos = await getAppointmentPhotos(appointmentId);
-    
     const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
     const departurePhoto = photos.find(p => p.photo_type === 'departure');
 
-    if (arrivalPhoto) {
-        arrivalPhotoContainer.innerHTML = `<img src="${arrivalPhoto.image_url}" alt="Llegada" class="max-w-full h-auto rounded-lg shadow-md">`;
-    } else {
-        arrivalPhotoContainer.innerHTML = `
-            <p class="text-gray-500 mb-3">No hay foto de llegada</p>
-            <button type="button" onclick="document.getElementById('arrival-photo-input').click()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">
-                Subir Foto de Llegada
-            </button>
-        `;
-    }
-
-    if (departurePhoto) {
-        departurePhotoContainer.innerHTML = `<img src="${departurePhoto.image_url}" alt="Salida" class="max-w-full h-auto rounded-lg shadow-md">`;
-    } else {
-        departurePhotoContainer.innerHTML = `
-            <p class="text-gray-500 mb-3">No hay foto de salida</p>
-            <button type="button" onclick="document.getElementById('departure-photo-input').click()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">
-                Subir Foto de Salida
-            </button>
-        `;
-    }
-
-    photosModal.classList.remove('hidden');
+    arrivalPhotoContainer.innerHTML = arrivalPhoto ? `<img src="${arrivalPhoto.image_url}" class="w-full h-full object-cover rounded-lg">` : `<p class="text-sm text-gray-500 text-center p-4">Clic para subir foto de llegada</p>`;
+    departurePhotoContainer.innerHTML = departurePhoto ? `<img src="${departurePhoto.image_url}" class="w-full h-full object-cover rounded-lg">` : `<p class="text-sm text-gray-500 text-center p-4">Clic para subir foto de salida</p>`;
 };
 
-// --- SUBIDA DE FOTOS ---
-const handlePhotoUpload = async (photoType) => {
-    const input = photoType === 'arrival' ? arrivalPhotoInput : departurePhotoInput;
-    const file = input.files[0];
-
-    if (!file) return;
-
-    uploadMessage.textContent = 'Subiendo imagen...';
-    uploadMessage.className = 'block p-4 rounded-lg bg-blue-100 text-blue-700';
-    uploadMessage.classList.remove('hidden');
-
-    const result = await uploadAppointmentPhoto(currentAppointmentId, file, photoType);
-
-    if (result.success) {
-        uploadMessage.textContent = '¡Imagen subida exitosamente!';
-        uploadMessage.className = 'block p-4 rounded-lg bg-green-100 text-green-700';
-        
-        setTimeout(() => {
-            uploadMessage.classList.add('hidden');
-        }, 2000);
-
-        await handleViewPhotos(currentAppointmentId);
-    } else {
-        uploadMessage.textContent = 'Error al subir la imagen. Inténtalo de nuevo.';
-        uploadMessage.className = 'block p-4 rounded-lg bg-red-100 text-red-700';
-    }
-
-    input.value = '';
-};
-
-arrivalPhotoInput.addEventListener('change', () => handlePhotoUpload('arrival'));
-departurePhotoInput.addEventListener('change', () => handlePhotoUpload('departure'));
-
-// --- MODAL DE FINALIZACIÓN ---
-cancelCompletionBtn.addEventListener('click', () => {
+const closeCompletionModal = () => {
     completionModal.classList.add('hidden');
     currentAppointmentId = null;
-});
-
-confirmCompletionBtn.addEventListener('click', async () => {
-    const observations = finalObservationsTextarea.value.trim();
-    
-    const result = await updateAppointmentStatus(
-        currentAppointmentId,
-        'completada',
-        observations || null
-    );
-
-    if (result.success) {
-        completionModal.classList.add('hidden');
-        
-        // Buscar datos de la cita para el modal de peso
-        const appointment = allAppointments.find(apt => apt.id === currentAppointmentId);
-        
-        if (appointment) {
-            openWeightModal(appointment);
-        }
-        
-        await loadAppointments();
-    } else {
-        alert('Error al finalizar la cita. Inténtalo nuevamente.');
-    }
-});
-
-// --- MODAL DE PESO ---
-const openWeightModal = (appointment) => {
-    currentPetId = appointment.pet_id;
-    currentCompletedAppointmentId = appointment.id;
-    petNameSpan.textContent = appointment.pets?.name || 'Mascota';
-    weightInput.value = '';
-    weightNotesInput.value = '';
-    weightModal.classList.remove('hidden');
 };
 
-skipWeightBtn.addEventListener('click', () => {
-    weightModal.classList.add('hidden');
-    currentPetId = null;
-    currentCompletedAppointmentId = null;
-});
+// --- MANEJO DE ACCIONES ---
+const setupActionHandlers = () => {
+    if (!appointmentsTableBody) return;
+    appointmentsTableBody.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const action = button.dataset.action;
+        const appointmentId = button.closest('tr').dataset.appointmentId;
+        
+        // Acción para abrir el modal unificado
+        if (action === 'completar') {
+            openCompletionModal(appointmentId);
+            return;
+        }
 
-saveWeightBtn.addEventListener('click', async () => {
-    const weight = weightInput.value.trim();
-    
-    if (!weight || parseFloat(weight) <= 0) {
-        alert('Por favor, ingresa un peso válido.');
-        return;
-    }
+        // Acciones para confirmar o rechazar directamente
+        const newStatusMap = { 'confirmar': 'confirmada', 'rechazar': 'rechazada' };
+        const newStatus = newStatusMap[action];
+        if (!newStatus) return; // Si la acción no es 'confirmar' ni 'rechazar', no hace nada más
 
-    const notes = weightNotesInput.value.trim();
-    
-    const result = await addWeightRecord(
-        currentPetId,
-        weight,
-        currentCompletedAppointmentId,
-        notes || null
-    );
-
-    if (result.success) {
-        alert('Peso registrado exitosamente.');
-        weightModal.classList.add('hidden');
-        currentPetId = null;
-        currentCompletedAppointmentId = null;
-    } else {
-        alert('Error al registrar el peso. Inténtalo nuevamente.');
-    }
-});
-
-// --- MODAL DE FOTOS ---
-closePhotosModalBtn.addEventListener('click', () => {
-    photosModal.classList.add('hidden');
-    currentAppointmentId = null;
-});
-
-donePhotosModalBtn.addEventListener('click', () => {
-    photosModal.classList.add('hidden');
-    currentAppointmentId = null;
-});
-
-// --- FILTROS ---
-searchInput.addEventListener('input', applyFilters);
-statusFilter.addEventListener('change', applyFilters);
-dateFilter.addEventListener('change', applyFilters);
-
-clearFiltersButton.addEventListener('click', () => {
-    searchInput.value = '';
-    statusFilter.value = '';
-    dateFilter.value = '';
-    applyFilters();
-});
-
-// --- DELEGACIÓN DE EVENTOS ---
-appointmentsTableBody.addEventListener('click', (e) => {
-    const button = e.target.closest('button');
-    if (!button) return;
-
-    const appointmentId = button.dataset.id;
-    const action = button.dataset.action;
-
-    switch (action) {
-        case 'confirm':
-            handleConfirm(appointmentId);
-            break;
-        case 'reject':
-            handleReject(appointmentId);
-            break;
-        case 'complete':
-            handleComplete(appointmentId);
-            break;
-        case 'cancel':
-            handleCancel(appointmentId);
-            break;
-        case 'view-photos':
-            handleViewPhotos(appointmentId);
-            break;
-    }
-});
+        button.disabled = true;
+        button.textContent = '...';
+        const { success, error } = await updateAppointmentStatus(appointmentId, newStatus);
+        
+        if (success) {
+            const index = allAppointments.findIndex(app => app.id == appointmentId);
+            if (index !== -1) {
+                allAppointments[index].status = newStatus;
+                applyFiltersAndSearch();
+            }
+        } else {
+            alert(`Error al actualizar la cita: ${error.message}`);
+            // Restaura el botón si hay un error
+            button.disabled = false;
+            button.textContent = action.charAt(0).toUpperCase() + action.slice(1);
+        }
+    });
+};
 
 // --- INICIALIZACIÓN ---
-document.addEventListener('DOMContentLoaded', async () => {
+const initializeAppointmentsSection = async () => {
     if (headerTitle) headerTitle.textContent = 'Gestión de Citas';
-    await loadAppointments();
-});
+    allAppointments = await getAppointments();
+    renderAppointmentsTable(allAppointments);
+    
+    searchInput.addEventListener('input', applyFiltersAndSearch);
+    statusFilter.addEventListener('change', applyFiltersAndSearch);
+    dateFilter.addEventListener('change', applyFiltersAndSearch);
+    clearFiltersButton.addEventListener('click', () => {
+        searchInput.value = '';
+        statusFilter.value = '';
+        dateFilter.value = '';
+        applyFiltersAndSearch();
+    });
+
+    setupActionHandlers();
+
+    // Listeners para el modal unificado
+    cancelCompletionBtn.addEventListener('click', closeCompletionModal);
+    
+    arrivalPhotoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            arrivalPhotoFile = file;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                arrivalPhotoContainer.innerHTML = `<img src="${event.target.result}" class="w-full h-full object-cover rounded-lg">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    departurePhotoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            departurePhotoFile = file;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                departurePhotoContainer.innerHTML = `<img src="${event.target.result}" class="w-full h-full object-cover rounded-lg">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    confirmCompletionBtn.addEventListener('click', async () => {
+        if (!currentAppointmentId) return;
+
+        confirmCompletionBtn.disabled = true;
+        confirmCompletionBtn.textContent = 'Guardando...';
+        uploadMessage.classList.remove('hidden');
+        uploadMessage.className = 'mx-6 text-center text-sm font-medium p-3 rounded-lg bg-blue-100 text-blue-700';
+        uploadMessage.textContent = 'Procesando... No cierres esta ventana.';
+
+        try {
+            if (arrivalPhotoFile) {
+                uploadMessage.textContent = 'Subiendo foto de llegada...';
+                await uploadAppointmentPhoto(currentAppointmentId, arrivalPhotoFile, 'arrival');
+            }
+            if (departurePhotoFile) {
+                uploadMessage.textContent = 'Subiendo foto de salida...';
+                await uploadAppointmentPhoto(currentAppointmentId, departurePhotoFile, 'departure');
+            }
+            uploadMessage.textContent = 'Guardando observaciones...';
+            const observations = finalObservationsTextarea.value;
+            const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', observations);
+
+            if (success) {
+                const index = allAppointments.findIndex(app => app.id == currentAppointmentId);
+                if (index !== -1) {
+                    allAppointments[index].status = 'completada';
+                    allAppointments[index].final_observations = observations;
+                    applyFiltersAndSearch();
+                }
+                closeCompletionModal();
+            } else { throw new Error('No se pudo actualizar el estado de la cita.'); }
+
+        } catch (error) {
+            uploadMessage.className = 'mx-6 text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
+            uploadMessage.textContent = `Error: ${error.message}`;
+        } finally {
+            confirmCompletionBtn.disabled = false;
+            confirmCompletionBtn.textContent = 'Confirmar y Completar';
+        }
+    });
+};
+
+document.addEventListener('DOMContentLoaded', initializeAppointmentsSection);
