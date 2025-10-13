@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario de Citas - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+        .calendar-day { 
+            min-height: 100px; 
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .calendar-day:hover { 
+            background-color: #f0fdf4; 
+            transform: scale(1.02);
+        }
+        .appointment-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 1px;
+        }
+        .blocked-slot {
+            background-color: #fee2e2;
+            border-left: 3px solid #dc2626;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-black">
+
+    <div class="md:hidden flex flex-col items-center justify-center h-screen bg-gray-100 p-4 text-center">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">Acceso no permitido</h1>
+        <p class="text-gray-600">El panel de administración solo está disponible en dispositivos de escritorio.</p>
+        <a href="/public/index.html" class="mt-6 bg-green-600 text-white font-bold py-2 px-4 rounded-lg">
+            Volver al inicio
+        </a>
+    </div>
+
+    <div class="hidden md:flex h-screen overflow-hidden">
+        <div id="sidebar-container"></div>
+        <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
+            <div id="header-container"></div>
+            <div id="main-content" class="flex-1 p-6 overflow-y-auto">
+                
+                <!-- Controles del Calendario -->
+                <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="flex items-center gap-4">
+                        <button id="prev-month" class="bg-white p-2 rounded-lg shadow hover:bg-gray-50 transition">
+                            <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <h2 id="current-month-year" class="text-2xl font-bold text-gray-800"></h2>
+                        <button id="next-month" class="bg-white p-2 rounded-lg shadow hover:bg-gray-50 transition">
+                            <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                        <button id="today-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
+                            Hoy
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="appointment-dot bg-yellow-500"></span>
+                            <span class="text-gray-600">Pendiente</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="appointment-dot bg-blue-500"></span>
+                            <span class="text-gray-600">Confirmada</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="appointment-dot bg-green-500"></span>
+                            <span class="text-gray-600">Completada</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="appointment-dot bg-red-500"></span>
+                            <span class="text-gray-600">Bloqueado</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendario -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <!-- Encabezado de días -->
+                    <div class="grid grid-cols-7 bg-gray-50 border-b">
+                        <div class="p-4 text-center font-semibold text-gray-700">Domingo</div>
+                        <div class="p-4 text-center font-semibold text-gray-700">Lunes</div>
+                        <div class="p-4 text-center font-semibold text-gray-700">Martes</div>
+                        <div class="p-4 text-center font-semibold text-gray-700">Miércoles</div>
+                        <div class="p-4 text-center font-semibold text-gray-700">Jueves</div>
+                        <div class="p-4 text-center font-semibold text-gray-700">Viernes</div>
+                        <div class="p-4 text-center font-semibold text-gray-700">Sábado</div>
+                    </div>
+                    
+                    <!-- Días del mes -->
+                    <div id="calendar-grid" class="grid grid-cols-7">
+                        <!-- Se generará dinámicamente -->
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para ver/bloquear horarios del día -->
+    <div id="day-detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
+                <div>
+                    <h3 id="modal-date" class="text-2xl font-bold text-gray-800"></h3>
+                    <p class="text-sm text-gray-600 mt-1">Haz clic en un horario para bloquearlo o desbloquearlo</p>
+                </div>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <div id="time-slots-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <!-- Se generará dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadComponent(url, containerId) {
+            try {
+                const response = await fetch(`${url}?v=${Date.now()}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const html = await response.text();
+                document.getElementById(containerId).innerHTML = html;
+            } catch (error) {
+                console.error(`Error cargando ${url}:`, error);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Promise.all([
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            ]);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            try {
+                const sidebarModule = await import(`./dashboard-sidebar.js?v=${Date.now()}`);
+                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+            } catch (error) { console.error('Error inicializando sidebar:', error); }
+        });
+    </script>
+    
+    <script type="module" src="../../core/auth.js"></script>
+    <script type="module" src="./dashboard-calendar.js"></script>
+</body>
+</html>
