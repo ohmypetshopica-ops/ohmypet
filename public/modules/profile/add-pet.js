@@ -1,5 +1,3 @@
-// public/modules/profile/add-pet.js
-
 import { supabase } from './profile.api.js';
 
 // --- ELEMENTOS DEL DOM ---
@@ -13,34 +11,23 @@ const formSubtitle = document.querySelector('#form-subtitle');
 const photoInput = document.querySelector('#photo');
 const imagePreview = document.querySelector('#image-preview');
 const sizeButtons = document.querySelectorAll('.size-btn');
-const hiddenSizeInput = document.querySelector('input#size');
+const hiddenSizeInput = document.querySelector('#size');
 const sexButtons = document.querySelectorAll('.sex-btn');
-const hiddenSexInput = document.querySelector('input#sex');
+const hiddenSexInput = document.querySelector('#sex');
 
-// --- ESTADO DEL FORMULARIO ---
+// --- ESTADO ---
 let currentStep = 1;
 const totalSteps = steps.length;
 const petData = {};
 let photoFile = null;
 
-const formTitles = [
-    "Cuéntanos sobre tu mascota",
-    "Detalles físicos",
-    "Notas importantes",
-    "¡Una foto para el recuerdo!"
-];
-const formSubtitles = [
-    "Comencemos con lo básico.",
-    "Ayúdanos a conocer su tamaño y peso.",
-    "¿Alguna alergia, miedo o gusto especial?",
-    "Sube una foto para su perfil (opcional)."
-];
+const formTitles = ["Cuéntanos sobre tu mascota", "Detalles físicos", "Observaciones finales"];
+const formSubtitles = ["Comencemos con lo básico.", "Ayúdanos a conocer mejor a tu mascota.", "Agrega cualquier detalle importante."];
 
-// --- FUNCIONES DE NAVEGÁCIÓN ---
+// --- NAVEGACIÓN ---
 const showStep = (stepNumber) => {
     steps.forEach(step => step.classList.add('hidden'));
     document.querySelector(`#step-${stepNumber}`).classList.remove('hidden');
-    
     const progress = (stepNumber / totalSteps) * 100;
     progressBar.style.width = `${progress}%`;
     formTitle.textContent = formTitles[stepNumber - 1];
@@ -50,10 +37,15 @@ const showStep = (stepNumber) => {
 
 const validateStep = (stepNumber) => {
     const currentStepElement = document.querySelector(`#step-${stepNumber}`);
-    const inputs = currentStepElement.querySelectorAll('input[required]');
-    for (let input of inputs) {
-        if (!input.value) {
+    const inputs = currentStepElement.querySelectorAll('input[required], select[required]');
+    for (const input of inputs) {
+        if (input.type === 'hidden' && !input.value.trim()) {
             alert(`Por favor, completa todos los campos requeridos.`);
+            return false;
+        }
+        if (input.type !== 'hidden' && !input.value.trim()) {
+            alert(`Por favor, completa todos los campos requeridos.`);
+            input.focus();
             return false;
         }
     }
@@ -69,7 +61,6 @@ const collectStepData = (stepNumber) => {
         }
     });
 };
-
 
 // --- EVENT LISTENERS ---
 nextButtons.forEach(button => {
@@ -124,7 +115,6 @@ sexButtons.forEach(button => {
     });
 });
 
-
 // --- MANEJO DEL ENVÍO FINAL ---
 addPetForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -159,14 +149,12 @@ addPetForm.addEventListener('submit', async (event) => {
         species: 'Perro',
         image_url: imageUrl,
         weight: petData.weight ? parseFloat(petData.weight) : null,
-        age: petData.age ? parseInt(petData.age) : null,
+        birth_date: petData.birth_date || null,
     };
     
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Eliminamos la propiedad 'photo' que viene del input de archivo,
-    // ya que no corresponde a una columna en la base de datos.
+    // Eliminamos propiedades no correspondientes a columnas
     delete finalPetData.photo;
-    // --- FIN DE LA CORRECCIÓN ---
+    delete finalPetData.age; // Por si acaso quedó algo
 
     const { error: insertError } = await supabase.from('pets').insert([finalPetData]);
 
@@ -178,5 +166,16 @@ addPetForm.addEventListener('submit', async (event) => {
     } else {
         alert('¡Mascota agregada con éxito!');
         window.location.href = '/public/modules/profile/profile.html';
+    }
+});
+
+// --- INICIALIZACIÓN ---
+document.addEventListener('DOMContentLoaded', () => {
+    showStep(1);
+    
+    // Establecer fecha máxima como hoy
+    const birthDateInput = document.querySelector('#birth_date');
+    if (birthDateInput) {
+        birthDateInput.max = new Date().toISOString().split('T')[0];
     }
 });

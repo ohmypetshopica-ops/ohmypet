@@ -3,38 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalles de Mascota - OhMyPet</title>
+    <title>Detalles de la Mascota - OhMyPet</title>
+    <link rel="icon" type="image/png" href="/public/assets/images/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         :root { font-family: 'Inter', sans-serif; }
-        .size-btn.selected {
-            border-color: #22c55e; /* green-500 */
-            background-color: #f0fdf4; /* green-50 */
-        }
-        .size-btn.selected img {
-            filter: invert(39%) sepia(61%) saturate(2068%) hue-rotate(117deg) brightness(91%) contrast(86%);
-        }
-        .sex-btn.selected-male {
-            border-color: #3b82f6; /* blue-500 */
-            background-color: #eff6ff; /* blue-50 */
-        }
-        .sex-btn.selected-female {
-            border-color: #ec4899; /* pink-500 */
-            background-color: #fdf2f8; /* pink-50 */
-        }
-        .sex-btn.selected-male img {
-            filter: invert(49%) sepia(87%) saturate(2500%) hue-rotate(204deg) brightness(98%) contrast(95%);
-        }
-        .sex-btn.selected-female img {
-            filter: invert(41%) sepia(50%) saturate(3000%) hue-rotate(295deg) brightness(96%) contrast(91%);
-        }
+        .selected { border-color: #10b981; background-color: #d1fae5; }
+        .selected-male { border-color: #3b82f6; background-color: #dbeafe; }
+        .selected-female { border-color: #ec4899; background-color: #fce7f3; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-green-50 to-purple-100 text-gray-900 antialiased flex flex-col items-center justify-center min-h-screen p-4">
+<body class="bg-gray-50 text-gray-900 antialiased flex items-center justify-center min-h-screen p-4">
 
-    <main class="w-full max-w-xl mx-auto bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 animate-fade-in">
-        <div class="mb-8">
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-6 md:p-10 border border-gray-100 my-8">
+        <div class="mb-6">
             <a href="/public/modules/profile/profile.html" class="flex items-center text-sm font-semibold text-green-600 hover:text-green-800 transition-colors duration-200">
                 <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -65,28 +48,28 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Sexo</label>
                 <div class="grid grid-cols-2 gap-4">
-                    <button type="button" class="sex-btn p-4 border-2 border-gray-200 rounded-lg flex items-center justify-center space-x-3 focus:outline-none" data-sex="Macho">
+                    <button type="button" class="sex-btn p-4 border-2 border-gray-200 rounded-lg flex items-center justify-center space-x-3 focus:outline-none transition-colors duration-200" data-sex="Macho">
                         <img src="/public/assets/icons/man-icon.svg" class="h-6 w-6">
                         <span class="font-medium text-gray-800">Macho</span>
                     </button>
-                    <button type="button" class="sex-btn p-4 border-2 border-gray-200 rounded-lg flex items-center justify-center space-x-3 focus:outline-none" data-sex="Hembra">
-                        <img src="/public/assets/icons/fem-icon.svg" class="h-6 w-6">
+                    <button type="button" class="sex-btn p-4 border-2 border-gray-200 rounded-lg flex items-center justify-center space-x-3 focus:outline-none transition-colors duration-200" data-sex="Hembra">
+                        <img src="/public/assets/icons/woman-icon.svg" class="h-6 w-6">
                         <span class="font-medium text-gray-800">Hembra</span>
                     </button>
                 </div>
                 <input type="hidden" id="sex" name="sex" required>
             </div>
 
-             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-4 text-center">Tamaño</label>
-                <div class="flex justify-around items-stretch space-x-2 sm:space-x-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tamaño</label>
+                <div class="grid grid-cols-3 gap-3">
                     <button type="button" class="size-btn p-3 border-2 border-gray-200 rounded-lg flex flex-col items-center justify-center space-y-2 flex-1 focus:outline-none" data-size="Pequeño">
-                         <img src="/public/assets/icons/dog-icon.svg" class="h-8">
-                        <span class="text-sm font-medium text-gray-800">Pequeño</span>
-                        <span class="text-xs text-gray-500">15 - 40 cm</span>
+                       <img src="/public/assets/icons/dog-icon.svg" class="h-8">
+                       <span class="text-sm font-medium text-gray-800">Pequeño</span>
+                       <span class="text-xs text-gray-500">-40 cm</span>
                     </button>
                     <button type="button" class="size-btn p-3 border-2 border-gray-200 rounded-lg flex flex-col items-center justify-center space-y-2 flex-1 focus:outline-none" data-size="Mediano">
-                        <img src="/public/assets/icons/dog-icon.svg" class="h-12">
+                       <img src="/public/assets/icons/dog-icon.svg" class="h-12">
                        <span class="text-sm font-medium text-gray-800">Mediano</span>
                        <span class="text-xs text-gray-500">40 - 60 cm</span>
                     </button>
@@ -101,8 +84,9 @@
 
             <div class="grid grid-cols-2 gap-6">
                 <div>
-                    <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Edad (años)</label>
-                    <input type="number" id="age" name="age" min="0" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+                    <label for="birth_date" class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+                    <input type="date" id="birth_date" name="birth_date" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+                    <p class="text-xs text-gray-500 mt-1">Edad: <span id="calculated-age" class="font-semibold">-</span></p>
                 </div>
                 <div>
                     <label for="weight" class="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
@@ -115,28 +99,17 @@
                 <textarea id="observations" name="observations" rows="4" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500"></textarea>
             </div>
 
-            <div class="pt-4 border-t border-gray-100">
-                <a id="history-button" href="#" class="block w-full">
-                    <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg shadow-sm hover:bg-gray-100">
-                        <div class="flex items-center">
-                            <span class="p-2 rounded-full bg-blue-100 text-blue-600 mr-3">
-                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            </span>
-                            <p class="text-sm font-medium text-gray-700">Ver Historial de Servicios</p>
-                        </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                    </div>
-                </a>
-            </div>
-
-            <div class="flex justify-between items-center pt-4">
-                <button type="button" id="delete-pet-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg">Eliminar</button>
-                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg">Guardar Cambios</button>
+            <div class="flex justify-between pt-6">
+                <button type="button" id="delete-pet-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg">Eliminar Mascota</button>
+                <div class="flex gap-4">
+                    <a id="history-button" href="#" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg inline-block">Ver Historial</a>
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg">Guardar Cambios</button>
+                </div>
             </div>
         </form>
+    </div>
 
-    </main>
     <script type="module" src="../../core/auth-client.js"></script>
-    <script type="module" src="pet-details.js"></script>
+    <script type="module" src="./pet-details.js"></script>
 </body>
 </html>

@@ -13,17 +13,13 @@ let departurePhotoFile = null;
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
-    // =================================================================
-    // =========== INICIO DE LA CORRECCIÓN DE TIMING ===================
     // Movemos la selección de elementos aquí, para asegurar que el DOM esté cargado.
-    // =================================================================
     const appointmentsTableBody = document.querySelector('#appointments-table-body');
     const searchInput = document.querySelector('#appointment-search-input');
     const statusFilter = document.querySelector('#appointment-status-filter');
     const dateFilter = document.querySelector('#appointment-date-filter');
     const clearFiltersButton = document.querySelector('#clear-filters-button');
     const headerTitle = document.querySelector('#header-title');
-
     const completionModal = document.querySelector('#completion-modal');
     const completionModalSubtitle = document.querySelector('#completion-modal-subtitle');
     const finalObservationsTextarea = document.querySelector('#final-observations-textarea');
@@ -34,9 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const arrivalPhotoInput = document.querySelector('#arrival-photo-input');
     const departurePhotoInput = document.querySelector('#departure-photo-input');
     const uploadMessage = document.querySelector('#upload-message');
-    // =================================================================
-    // ================ FIN DE LA CORRECCIÓN DE TIMING =================
-    // =================================================================
 
     const renderAppointmentsTable = (appointments) => {
         if (!appointmentsTableBody) return;
@@ -44,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const applyFiltersAndSearch = () => {
+        // (código sin cambios)
         const searchTerm = searchInput.value.toLowerCase().trim();
         const selectedStatus = statusFilter.value;
         const selectedDate = dateFilter.value;
