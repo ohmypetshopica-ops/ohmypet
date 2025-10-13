@@ -10,7 +10,10 @@ const setupUI = async (user) => {
     const userNav = document.getElementById('user-nav');
     const userInitialElement = document.getElementById('user-initial');
 
-    if (!guestNav || !userNav) return;
+    if (!guestNav || !userNav) {
+        console.log('Elementos del header no encontrados aún, reintentando...');
+        return false;
+    }
 
     if (user) {
         // Usuario logueado: mostrar menú de usuario
@@ -43,44 +46,51 @@ const setupUI = async (user) => {
         userNav.classList.add('hidden');
         userNav.classList.remove('flex');
     }
+    
+    return true;
 };
 
 /**
  * Configura el botón de logout de manera directa
  */
 const setupLogoutButton = () => {
-    setTimeout(() => {
-        const logoutButton = document.getElementById('logout-button');
+    const logoutButton = document.getElementById('logout-button');
+    
+    if (!logoutButton) {
+        console.log('Botón de logout no encontrado');
+        return;
+    }
+    
+    // Clonar el botón para eliminar eventos previos
+    const newLogoutButton = logoutButton.cloneNode(true);
+    logoutButton.parentNode.replaceChild(newLogoutButton, logoutButton);
+    
+    newLogoutButton.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         
-        if (logoutButton) {
-            // Clonar el botón para eliminar eventos previos
-            const newLogoutButton = logoutButton.cloneNode(true);
-            logoutButton.parentNode.replaceChild(newLogoutButton, logoutButton);
+        console.log('Cerrando sesión...');
+        
+        try {
+            // Limpiar almacenamiento local
+            localStorage.clear();
+            sessionStorage.clear();
             
-            newLogoutButton.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                try {
-                    // Limpiar almacenamiento local
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    
-                    // Cerrar sesión en Supabase
-                    await supabase.auth.signOut({ scope: 'local' });
-                    
-                    // Redirigir al inicio
-                    window.location.href = '/public/index.html';
-                    
-                } catch (error) {
-                    console.error('Error al cerrar sesión:', error);
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    window.location.href = '/public/index.html';
-                }
-            });
+            // Cerrar sesión en Supabase
+            await supabase.auth.signOut({ scope: 'local' });
+            
+            // Redirigir al inicio
+            window.location.href = '/public/index.html';
+            
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/public/index.html';
         }
-    }, 500);
+    });
+    
+    console.log('✓ Botón de logout configurado');
 };
 
 /**
@@ -153,23 +163,64 @@ const checkForNotification = () => {
 };
 
 /**
- * Punto de entrada principal que se ejecuta una vez que el layout está listo.
+ * Inicializa la UI con reintentos si es necesario
+ */
+const initializeUI = async () => {
+    console.log('=== Inicializando UI ===');
+    
+    // Obtener usuario actual
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('Usuario actual:', user ? user.email : 'No logueado');
+    
+    // Intentar configurar UI con reintentos
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const trySetup = async () => {
+        const success = await setupUI(user);
+        
+        if (success) {
+            console.log('✓ UI configurada correctamente');
+            
+            // Si hay usuario, configurar logout
+            if (user) {
+                setupLogoutButton();
+            }
+        } else {
+            attempts++;
+            if (attempts < maxAttempts) {
+                console.log(`Intento ${attempts}/${maxAttempts}, esperando header...`);
+                setTimeout(trySetup, 100);
+            } else {
+                console.error('❌ No se pudo configurar la UI después de múltiples intentos');
+            }
+        }
+    };
+    
+    trySetup();
+};
+
+/**
+ * Punto de entrada principal
  */
 const initialize = () => {
+    console.log('=== Main.js cargado ===');
+    
+    // Configurar listeners del header
+    setupHeaderEventListeners();
+    
+    // Inicializar UI inmediatamente
+    initializeUI();
+    
     // Escuchar cambios en el estado de autenticación
     supabase.auth.onAuthStateChange((_event, session) => {
+        console.log('Cambio de autenticación detectado:', session?.user ? 'Login' : 'Logout');
         setupUI(session?.user);
         
         if (session?.user) {
             setupLogoutButton();
         }
     });
-
-    // Configurar listeners del header
-    setupHeaderEventListeners();
-    
-    // Configurar logout (por si ya hay sesión activa)
-    setupLogoutButton();
     
     // Verificar notificaciones
     checkForNotification();
@@ -180,3 +231,11 @@ const initialize = () => {
 
 // Esperar a que el layout esté listo antes de inicializar
 document.addEventListener('layoutReady', initialize);
+
+// CRÍTICO: También inicializar si el DOM ya está cargado
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+} else {
+    // El DOM ya está cargado, inicializar inmediatamente
+    setTimeout(initialize, 100);
+}
