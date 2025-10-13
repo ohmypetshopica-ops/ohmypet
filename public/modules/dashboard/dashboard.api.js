@@ -1,5 +1,5 @@
 // public/modules/dashboard/dashboard.api.js
-// VERSIÓN FINAL, COMPLETA Y CORREGIDA
+// VERSIÓN FINAL, COMPLETA Y CORREGIDA (CON OBSERVACIONES)
 
 import { supabase } from '../../core/supabase.js';
 
@@ -58,18 +58,30 @@ export const getAppointments = async () => {
     return data || [];
 };
 
-export const updateAppointmentStatus = async (appointmentId, newStatus) => {
+// =================================================================
+// ============== FUNCIÓN CORREGIDA Y MEJORADA =====================
+// =================================================================
+export const updateAppointmentStatus = async (appointmentId, newStatus, observations = null) => {
+    const updateData = { status: newStatus };
+
+    // Si se están pasando observaciones, añadirlas al objeto de actualización
+    if (observations !== null) {
+        updateData.final_observations = observations;
+    }
+
     const { data, error } = await supabase
         .from('appointments')
-        .update({ status: newStatus })
+        .update(updateData)
         .eq('id', appointmentId)
         .select();
+        
     if (error) {
         console.error('Error al actualizar estado de la cita:', error);
         return { success: false, error };
     }
     return { success: true, data: data[0] };
 };
+// =================================================================
 
 // --- PRODUCTOS ---
 export const getProducts = async () => {
@@ -112,7 +124,7 @@ export const getServices = async () => {
     return data || [];
 };
 
-// --- FOTOS DE CITAS (NUEVAS FUNCIONES) ---
+// --- FOTOS DE CITAS ---
 export const getAppointmentPhotos = async (appointmentId) => {
     const { data, error } = await supabase
         .from('appointment_photos')
