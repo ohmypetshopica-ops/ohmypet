@@ -1,3 +1,5 @@
+// public/modules/profile/profile.api.js
+
 // Importamos el cliente de Supabase desde el archivo centralizado
 import { supabase } from '../../core/supabase.js';
 
@@ -61,23 +63,38 @@ export const cancelAppointment = async (appointmentId) => {
 };
 
 /**
- * Obtiene los horarios ya reservados para una fecha específica.
+ * Obtiene los horarios ya reservados Y bloqueados para una fecha específica.
  * @param {string} date - La fecha en formato YYYY-MM-DD.
  * @returns {Promise<Array>} Una lista de horarios ocupados (ej: ["09:00", "10:30"]).
  */
 export const getBookedTimes = async (date) => {
-    const { data, error } = await supabase
+    // Obtener citas reservadas
+    const { data: appointments, error: appointmentsError } = await supabase
         .from('appointments')
         .select('appointment_time')
         .eq('appointment_date', date)
         .in('status', ['pendiente', 'confirmada']);
 
-    if (error) {
-        console.error("Error al verificar horarios:", error);
-        return [];
+    if (appointmentsError) {
+        console.error("Error al verificar horarios de citas:", appointmentsError);
     }
+
+    // Obtener horarios bloqueados
+    const { data: blockedSlots, error: blockedError } = await supabase
+        .from('blocked_slots')
+        .select('blocked_time')
+        .eq('blocked_date', date);
+
+    if (blockedError) {
+        console.error("Error al verificar horarios bloqueados:", blockedError);
+    }
+
+    // Combinar ambos arrays
+    const bookedFromAppointments = appointments ? appointments.map(app => app.appointment_time.slice(0, 5)) : [];
+    const bookedFromBlocked = blockedSlots ? blockedSlots.map(slot => slot.blocked_time.slice(0, 5)) : [];
     
-    return data.map(app => app.appointment_time.slice(0, 5));
+    // Retornar array único combinado (sin duplicados)
+    return [...new Set([...bookedFromAppointments, ...bookedFromBlocked])];
 };
 
 /**

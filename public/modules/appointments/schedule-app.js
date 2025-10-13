@@ -19,6 +19,37 @@ let selectedTime = null;
 let clientFullName = 'Cliente';
 let currentUser = null; 
 
+// --- FUNCIÓN PARA OBTENER HORARIOS OCUPADOS (citas + bloqueados) ---
+const getBookedTimes = async (date) => {
+    // Obtener citas reservadas
+    const { data: appointments, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('appointment_time')
+        .eq('appointment_date', date)
+        .in('status', ['pendiente', 'confirmada']);
+
+    if (appointmentsError) {
+        console.error("Error al verificar horarios de citas:", appointmentsError);
+    }
+
+    // Obtener horarios bloqueados
+    const { data: blockedSlots, error: blockedError } = await supabase
+        .from('blocked_slots')
+        .select('blocked_time')
+        .eq('blocked_date', date);
+
+    if (blockedError) {
+        console.error("Error al verificar horarios bloqueados:", blockedError);
+    }
+
+    // Combinar ambos arrays
+    const bookedFromAppointments = appointments ? appointments.map(app => app.appointment_time.slice(0, 5)) : [];
+    const bookedFromBlocked = blockedSlots ? blockedSlots.map(slot => slot.blocked_time.slice(0, 5)) : [];
+    
+    // Retornar array único combinado (sin duplicados)
+    return [...new Set([...bookedFromAppointments, ...bookedFromBlocked])];
+};
+
 // --- LÓGICA DE LA APLICACIÓN ---
 
 const loadUserDataAndPets = async () => {
@@ -100,19 +131,9 @@ const handleDateChange = async () => {
         return;
     }
     timeOptionsContainer.innerHTML = '<p class="text-sm text-gray-500">Cargando disponibilidad...</p>';
-    const { data: appointments, error } = await supabase
-        .from('appointments')
-        .select('appointment_time')
-        .eq('appointment_date', selectedDate)
-        .in('status', ['pendiente', 'confirmada']);
     
-    if (error) {
-        console.error("Error al verificar horarios:", error);
-        timeOptionsContainer.innerHTML = '<p class="text-sm text-red-500">No se pudo verificar la disponibilidad.</p>';
-        return;
-    }
-    
-    const bookedTimes = appointments.map(app => app.appointment_time.slice(0, 5));
+    // Usar la nueva función que incluye bloqueados
+    const bookedTimes = await getBookedTimes(selectedDate);
     renderTimeOptions(bookedTimes);
 };
 
