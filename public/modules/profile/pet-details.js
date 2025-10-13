@@ -77,125 +77,134 @@ const loadPetDetails = async () => {
         return;
     }
 
-    // Rellenar formulario
     petNameTitle.textContent = pet.name;
-    petMainPhoto.src = pet.image_url || 'https://via.placeholder.com/150';
-    editPetForm.name.value = pet.name;
-    editPetForm.breed.value = pet.breed;
-    editPetForm.birth_date.value = pet.birth_date || '';
-    editPetForm.weight.value = pet.weight || '';
-    editPetForm.observations.value = pet.observations || '';
-
-    // Calcular y mostrar edad
+    document.querySelector('#name').value = pet.name;
+    document.querySelector('#breed').value = pet.breed || '';
+    document.querySelector('#weight').value = pet.weight || '';
+    document.querySelector('#observations').value = pet.observations || '';
+    birthDateInput.value = pet.birth_date || '';
+    
+    // Actualizar edad calculada al cargar
     updateCalculatedAge();
 
-    // Seleccionar botones de sexo
-    hiddenSexInput.value = pet.sex;
-    sexButtons.forEach(button => {
-        button.classList.remove('selected-male', 'selected-female');
-        if (button.dataset.sex === pet.sex) {
-            button.classList.add(pet.sex === 'Macho' ? 'selected-male' : 'selected-female');
+    if (pet.image_url) {
+        petMainPhoto.src = pet.image_url;
+    }
+
+    hiddenSexInput.value = pet.sex || '';
+    sexButtons.forEach(btn => {
+        if (btn.dataset.sex === pet.sex) {
+            btn.classList.add('border-green-500', 'bg-green-50');
         }
     });
 
-    // Seleccionar botones de tamaño
-    hiddenSizeInput.value = pet.size;
-    sizeButtons.forEach(button => {
-        button.classList.remove('selected');
-        if (button.dataset.size === pet.size) {
-            button.classList.add('selected');
+    hiddenSizeInput.value = pet.size || '';
+    sizeButtons.forEach(btn => {
+        if (btn.dataset.size === pet.size) {
+            btn.classList.add('border-green-500', 'bg-green-50');
         }
     });
 
-    historyButton.href = `/public/modules/profile/service-history.html?id=${petId}`;
+    historyButton.href = `/public/modules/profile/pet-history.html?id=${petId}`;
 };
 
-// --- MANEJO DE EVENTOS DE BOTONES ---
+// --- BOTONES DE SEXO ---
+sexButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        sexButtons.forEach(btn => btn.classList.remove('border-green-500', 'bg-green-50'));
+        button.classList.add('border-green-500', 'bg-green-50');
+        hiddenSexInput.value = button.dataset.sex;
+    });
+});
+
+// --- BOTONES DE TAMAÑO ---
 sizeButtons.forEach(button => {
     button.addEventListener('click', () => {
-        sizeButtons.forEach(btn => btn.classList.remove('selected'));
-        button.classList.add('selected');
+        sizeButtons.forEach(btn => btn.classList.remove('border-green-500', 'bg-green-50'));
+        button.classList.add('border-green-500', 'bg-green-50');
         hiddenSizeInput.value = button.dataset.size;
     });
 });
 
-sexButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        sexButtons.forEach(btn => btn.classList.remove('selected-male', 'selected-female'));
-        const selectedSex = button.dataset.sex;
-        button.classList.add(selectedSex === 'Macho' ? 'selected-male' : 'selected-female');
-        hiddenSexInput.value = selectedSex;
-    });
+// --- ACTUALIZAR EDAD EN TIEMPO REAL ---
+birthDateInput.addEventListener('change', updateCalculatedAge);
+
+// --- SUBIR FOTO ---
+document.querySelector('#change-photo-btn').addEventListener('click', () => {
+    photoUploadInput.click();
 });
 
-photoUploadInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
+photoUploadInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
     if (file) {
         photoFile = file;
         const reader = new FileReader();
-        reader.onload = (e) => { petMainPhoto.src = e.target.result; };
+        reader.onload = (event) => {
+            petMainPhoto.src = event.target.result;
+        };
         reader.readAsDataURL(file);
     }
 });
 
-// Actualizar edad cuando cambie la fecha
-birthDateInput.addEventListener('change', updateCalculatedAge);
-
-// --- MANEJO DEL FORMULARIO DE EDICIÓN ---
-editPetForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    let imageUrl = petMainPhoto.src;
-    if (photoFile) {
-        const fileName = `${currentUser.id}/${petId}/${Date.now()}_${photoFile.name}`;
-        const { error: uploadError } = await supabase.storage.from('pet_galleries').upload(fileName, photoFile, {
-            upsert: true
-        });
-        if (uploadError) {
-            alert('Hubo un error al subir la nueva foto. Se mantendrá la anterior.');
-        } else {
-            const { publicUrl } = supabase.storage.from('pet_galleries').getPublicUrl(fileName).data;
-            imageUrl = publicUrl;
-        }
-    }
+// --- GUARDAR CAMBIOS ---
+editPetForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
     const updatedPet = {
-        name: editPetForm.name.value,
-        breed: editPetForm.breed.value,
-        size: hiddenSizeInput.value,
+        name: document.querySelector('#name').value,
+        breed: document.querySelector('#breed').value,
         sex: hiddenSexInput.value,
-        weight: editPetForm.weight.value ? parseFloat(editPetForm.weight.value) : null,
-        birth_date: editPetForm.birth_date.value || null,
-        observations: editPetForm.observations.value,
-        image_url: imageUrl,
+        size: hiddenSizeInput.value,
+        weight: parseFloat(document.querySelector('#weight').value) || null,
+        birth_date: birthDateInput.value || null,
+        observations: document.querySelector('#observations').value,
     };
 
-    const { error } = await supabase.from('pets').update(updatedPet).eq('id', petId);
-
-    if (error) {
-        alert('Hubo un error al guardar los cambios.');
-    } else {
-        alert('¡Cambios guardados con éxito!');
-        petNameTitle.textContent = updatedPet.name;
-        photoFile = null;
-    }
-});
-
-// --- MANEJO DE LA ELIMINACIÓN ---
-deletePetButton.addEventListener('click', async () => {
-    if (confirm('¿Estás seguro? Se borrará la mascota y su historial de citas.')) {
-        await supabase.from('appointments').delete().eq('pet_id', petId);
-        const { error: petError } = await supabase.from('pets').delete().eq('id', petId);
-        if (petError) {
-            alert('Error al eliminar la mascota.');
-        } else {
-            alert('Mascota eliminada con éxito.');
-            window.location.href = '/public/modules/profile/profile.html';
+    if (photoFile) {
+        const fileName = `${currentUser.id}/${Date.now()}_${photoFile.name}`;
+        const { error: uploadError } = await supabase.storage.from('pet_galleries').upload(fileName, photoFile);
+        if (!uploadError) {
+            const { publicUrl } = supabase.storage.from('pet_galleries').getPublicUrl(fileName).data;
+            updatedPet.image_url = publicUrl;
         }
     }
+
+    const { error } = await supabase
+        .from('pets')
+        .update(updatedPet)
+        .eq('id', petId)
+        .eq('owner_id', currentUser.id);
+
+    if (error) {
+        console.error('Error al actualizar la mascota:', error);
+        alert('Hubo un error al guardar los cambios.');
+    } else {
+        alert('¡Cambios guardados exitosamente!');
+        loadPetDetails();
+    }
 });
 
-// --- INICIALIZACIÓN ---
+// --- ELIMINAR MASCOTA ---
+deletePetButton.addEventListener('click', async () => {
+    const confirmDelete = confirm(`¿Estás seguro de eliminar a ${petNameTitle.textContent}?`);
+    if (!confirmDelete) return;
+
+    const { error } = await supabase
+        .from('pets')
+        .delete()
+        .eq('id', petId)
+        .eq('owner_id', currentUser.id);
+
+    if (error) {
+        console.error('Error al eliminar mascota:', error);
+        alert('Hubo un error al eliminar la mascota.');
+    } else {
+        alert('Mascota eliminada exitosamente.');
+        window.location.href = '/public/modules/profile/profile.html';
+    }
+});
+
+// --- INICIALIZAR ---
 document.addEventListener('DOMContentLoaded', () => {
     loadPetDetails();
     

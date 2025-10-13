@@ -1,5 +1,3 @@
-// public/modules/dashboard/dashboard-pets.js
-
 import { supabase } from '../../core/supabase.js';
 
 // --- ELEMENTOS DEL DOM ---
@@ -43,9 +41,6 @@ const calculateAge = (birthDate) => {
 
 // --- FUNCIONES DE API ---
 
-/**
- * Obtiene TODAS las mascotas del sistema (para administradores)
- */
 const getAllPets = async () => {
     const { data, error } = await supabase
         .from('pets')
@@ -80,9 +75,6 @@ const getAllPets = async () => {
     return data || [];
 };
 
-/**
- * Busca mascotas por nombre, raza o nombre del dueño
- */
 const searchPets = async (searchTerm) => {
     const allPets = await getAllPets();
     
@@ -101,9 +93,6 @@ const searchPets = async (searchTerm) => {
     });
 };
 
-/**
- * Obtiene el historial de citas de una mascota específica
- */
 const getPetAppointments = async (petId) => {
     const { data, error } = await supabase
         .from('appointments')
@@ -119,28 +108,21 @@ const getPetAppointments = async (petId) => {
     return data || [];
 };
 
-/**
- * Obtiene estadísticas generales de mascotas
- */
 const getStats = async () => {
-    // Total de mascotas
     const { count: totalPets } = await supabase
         .from('pets')
         .select('*', { count: 'exact', head: true });
 
-    // Perros
     const { count: dogs } = await supabase
         .from('pets')
         .select('*', { count: 'exact', head: true })
         .eq('species', 'Perro');
 
-    // Gatos
     const { count: cats } = await supabase
         .from('pets')
         .select('*', { count: 'exact', head: true })
         .eq('species', 'Gato');
 
-    // Citas este mes
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
@@ -235,7 +217,6 @@ const openPetDetailsModal = async (pet) => {
     document.querySelector('#modal-pet-owner').textContent = ownerName;
     document.querySelector('#modal-pet-observations').textContent = pet.observations || 'Sin observaciones registradas.';
 
-    // Cargar historial de citas
     const appointments = await getPetAppointments(pet.id);
     const appointmentsContainer = document.querySelector('#modal-pet-appointments');
     
@@ -287,26 +268,21 @@ const applyFilters = async () => {
 const initializePetsSection = async () => {
     if (headerTitle) headerTitle.textContent = 'Gestión de Mascotas';
 
-    // Cargar estadísticas
     const stats = await getStats();
     if (totalPetsCount) totalPetsCount.textContent = stats.totalPets;
     if (dogsCount) dogsCount.textContent = stats.dogs;
     if (catsCount) catsCount.textContent = stats.cats;
     if (appointmentsMonthCount) appointmentsMonthCount.textContent = stats.appointmentsMonth;
 
-    // Cargar tabla inicial
     const allPets = await getAllPets();
     await renderPetsTable(allPets);
 
-    // Event listeners
     if (petSearchInput) petSearchInput.addEventListener('input', applyFilters);
     if (speciesFilter) speciesFilter.addEventListener('change', applyFilters);
 
-    // Modal handlers
     if (closeModalBtn) closeModalBtn.addEventListener('click', closePetDetailsModal);
     if (closeModalBottomBtn) closeModalBottomBtn.addEventListener('click', closePetDetailsModal);
 
-    // Event delegation para botones "Ver Detalles"
     if (petsTableBody) {
         petsTableBody.addEventListener('click', (e) => {
             if (e.target.classList.contains('view-details-btn')) {
@@ -318,5 +294,4 @@ const initializePetsSection = async () => {
     }
 };
 
-// --- EJECUTAR AL CARGAR ---
 document.addEventListener('DOMContentLoaded', initializePetsSection);
