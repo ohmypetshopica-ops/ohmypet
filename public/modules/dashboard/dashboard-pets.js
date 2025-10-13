@@ -17,13 +17,36 @@ const petDetailsModal = document.querySelector('#pet-details-modal');
 const closeModalBtn = document.querySelector('#close-modal-btn');
 const closeModalBottomBtn = document.querySelector('#close-modal-bottom-btn');
 
-// --- FUNCIONES DE API (CORREGIDAS) ---
+// --- FUNCIÓN PARA CALCULAR EDAD ---
+const calculateAge = (birthDate) => {
+    if (!birthDate) return null;
+    
+    const birth = new Date(birthDate);
+    const today = new Date();
+    
+    let years = today.getFullYear() - birth.getFullYear();
+    let months = today.getMonth() - birth.getMonth();
+    
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+    
+    if (years === 0) {
+        return `${months} ${months === 1 ? 'mes' : 'meses'}`;
+    } else if (months === 0) {
+        return `${years} ${years === 1 ? 'año' : 'años'}`;
+    } else {
+        return `${years} ${years === 1 ? 'año' : 'años'} y ${months} ${months === 1 ? 'mes' : 'meses'}`;
+    }
+};
+
+// --- FUNCIONES DE API ---
 
 /**
  * Obtiene TODAS las mascotas del sistema (para administradores)
  */
 const getAllPets = async () => {
-    // IMPORTANTE: No filtramos por owner_id porque somos administradores
     const { data, error } = await supabase
         .from('pets')
         .select(`
@@ -33,7 +56,7 @@ const getAllPets = async () => {
             breed,
             sex,
             size,
-            age,
+            birth_date,
             weight,
             observations,
             image_url,
@@ -61,10 +84,8 @@ const getAllPets = async () => {
  * Busca mascotas por nombre, raza o nombre del dueño
  */
 const searchPets = async (searchTerm) => {
-    // Primero obtenemos todas las mascotas
     const allPets = await getAllPets();
     
-    // Luego filtramos en el cliente (más flexible para búsquedas complejas)
     const searchLower = searchTerm.toLowerCase();
     return allPets.filter(pet => {
         const petName = pet.name?.toLowerCase() || '';
@@ -146,6 +167,7 @@ const createPetRow = (pet) => {
         : ownerProfile?.full_name || 'Sin dueño asignado';
 
     const petData = JSON.stringify(pet).replace(/"/g, '&quot;');
+    const ageDisplay = calculateAge(pet.birth_date) || 'N/A';
 
     return `
         <tr class="hover:bg-gray-50 transition-colors" data-pet='${petData}'>
@@ -171,7 +193,7 @@ const createPetRow = (pet) => {
                 </span>
             </td>
             <td class="px-6 py-4 text-sm text-gray-700">
-                ${pet.age ? `${pet.age} años` : 'N/A'} • ${pet.size || 'N/A'}
+                ${ageDisplay} • ${pet.size || 'N/A'}
             </td>
             <td class="px-6 py-4 text-sm text-gray-500">
                 ${pet.weight ? `${pet.weight} kg` : 'N/A'}
@@ -200,12 +222,14 @@ const openPetDetailsModal = async (pet) => {
         ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
         : ownerProfile?.full_name || 'Sin dueño asignado';
 
+    const ageDisplay = calculateAge(pet.birth_date) || 'N/A';
+
     document.querySelector('#modal-pet-image').src = pet.image_url || `https://via.placeholder.com/80/10b981/ffffff?text=${pet.name.charAt(0)}`;
     document.querySelector('#modal-pet-name').textContent = pet.name;
     document.querySelector('#modal-pet-breed').textContent = pet.breed || 'Raza no especificada';
     document.querySelector('#modal-pet-species').textContent = pet.species || 'N/A';
     document.querySelector('#modal-pet-sex').textContent = pet.sex || 'N/A';
-    document.querySelector('#modal-pet-age').textContent = pet.age ? `${pet.age} años` : 'N/A';
+    document.querySelector('#modal-pet-age').textContent = ageDisplay;
     document.querySelector('#modal-pet-weight').textContent = pet.weight ? `${pet.weight} kg` : 'N/A';
     document.querySelector('#modal-pet-size').textContent = pet.size || 'N/A';
     document.querySelector('#modal-pet-owner').textContent = ownerName;
@@ -256,60 +280,43 @@ const applyFilters = async () => {
         pets = pets.filter(pet => pet.species === species);
     }
 
-    console.log(`Mostrando ${pets.length} mascotas después de filtros`);
-    renderPetsTable(pets);
+    await renderPetsTable(pets);
 };
-
-const setupFilters = () => {
-    let debounceTimer;
-    petSearchInput.addEventListener('input', () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(applyFilters, 300);
-    });
-
-    speciesFilter.addEventListener('change', applyFilters);
-};
-
-// --- EVENTOS ---
-petsTableBody.addEventListener('click', (e) => {
-    const row = e.target.closest('tr[data-pet]');
-    if (row) {
-        const pet = JSON.parse(row.dataset.pet);
-        openPetDetailsModal(pet);
-    }
-});
-
-closeModalBtn.addEventListener('click', closePetDetailsModal);
-closeModalBottomBtn.addEventListener('click', closePetDetailsModal);
-petDetailsModal.addEventListener('click', (e) => {
-    if (e.target === petDetailsModal) closePetDetailsModal();
-});
 
 // --- INICIALIZACIÓN ---
 const initializePetsSection = async () => {
-    console.log('=== Inicializando sección de mascotas ===');
-    
-    if (headerTitle) {
-        headerTitle.textContent = 'Gestión de Mascotas';
+    if (headerTitle) headerTitle.textContent = 'Gestión de Mascotas';
+
+    // Cargar estadísticas
+    const stats = await getStats();
+    if (totalPetsCount) totalPetsCount.textContent = stats.totalPets;
+    if (dogsCount) dogsCount.textContent = stats.dogs;
+    if (catsCount) catsCount.textContent = stats.cats;
+    if (appointmentsMonthCount) appointmentsMonthCount.textContent = stats.appointmentsMonth;
+
+    // Cargar tabla inicial
+    const allPets = await getAllPets();
+    await renderPetsTable(allPets);
+
+    // Event listeners
+    if (petSearchInput) petSearchInput.addEventListener('input', applyFilters);
+    if (speciesFilter) speciesFilter.addEventListener('change', applyFilters);
+
+    // Modal handlers
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closePetDetailsModal);
+    if (closeModalBottomBtn) closeModalBottomBtn.addEventListener('click', closePetDetailsModal);
+
+    // Event delegation para botones "Ver Detalles"
+    if (petsTableBody) {
+        petsTableBody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('view-details-btn')) {
+                const row = e.target.closest('tr');
+                const petData = JSON.parse(row.dataset.pet);
+                openPetDetailsModal(petData);
+            }
+        });
     }
-
-    petsTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Cargando mascotas...</td></tr>';
-
-    const [pets, stats] = await Promise.all([
-        getAllPets(),
-        getStats()
-    ]);
-
-    console.log('Mascotas cargadas:', pets.length);
-    console.log('Estadísticas:', stats);
-
-    totalPetsCount.textContent = stats.totalPets;
-    dogsCount.textContent = stats.dogs;
-    catsCount.textContent = stats.cats;
-    appointmentsMonthCount.textContent = stats.appointmentsMonth;
-
-    renderPetsTable(pets);
-    setupFilters();
 };
 
+// --- EJECUTAR AL CARGAR ---
 document.addEventListener('DOMContentLoaded', initializePetsSection);

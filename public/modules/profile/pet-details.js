@@ -1,5 +1,3 @@
-// public/modules/profile/pet-details.js
-
 import { supabase } from './profile.api.js';
 
 // --- ELEMENTOS DEL DOM ---
@@ -13,12 +11,44 @@ const sizeButtons = document.querySelectorAll('.size-btn');
 const hiddenSizeInput = document.querySelector('input#size');
 const sexButtons = document.querySelectorAll('.sex-btn');
 const hiddenSexInput = document.querySelector('input#sex');
+const birthDateInput = document.querySelector('#birth_date');
+const calculatedAgeSpan = document.querySelector('#calculated-age');
 
 // --- ID DE LA MASCOTA DESDE LA URL ---
 const urlParams = new URLSearchParams(window.location.search);
 const petId = urlParams.get('id');
 let currentUser = null;
 let photoFile = null;
+
+// --- FUNCIÓN PARA CALCULAR EDAD ---
+const calculateAge = (birthDate) => {
+    if (!birthDate) return 'Sin fecha';
+    
+    const birth = new Date(birthDate);
+    const today = new Date();
+    
+    let years = today.getFullYear() - birth.getFullYear();
+    let months = today.getMonth() - birth.getMonth();
+    
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+    
+    if (years === 0) {
+        return `${months} ${months === 1 ? 'mes' : 'meses'}`;
+    } else if (months === 0) {
+        return `${years} ${years === 1 ? 'año' : 'años'}`;
+    } else {
+        return `${years} ${years === 1 ? 'año' : 'años'} y ${months} ${months === 1 ? 'mes' : 'meses'}`;
+    }
+};
+
+// --- ACTUALIZAR EDAD CALCULADA ---
+const updateCalculatedAge = () => {
+    const birthDate = birthDateInput.value;
+    calculatedAgeSpan.textContent = calculateAge(birthDate);
+};
 
 // --- FUNCIÓN PARA CARGAR LOS DATOS DE LA MASCOTA ---
 const loadPetDetails = async () => {
@@ -52,9 +82,12 @@ const loadPetDetails = async () => {
     petMainPhoto.src = pet.image_url || 'https://via.placeholder.com/150';
     editPetForm.name.value = pet.name;
     editPetForm.breed.value = pet.breed;
-    editPetForm.age.value = pet.age || '';
+    editPetForm.birth_date.value = pet.birth_date || '';
     editPetForm.weight.value = pet.weight || '';
     editPetForm.observations.value = pet.observations || '';
+
+    // Calcular y mostrar edad
+    updateCalculatedAge();
 
     // Seleccionar botones de sexo
     hiddenSexInput.value = pet.sex;
@@ -105,6 +138,9 @@ photoUploadInput.addEventListener('change', (event) => {
     }
 });
 
+// Actualizar edad cuando cambie la fecha
+birthDateInput.addEventListener('change', updateCalculatedAge);
+
 // --- MANEJO DEL FORMULARIO DE EDICIÓN ---
 editPetForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -113,7 +149,7 @@ editPetForm.addEventListener('submit', async (event) => {
     if (photoFile) {
         const fileName = `${currentUser.id}/${petId}/${Date.now()}_${photoFile.name}`;
         const { error: uploadError } = await supabase.storage.from('pet_galleries').upload(fileName, photoFile, {
-            upsert: true // Permite reemplazar la foto si se sube una nueva
+            upsert: true
         });
         if (uploadError) {
             alert('Hubo un error al subir la nueva foto. Se mantendrá la anterior.');
@@ -129,7 +165,7 @@ editPetForm.addEventListener('submit', async (event) => {
         size: hiddenSizeInput.value,
         sex: hiddenSexInput.value,
         weight: editPetForm.weight.value ? parseFloat(editPetForm.weight.value) : null,
-        age: editPetForm.age.value ? parseInt(editPetForm.age.value) : null,
+        birth_date: editPetForm.birth_date.value || null,
         observations: editPetForm.observations.value,
         image_url: imageUrl,
     };
@@ -141,7 +177,7 @@ editPetForm.addEventListener('submit', async (event) => {
     } else {
         alert('¡Cambios guardados con éxito!');
         petNameTitle.textContent = updatedPet.name;
-        photoFile = null; // Resetear el archivo de foto
+        photoFile = null;
     }
 });
 
@@ -160,4 +196,11 @@ deletePetButton.addEventListener('click', async () => {
 });
 
 // --- INICIALIZACIÓN ---
-document.addEventListener('DOMContentLoaded', loadPetDetails);
+document.addEventListener('DOMContentLoaded', () => {
+    loadPetDetails();
+    
+    // Establecer fecha máxima como hoy
+    if (birthDateInput) {
+        birthDateInput.max = new Date().toISOString().split('T')[0];
+    }
+});
