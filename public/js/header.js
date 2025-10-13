@@ -16,6 +16,7 @@ export const initHeader = async () => {
     const userInitial = document.getElementById('user-initial');
     const logoutBtn = document.getElementById('logout-btn');
     const cartBadge = document.getElementById('cart-badge');
+    const cartBtn = document.getElementById('cart-btn');
 
     // Verificar que existen los elementos
     if (!guestNav || !userNav) {
@@ -94,14 +95,43 @@ export const initHeader = async () => {
         });
     }
 
+    // ========== CARRITO ==========
+    
+    // Abrir modal del carrito (solo si estamos en store.html)
+    if (cartBtn) {
+        cartBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const cartModal = document.getElementById('cart-modal');
+            const cartModalContent = document.getElementById('cart-modal-content');
+            
+            if (cartModal && cartModalContent) {
+                // Estamos en la tienda, abrir modal
+                cartModal.classList.remove('hidden');
+                setTimeout(() => {
+                    cartModalContent.style.transform = 'translateX(0)';
+                }, 10);
+                
+                // Llamar función de renderizado si existe
+                if (window.renderCart) {
+                    window.renderCart();
+                }
+                console.log('🛒 Modal del carrito abierto');
+            } else {
+                // No estamos en la tienda, ir a la tienda
+                console.log('🛒 Redirigiendo a tienda...');
+                window.location.href = '/public/modules/store/store.html';
+            }
+        });
+    }
+
+    // Actualizar badge del carrito
+    updateCartBadge(cartBadge);
+
     // Cerrar menús al hacer click fuera
     document.addEventListener('click', () => {
         guestDropdown?.classList.add('hidden');
         userDropdown?.classList.add('hidden');
     });
-
-    // Actualizar badge del carrito
-    updateCartBadge(cartBadge);
 
     console.log('✅ Header inicializado completamente');
     return true;
@@ -120,12 +150,21 @@ const updateCartBadge = (badge) => {
         if (totalItems > 0) {
             badge.textContent = totalItems;
             badge.classList.remove('hidden');
+            console.log('🛒 Badge actualizado:', totalItems);
         } else {
             badge.classList.add('hidden');
         }
     } catch (error) {
         console.log('Cart no disponible');
     }
+};
+
+/**
+ * Función pública para actualizar el badge desde otros scripts
+ */
+export const refreshCartBadge = () => {
+    const badge = document.getElementById('cart-badge');
+    updateCartBadge(badge);
 };
 
 /**

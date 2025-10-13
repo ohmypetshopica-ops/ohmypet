@@ -39,7 +39,10 @@ const saveCart = (cart) => {
  */
 const updateCartBadge = () => {
     // Si el badge no existe en la página, salir sin error
-    if (!cartCountBadge) return;
+    if (!cartCountBadge) {
+        console.log('Badge del carrito no encontrado en esta página');
+        return;
+    }
     
     const cart = getCart();
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -49,6 +52,11 @@ const updateCartBadge = () => {
         cartCountBadge.classList.remove('hidden');
     } else {
         cartCountBadge.classList.add('hidden');
+    }
+    
+    // También actualizar el badge del header si existe
+    if (window.refreshCartBadge) {
+        window.refreshCartBadge();
     }
 };
 
@@ -89,8 +97,12 @@ export const addProductToCart = (product) => {
     updateCartBadge();
     renderCart();
     showNotification();
+    
+    // Actualizar badge del header
+    if (window.refreshCartBadge) {
+        window.refreshCartBadge();
+    }
 };
-
 /**
  * Actualiza la cantidad de un producto
  */
