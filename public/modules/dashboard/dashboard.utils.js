@@ -73,5 +73,5 @@ export {
     createUpcomingAppointmentItem, 
     createClientRow, 
     createProductRow, 
-    createAppointmentRow 
+    createAppointmentRow  
 };
