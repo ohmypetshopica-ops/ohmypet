@@ -1,5 +1,5 @@
 // public/modules/profile/my-appointments.js
-// VERSIÓN CON GALERÍA DE FOTOS Y OBSERVACIONES PARA EL CLIENTE
+// VERSIÓN CORREGIDA CON VERIFICACIÓN DE SEGURIDAD PARA FOTOS
 
 import { supabase, getUserAppointments, cancelAppointment, getBookedTimes, rescheduleAppointment, getUserProfile } from './profile.api.js';
 
@@ -95,11 +95,15 @@ const createAppointmentCard = (appointment) => {
     };
     const currentStyle = statusStyles[status] || statusStyles.pendiente;
 
-    // **NUEVO**: Preparar HTML para fotos y observaciones si la cita está completada
     let completedContent = '';
     if (status === 'completada') {
-        const arrivalPhoto = appointment.appointment_photos.find(p => p.photo_type === 'arrival');
-        const departurePhoto = appointment.appointment_photos.find(p => p.photo_type === 'departure');
+        // ================ INICIO DE LA CORRECCIÓN ===================
+        // Añadimos una verificación: si 'appointment_photos' no existe, lo tratamos como una lista vacía.
+        const photos = appointment.appointment_photos || []; 
+        // ================= FIN DE LA CORRECCIÓN =====================
+
+        const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
+        const departurePhoto = photos.find(p => p.photo_type === 'departure');
 
         completedContent = `
             <div class="mt-4 pt-4 border-t border-gray-200">
@@ -108,11 +112,11 @@ const createAppointmentCard = (appointment) => {
                         <h4 class="text-sm font-semibold text-gray-700 mb-2">Resultado del Servicio:</h4>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <img src="${arrivalPhoto ? arrivalPhoto.image_url : 'https://via.placeholder.com/150'}" alt="Foto de llegada" class="rounded-lg object-cover w-full h-32">
+                                <img src="${arrivalPhoto ? arrivalPhoto.image_url : 'https://via.placeholder.com/150/F3F4F6/9CA3AF?text=Antes'}" alt="Foto de llegada" class="rounded-lg object-cover w-full h-32">
                                 <p class="text-xs text-center text-gray-500 mt-1">Llegada</p>
                             </div>
                             <div>
-                                <img src="${departurePhoto ? departurePhoto.image_url : 'https://via.placeholder.com/150'}" alt="Foto de salida" class="rounded-lg object-cover w-full h-32">
+                                <img src="${departurePhoto ? departurePhoto.image_url : 'https://via.placeholder.com/150/F3F4F6/9CA3AF?text=Despu%C3%A9s'}" alt="Foto de salida" class="rounded-lg object-cover w-full h-32">
                                 <p class="text-xs text-center text-gray-500 mt-1">Salida</p>
                             </div>
                         </div>

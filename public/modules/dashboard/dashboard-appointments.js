@@ -1,216 +1,88 @@
-// public/modules/dashboard/dashboard-appointments.js
-// VERSIÓN CON MODAL UNIFICADO
+// Al inicio del archivo, importar la nueva API
+import { addWeightRecord } from './pet-weight.api.js';
 
-import { supabase } from '../../core/supabase.js';
-import { getAppointments, updateAppointmentStatus, getAppointmentPhotos, uploadAppointmentPhoto } from './dashboard.api.js';
-import { createAppointmentRow } from './dashboard.utils.js';
+// Dentro de la función que maneja la finalización de cita
+// Agregar después del modal de observaciones finales:
 
-// --- ELEMENTOS DEL DOM ---
-const appointmentsTableBody = document.querySelector('#appointments-table-body');
-const searchInput = document.querySelector('#appointment-search-input');
-const statusFilter = document.querySelector('#appointment-status-filter');
-const dateFilter = document.querySelector('#appointment-date-filter');
-const clearFiltersButton = document.querySelector('#clear-filters-button');
-const headerTitle = document.querySelector('#header-title');
+// **NUEVO**: Modal de Registro de Peso
+const weightModal = document.querySelector('#weight-modal');
+const petNameSpan = document.querySelector('#weight-pet-name');
+const weightInput = document.querySelector('#weight-input');
+const weightNotesInput = document.querySelector('#weight-notes-input');
+const skipWeightBtn = document.querySelector('#skip-weight-btn');
+const saveWeightBtn = document.querySelector('#save-weight-btn');
 
-// Modal Unificado de Finalización
-const completionModal = document.querySelector('#completion-modal');
-const completionModalSubtitle = document.querySelector('#completion-modal-subtitle');
-const finalObservationsTextarea = document.querySelector('#final-observations-textarea');
-const cancelCompletionBtn = document.querySelector('#cancel-completion-btn');
-const confirmCompletionBtn = document.querySelector('#confirm-completion-btn');
-const arrivalPhotoContainer = document.querySelector('#arrival-photo-container');
-const departurePhotoContainer = document.querySelector('#departure-photo-container');
-const arrivalPhotoInput = document.querySelector('#arrival-photo-input');
-const departurePhotoInput = document.querySelector('#departure-photo-input');
-const uploadMessage = document.querySelector('#upload-message');
+let currentPetId = null;
+let currentCompletedAppointmentId = null;
 
-// --- ESTADO ---
-let allAppointments = [];
-let currentAppointmentId = null;
-let arrivalPhotoFile = null;
-let departurePhotoFile = null;
-
-// --- RENDERIZADO Y FILTRADO (Sin cambios) ---
-const renderAppointmentsTable = (appointments) => {
-    if (!appointmentsTableBody) return;
-    appointmentsTableBody.innerHTML = appointments.length > 0 ? appointments.map(createAppointmentRow).join('') : `<tr><td colspan="5" class="block md:table-cell text-center py-8 text-gray-500">No se encontraron citas.</td></tr>`;
-};
-const applyFiltersAndSearch = () => {
-    // ... (Esta función no necesita cambios, la mantenemos como está)
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    const selectedStatus = statusFilter.value;
-    const selectedDate = dateFilter.value;
-    let filteredAppointments = allAppointments;
-    if (selectedStatus) filteredAppointments = filteredAppointments.filter(app => app.status === selectedStatus);
-    if (selectedDate) filteredAppointments = filteredAppointments.filter(app => app.appointment_date === selectedDate);
-    if (searchTerm) filteredAppointments = filteredAppointments.filter(app => {
-        const ownerName = (app.profiles?.full_name || `${app.profiles?.first_name} ${app.profiles?.last_name}`).toLowerCase();
-        const petName = app.pets?.name.toLowerCase();
-        return ownerName.includes(searchTerm) || petName.includes(searchTerm);
-    });
-    renderAppointmentsTable(filteredAppointments);
+// Función para abrir modal de peso después de completar cita
+const openWeightModal = (appointment) => {
+    currentPetId = appointment.pet_id;
+    currentCompletedAppointmentId = appointment.id;
+    petNameSpan.textContent = appointment.pets?.name || 'Mascota';
+    weightInput.value = '';
+    weightNotesInput.value = '';
+    weightModal.classList.remove('hidden');
 };
 
+// Botón para omitir registro de peso
+skipWeightBtn.addEventListener('click', () => {
+    weightModal.classList.add('hidden');
+    currentPetId = null;
+    currentCompletedAppointmentId = null;
+});
 
-// --- LÓGICA DEL MODAL UNIFICADO ---
-const openCompletionModal = async (appointmentId) => {
-    currentAppointmentId = appointmentId;
-    const appointment = allAppointments.find(app => app.id == appointmentId);
-    if (!appointment) return;
-
-    // Resetear estado
-    finalObservationsTextarea.value = appointment.final_observations || '';
-    arrivalPhotoFile = null;
-    departurePhotoFile = null;
-    arrivalPhotoInput.value = '';
-    departurePhotoInput.value = '';
-    uploadMessage.classList.add('hidden');
+// Botón para guardar peso
+saveWeightBtn.addEventListener('click', async () => {
+    const weight = weightInput.value.trim();
     
-    // Rellenar subtítulo
-    const ownerName = (appointment.profiles?.first_name && appointment.profiles?.last_name) ? `${appointment.profiles.first_name} ${appointment.profiles.last_name}` : appointment.profiles?.full_name;
-    completionModalSubtitle.textContent = `Mascota: ${appointment.pets.name} | Dueño: ${ownerName}`;
+    if (!weight || parseFloat(weight) <= 0) {
+        alert('Por favor, ingresa un peso válido.');
+        return;
+    }
 
-    // Mostrar modal
-    completionModal.classList.remove('hidden');
-
-    // Cargar fotos existentes
-    arrivalPhotoContainer.innerHTML = `<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>`;
-    departurePhotoContainer.innerHTML = `<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>`;
+    const notes = weightNotesInput.value.trim();
     
-    const photos = await getAppointmentPhotos(appointmentId);
-    const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
-    const departurePhoto = photos.find(p => p.photo_type === 'departure');
+    const result = await addWeightRecord(
+        currentPetId,
+        weight,
+        currentCompletedAppointmentId,
+        notes || null
+    );
 
-    arrivalPhotoContainer.innerHTML = arrivalPhoto ? `<img src="${arrivalPhoto.image_url}" class="w-full h-full object-cover rounded-lg">` : `<p class="text-sm text-gray-500 text-center p-4">Clic para subir foto de llegada</p>`;
-    departurePhotoContainer.innerHTML = departurePhoto ? `<img src="${departurePhoto.image_url}" class="w-full h-full object-cover rounded-lg">` : `<p class="text-sm text-gray-500 text-center p-4">Clic para subir foto de salida</p>`;
-};
+    if (result.success) {
+        alert('Peso registrado exitosamente.');
+        weightModal.classList.add('hidden');
+        currentPetId = null;
+        currentCompletedAppointmentId = null;
+    } else {
+        alert('Error al registrar el peso. Inténtalo nuevamente.');
+    }
+});
 
-const closeCompletionModal = () => {
-    completionModal.classList.add('hidden');
-    currentAppointmentId = null;
-};
+// Modificar la función de completar cita para mostrar modal de peso
+// En el botón de "Completar":
+confirmCompletionBtn.addEventListener('click', async () => {
+    const observations = finalObservationsTextarea.value.trim();
+    
+    const result = await updateAppointmentStatus(
+        currentAppointmentId,
+        'completada',
+        observations || null
+    );
 
-// --- MANEJO DE ACCIONES ---
-const setupActionHandlers = () => {
-    if (!appointmentsTableBody) return;
-    appointmentsTableBody.addEventListener('click', async (event) => {
-        const button = event.target.closest('button[data-action]');
-        if (!button) return;
-        const action = button.dataset.action;
-        const appointmentId = button.closest('tr').dataset.appointmentId;
+    if (result.success) {
+        completionModal.classList.add('hidden');
         
-        if (action === 'completar') {
-            openCompletionModal(appointmentId);
-            return;
-        }
-
-        const newStatusMap = { 'confirmar': 'confirmada', 'rechazar': 'rechazada' };
-        const newStatus = newStatusMap[action];
-        if (!newStatus) return;
-
-        button.disabled = true;
-        button.textContent = '...';
-        const { success } = await updateAppointmentStatus(appointmentId, newStatus);
-        if (success) {
-            const index = allAppointments.findIndex(app => app.id == appointmentId);
-            if (index !== -1) {
-                allAppointments[index].status = newStatus;
-                applyFiltersAndSearch();
-            }
-        } // (Manejo de error omitido por brevedad)
-    });
-};
-
-// --- INICIALIZACIÓN ---
-const initializeAppointmentsSection = async () => {
-    if (headerTitle) headerTitle.textContent = 'Gestión de Citas';
-    allAppointments = await getAppointments();
-    renderAppointmentsTable(allAppointments);
-    
-    // Listeners de filtros (sin cambios)
-    searchInput.addEventListener('input', applyFiltersAndSearch);
-    statusFilter.addEventListener('change', applyFiltersAndSearch);
-    dateFilter.addEventListener('change', applyFiltersAndSearch);
-    clearFiltersButton.addEventListener('click', () => {
-        searchInput.value = '';
-        statusFilter.value = '';
-        dateFilter.value = '';
-        applyFiltersAndSearch();
-    });
-
-    setupActionHandlers();
-
-    // Listeners para el modal unificado
-    cancelCompletionBtn.addEventListener('click', closeCompletionModal);
-    
-    arrivalPhotoInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            arrivalPhotoFile = file;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                arrivalPhotoContainer.innerHTML = `<img src="${event.target.result}" class="w-full h-full object-cover rounded-lg">`;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    departurePhotoInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            departurePhotoFile = file;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                departurePhotoContainer.innerHTML = `<img src="${event.target.result}" class="w-full h-full object-cover rounded-lg">`;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    confirmCompletionBtn.addEventListener('click', async () => {
-        if (!currentAppointmentId) return;
-
-        confirmCompletionBtn.disabled = true;
-        confirmCompletionBtn.textContent = 'Guardando...';
-        uploadMessage.classList.remove('hidden');
-        uploadMessage.className = 'mx-6 text-center text-sm font-medium p-3 rounded-lg bg-blue-100 text-blue-700';
-        uploadMessage.textContent = 'Procesando... No cierres esta ventana.';
-
-        try {
-            // 1. Subir foto de llegada si existe
-            if (arrivalPhotoFile) {
-                uploadMessage.textContent = 'Subiendo foto de llegada...';
-                await uploadAppointmentPhoto(currentAppointmentId, arrivalPhotoFile, 'arrival');
-            }
-            // 2. Subir foto de salida si existe
-            if (departurePhotoFile) {
-                uploadMessage.textContent = 'Subiendo foto de salida...';
-                await uploadAppointmentPhoto(currentAppointmentId, departurePhotoFile, 'departure');
-            }
-            // 3. Guardar observaciones y marcar como completada
-            uploadMessage.textContent = 'Guardando observaciones...';
-            const observations = finalObservationsTextarea.value;
-            const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', observations);
-
-            if (success) {
-                const index = allAppointments.findIndex(app => app.id == currentAppointmentId);
-                if (index !== -1) {
-                    allAppointments[index].status = 'completada';
-                    allAppointments[index].final_observations = observations;
-                    applyFiltersAndSearch();
-                }
-                closeCompletionModal();
-            } else { throw new Error('No se pudo actualizar el estado de la cita.'); }
-
-        } catch (error) {
-            uploadMessage.className = 'mx-6 text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
-            uploadMessage.textContent = `Error: ${error.message}`;
-        } finally {
-            confirmCompletionBtn.disabled = false;
-            confirmCompletionBtn.textContent = 'Confirmar y Completar';
-        }
-    });
-};
-
-document.addEventListener('DOMContentLoaded', initializeAppointmentsSection);
+        // **NUEVO**: Buscar datos de la cita para el modal de peso
+        const appointment = allAppointments.find(apt => apt.id === currentAppointmentId);
+        
+        // Mostrar modal de peso
+        openWeightModal(appointment);
+        
+        // Recargar tabla
+        await loadAppointments();
+    } else {
+        alert('Error al finalizar la cita. Inténtalo nuevamente.');
+    }
+});
