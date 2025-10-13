@@ -4,115 +4,138 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tienda - OhMyPet</title>
-    <link rel="icon" type="image/png" href="/public/assets/images/favicon.png">
+    <link rel="icon" type="image/x-icon" href="/public/assets/icons/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <style>
-        :root { font-family: 'Inter', sans-serif; }
-    </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
-
-    <!-- Header compartido -->
+<body class="bg-gray-50">
     <div id="header-container"></div>
+
+    <header class="bg-white shadow-md sticky top-0 z-40">
+        <nav class="container mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+            <a href="/public" class="flex items-center gap-2">
+                <img src="/public/assets/icons/logo.svg" alt="OhMyPet Logo" class="h-10">
+                <span class="text-2xl font-bold text-green-600">OhMyPet</span>
+            </a>
+
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <button id="user-profile-button" class="h-10 w-10 bg-gradient-to-br from-green-500 to-green-700 rounded-full flex items-center justify-center text-white font-bold text-lg hover:bg-green-600 transition">
+                        <span id="user-initial"></span>
+                    </button>
+                    <div id="user-profile-menu" class="absolute right-0 top-12 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+                        <a href="/public/modules/profile/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-bold text-green-600">Mi Perfil</a>
+                        <button id="logout-button" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-100">Cerrar Sesión</button>
+                    </div>
+                </div>
+                
+                <button id="cart-button" class="relative p-2 rounded-full hover:bg-gray-100 transition">
+                    <img src="/public/assets/icons/carrito.svg" alt="Carrito" class="h-6 w-6">
+                    <span id="cart-count-badge" class="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
+                </button>
+            </div>
+        </nav>
+    </header>
 
     <div class="container mx-auto px-4 sm:px-6 py-6">
         <div class="flex flex-col lg:flex-row gap-6">
             
-            <!-- Sidebar Filters -->
             <aside class="w-full lg:w-64 flex-shrink-0">
                 <div class="bg-white rounded-lg shadow-sm border p-6 sticky top-24">
                     
-                    <!-- Price Filter -->
                     <div class="mb-6">
                         <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase">Filtrar Por Precio</h3>
                         <div class="space-y-3">
                             <div class="flex items-center justify-between text-sm">
                                 <span class="text-gray-600">Precio:</span>
                                 <span class="font-semibold text-gray-800">
-                                    S/ <span id="max-price-display">200</span>
+                                    <span id="min-price-display">S/0</span> - <span id="max-price-display">S/1500</span>
                                 </span>
                             </div>
-                            <input type="range" id="price-range" min="0" max="200" value="200" step="10" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600">
-                            <div class="flex justify-between text-xs text-gray-500">
-                                <span>S/ 0</span>
-                                <span>S/ 200</span>
-                            </div>
+                            <input type="range" id="price-range" min="0" max="1500" value="1500" step="10" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600">
+                            <button id="apply-price-filter" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition">
+                                Aplicar Filtro
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Category Filter -->
                     <div class="mb-6">
-                        <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase">Categorías</h3>
-                        <div class="space-y-2">
-                            <button class="category-btn w-full text-left px-4 py-2 rounded-lg transition-colors bg-green-50 text-green-700 font-semibold" data-category="all">
-                                Todos los productos
-                            </button>
-                            <button class="category-btn w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700" data-category="alimento">
-                                Alimento
-                            </button>
-                            <button class="category-btn w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700" data-category="accesorio">
-                                Accesorios
-                            </button>
-                            <button class="category-btn w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700" data-category="juguete">
-                                Juguetes
-                            </button>
-                            <button class="category-btn w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700" data-category="higiene">
-                                Higiene
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Sort Filter -->
-                    <div>
                         <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase">Ordenar Por</h3>
-                        <select id="sort-select" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm">
-                            <option value="default">Predeterminado</option>
+                        <select id="sort-select" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent">
+                            <option value="default">Por Defecto</option>
                             <option value="price-asc">Precio: Menor a Mayor</option>
                             <option value="price-desc">Precio: Mayor a Menor</option>
                             <option value="name">Nombre: A-Z</option>
                         </select>
                     </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase">Categorías</h3>
+                        <div class="space-y-1">
+                            <button class="category-filter-btn w-full text-left px-3 py-2 rounded-lg bg-green-50 text-green-700 font-medium transition text-sm" data-category="all">
+                                <span>Todos los Productos</span>
+                            </button>
+                            <button class="category-filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition text-sm" data-category="comida">
+                                <span class="text-gray-600">Comida</span>
+                            </button>
+                            <button class="category-filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition text-sm" data-category="juguetes">
+                                <span class="text-gray-600">Juguetes</span>
+                            </button>
+                            <button class="category-filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition text-sm" data-category="accesorios">
+                                <span class="text-gray-600">Accesorios</span>
+                            </button>
+                            <button class="category-filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition text-sm" data-category="higiene">
+                                <span class="text-gray-600">Higiene</span>
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </aside>
 
-            <!-- Products Grid -->
             <main class="flex-1">
-                <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h1 class="text-3xl font-bold text-gray-800">Productos</h1>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm text-gray-600">Vista:</span>
-                        <button id="grid-2-btn" class="p-2 rounded hover:bg-gray-100 transition">
-                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                            </svg>
-                        </button>
-                        <button id="grid-3-btn" class="p-2 rounded bg-green-100 text-green-600 transition">
-                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM13 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z" />
-                            </svg>
-                        </button>
+                
+                <div class="bg-white rounded-lg shadow-sm border p-4 mb-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600">
+                                Mostrando <span id="showing-count" class="font-semibold text-gray-800">1-24</span> de 
+                                <span id="total-count" class="font-semibold text-gray-800">691</span> resultados
+                            </p>
+                        </div>
+                        
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                                <button id="view-grid-3" class="p-2 rounded hover:bg-white transition view-btn" data-cols="3">
+                                    <svg class="h-5 w-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M3 3h7v7H3V3zm0 11h7v7H3v-7zm11-11h7v7h-7V3zm0 11h7v7h-7v-7z"/>
+                                    </svg>
+                                </button>
+                                <button id="view-grid-4" class="p-2 rounded hover:bg-white transition view-btn active" data-cols="4">
+                                    <svg class="h-5 w-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M3 3h4v4H3V3zm0 7h4v4H3v-4zm0 7h4v4H3v-4zm7-14h4v4h-4V3zm0 7h4v4h-4v-4zm0 7h4v4h-4v-4zm7-14h4v4h-4V3zm0 7h4v4h-4v-4zm0 7h4v4h-4v-4z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div id="products-container" class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    <!-- Los productos se cargarán aquí dinámicamente -->
+
+                <div id="products-container" class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     <div class="col-span-full flex justify-center py-20">
                         <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600"></div>
                     </div>
                 </div>
             </main>
+
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white mt-12">
-        <div class="container mx-auto px-6 py-8">
-            <p class="text-center text-sm">&copy; 2025 OhMyPet. Todos los derechos reservados.</p>
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-sm">&copy; 2025 OhMyPet. Todos los derechos reservados.</p>
         </div>
     </footer>
 
-    <!-- Cart Modal -->
     <div id="cart-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
         <div id="cart-modal-content" class="w-full max-w-md h-full bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
             <div class="flex justify-between items-center p-6 border-b">
@@ -136,33 +159,78 @@
         </div>
     </div>
     
-    <!-- Add to Cart Notification -->
     <div id="add-to-cart-notification" class="fixed bottom-8 left-1/2 -translate-x-1/2 transform translate-y-20 opacity-0 bg-gray-900 text-white py-3 px-6 rounded-lg shadow-xl z-50 transition-all duration-300">
         <p class="font-medium">¡Producto agregado al carrito!</p>
     </div>
 
-    <!-- Delete Confirmation Modal -->
     <div id="delete-confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-lg shadow-2xl p-6 text-center">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
             </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2">Eliminar Producto</h3>
-            <p class="text-gray-600 mb-6 text-sm">¿Estás seguro de que quieres eliminar este producto del carrito?</p>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">¿Eliminar producto?</h3>
+            <p class="text-sm text-gray-600 mb-6">¿Estás seguro de que deseas eliminar este producto del carrito?</p>
             <div class="flex gap-3">
-                <button id="modal-cancel-btn" class="flex-1 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">
+                <button id="modal-cancel-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition">
                     Cancelar
                 </button>
-                <button id="modal-confirm-btn" class="flex-1 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition">
+                <button id="modal-confirm-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition">
                     Eliminar
                 </button>
             </div>
         </div>
     </div>
-    
-    <script type="module" src="./store-layout.js"></script>
+
+    <script type="module">
+        import { supabase } from '../../core/supabase.js';
+        import { setupCartEventListeners } from '../../js/cart.js';
+
+        const userInitial = document.querySelector('#user-initial');
+        const userProfileButton = document.querySelector('#user-profile-button');
+        const userProfileMenu = document.querySelector('#user-profile-menu');
+        const logoutButton = document.querySelector('#logout-button');
+
+        const checkAuth = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = '/public';
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (profile?.name) {
+                userInitial.textContent = profile.name.charAt(0).toUpperCase();
+            }
+        };
+
+        userProfileButton?.addEventListener('click', () => {
+            userProfileMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!userProfileButton?.contains(e.target) && !userProfileMenu?.contains(e.target)) {
+                userProfileMenu?.classList.add('hidden');
+            }
+        });
+
+        logoutButton?.addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/public';
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            setupCartEventListeners();
+        });
+    </script>
+
     <script type="module" src="./store.js"></script>
 </body>
 </html>
