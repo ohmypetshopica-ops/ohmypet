@@ -25,6 +25,10 @@ const loadStoreHeader = async () => {
         // Exponer función para actualizar badge
         window.refreshCartBadge = refreshCartBadge;
         
+        // IMPORTANTE: Disparar evento de que la tienda está lista
+        document.dispatchEvent(new CustomEvent('storeReady'));
+        console.log('🎉 Tienda lista para cargar productos');
+        
     } catch (error) {
         console.error('Error cargando header:', error);
     }

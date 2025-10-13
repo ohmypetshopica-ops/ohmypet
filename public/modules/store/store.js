@@ -193,12 +193,30 @@ const setupViewToggle = () => {
     });
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+// Esperar a que la tienda esté completamente lista (header cargado)
+document.addEventListener('storeReady', () => {
+    console.log('🏪 Iniciando carga de productos...');
     loadProducts();
     setupProductAddListeners();
     setupCategoryFilters();
     setupPriceFilter();
     setupSorting();
     setupViewToggle();
-    setupCartEventListeners(); 
+    setupCartEventListeners();
 });
+
+// Fallback por si el evento ya se disparó
+if (document.readyState === 'complete') {
+    setTimeout(() => {
+        if (!allProducts.length) {
+            console.log('🔄 Fallback: Cargando productos...');
+            loadProducts();
+            setupProductAddListeners();
+            setupCategoryFilters();
+            setupPriceFilter();
+            setupSorting();
+            setupViewToggle();
+            setupCartEventListeners();
+        }
+    }, 1000);
+}

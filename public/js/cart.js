@@ -230,6 +230,9 @@ const renderCart = () => {
     setupCartItemListeners();
 };
 
+// Exponer globalmente para que header.js pueda usarla
+window.renderCart = renderCart;
+
 /**
  * Configura los event listeners de los items del carrito
  */
