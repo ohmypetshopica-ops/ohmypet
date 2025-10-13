@@ -1,47 +1,37 @@
 <header class="bg-white shadow-sm sticky top-0 z-20">
     <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-        <!-- Logo -->
         <div class="flex items-center space-x-4">
             <a href="/public/index.html" class="text-2xl font-bold text-green-600">OhMyPet</a>
         </div>
         
-        <!-- Navegación -->
         <div class="flex items-center space-x-4">
-            <!-- Menú de invitado (cuando NO está logueado) -->
-            <div id="guest-nav" class="hidden relative">
-                <button id="guest-menu-btn" class="p-2 rounded-full hover:bg-gray-100 focus:outline-none transition-colors">
-                    <img src="/public/assets/icons/user.svg" alt="Usuario" class="h-7 w-7">
+            <div id="guest-nav" class="relative">
+                <button id="profile-menu-button" class="p-2 rounded-full hover:bg-gray-100 focus:outline-none">
+                    <img src="/public/assets/icons/user.svg" alt="Ícono de perfil" class="h-7 w-7 text-gray-600">
                 </button>
-                <div id="guest-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 border border-gray-200">
-                    <a href="/public/register.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 font-semibold text-green-600 transition-colors">
+                <div id="profile-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+                    <a href="/public/register.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-bold text-green-600">
                         Registrarse
                     </a>
-                    <a href="/public/modules/login/login.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors">
+                    <a href="/public/modules/login/login.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         Iniciar Sesión
                     </a>
                 </div>
             </div>
 
-            <!-- Menú de usuario (cuando SÍ está logueado) -->
-            <div id="user-nav" class="hidden relative">
-                <button id="user-menu-btn" class="flex items-center justify-center h-10 w-10 bg-green-500 rounded-full text-white font-bold text-lg hover:bg-green-600 transition-colors focus:outline-none">
-                    <span id="user-initial">U</span>
+            <div id="user-nav" class="hidden items-center space-x-4 relative">
+                <button id="user-profile-button" class="flex items-center justify-center h-9 w-9 bg-green-500 rounded-full text-white font-bold text-lg hover:bg-green-600 transition-colors duration-200 focus:outline-none">
+                    <span id="user-initial"></span>
                 </button>
-                <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 border border-gray-200">
-                    <a href="/public/modules/profile/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 font-semibold text-green-600 transition-colors">
-                        Mi Perfil
-                    </a>
-                    <button id="logout-btn" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium">
-                        Cerrar Sesión
-                    </button>
+                <div id="user-profile-menu" class="absolute right-0 top-12 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+                    <a href="/public/modules/profile/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-bold text-green-600">Mi Perfil</a>
+                    <button id="logout-button" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-100 transition-colors duration-200">Cerrar Sesión</button>
                 </div>
             </div>
             
-            <!-- Botón del carrito -->
-            <button id="cart-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors relative">
-                <img src="/public/assets/icons/carrito.svg" alt="Carrito" class="h-7 w-7">
-                <span id="cart-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
-            </button>
+            <a href="/public/modules/store/store.html" title="Tienda" class="text-gray-600 hover:text-green-600 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                <img src="/public/assets/icons/carrito.svg" alt="Ícono de carrito de compras" class="h-7 w-7 text-gray-600">
+            </a>
         </div>
     </nav>
 </header>
