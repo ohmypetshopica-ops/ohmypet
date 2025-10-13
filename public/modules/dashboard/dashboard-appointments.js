@@ -1,7 +1,7 @@
 // public/modules/dashboard/dashboard-appointments.js
+// VERSIÓN COMPLETA CON DIAGNÓSTICO
 
 import { supabase } from '../../core/supabase.js';
-// **NUEVO**: Importamos las nuevas funciones de la API
 import { getAppointments, updateAppointmentStatus, getAppointmentPhotos, uploadAppointmentPhoto } from './dashboard.api.js';
 import { createAppointmentRow } from './dashboard.utils.js';
 
@@ -12,8 +12,6 @@ const statusFilter = document.querySelector('#appointment-status-filter');
 const dateFilter = document.querySelector('#appointment-date-filter');
 const clearFiltersButton = document.querySelector('#clear-filters-button');
 const headerTitle = document.querySelector('#header-title');
-
-// **NUEVO**: ELEMENTOS DEL MODAL DE FOTOS
 const photosModal = document.querySelector('#photos-modal');
 const closePhotosModalBtn = document.querySelector('#close-photos-modal-btn');
 const donePhotosModalBtn = document.querySelector('#done-photos-modal-btn');
@@ -25,8 +23,8 @@ const departurePhotoInput = document.querySelector('#departure-photo-input');
 const uploadMessage = document.querySelector('#upload-message');
 
 // --- ESTADO ---
-let allAppointments = []; // Caché local para evitar llamadas repetidas a la DB
-let currentAppointmentId = null; // **NUEVO**: Para saber en qué cita estamos trabajando
+let allAppointments = [];
+let currentAppointmentId = null;
 
 // --- RENDERIZADO Y FILTRADO ---
 const renderAppointmentsTable = (appointments) => {
@@ -42,7 +40,6 @@ const applyFiltersAndSearch = () => {
     const searchTerm = searchInput.value.toLowerCase().trim();
     const selectedStatus = statusFilter.value;
     const selectedDate = dateFilter.value;
-
     let filteredAppointments = allAppointments;
 
     if (selectedStatus) {
@@ -58,28 +55,23 @@ const applyFiltersAndSearch = () => {
             return ownerName.includes(searchTerm) || petName.includes(searchTerm);
         });
     }
-
     renderAppointmentsTable(filteredAppointments);
 };
 
-// **NUEVO**: FUNCIONES PARA EL MODAL DE FOTOS
+// --- FUNCIONES PARA EL MODAL DE FOTOS ---
 const openPhotosModal = async (appointmentId) => {
     currentAppointmentId = appointmentId;
     const appointment = allAppointments.find(app => app.id == appointmentId);
     if (!appointment) return;
 
-    // Rellenar subtítulo
     const ownerName = (appointment.profiles?.first_name && appointment.profiles?.last_name) ? `${appointment.profiles.first_name} ${appointment.profiles.last_name}` : appointment.profiles?.full_name;
     photosModalSubtitle.textContent = `Mascota: ${appointment.pets.name} | Dueño: ${ownerName}`;
 
-    // Limpiar contenedores y mensaje
     arrivalPhotoContainer.innerHTML = `<p class="text-sm text-gray-500">Cargando...</p>`;
     departurePhotoContainer.innerHTML = `<p class="text-sm text-gray-500">Cargando...</p>`;
     uploadMessage.classList.add('hidden');
-    
     photosModal.classList.remove('hidden');
 
-    // Cargar fotos existentes
     const photos = await getAppointmentPhotos(appointmentId);
     const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
     const departurePhoto = photos.find(p => p.photo_type === 'departure');
@@ -89,7 +81,6 @@ const openPhotosModal = async (appointmentId) => {
     } else {
         arrivalPhotoContainer.innerHTML = `<p class="text-sm text-gray-500">Aún no hay foto de llegada</p>`;
     }
-
     if (departurePhoto) {
         departurePhotoContainer.innerHTML = `<img src="${departurePhoto.image_url}" class="w-full h-full object-cover rounded-lg">`;
     } else {
@@ -100,7 +91,6 @@ const openPhotosModal = async (appointmentId) => {
 const closePhotosModal = () => {
     photosModal.classList.add('hidden');
     currentAppointmentId = null;
-    // Limpiar los inputs de archivo para poder subir el mismo archivo de nuevo si es necesario
     arrivalPhotoInput.value = '';
     departurePhotoInput.value = '';
 };
@@ -116,29 +106,24 @@ const handlePhotoUpload = async (file, type, container) => {
     if (success) {
         uploadMessage.textContent = `¡Foto de ${type === 'arrival' ? 'llegada' : 'salida'} subida con éxito!`;
         uploadMessage.className = 'block mt-4 text-center text-sm font-medium p-3 rounded-lg bg-green-100 text-green-700';
-        openPhotosModal(currentAppointmentId); // Recargar el modal para mostrar la nueva foto
+        openPhotosModal(currentAppointmentId);
     } else {
         uploadMessage.textContent = `Error al subir la foto: ${error.message}`;
         uploadMessage.className = 'block mt-4 text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
-        // Restaurar el contenedor a su estado anterior si falla
         container.innerHTML = `<p class="text-sm text-gray-500">Error al cargar</p>`;
     }
     uploadMessage.classList.remove('hidden');
 };
 
-
 // --- MANEJO DE ACCIONES ---
 const setupActionHandlers = () => {
     if (!appointmentsTableBody) return;
-
     appointmentsTableBody.addEventListener('click', async (event) => {
         const button = event.target.closest('button[data-action]');
         if (!button) return;
-
         const action = button.dataset.action;
         const appointmentId = button.closest('tr').dataset.appointmentId;
-        
-        // **NUEVO**: Manejar la acción de abrir el modal de fotos
+
         if (action === 'fotos') {
             openPhotosModal(appointmentId);
             return;
@@ -152,7 +137,6 @@ const setupActionHandlers = () => {
         button.textContent = '...';
 
         const { success, error } = await updateAppointmentStatus(appointmentId, newStatus);
-
         if (success) {
             const updatedAppointmentIndex = allAppointments.findIndex(app => app.id == appointmentId);
             if (updatedAppointmentIndex !== -1) {
@@ -169,12 +153,27 @@ const setupActionHandlers = () => {
 
 // --- INICIALIZACIÓN ---
 const initializeAppointmentsSection = async () => {
+    // --- INICIO DE LA SECCIÓN DE DIAGNÓSTICO ---
+    console.log("PASO 1: Entrando en initializeAppointmentsSection.");
+
     if (headerTitle) {
         headerTitle.textContent = 'Gestión de Citas';
     }
 
-    allAppointments = await getAppointments();
-    renderAppointmentsTable(allAppointments);
+    try {
+        console.log("PASO 2: Intentando llamar a getAppointments()...");
+        allAppointments = await getAppointments();
+        console.log("PASO 3: La llamada a getAppointments() ha finalizado. Datos recibidos:", allAppointments);
+
+        console.log("PASO 4: Renderizando la tabla de citas...");
+        renderAppointmentsTable(allAppointments);
+        console.log("PASO 5: La tabla de citas ha sido renderizada.");
+
+    } catch (error) {
+        console.error("ERROR CRÍTICO durante la inicialización:", error);
+        appointmentsTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-red-500">Error al cargar las citas. Revisa la consola.</td></tr>`;
+    }
+    // --- FIN DE LA SECCIÓN DE DIAGNÓSTICO ---
 
     searchInput.addEventListener('input', applyFiltersAndSearch);
     statusFilter.addEventListener('change', applyFiltersAndSearch);
@@ -188,7 +187,6 @@ const initializeAppointmentsSection = async () => {
 
     setupActionHandlers();
 
-    // **NUEVO**: Listeners para el modal de fotos
     closePhotosModalBtn.addEventListener('click', closePhotosModal);
     donePhotosModalBtn.addEventListener('click', closePhotosModal);
     photosModal.addEventListener('click', (e) => {
