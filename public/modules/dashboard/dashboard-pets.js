@@ -93,6 +93,22 @@ const searchPets = async (searchTerm) => {
     });
 };
 
+const getLastAppointment = async (petId) => {
+    const { data, error } = await supabase
+        .from('appointments')
+        .select('appointment_date, appointment_time, status')
+        .eq('pet_id', petId)
+        .order('appointment_date', { ascending: false })
+        .order('appointment_time', { ascending: false })
+        .limit(1)
+        .single();
+
+    if (error) {
+        return null;
+    }
+    return data;
+};
+
 const getPetAppointments = async (petId) => {
     const { data, error } = await supabase
         .from('appointments')
@@ -142,7 +158,7 @@ const getStats = async () => {
 };
 
 // --- RENDERIZADO ---
-const createPetRow = (pet) => {
+const createPetRow = async (pet) => {
     const ownerProfile = pet.profiles;
     const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
         ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
@@ -150,6 +166,16 @@ const createPetRow = (pet) => {
 
     const petData = JSON.stringify(pet).replace(/"/g, '&quot;');
     const ageDisplay = calculateAge(pet.birth_date) || 'N/A';
+
+    // Obtener última cita
+    const lastAppointment = await getLastAppointment(pet.id);
+    let lastAppointmentDisplay = 'Sin citas';
+    
+    if (lastAppointment) {
+        const date = new Date(lastAppointment.appointment_date);
+        const formattedDate = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        lastAppointmentDisplay = `${formattedDate}`;
+    }
 
     return `
         <tr class="hover:bg-gray-50 transition-colors" data-pet='${petData}'>
@@ -178,7 +204,7 @@ const createPetRow = (pet) => {
                 ${ageDisplay} • ${pet.size || 'N/A'}
             </td>
             <td class="px-6 py-4 text-sm text-gray-500">
-                ${pet.weight ? `${pet.weight} kg` : 'N/A'}
+                ${lastAppointmentDisplay}
             </td>
             <td class="px-6 py-4 text-right text-sm font-medium">
                 <button class="text-green-600 hover:text-green-900 font-semibold view-details-btn">
@@ -191,7 +217,8 @@ const createPetRow = (pet) => {
 
 const renderPetsTable = async (pets) => {
     if (pets.length > 0) {
-        petsTableBody.innerHTML = pets.map(createPetRow).join('');
+        const rows = await Promise.all(pets.map(pet => createPetRow(pet)));
+        petsTableBody.innerHTML = rows.join('');
     } else {
         petsTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">No se encontraron mascotas.</td></tr>';
     }
