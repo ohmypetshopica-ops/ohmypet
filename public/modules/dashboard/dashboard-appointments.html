@@ -60,6 +60,53 @@
             </div>
         </main>
     </div>
+
+    <div id="photos-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl transform transition-all">
+        <div class="p-6 border-b flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800">Gestionar Fotos de la Cita</h2>
+                <p id="photos-modal-subtitle" class="text-sm text-gray-600">Mascota: - | Dueño: -</p>
+            </div>
+            <button id="close-photos-modal-btn" class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+
+        <div class="p-6 max-h-[60vh] overflow-y-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <h3 class="font-semibold text-gray-700">Foto de Llegada</h3>
+                    <div id="arrival-photo-container" class="w-full h-40 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed">
+                        <p class="text-sm text-gray-500">Aún no hay foto</p>
+                    </div>
+                    <input type="file" id="arrival-photo-input" class="hidden" accept="image/*">
+                    <button type="button" onclick="document.getElementById('arrival-photo-input').click()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm">
+                        Subir Foto de Llegada
+                    </button>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="font-semibold text-gray-700">Foto de Salida</h3>
+                    <div id="departure-photo-container" class="w-full h-40 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed">
+                         <p class="text-sm text-gray-500">Aún no hay foto</p>
+                    </div>
+                    <input type="file" id="departure-photo-input" class="hidden" accept="image/*">
+                    <button type="button" onclick="document.getElementById('departure-photo-input').click()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-sm">
+                        Subir Foto de Salida
+                    </button>
+                </div>
+            </div>
+             <div id="upload-message" class="hidden mt-4 text-center text-sm font-medium p-3 rounded-lg"></div>
+        </div>
+        
+        <div class="bg-gray-50 px-6 py-4 flex justify-end">
+            <button type="button" id="done-photos-modal-btn" class="bg-gray-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700">
+                Hecho
+            </button>
+        </div>
+    </div>
+</div>
     
     <script>
         async function loadComponent(url, containerId) {
