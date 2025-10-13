@@ -1,5 +1,5 @@
 // public/modules/dashboard/dashboard-appointments.js
-// VERSIÓN FINAL Y COMPLETA
+// VERSIÓN FINAL Y COMPLETA CON LÓGICA DE MODAL UNIFICADO
 
 import { supabase } from '../../core/supabase.js';
 import { getAppointments, updateAppointmentStatus, getAppointmentPhotos, uploadAppointmentPhoto } from './dashboard.api.js';
@@ -94,16 +94,17 @@ const setupActionHandlers = () => {
         const action = button.dataset.action;
         const appointmentId = button.closest('tr').dataset.appointmentId;
         
-        // Acción para abrir el modal unificado
+        // **ESTA ES LA LÓGICA QUE FALTABA**
+        // Si la acción es "completar", abre el modal y detiene la ejecución.
         if (action === 'completar') {
             openCompletionModal(appointmentId);
             return;
         }
 
-        // Acciones para confirmar o rechazar directamente
+        // Si no, continúa con la lógica de "confirmar" o "rechazar".
         const newStatusMap = { 'confirmar': 'confirmada', 'rechazar': 'rechazada' };
         const newStatus = newStatusMap[action];
-        if (!newStatus) return; // Si la acción no es 'confirmar' ni 'rechazar', no hace nada más
+        if (!newStatus) return;
 
         button.disabled = true;
         button.textContent = '...';
@@ -117,7 +118,6 @@ const setupActionHandlers = () => {
             }
         } else {
             alert(`Error al actualizar la cita: ${error.message}`);
-            // Restaura el botón si hay un error
             button.disabled = false;
             button.textContent = action.charAt(0).toUpperCase() + action.slice(1);
         }
@@ -171,13 +171,11 @@ const initializeAppointmentsSection = async () => {
 
     confirmCompletionBtn.addEventListener('click', async () => {
         if (!currentAppointmentId) return;
-
         confirmCompletionBtn.disabled = true;
         confirmCompletionBtn.textContent = 'Guardando...';
         uploadMessage.classList.remove('hidden');
         uploadMessage.className = 'mx-6 text-center text-sm font-medium p-3 rounded-lg bg-blue-100 text-blue-700';
         uploadMessage.textContent = 'Procesando... No cierres esta ventana.';
-
         try {
             if (arrivalPhotoFile) {
                 uploadMessage.textContent = 'Subiendo foto de llegada...';
@@ -190,7 +188,6 @@ const initializeAppointmentsSection = async () => {
             uploadMessage.textContent = 'Guardando observaciones...';
             const observations = finalObservationsTextarea.value;
             const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', observations);
-
             if (success) {
                 const index = allAppointments.findIndex(app => app.id == currentAppointmentId);
                 if (index !== -1) {
@@ -200,7 +197,6 @@ const initializeAppointmentsSection = async () => {
                 }
                 closeCompletionModal();
             } else { throw new Error('No se pudo actualizar el estado de la cita.'); }
-
         } catch (error) {
             uploadMessage.className = 'mx-6 text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
             uploadMessage.textContent = `Error: ${error.message}`;
