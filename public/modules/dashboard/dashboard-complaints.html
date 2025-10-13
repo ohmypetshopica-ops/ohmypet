@@ -67,5 +67,67 @@
     </script>
     <script type="module" src="../../core/auth.js"></script>
     <script type="module" src="./dashboard-complaints.js"></script>
-</body>
+
+    <div id="complaint-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden transform transition-all">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800">Detalles del Reclamo</h2>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <div class="p-6 max-h-[70vh] overflow-y-auto space-y-6">
+                <div>
+                    <h3 class="font-semibold text-gray-700 mb-2 border-b pb-1">Datos del Cliente</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                        <p><strong>Nombre:</strong> <span id="modal-client-name">-</span></p>
+                        <p><strong>Documento:</strong> <span id="modal-client-doc">-</span></p>
+                        <p><strong>Email:</strong> <span id="modal-client-email">-</span></p>
+                        <p><strong>Teléfono:</strong> <span id="modal-client-phone">-</span></p>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-700 mb-2 border-b pb-1">Información del Reclamo</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                        <p><strong>Tipo de Solicitud:</strong> <span id="modal-complaint-type" class="font-semibold capitalize">-</span></p>
+                        <p><strong>Fecha:</strong> <span id="modal-complaint-date">-</span></p>
+                        <p><strong>Producto/Servicio:</strong> <span id="modal-complaint-item" class="capitalize">-</span></p>
+                        <p><strong>Monto Reclamado:</strong> S/ <span id="modal-complaint-amount">-</span></p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <label class="block text-xs font-medium text-gray-500">Descripción del Producto/Servicio</label>
+                        <p id="modal-item-description" class="text-sm text-gray-800">-</p>
+                    </div>
+                    <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                        <label class="block text-xs font-medium text-yellow-700">Detalle del Reclamo</label>
+                        <p id="modal-complaint-details" class="text-sm text-gray-800">-</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg border border-green-200">
+                        <label class="block text-xs font-medium text-green-700">Pedido del Cliente</label>
+                        <p id="modal-client-request" class="text-sm text-gray-800">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 px-6 py-4 flex justify-end items-center gap-4">
+                <div class="flex items-center">
+                    <label for="status-select" class="text-sm font-medium mr-2">Estado:</label>
+                    <select id="status-select" class="rounded-lg border-gray-300 shadow-sm">
+                        <option value="pendiente">Pendiente</option>
+                        <option value="en proceso">En Proceso</option>
+                        <option value="atendido">Atendido</option>
+                    </select>
+                </div>
+                <button id="update-status-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
+                    Actualizar Estado
+                </button>
+            </div>
+        </div>
+    </div>
+    </body>
 </html>
