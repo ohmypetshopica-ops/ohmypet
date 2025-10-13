@@ -1,6 +1,4 @@
 import { supabase } from '../core/supabase.js';
-// --- ESTA ES LA LÍNEA CLAVE ---
-// Importa la función desde cart.js
 import { updateCartBadge } from './cart.js';
 
 /**
@@ -108,16 +106,20 @@ const setupHeaderEventListeners = () => {
     });
 };
 
+// ===== FUNCIÓN DE NOTIFICACIÓN CORREGIDA =====
 const showScheduleNotification = () => {
     const notificationBanner = document.querySelector('#notification-banner');
     if (!notificationBanner) return;
 
+    // 1. Mostrar la notificación (deslizar y hacer visible)
     notificationBanner.classList.remove('opacity-0', 'translate-x-full', 'pointer-events-none');
 
+    // 2. Ocultar la notificación después de 4 segundos
     setTimeout(() => {
         notificationBanner.classList.add('opacity-0', 'translate-x-full', 'pointer-events-none');
     }, 4000);
 };
+// ===== FIN DE LA CORRECCIÓN =====
 
 const checkForNotification = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -142,7 +144,7 @@ const initialize = () => {
     setupHeaderEventListeners();
     setupLogoutButton();
     checkForNotification();
-    updateCartBadge(); // Se llama a la función importada
+    updateCartBadge();
 };
 
 document.addEventListener('layoutReady', initialize);
