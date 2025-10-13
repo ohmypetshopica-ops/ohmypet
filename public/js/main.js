@@ -1,15 +1,14 @@
 import { supabase } from '../core/supabase.js';
 
-// Importar cart solo si el archivo existe y no causa errores
-let updateCartBadge = () => {}; // Función vacía por defecto
-
+// Importar cart de forma segura
+let updateCartBadge = () => {};
 try {
     const cartModule = await import('./cart.js');
     if (cartModule.updateCartBadge) {
         updateCartBadge = cartModule.updateCartBadge;
     }
 } catch (error) {
-    console.log('Cart.js no disponible en esta página');
+    console.log('Cart no disponible');
 }
 
 /**
@@ -77,51 +76,61 @@ const setupLogoutButton = () => {
 };
 
 /**
- * Configura los menús desplegables
+ * SOLUCIÓN: Event delegation en el body para que funcione incluso si el header no existe aún
  */
 const setupHeaderEventListeners = () => {
+    // Usar event delegation en document.body para capturar clicks incluso si los elementos se cargan después
     document.body.addEventListener('click', (event) => {
-        const profileMenuButton = document.getElementById('profile-menu-button');
-        const profileMenu = document.getElementById('profile-menu');
-        const userProfileButton = document.getElementById('user-profile-button');
-        const userProfileMenu = document.getElementById('user-profile-menu');
-        
-        if (profileMenuButton?.contains(event.target)) {
+        // Menú de invitado (icono de usuario)
+        const profileMenuButton = event.target.closest('#profile-menu-button');
+        if (profileMenuButton) {
             event.preventDefault();
             event.stopPropagation();
+            const profileMenu = document.getElementById('profile-menu');
+            const userProfileMenu = document.getElementById('user-profile-menu');
             profileMenu?.classList.toggle('hidden');
             userProfileMenu?.classList.add('hidden');
             return;
         }
         
-        if (userProfileButton?.contains(event.target)) {
+        // Menú de usuario logueado (círculo con inicial)
+        const userProfileButton = event.target.closest('#user-profile-button');
+        if (userProfileButton) {
             event.preventDefault();
             event.stopPropagation();
+            const userProfileMenu = document.getElementById('user-profile-menu');
+            const profileMenu = document.getElementById('profile-menu');
             userProfileMenu?.classList.toggle('hidden');
             profileMenu?.classList.add('hidden');
             return;
         }
 
+        // Cerrar menús si se hace clic fuera
+        const profileMenu = document.getElementById('profile-menu');
+        const userProfileMenu = document.getElementById('user-profile-menu');
+        const clickedInsideProfileMenu = event.target.closest('#profile-menu');
+        const clickedInsideUserMenu = event.target.closest('#user-profile-menu');
+        
         if (profileMenu && !profileMenu.classList.contains('hidden') && 
-            !profileMenuButton?.contains(event.target) && !profileMenu.contains(event.target)) {
+            !profileMenuButton && !clickedInsideProfileMenu) {
             profileMenu.classList.add('hidden');
         }
         
         if (userProfileMenu && !userProfileMenu.classList.contains('hidden') && 
-            !userProfileButton?.contains(event.target) && !userProfileMenu.contains(event.target)) {
+            !userProfileButton && !clickedInsideUserMenu) {
             userProfileMenu.classList.add('hidden');
         }
     });
 };
 
 /**
- * Inicializa la UI
+ * Inicializa la UI con reintentos
  */
 const initializeUI = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 15; // Aumentamos intentos
     
     const trySetup = async () => {
         const success = await setupUI(user);
@@ -145,9 +154,13 @@ const initializeUI = async () => {
  * Inicialización principal
  */
 const initialize = () => {
+    // IMPORTANTE: Configurar listeners INMEDIATAMENTE, antes de que el header exista
     setupHeaderEventListeners();
+    
+    // Luego inicializar UI
     initializeUI();
     
+    // Escuchar cambios de autenticación
     supabase.auth.onAuthStateChange((_event, session) => {
         setupUI(session?.user);
         if (session?.user) {
@@ -155,14 +168,15 @@ const initialize = () => {
         }
     });
     
-    // Actualizar badge del carrito (si existe)
+    // Actualizar badge del carrito
     updateCartBadge();
 };
 
+// Múltiples puntos de entrada para asegurar inicialización
 document.addEventListener('layoutReady', initialize);
+document.addEventListener('DOMContentLoaded', initialize);
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initialize);
-} else {
-    setTimeout(initialize, 100);
+// Si el script se carga después del DOMContentLoaded
+if (document.readyState !== 'loading') {
+    initialize();
 }
