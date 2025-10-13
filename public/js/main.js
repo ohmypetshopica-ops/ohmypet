@@ -13,23 +13,32 @@ const setupUI = async (user) => {
     if (!guestNav || !userNav) return;
 
     if (user) {
+        // Usuario logueado: mostrar menú de usuario
         guestNav.classList.add('hidden');
         userNav.classList.remove('hidden');
         userNav.classList.add('flex');
 
+        // Obtener datos del perfil para mostrar la inicial
         const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name')
+            .select('full_name, first_name, last_name')
             .eq('id', user.id)
             .single();
 
-        if (userInitialElement && profile && profile.full_name) {
-            userInitialElement.textContent = profile.full_name.charAt(0).toUpperCase();
+        if (userInitialElement && profile) {
+            // Priorizar first_name si existe, sino usar full_name
+            const displayName = profile.first_name || profile.full_name || profile.last_name;
+            if (displayName) {
+                userInitialElement.textContent = displayName.charAt(0).toUpperCase();
+            } else {
+                userInitialElement.textContent = '👤';
+            }
         } else if (userInitialElement) {
             userInitialElement.textContent = '👤';
         }
 
     } else {
+        // Usuario NO logueado: mostrar menú de invitado
         guestNav.classList.remove('hidden');
         userNav.classList.add('hidden');
         userNav.classList.remove('flex');
@@ -44,6 +53,7 @@ const setupLogoutButton = () => {
         const logoutButton = document.getElementById('logout-button');
         
         if (logoutButton) {
+            // Clonar el botón para eliminar eventos previos
             const newLogoutButton = logoutButton.cloneNode(true);
             logoutButton.parentNode.replaceChild(newLogoutButton, logoutButton);
             
@@ -52,11 +62,14 @@ const setupLogoutButton = () => {
                 e.stopPropagation();
                 
                 try {
+                    // Limpiar almacenamiento local
                     localStorage.clear();
                     sessionStorage.clear();
                     
+                    // Cerrar sesión en Supabase
                     await supabase.auth.signOut({ scope: 'local' });
                     
+                    // Redirigir al inicio
                     window.location.href = '/public/index.html';
                     
                 } catch (error) {
@@ -71,7 +84,7 @@ const setupLogoutButton = () => {
 };
 
 /**
- * Configura los listeners para los menús desplegables
+ * Configura los listeners para los menús desplegables del header
  */
 const setupHeaderEventListeners = () => {
     document.body.addEventListener('click', (event) => {
@@ -80,20 +93,25 @@ const setupHeaderEventListeners = () => {
         const userProfileButton = document.getElementById('user-profile-button');
         const userProfileMenu = document.getElementById('user-profile-menu');
         
+        // Menú de invitado (icono de usuario)
         if (profileMenuButton?.contains(event.target)) {
             event.preventDefault();
             event.stopPropagation();
             profileMenu?.classList.toggle('hidden');
+            userProfileMenu?.classList.add('hidden'); // Cerrar el otro menú
             return;
         }
         
+        // Menú de usuario logueado (círculo con inicial)
         if (userProfileButton?.contains(event.target)) {
             event.preventDefault();
             event.stopPropagation();
             userProfileMenu?.classList.toggle('hidden');
+            profileMenu?.classList.add('hidden'); // Cerrar el otro menú
             return;
         }
 
+        // Cerrar menús si se hace clic fuera de ellos
         if (profileMenu && !profileMenu.classList.contains('hidden') && 
             !profileMenuButton?.contains(event.target) && !profileMenu.contains(event.target)) {
             profileMenu.classList.add('hidden');
@@ -106,25 +124,30 @@ const setupHeaderEventListeners = () => {
     });
 };
 
-// ===== FUNCIÓN DE NOTIFICACIÓN CORREGIDA =====
+/**
+ * Muestra la notificación de cita agendada
+ */
 const showScheduleNotification = () => {
     const notificationBanner = document.querySelector('#notification-banner');
     if (!notificationBanner) return;
 
-    // 1. Mostrar la notificación (deslizar y hacer visible)
+    // Mostrar la notificación
     notificationBanner.classList.remove('opacity-0', 'translate-x-full', 'pointer-events-none');
 
-    // 2. Ocultar la notificación después de 4 segundos
+    // Ocultar después de 4 segundos
     setTimeout(() => {
         notificationBanner.classList.add('opacity-0', 'translate-x-full', 'pointer-events-none');
     }, 4000);
 };
-// ===== FIN DE LA CORRECCIÓN =====
 
+/**
+ * Verifica si viene de agendar cita para mostrar notificación
+ */
 const checkForNotification = () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('from') === 'schedule') {
         showScheduleNotification();
+        // Limpiar el parámetro de la URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 };
@@ -133,6 +156,7 @@ const checkForNotification = () => {
  * Punto de entrada principal que se ejecuta una vez que el layout está listo.
  */
 const initialize = () => {
+    // Escuchar cambios en el estado de autenticación
     supabase.auth.onAuthStateChange((_event, session) => {
         setupUI(session?.user);
         
@@ -141,10 +165,18 @@ const initialize = () => {
         }
     });
 
+    // Configurar listeners del header
     setupHeaderEventListeners();
+    
+    // Configurar logout (por si ya hay sesión activa)
     setupLogoutButton();
+    
+    // Verificar notificaciones
     checkForNotification();
+    
+    // Actualizar badge del carrito
     updateCartBadge();
 };
 
+// Esperar a que el layout esté listo antes de inicializar
 document.addEventListener('layoutReady', initialize);
