@@ -1,17 +1,26 @@
 import { supabase } from '../core/supabase.js';
-import { updateCartBadge } from './cart.js';
+
+// Importar cart solo si el archivo existe y no causa errores
+let updateCartBadge = () => {}; // Función vacía por defecto
+
+try {
+    const cartModule = await import('./cart.js');
+    if (cartModule.updateCartBadge) {
+        updateCartBadge = cartModule.updateCartBadge;
+    }
+} catch (error) {
+    console.log('Cart.js no disponible en esta página');
+}
 
 /**
- * Actualiza la UI del header según el estado de autenticación del usuario.
+ * Actualiza la UI del header según el estado de autenticación
  */
 const setupUI = async (user) => {
     const guestNav = document.getElementById('guest-nav');
     const userNav = document.getElementById('user-nav');
     const userInitialElement = document.getElementById('user-initial');
 
-    if (!guestNav || !userNav) {
-        return false;
-    }
+    if (!guestNav || !userNav) return false;
 
     if (user) {
         guestNav.classList.add('hidden');
@@ -46,7 +55,6 @@ const setupUI = async (user) => {
  */
 const setupLogoutButton = () => {
     const logoutButton = document.getElementById('logout-button');
-    
     if (!logoutButton) return;
     
     const newLogoutButton = logoutButton.cloneNode(true);
@@ -147,6 +155,7 @@ const initialize = () => {
         }
     });
     
+    // Actualizar badge del carrito (si existe)
     updateCartBadge();
 };
 

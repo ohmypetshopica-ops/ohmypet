@@ -38,6 +38,9 @@ const saveCart = (cart) => {
  * Actualiza el badge del contador del carrito
  */
 const updateCartBadge = () => {
+    // Si el badge no existe en la página, salir sin error
+    if (!cartCountBadge) return;
+    
     const cart = getCart();
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     
