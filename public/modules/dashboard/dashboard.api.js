@@ -51,7 +51,7 @@ export const searchClients = async (searchTerm) => {
 export const getAppointments = async () => {
     const { data, error } = await supabase
         .from('appointments')
-        .select(`id, appointment_date, appointment_time, service, status, final_observations, final_weight, receipt_url, pet_id, pets ( name ), profiles ( full_name, first_name, last_name )`)
+        .select(`id, appointment_date, appointment_time, service, status, final_observations, final_weight, invoice_pdf_url, pet_id, pets ( name ), profiles ( full_name, first_name, last_name )`)
         .order('created_at', { ascending: false });
     if (error) console.error('Error al obtener citas:', error);
     return data || [];
@@ -199,7 +199,7 @@ export const uploadReceiptFile = async (appointmentId, file) => {
 
     const { error: dbError } = await supabase
         .from('appointments')
-        .update({ receipt_url: publicUrl })
+        .update({ invoice_pdf_url: publicUrl })
         .eq('id', appointmentId);
 
     if (dbError) {

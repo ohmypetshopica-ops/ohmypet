@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<img src="${departurePhoto.image_url}" alt="Foto de salida" class="w-full h-full object-cover rounded-lg">` 
             : `<p class="text-sm text-gray-500">Clic para subir foto de salida</p>`;
 
-        if (appointment && appointment.receipt_url) {
+        if (appointment && appointment.invoice_pdf_url) {
             receiptContainer.innerHTML = `<p class="text-sm text-green-600">✓ Boleta cargada</p>`;
         } else {
             receiptContainer.innerHTML = `<p class="text-sm text-gray-500">Clic para subir boleta (opcional)</p>`;
