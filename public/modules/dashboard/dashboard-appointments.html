@@ -172,13 +172,18 @@
             try {
                 const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
                 if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+                
+                // --- INICIO DE LA CORRECCIÓN ---
+                // Importamos dinámicamente los scripts con la versión para evitar la caché
+                await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
+                await import(`/public/modules/dashboard/dashboard-appointments.js?v=${CACHE_VERSION}`);
+                // --- FIN DE LA CORRECCIÓN ---
+
             } catch (error) { 
-                console.error('Error inicializando sidebar:', error); 
+                console.error('Error inicializando scripts:', error); 
             }
         });
     </script>
 
-    <script type="module" src="/public/core/auth.js"></script>
-    <script type="module" src="/public/modules/dashboard/dashboard-appointments.js"></script>
-</body>
+    </body>
 </html>
