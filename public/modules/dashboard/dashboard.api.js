@@ -51,17 +51,22 @@ export const searchClients = async (searchTerm) => {
 export const getAppointments = async () => {
     const { data, error } = await supabase
         .from('appointments')
-        .select(`id, appointment_date, appointment_time, service, status, final_observations, final_weight, invoice_pdf_url, pet_id, pets ( name ), profiles ( full_name, first_name, last_name )`)
+        .select(`id, appointment_date, appointment_time, service, status, final_observations, final_weight, invoice_pdf_url, pet_id, service_price, payment_method, pets ( name ), profiles ( full_name, first_name, last_name )`)
         .order('created_at', { ascending: false });
     if (error) console.error('Error al obtener citas:', error);
     return data || [];
 };
 
-export const updateAppointmentStatus = async (appointmentId, newStatus, observations = null) => {
-    const updateData = { status: newStatus };
-    if (observations !== null) {
-        updateData.final_observations = observations;
-    }
+export const updateAppointmentStatus = async (appointmentId, newStatus, details = {}) => {
+    const updateData = {
+        status: newStatus,
+        final_observations: details.observations,
+        final_weight: details.weight,
+        service_price: details.price,
+        payment_method: details.paymentMethod
+    };
+
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
     const { data, error } = await supabase
         .from('appointments')

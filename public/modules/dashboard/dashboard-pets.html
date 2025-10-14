@@ -17,9 +17,6 @@
                 <section id="pets" class="space-y-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-gray-800">Gestión de Mascotas</h2>
-                        <div class="flex space-x-3">
-                            <input type="text" id="pet-search-input" placeholder="Buscar mascota, raza o dueño..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -35,6 +32,37 @@
                             <p class="text-sm text-gray-600 mb-1">Citas Este Mes</p>
                             <p class="text-2xl font-bold text-green-600" id="appointments-month-count">-</p>
                         </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Filtros de Búsqueda</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Buscar por nombre o dueño</label>
+                                <input type="text" id="pet-search-input" placeholder="Buscar mascota o dueño..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por raza</label>
+                                <div class="relative">
+                                    <button type="button" id="breed-filter-btn" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-left bg-white hover:bg-gray-50 focus:ring-2 focus:ring-green-500 focus:border-green-500 flex justify-between items-center">
+                                        <span id="breed-filter-text">Todas las razas</span>
+                                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    <div id="breed-filter-dropdown" class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                                        <div class="p-2">
+                                            <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                                                <input type="checkbox" value="all" class="breed-checkbox mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" checked>
+                                                <span class="text-sm text-gray-700">Todas las razas</span>
+                                            </label>
+                                            <div id="breed-options-list"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center space-x-2" id="selected-breeds-tags"></div>
                     </div>
 
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">

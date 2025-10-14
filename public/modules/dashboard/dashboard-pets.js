@@ -3,6 +3,11 @@ import { supabase } from '../../core/supabase.js';
 // --- ELEMENTOS DEL DOM ---
 const petsTableBody = document.querySelector('#pets-table-body');
 const petSearchInput = document.querySelector('#pet-search-input');
+const breedFilterBtn = document.querySelector('#breed-filter-btn');
+const breedFilterDropdown = document.querySelector('#breed-filter-dropdown');
+const breedFilterText = document.querySelector('#breed-filter-text');
+const breedOptionsList = document.querySelector('#breed-options-list');
+const selectedBreedsTags = document.querySelector('#selected-breeds-tags');
 const headerTitle = document.querySelector('#header-title');
 const totalPetsCount = document.querySelector('#total-pets-count');
 const dogsCount = document.querySelector('#dogs-count');
@@ -19,6 +24,8 @@ let currentPage = 1;
 const itemsPerPage = 10;
 let totalPets = 0;
 let currentSearch = '';
+let selectedBreeds = [];
+let allBreeds = [];
 
 // --- FUNCIÓN PARA CALCULAR EDAD ---
 const calculateAge = (birthDate) => {
@@ -44,8 +51,23 @@ const calculateAge = (birthDate) => {
     }
 };
 
-// --- FUNCIONES DE API PAGINADAS ---
-const getPetsPaginated = async (page = 1, search = '') => {
+// --- FUNCIONES DE API ---
+const getAllBreeds = async () => {
+    const { data, error } = await supabase
+        .from('pets')
+        .select('breed')
+        .not('breed', 'is', null);
+
+    if (error) {
+        console.error('Error al obtener razas:', error);
+        return [];
+    }
+
+    const breeds = [...new Set(data.map(p => p.breed).filter(b => b && b.trim()))].sort();
+    return breeds;
+};
+
+const getPetsPaginated = async (page = 1, search = '', breeds = []) => {
     const from = (page - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
 
@@ -66,6 +88,10 @@ const getPetsPaginated = async (page = 1, search = '') => {
 
     if (search) {
         query = query.or(`name.ilike.%${search}%,breed.ilike.%${search}%,profiles.first_name.ilike.%${search}%,profiles.last_name.ilike.%${search}%,profiles.full_name.ilike.%${search}%`);
+    }
+
+    if (breeds.length > 0) {
+        query = query.in('breed', breeds);
     }
 
     const { data, error, count } = await query
@@ -249,11 +275,102 @@ const renderPagination = () => {
 const loadPets = async () => {
     petsTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Cargando mascotas...</td></tr>';
     
-    const { pets, total } = await getPetsPaginated(currentPage, currentSearch);
+    const { pets, total } = await getPetsPaginated(currentPage, currentSearch, selectedBreeds);
     totalPets = total;
     
     await renderPetsTable(pets);
     renderPagination();
+};
+
+// --- FILTROS DE RAZA ---
+const renderBreedOptions = async () => {
+    allBreeds = await getAllBreeds();
+    
+    breedOptionsList.innerHTML = allBreeds.map(breed => `
+        <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+            <input type="checkbox" value="${breed}" class="breed-checkbox mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+            <span class="text-sm text-gray-700">${breed}</span>
+        </label>
+    `).join('');
+
+    setupBreedCheckboxes();
+};
+
+const setupBreedCheckboxes = () => {
+    const checkboxes = document.querySelectorAll('.breed-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const value = e.target.value;
+            
+            if (value === 'all') {
+                if (e.target.checked) {
+                    selectedBreeds = [];
+                    checkboxes.forEach(cb => {
+                        if (cb.value !== 'all') cb.checked = false;
+                    });
+                }
+            } else {
+                const allCheckbox = document.querySelector('.breed-checkbox[value="all"]');
+                if (allCheckbox) allCheckbox.checked = false;
+                
+                if (e.target.checked) {
+                    selectedBreeds.push(value);
+                } else {
+                    selectedBreeds = selectedBreeds.filter(b => b !== value);
+                }
+
+                if (selectedBreeds.length === 0) {
+                    if (allCheckbox) allCheckbox.checked = true;
+                }
+            }
+
+            updateBreedFilterDisplay();
+            applyFilters();
+        });
+    });
+};
+
+const updateBreedFilterDisplay = () => {
+    if (selectedBreeds.length === 0) {
+        breedFilterText.textContent = 'Todas las razas';
+        selectedBreedsTags.innerHTML = '';
+    } else {
+        breedFilterText.textContent = `${selectedBreeds.length} raza${selectedBreeds.length > 1 ? 's' : ''} seleccionada${selectedBreeds.length > 1 ? 's' : ''}`;
+        
+        selectedBreedsTags.innerHTML = selectedBreeds.map(breed => `
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                ${breed}
+                <button type="button" class="ml-2 text-green-600 hover:text-green-800" data-breed="${breed}">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </span>
+        `).join('');
+
+        selectedBreedsTags.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const breed = btn.dataset.breed;
+                selectedBreeds = selectedBreeds.filter(b => b !== breed);
+                
+                const checkbox = document.querySelector(`.breed-checkbox[value="${breed}"]`);
+                if (checkbox) checkbox.checked = false;
+                
+                if (selectedBreeds.length === 0) {
+                    const allCheckbox = document.querySelector('.breed-checkbox[value="all"]');
+                    if (allCheckbox) allCheckbox.checked = true;
+                }
+                
+                updateBreedFilterDisplay();
+                applyFilters();
+            });
+        });
+    }
+};
+
+const toggleBreedDropdown = () => {
+    breedFilterDropdown.classList.toggle('hidden');
 };
 
 // --- FILTROS ---
@@ -306,9 +423,20 @@ const initializePetsSection = async () => {
     if (dogsCount) dogsCount.textContent = stats.dogs;
     if (appointmentsMonthCount) appointmentsMonthCount.textContent = stats.appointmentsMonth;
 
+    await renderBreedOptions();
     await loadPets();
 
     if (petSearchInput) petSearchInput.addEventListener('input', applyFilters);
+
+    if (breedFilterBtn) {
+        breedFilterBtn.addEventListener('click', toggleBreedDropdown);
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!breedFilterBtn.contains(e.target) && !breedFilterDropdown.contains(e.target)) {
+            breedFilterDropdown.classList.add('hidden');
+        }
+    });
 
     if (closeModalBtn) closeModalBtn.addEventListener('click', closePetDetailsModal);
     if (closeModalBottomBtn) closeModalBottomBtn.addEventListener('click', closePetDetailsModal);

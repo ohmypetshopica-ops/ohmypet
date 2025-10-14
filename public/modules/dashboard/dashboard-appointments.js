@@ -22,6 +22,8 @@ const completionModal = document.querySelector('#completion-modal');
 const completionModalSubtitle = document.querySelector('#completion-modal-subtitle');
 const finalObservationsTextarea = document.querySelector('#final-observations-textarea');
 const petWeightInput = document.querySelector('#pet-weight-input');
+const servicePriceInput = document.querySelector('#service-price-input');
+const paymentMethodSelect = document.querySelector('#payment-method-select');
 const cancelCompletionBtn = document.querySelector('#cancel-completion-btn');
 const confirmCompletionBtn = document.querySelector('#confirm-completion-btn');
 const saveDuringAppointmentBtn = document.querySelector('#save-during-appointment-btn');
@@ -78,6 +80,8 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
     completionModalSubtitle.textContent = `Mascota: ${petName}`;
     finalObservationsTextarea.value = '';
     petWeightInput.value = '';
+    servicePriceInput.value = '';
+    paymentMethodSelect.value = '';
     uploadMessage.classList.add('hidden');
 
     completionModal.classList.remove('hidden');
@@ -89,6 +93,12 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
         }
         if (appointment.final_weight) {
             petWeightInput.value = appointment.final_weight;
+        }
+        if (appointment.service_price) {
+            servicePriceInput.value = appointment.service_price;
+        }
+        if (appointment.payment_method) {
+            paymentMethodSelect.value = appointment.payment_method;
         }
     }
 
@@ -251,10 +261,14 @@ const initializePage = async () => {
 
             const observations = finalObservationsTextarea.value.trim();
             const weight = petWeightInput.value.trim();
+            const price = servicePriceInput.value.trim();
+            const paymentMethod = paymentMethodSelect.value;
 
             const updateData = {};
             if (observations) updateData.final_observations = observations;
             if (weight) updateData.final_weight = parseFloat(weight);
+            if (price) updateData.service_price = parseFloat(price);
+            if (paymentMethod) updateData.payment_method = paymentMethod;
 
             if (Object.keys(updateData).length > 0) {
                 uploadMessage.textContent = 'Guardando datos adicionales...';
@@ -287,6 +301,8 @@ const initializePage = async () => {
 
     confirmCompletionBtn?.addEventListener('click', async () => {
         const weight = petWeightInput.value.trim();
+        const price = servicePriceInput.value.trim();
+        const paymentMethod = paymentMethodSelect.value;
         const photos = await getAppointmentPhotos(currentAppointmentId);
         const hasArrivalPhoto = photos.some(p => p.photo_type === 'arrival') || arrivalPhotoFile;
         const hasDeparturePhoto = photos.some(p => p.photo_type === 'departure') || departurePhotoFile;
@@ -295,6 +311,8 @@ const initializePage = async () => {
         if (!hasArrivalPhoto) missingFields.push('foto de llegada');
         if (!hasDeparturePhoto) missingFields.push('foto de salida');
         if (!weight) missingFields.push('peso de la mascota');
+        if (!price) missingFields.push('precio del servicio');
+        if (!paymentMethod) missingFields.push('método de pago');
 
         if (missingFields.length > 0) {
             alert(`❌ Para completar la cita, debes agregar:\n\n• ${missingFields.join('\n• ')}\n\nPuedes usar el botón "Guardar Información" para ir agregando los datos durante la cita.`);
@@ -326,7 +344,12 @@ const initializePage = async () => {
 
             uploadMessage.textContent = 'Guardando observaciones y completando cita...';
             const observations = finalObservationsTextarea.value.trim();
-            const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', observations);
+            const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', {
+                observations: observations,
+                weight: parseFloat(weight),
+                price: parseFloat(price),
+                paymentMethod: paymentMethod
+            });
 
             if (success) {
                 const index = allAppointments.findIndex(app => app.id == currentAppointmentId);
@@ -334,6 +357,8 @@ const initializePage = async () => {
                     allAppointments[index].status = 'completada';
                     allAppointments[index].final_observations = observations;
                     allAppointments[index].final_weight = parseFloat(weight);
+                    allAppointments[index].service_price = parseFloat(price);
+                    allAppointments[index].payment_method = paymentMethod;
                     applyFiltersAndSearch();
                 }
                 closeCompletionModal();
