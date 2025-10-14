@@ -23,11 +23,17 @@ let maxPrice = 1500;
 let currentCols = 4;
 
 const createProductCard = (product) => {
+    // --- OPTIMIZACIÓN DE IMAGEN AQUÍ ---
+    // Construimos la URL de la imagen optimizada pidiendo a Supabase una versión de 400px de ancho.
+    const optimizedImageUrl = product.image_url 
+        ? `${product.image_url}?width=400&quality=75` 
+        : `https://via.placeholder.com/300x300/10b981/ffffff?text=${encodeURIComponent(product.name)}`;
+
     return `
         <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
             <div class="relative bg-gray-100 h-48">
                 <img class="w-full h-full object-cover" 
-                     src="${product.image_url || 'https://via.placeholder.com/300x300/10b981/ffffff?text=' + encodeURIComponent(product.name)}" 
+                     src="${optimizedImageUrl}" 
                      alt="${product.name}">
                 ${product.discount ? `<span class="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">-${product.discount}%</span>` : ''}
                 ${product.is_new ? '<span class="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">NUEVO</span>' : ''}
@@ -58,7 +64,6 @@ const createProductCard = (product) => {
         </div>
     `;
 };
-
 const loadProducts = async () => {
     productsContainer.innerHTML = '<div class="col-span-full flex justify-center py-20"><div class="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600"></div></div>';
 
