@@ -16,7 +16,7 @@ export const initHeader = async () => {
     const userInitial = document.getElementById('user-initial');
     const logoutBtn = document.getElementById('logout-btn');
     const cartBadge = document.getElementById('cart-badge');
-    const cartBtn = document.getElementById('cart-btn');
+    const cartBtn = document.querySelector('a[href="/public/modules/store/store.html"]');
 
     // Verificar que existen los elementos
     if (!guestNav || !userNav) {
@@ -43,41 +43,40 @@ export const initHeader = async () => {
             .single();
 
         if (profile) {
-            const name = profile.first_name || profile.full_name || profile.last_name || 'U';
-            userInitial.textContent = name.charAt(0).toUpperCase();
-            console.log('✅ Inicial del usuario:', name.charAt(0).toUpperCase());
+            const displayName = (profile.first_name && profile.last_name) 
+                ? `${profile.first_name} ${profile.last_name}` 
+                : profile.full_name;
+            const initial = displayName ? displayName.charAt(0).toUpperCase() : 'U';
+            if (userInitial) userInitial.textContent = initial;
         }
-
     } else {
-        // Usuario NO logueado
-        console.log('🔓 Usuario no logueado');
+        // Usuario NO LOGUEADO
+        console.log('🔓 Usuario no autenticado');
         guestNav.classList.remove('hidden');
         userNav.classList.add('hidden');
     }
 
-    // ========== EVENT LISTENERS ==========
-
-    // Abrir/cerrar menú de invitado
+    // ========== MENÚ DESPLEGABLE DE INVITADO ==========
     if (guestMenuBtn && guestDropdown) {
         guestMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             guestDropdown.classList.toggle('hidden');
             userDropdown?.classList.add('hidden');
-            console.log('🔽 Menú invitado toggled');
+            console.log('📋 Menú de invitado toggled');
         });
     }
 
-    // Abrir/cerrar menú de usuario
+    // ========== MENÚ DESPLEGABLE DE USUARIO ==========
     if (userMenuBtn && userDropdown) {
         userMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             userDropdown.classList.toggle('hidden');
             guestDropdown?.classList.add('hidden');
-            console.log('🔽 Menú usuario toggled');
+            console.log('📋 Menú de usuario toggled');
         });
     }
 
-    // Cerrar sesión
+    // ========== CERRAR SESIÓN ==========
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
@@ -172,7 +171,7 @@ export const refreshCartBadge = () => {
  */
 export const initHeaderWithRetry = async () => {
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 3;
 
     const tryInit = async () => {
         const success = await initHeader();
@@ -180,7 +179,7 @@ export const initHeaderWithRetry = async () => {
         if (!success && attempts < maxAttempts) {
             attempts++;
             console.log(`⏳ Reintento ${attempts}/${maxAttempts}`);
-            setTimeout(tryInit, 100);
+            setTimeout(tryInit, 200);
         } else if (!success) {
             console.error('❌ No se pudo inicializar el header después de múltiples intentos');
         }
