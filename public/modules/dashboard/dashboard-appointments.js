@@ -86,8 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appointment.final_observations) {
                 finalObservationsTextarea.value = appointment.final_observations;
             }
-            if (appointment.pet_weight) {
-                petWeightInput.value = appointment.pet_weight;
+            if (appointment.final_weight) {
+                petWeightInput.value = appointment.final_weight;
             }
         }
 
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const updateData = {};
                 if (observations) updateData.final_observations = observations;
-                if (weight) updateData.pet_weight = parseFloat(weight);
+                if (weight) updateData.final_weight = parseFloat(weight);
 
                 if (Object.keys(updateData).length > 0) {
                     uploadMessage.textContent = 'Guardando datos adicionales...';
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (index !== -1) {
                         allAppointments[index].status = 'completada';
                         allAppointments[index].final_observations = observations;
-                        allAppointments[index].pet_weight = parseFloat(weight);
+                        allAppointments[index].final_weight = parseFloat(weight);
                         applyFiltersAndSearch();
                     }
                     closeCompletionModal();
