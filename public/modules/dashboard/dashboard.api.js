@@ -1,8 +1,5 @@
-// VERSIÓN FINAL Y COMPLETA - dashboard.api.js
-
 import { supabase } from '../../core/supabase.js';
 
-// --- FUNCIONES DE CONTEO (Optimizadas por defecto) ---
 export const getClientCount = async () => {
     const { count, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'cliente');
     if (error) console.error('Error al contar clientes:', error);
@@ -27,8 +24,6 @@ export const getProductsCount = async () => {
     return count || 0;
 };
 
-// --- FUNCIONES DE OBTENCIÓN DE DATOS (Optimizadas con SELECT específico) ---
-
 export const getUpcomingAppointments = async () => {
     const { data, error } = await supabase
         .from('appointments')
@@ -42,19 +37,17 @@ export const getUpcomingAppointments = async () => {
 };
 
 export const getClients = async () => {
-    const { data, error } = await supabase.from('profiles').select('id, full_name, first_name, last_name, role').eq('role', 'cliente').order('full_name', { ascending: true });
+    const { data, error } = await supabase.from('profiles').select('*').eq('role', 'cliente').order('full_name', { ascending: true });
     if (error) console.error('Error al obtener clientes:', error);
     return data || [];
 };
 
 export const searchClients = async (searchTerm) => {
-    const { data, error } = await supabase.from('profiles').select('id, full_name, first_name, last_name, role').eq('role', 'cliente').or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+    const { data, error } = await supabase.from('profiles').select('*').eq('role', 'cliente').or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
     if (error) console.error('Error al buscar clientes:', error);
     return data || [];
 };
 
-// NOTA: Esta función ya no se usa en la página de citas (que ahora usa paginación),
-// pero la mantenemos por si otro módulo la necesita.
 export const getAppointments = async () => {
     const { data, error } = await supabase
         .from('appointments')
@@ -64,32 +57,38 @@ export const getAppointments = async () => {
     return data || [];
 };
 
-
-export const getProducts = async () => {
-    const { data, error } = await supabase.from('products').select('*').order('name', { ascending: true });
-    if (error) console.error('Error al obtener productos:', error);
-    return data || [];
-};
-
-export const getServices = async () => {
-    const { data, error } = await supabase.from('services').select('*');
-    if (error) console.error('Error al obtener servicios:', error);
-    return data || [];
-};
-
-// --- FUNCIONES DE MODIFICACIÓN DE DATOS ---
-
 export const updateAppointmentStatus = async (appointmentId, newStatus, observations = null) => {
     const updateData = { status: newStatus };
     if (observations !== null) {
         updateData.final_observations = observations;
     }
-    const { data, error } = await supabase.from('appointments').update(updateData).eq('id', appointmentId).select();
+
+    const { data, error } = await supabase
+        .from('appointments')
+        .update(updateData)
+        .eq('id', appointmentId)
+        .select();
+        
     if (error) {
         console.error('Error al actualizar estado de la cita:', error);
         return { success: false, error };
     }
     return { success: true, data: data[0] };
+};
+
+export const filterAppointments = async (filters) => {
+    let query = supabase.from('appointments').select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`);
+    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.date) query = query.eq('appointment_date', filters.date);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) console.error('Error al filtrar citas:', error);
+    return data || [];
+};
+
+export const getProducts = async () => {
+    const { data, error } = await supabase.from('products').select('*').order('name', { ascending: true });
+    if (error) console.error('Error al obtener productos:', error);
+    return data || [];
 };
 
 export const addProduct = async (productData) => {
@@ -119,8 +118,11 @@ export const deleteProduct = async (productId) => {
     return { success: true };
 };
 
-
-// --- FUNCIONES DE MANEJO DE ARCHIVOS (¡LAS QUE FALTABAN!) ---
+export const getServices = async () => {
+    const { data, error } = await supabase.from('services').select('*');
+    if (error) console.error('Error al obtener servicios:', error);
+    return data || [];
+};
 
 export const getAppointmentPhotos = async (appointmentId) => {
     const { data, error } = await supabase
@@ -137,36 +139,74 @@ export const getAppointmentPhotos = async (appointmentId) => {
 
 export const uploadAppointmentPhoto = async (appointmentId, file, photoType) => {
     if (!file) return { success: false, error: { message: 'No se proporcionó ningún archivo.' } };
+
     const fileName = `public/${appointmentId}-${photoType}-${Date.now()}`;
-    const { error: uploadError } = await supabase.storage.from('appointment_images').upload(fileName, file, { upsert: true });
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('appointment_images')
+        .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true
+        });
+
     if (uploadError) {
         console.error('Error al subir la imagen:', uploadError);
         return { success: false, error: uploadError };
     }
-    const { data: { publicUrl } } = supabase.storage.from('appointment_images').getPublicUrl(fileName);
-    const { data, error: dbError } = await supabase.from('appointment_photos').upsert({ appointment_id: appointmentId, photo_type: photoType, image_url: publicUrl }, { onConflict: 'appointment_id, photo_type' }).select();
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('appointment_images')
+        .getPublicUrl(fileName);
+
+    const { data: dbData, error: dbError } = await supabase
+        .from('appointment_photos')
+        .upsert({
+            appointment_id: appointmentId,
+            photo_type: photoType,
+            image_url: publicUrl
+        }, { onConflict: 'appointment_id, photo_type' })
+        .select();
+
     if (dbError) {
         console.error('Error al guardar la URL en la base de datos:', dbError);
         return { success: false, error: dbError };
     }
-    return { success: true, data: data[0] };
+
+    return { success: true, data: dbData[0] };
 };
 
 export const uploadReceiptFile = async (appointmentId, file) => {
     if (!file) return { success: false, error: { message: 'No se proporcionó ningún archivo.' } };
+
     const fileExtension = file.name.split('.').pop();
     const fileName = `public/${appointmentId}-receipt-${Date.now()}.${fileExtension}`;
-    const { error: uploadError } = await supabase.storage.from('receipts').upload(fileName, file, { upsert: true });
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true
+        });
+
     if (uploadError) {
         console.error('Error al subir la boleta:', uploadError);
         return { success: false, error: uploadError };
     }
-    const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(fileName);
-    const { error: dbError } = await supabase.from('appointments').update({ invoice_pdf_url: publicUrl }).eq('id', appointmentId);
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(fileName);
+
+    const { error: dbError } = await supabase
+        .from('appointments')
+        .update({ invoice_pdf_url: publicUrl })
+        .eq('id', appointmentId);
+
     if (dbError) {
         console.error('Error al guardar la URL de la boleta:', dbError);
         return { success: false, error: dbError };
     }
+
     return { success: true, url: publicUrl };
 };
 
