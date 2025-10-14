@@ -1,136 +1,99 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Servicios - Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <style>:root { font-family: 'Inter', sans-serif; }</style>
-</head>
-<body class="bg-gray-100 text-black">
-    <div class="flex h-screen overflow-hidden">
-        <div id="sidebar-container"></div>
-        <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
-            <div id="header-container"></div>
-            <div id="main-content" class="flex-1 p-6 overflow-y-auto">
-                <section id="services" class="space-y-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-800">Historial de Servicios</h2>
-                            <p id="filter-subtitle" class="text-sm text-gray-600 mt-1"></p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Total Servicios</p>
-                            <p class="text-2xl font-bold text-gray-900" id="total-services-count">-</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Completados</p>
-                            <p class="text-2xl font-bold text-green-600" id="completed-services-count">-</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Pendientes</p>
-                            <p class="text-2xl font-bold text-yellow-600" id="pending-services-count">-</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Este Mes</p>
-                            <p class="text-2xl font-bold text-blue-600" id="month-services-count">-</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Filtros de Búsqueda</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
-                                <input type="text" id="service-search-input" placeholder="Buscar por cliente o mascota..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-                                <select id="service-status-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                                    <option value="">Todos los estados</option>
-                                    <option value="pendiente">Pendiente</option>
-                                    <option value="confirmada">Confirmada</option>
-                                    <option value="completada">Completada</option>
-                                    <option value="cancelada">Cancelada</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
-                                <input type="date" id="service-date-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            </div>
-                        </div>
-                        <div class="mt-4 flex space-x-3">
-                            <button id="clear-filters-btn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm font-semibold">
-                                Limpiar Filtros
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente / Mascota</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha y Hora</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Método de Pago</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Costo</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ver Detalles</th>
-                                </tr>
-                            </thead>
-                            <tbody id="services-table-body" class="divide-y divide-gray-200">
-                                <tr>
-                                    <td colspan="6" class="text-center py-8 text-gray-500">Cargando servicios...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div id="pagination-container"></div>
-                    </div>
-                </section>
-            </div>
-        </main>
+<aside id="sidebar" class="w-64 bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 flex flex-col shadow-sm">
+    <div class="p-6 border-b border-gray-200 bg-white">
+        <h2 class="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+            Dashboard
+        </h2>
+        <p class="text-xs text-gray-500 mt-1">Panel Administrativo</p>
     </div>
 
-    <div id="service-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white">
-                <h3 class="text-xl font-bold text-gray-800">Detalles del Servicio</h3>
-                <p class="text-sm text-gray-500 mt-1">Información completa del servicio realizado</p>
+    <nav class="flex-1 px-3 py-6 space-y-6 overflow-y-auto">
+        <div>
+            <h3 class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">General</h3>
+            
+            <a href="/public/modules/dashboard/dashboard-overview.html" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all group hover:bg-white">
+                <svg class="h-5 w-5 mr-3 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span class="text-gray-700 group-hover:text-gray-900">Inicio</span>
+            </a>
+
+            <a href="/public/modules/dashboard/dashboard-clients.html" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all group hover:bg-white">
+                <svg class="h-5 w-5 mr-3 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <span class="text-gray-700 group-hover:text-gray-900">Clientes</span>
+            </a>
+
+            <a href="/public/modules/dashboard/dashboard-pets.html" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all group hover:bg-white">
+                <svg class="h-5 w-5 mr-3 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-gray-700 group-hover:text-gray-900">Mascotas</span>
+            </a>
+
+            <a href="/public/modules/dashboard/dashboard-appointments.html" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all group hover:bg-white">
+                <svg class="h-5 w-5 mr-3 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-gray-700 group-hover:text-gray-900">Citas</span>
+            </a>
+
+            <a href="/public/modules/dashboard/dashboard-calendar.html" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all group hover:bg-white">
+                <svg class="h-5 w-5 mr-3 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-gray-700 group-hover:text-gray-900">Calendario</span>
+            </a>
+
+            <a href="/public/modules/dashboard/dashboard-complaints.html" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all group hover:bg-white">
+                <svg class="h-5 w-5 mr-3 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <span class="text-gray-700 group-hover:text-gray-900">Reclamos</span>
+            </a>
+        </div>
+
+        <div>
+            <h3 class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Inventario</h3>
+            
+            <a href="/public/modules/dashboard/dashboard-products.html" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all group hover:bg-white">
+                <svg class="h-5 w-5 mr-3 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <span class="text-gray-700 group-hover:text-gray-900">Productos</span>
+            </a>
+
+            <a href="/public/modules/dashboard/dashboard-services.html" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all group hover:bg-white">
+                <svg class="h-5 w-5 mr-3 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <span class="text-gray-700 group-hover:text-gray-900">Servicios</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-white">
+        <div class="flex items-center px-3 py-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+            <div class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <span class="text-white font-bold text-sm" id="sidebar-user-initial">A</span>
             </div>
-            <div id="modal-service-details" class="flex-1 p-6 overflow-y-auto"></div>
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
-                <button id="close-service-modal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">Cerrar</button>
+            <div class="ml-3 flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-900 truncate" id="sidebar-user-name">Administrador</p>
+                <p class="text-xs text-gray-500">Admin</p>
             </div>
         </div>
-    </div>
 
-    <script type="module">
-        const CACHE_VERSION = Date.now();
-        async function loadComponent(url, containerId) {
-            try {
-                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const html = await response.text();
-                document.getElementById(containerId).innerHTML = html;
-            } catch (error) { console.error(`Error cargando ${url}:`, error); }
-        }
-        document.addEventListener('DOMContentLoaded', async () => {
-            await Promise.all([
-                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
-                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
-            ]);
-            await new Promise(resolve => setTimeout(resolve, 100));
-            try {
-                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
-                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
-                await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
-                await import(`./dashboard-services.js?v=${CACHE_VERSION}`);
-            } catch (error) { console.error('Error inicializando scripts:', error); }
-        });
-    </script>
-</body>
-</html>
+        <a href="/public" target="_blank" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50 transition-all group">
+            <svg class="h-5 w-5 mr-3 text-gray-500 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <span class="group-hover:text-green-700">Ir a la Tienda</span>
+        </a>
+        <button id="sidebar-logout-button" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all group">
+            <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span>Cerrar Sesión</span>
+        </button>
+    </div>
+</aside>
