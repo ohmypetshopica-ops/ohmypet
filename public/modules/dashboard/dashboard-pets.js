@@ -153,6 +153,21 @@ const getPetDetails = async (petId) => {
     return data;
 };
 
+const getPetAppointments = async (petId) => {
+    const { data, error } = await supabase
+        .from('appointments')
+        .select('id, appointment_date, appointment_time, service, status')
+        .eq('pet_id', petId)
+        .order('appointment_date', { ascending: false })
+        .limit(5);
+
+    if (error) {
+        console.error('Error al obtener citas de la mascota:', error);
+        return [];
+    }
+    return data || [];
+};
+
 const getStats = async () => {
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
@@ -405,6 +420,38 @@ const openPetDetailsModal = async (petId) => {
         modalImage.src = pet.image_url;
     } else {
         modalImage.src = `https://ui-avatars.com/api/?name=${pet.name}&background=10b981&color=fff&size=80`;
+    }
+
+    const appointments = await getPetAppointments(pet.id);
+    const appointmentsContainer = document.querySelector('#modal-pet-appointments');
+    
+    if (appointments.length > 0) {
+        const lastAppointment = appointments[0];
+        appointmentsContainer.innerHTML = `
+            <div class="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200">
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">${new Date(lastAppointment.appointment_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} - ${lastAppointment.appointment_time}</p>
+                    <p class="text-xs text-gray-600">${lastAppointment.service || 'Servicio general'}</p>
+                </div>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                    lastAppointment.status === 'completada' ? 'bg-green-100 text-green-800' :
+                    lastAppointment.status === 'confirmada' ? 'bg-blue-100 text-blue-800' :
+                    lastAppointment.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-800'
+                }">
+                    ${lastAppointment.status}
+                </span>
+            </div>
+        `;
+    } else {
+        appointmentsContainer.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No hay servicios registrados.</p>';
+    }
+
+    const viewAllBtn = document.querySelector('#view-all-appointments-btn');
+    if (viewAllBtn) {
+        viewAllBtn.onclick = () => {
+            window.location.href = `/public/modules/dashboard/dashboard-appointments.html?pet=${pet.id}`;
+        };
     }
 
     petDetailsModal.classList.remove('hidden');
