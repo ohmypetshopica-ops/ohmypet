@@ -210,4 +210,4 @@ export const uploadReceiptFile = async (appointmentId, file) => {
     return { success: true, url: publicUrl };
 };
 
-export { supabase };
+export { supabase }; 
