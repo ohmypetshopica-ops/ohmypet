@@ -57,6 +57,21 @@ export const getAppointments = async () => {
     return data || [];
 };
 
+// --- NUEVA FUNCIÓN ---
+export const getCompletedAppointments = async () => {
+    const { data, error } = await supabase
+        .from('appointments')
+        .select(`*, pets(name), profiles(full_name, first_name, last_name)`)
+        .eq('status', 'completada')
+        .order('appointment_date', { ascending: false });
+    if (error) {
+        console.error('Error al obtener servicios completados:', error);
+        return [];
+    }
+    return data || [];
+};
+// --- FIN ---
+
 export const updateAppointmentStatus = async (appointmentId, newStatus, details = {}) => {
     const updateData = {
         status: newStatus,
@@ -149,34 +164,24 @@ export const uploadAppointmentPhoto = async (appointmentId, file, photoType) => 
     
     const { data: uploadData, error: uploadError } = await supabase.storage
         .from('appointment_images')
-        .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: true
-        });
+        .upload(fileName, file, { cacheControl: '3600', upsert: true });
 
     if (uploadError) {
         console.error('Error al subir la imagen:', uploadError);
         return { success: false, error: uploadError };
     }
 
-    const { data: { publicUrl } } = supabase.storage
-        .from('appointment_images')
-        .getPublicUrl(fileName);
+    const { data: { publicUrl } } = supabase.storage.from('appointment_images').getPublicUrl(fileName);
 
     const { data: dbData, error: dbError } = await supabase
         .from('appointment_photos')
-        .upsert({
-            appointment_id: appointmentId,
-            photo_type: photoType,
-            image_url: publicUrl
-        }, { onConflict: 'appointment_id, photo_type' })
+        .upsert({ appointment_id: appointmentId, photo_type: photoType, image_url: publicUrl }, { onConflict: 'appointment_id, photo_type' })
         .select();
 
     if (dbError) {
         console.error('Error al guardar la URL en la base de datos:', dbError);
         return { success: false, error: dbError };
     }
-
     return { success: true, data: dbData[0] };
 };
 
@@ -188,19 +193,14 @@ export const uploadReceiptFile = async (appointmentId, file) => {
     
     const { data: uploadData, error: uploadError } = await supabase.storage
         .from('receipts')
-        .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: true
-        });
+        .upload(fileName, file, { cacheControl: '3600', upsert: true });
 
     if (uploadError) {
         console.error('Error al subir la boleta:', uploadError);
         return { success: false, error: uploadError };
     }
 
-    const { data: { publicUrl } } = supabase.storage
-        .from('receipts')
-        .getPublicUrl(fileName);
+    const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(fileName);
 
     const { error: dbError } = await supabase
         .from('appointments')
@@ -211,7 +211,6 @@ export const uploadReceiptFile = async (appointmentId, file) => {
         console.error('Error al guardar la URL de la boleta:', dbError);
         return { success: false, error: dbError };
     }
-
     return { success: true, url: publicUrl };
 };
 

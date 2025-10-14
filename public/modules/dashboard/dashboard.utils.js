@@ -1,7 +1,6 @@
 // public/modules/dashboard/dashboard.utils.js
 // VERSIÓN COMPLETA Y FINAL
 
-// Esta función es necesaria para el resumen del dashboard.
 const createUpcomingAppointmentItem = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
     const ownerProfile = appointment.profiles;
@@ -22,7 +21,6 @@ const createUpcomingAppointmentItem = (appointment) => {
     `;
 };
 
-// Esta es la función que faltaba y causaba el error.
 const createClientRow = (client) => {
     const displayName = (client.first_name && client.last_name) 
         ? `${client.first_name} ${client.last_name}` 
@@ -36,7 +34,6 @@ const createClientRow = (client) => {
     `;
 };
 
-// Esta función es para la tabla de productos.
 const createProductRow = (product) => {
     const productData = JSON.stringify(product).replace(/"/g, '&quot;');
     return `
@@ -49,8 +46,6 @@ const createProductRow = (product) => {
     `;
 };
 
-// **AQUÍ ESTÁ LA CORRECCIÓN**
-// La función createAppointmentRow ha sido simplificada para asegurar su correcto renderizado.
 const createAppointmentRow = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
     const ownerProfile = appointment.profiles;
@@ -71,17 +66,20 @@ const createAppointmentRow = (appointment) => {
     
     let actionButtons = '';
     if (status === 'pendiente') {
-        actionButtons = `
-            <button data-action="confirmar" class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition-colors">Confirmar</button>
-            <button data-action="rechazar" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors">Rechazar</button>
-        `;
+        actionButtons = `<button data-action="confirmar" class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition-colors">Confirmar</button>
+                         <button data-action="rechazar" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors">Rechazar</button>`;
     } else if (status === 'confirmada') {
         actionButtons = `<button data-action="completar" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors">Completar</button>`;
     } else {
         actionButtons = `<span class="text-xs text-gray-400">Sin acciones</span>`;
     }
 
-    // Estructura de fila simplificada para máxima compatibilidad
+    let paymentDetails = '<span class="text-xs text-gray-400">N/A</span>';
+    if (status === 'completada' && appointment.service_price && appointment.payment_method) {
+        paymentDetails = `<div class="text-sm font-bold text-gray-900">S/ ${appointment.service_price.toFixed(2)}</div>
+                          <div class="text-xs text-gray-600">${appointment.payment_method}</div>`;
+    }
+
     return `
         <tr data-appointment-id="${appointment.id}">
             <td class="px-6 py-4 whitespace-nowrap">
@@ -92,28 +90,57 @@ const createAppointmentRow = (appointment) => {
                 <div class="text-sm text-gray-900">${appointment.appointment_date}</div>
                 <div class="text-sm text-gray-500">${appointment.appointment_time}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 max-w-xs truncate" title="${appointment.service}">
-                ${appointment.service}
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 max-w-xs truncate" title="${appointment.service || ''}">
+                ${appointment.service || 'Sin notas'}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${currentStyle.bg} ${currentStyle.textColor}">
-                    ${currentStyle.text}
-                </span>
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${currentStyle.bg} ${currentStyle.textColor}">${currentStyle.text}</span>
             </td>
+            <td class="px-6 py-4 whitespace-nowrap">${paymentDetails}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                <div class="flex items-center justify-center gap-2">
-                    ${actionButtons}
-                </div>
+                <div class="flex items-center justify-center gap-2">${actionButtons}</div>
             </td>
         </tr>
     `;
 };
 
+// --- NUEVA FUNCIÓN ---
+const createServiceHistoryRow = (service) => {
+    const petName = service.pets?.name || 'N/A';
+    const ownerProfile = service.profiles;
+    const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name)
+        ? `${ownerProfile.first_name} ${ownerProfile.last_name}`
+        : ownerProfile?.full_name || 'N/A';
 
-// El bloque de exportación final que incluye todas las funciones.
+    return `
+        <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm font-medium text-gray-900">${ownerName}</div>
+                <div class="text-sm text-gray-500">${petName}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                ${service.appointment_date}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">
+                S/ ${(service.service_price || 0).toFixed(2)}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                    ${service.payment_method || 'N/A'}
+                </span>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-600 max-w-sm truncate" title="${service.final_observations || ''}">
+                ${service.final_observations || 'Sin observaciones.'}
+            </td>
+        </tr>
+    `;
+};
+// --- FIN ---
+
 export { 
     createUpcomingAppointmentItem, 
     createClientRow, 
     createProductRow, 
-    createAppointmentRow 
+    createAppointmentRow,
+    createServiceHistoryRow // Exportar la nueva función
 };
