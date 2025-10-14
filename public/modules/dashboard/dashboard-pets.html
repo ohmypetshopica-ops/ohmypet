@@ -27,6 +27,7 @@
                         </div>
                     </div>
 
+                    <!-- Estadísticas rápidas -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                         <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                             <p class="text-sm text-gray-600 mb-1">Total Mascotas</p>
@@ -46,6 +47,7 @@
                         </div>
                     </div>
 
+                    <!-- Tabla de mascotas -->
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
                         <table class="w-full">
                             <thead class="bg-gray-50">
@@ -64,13 +66,13 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <div id="pagination-container"></div>
                     </div>
                 </section>
             </div>
         </main>
     </div>
 
+    <!-- Modal de detalles de mascota -->
     <div id="pet-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden">
             <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 text-white">
@@ -123,14 +125,52 @@
                     <p id="modal-pet-observations" class="text-sm text-gray-700">-</p>
                 </div>
 
-                <div class="flex justify-end">
-                    <button id="close-modal-bottom-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cerrar</button>
+                <div class="border-t pt-4">
+                    <h3 class="font-semibold text-gray-800 mb-3">Historial de Citas</h3>
+                    <div id="modal-pet-appointments" class="space-y-2">
+                        <p class="text-sm text-gray-500">Cargando historial...</p>
+                    </div>
                 </div>
+            </div>
+
+            <div class="bg-gray-50 px-6 py-4 flex justify-end">
+                <button id="close-modal-bottom-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors">
+                    Cerrar
+                </button>
             </div>
         </div>
     </div>
+    
+    <script>
+        async function loadComponent(url, containerId) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const html = await response.text();
+                document.getElementById(containerId).innerHTML = html;
+            } catch (error) {
+                console.error(`Error cargando ${url}:`, error);
+            }
+        }
 
-    <script type="module" src="../../core/layout-loader.js"></script>
-    <script type="module" src="dashboard-pets.js"></script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Promise.all([
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            ]);
+            
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            try {
+                const sidebarModule = await import('./dashboard-sidebar.js');
+                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+    
+    <script type="module" src="../../core/auth.js"></script>
+    <script type="module" src="./dashboard-pets.js"></script>
 </body>
 </html>
