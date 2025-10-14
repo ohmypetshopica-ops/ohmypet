@@ -1,7 +1,6 @@
 import { supabase } from '../../core/supabase.js';
 
 export const getUserProfile = async (userId) => {
-    // Esta consulta ya estaba optimizada. ¡Buen trabajo aquí!
     const { data: profile, error } = await supabase
         .from('profiles')
         .select('full_name, first_name, last_name')
@@ -15,18 +14,11 @@ export const getUserProfile = async (userId) => {
     return profile;
 };
 
-// --- OPTIMIZACIÓN AQUÍ ---
-// Antes usaba select('*'), ahora pide solo las columnas necesarias para mostrar las tarjetas de citas.
 export const getUserAppointments = async (userId) => {
     const { data, error } = await supabase
         .from('appointments')
         .select(`
-            id,
-            appointment_date,
-            appointment_time,
-            service,
-            status,
-            final_observations,
+            *,
             pets ( name, image_url ),
             appointment_photos ( photo_type, image_url )
         `)
@@ -53,7 +45,6 @@ export const cancelAppointment = async (appointmentId) => {
     return { success: true, data: data[0] };
 };
 
-// Esta consulta ya estaba optimizada.
 export const getBookedTimes = async (date) => {
     const { data: appointments, error: appointmentsError } = await supabase
         .from('appointments')
