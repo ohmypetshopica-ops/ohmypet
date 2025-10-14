@@ -7,6 +7,7 @@ const deletePetButton = document.querySelector('#delete-pet-button');
 const petMainPhoto = document.querySelector('#pet-main-photo');
 const historyButton = document.querySelector('#history-button');
 const photoUploadInput = document.querySelector('#photo-upload');
+const changePhotoButton = document.querySelector('#change-photo-btn');
 const sizeButtons = document.querySelectorAll('.size-btn');
 const hiddenSizeInput = document.querySelector('input#size');
 const sexButtons = document.querySelectorAll('.sex-btn');
@@ -46,8 +47,10 @@ const calculateAge = (birthDate) => {
 
 // --- ACTUALIZAR EDAD CALCULADA ---
 const updateCalculatedAge = () => {
-    const birthDate = birthDateInput.value;
-    calculatedAgeSpan.textContent = calculateAge(birthDate);
+    if (birthDateInput) {
+        const birthDate = birthDateInput.value;
+        calculatedAgeSpan.textContent = calculateAge(birthDate);
+    }
 };
 
 // --- FUNCIÓN PARA CARGAR LOS DATOS DE LA MASCOTA ---
@@ -82,9 +85,8 @@ const loadPetDetails = async () => {
     document.querySelector('#breed').value = pet.breed || '';
     document.querySelector('#weight').value = pet.weight || '';
     document.querySelector('#observations').value = pet.observations || '';
-    birthDateInput.value = pet.birth_date || '';
+    if (birthDateInput) birthDateInput.value = pet.birth_date || '';
     
-    // Actualizar edad calculada al cargar
     updateCalculatedAge();
 
     if (pet.image_url) {
@@ -93,60 +95,65 @@ const loadPetDetails = async () => {
 
     hiddenSexInput.value = pet.sex || '';
     sexButtons.forEach(btn => {
+        btn.classList.remove('selected-male', 'selected-female');
         if (btn.dataset.sex === pet.sex) {
-            btn.classList.add('border-green-500', 'bg-green-50');
+            btn.classList.add(pet.sex === 'Macho' ? 'selected-male' : 'selected-female');
         }
     });
 
     hiddenSizeInput.value = pet.size || '';
     sizeButtons.forEach(btn => {
+        btn.classList.remove('selected');
         if (btn.dataset.size === pet.size) {
-            btn.classList.add('border-green-500', 'bg-green-50');
+            btn.classList.add('selected');
         }
     });
 
-    historyButton.href = `/public/modules/profile/pet-history.html?id=${petId}`;
+    historyButton.href = `/public/modules/profile/service-history.html?id=${petId}`;
 };
 
-// --- BOTONES DE SEXO ---
+// --- EVENT LISTENERS ---
+
 sexButtons.forEach(button => {
     button.addEventListener('click', () => {
-        sexButtons.forEach(btn => btn.classList.remove('border-green-500', 'bg-green-50'));
-        button.classList.add('border-green-500', 'bg-green-50');
+        sexButtons.forEach(btn => btn.classList.remove('selected-male', 'selected-female'));
+        button.classList.add(button.dataset.sex === 'Macho' ? 'selected-male' : 'selected-female');
         hiddenSexInput.value = button.dataset.sex;
     });
 });
 
-// --- BOTONES DE TAMAÑO ---
 sizeButtons.forEach(button => {
     button.addEventListener('click', () => {
-        sizeButtons.forEach(btn => btn.classList.remove('border-green-500', 'bg-green-50'));
-        button.classList.add('border-green-500', 'bg-green-50');
+        sizeButtons.forEach(btn => btn.classList.remove('selected'));
+        button.classList.add('selected');
         hiddenSizeInput.value = button.dataset.size;
     });
 });
 
-// --- ACTUALIZAR EDAD EN TIEMPO REAL ---
-birthDateInput.addEventListener('change', updateCalculatedAge);
+if (birthDateInput) {
+    birthDateInput.addEventListener('change', updateCalculatedAge);
+}
 
-// --- SUBIR FOTO ---
-document.querySelector('#change-photo-btn').addEventListener('click', () => {
-    photoUploadInput.click();
-});
+if (changePhotoButton) {
+    changePhotoButton.addEventListener('click', () => {
+        photoUploadInput.click();
+    });
+}
 
-photoUploadInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        photoFile = file;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            petMainPhoto.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-});
+if (photoUploadInput) {
+    photoUploadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            photoFile = file;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                petMainPhoto.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
 
-// --- GUARDAR CAMBIOS ---
 editPetForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -162,10 +169,10 @@ editPetForm.addEventListener('submit', async (e) => {
 
     if (photoFile) {
         const fileName = `${currentUser.id}/${Date.now()}_${photoFile.name}`;
-        const { error: uploadError } = await supabase.storage.from('pet_galleries').upload(fileName, photoFile);
+        const { error: uploadError } = await supabase.storage.from('pet_galleries').upload(fileName, photoFile, { upsert: true });
         if (!uploadError) {
-            const { publicUrl } = supabase.storage.from('pet_galleries').getPublicUrl(fileName).data;
-            updatedPet.image_url = publicUrl;
+            const { data } = supabase.storage.from('pet_galleries').getPublicUrl(fileName);
+            updatedPet.image_url = data.publicUrl;
         }
     }
 
@@ -180,13 +187,12 @@ editPetForm.addEventListener('submit', async (e) => {
         alert('Hubo un error al guardar los cambios.');
     } else {
         alert('¡Cambios guardados exitosamente!');
-        loadPetDetails();
+        petNameTitle.textContent = updatedPet.name;
     }
 });
 
-// --- ELIMINAR MASCOTA ---
 deletePetButton.addEventListener('click', async () => {
-    const confirmDelete = confirm(`¿Estás seguro de eliminar a ${petNameTitle.textContent}?`);
+    const confirmDelete = confirm(`¿Estás seguro de eliminar a ${petNameTitle.textContent}? Esta acción no se puede deshacer.`);
     if (!confirmDelete) return;
 
     const { error } = await supabase
@@ -208,7 +214,6 @@ deletePetButton.addEventListener('click', async () => {
 document.addEventListener('DOMContentLoaded', () => {
     loadPetDetails();
     
-    // Establecer fecha máxima como hoy
     if (birthDateInput) {
         birthDateInput.max = new Date().toISOString().split('T')[0];
     }
