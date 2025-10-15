@@ -12,8 +12,6 @@ const priceRange = document.querySelector('#price-range');
 const maxPriceDisplay = document.querySelector('#max-price-display');
 const viewButtons = document.querySelectorAll('.view-btn');
 
-const PRODUCTS_CACHE_KEY = 'ohmypet_products_cache';
-
 let allProducts = [];
 let currentCategory = 'all';
 let currentSort = 'default';
@@ -60,17 +58,16 @@ const createProductCard = (product) => {
         </div>
     `;
 };
+
+// --- FUNCIÓN CORREGIDA ---
 const loadProducts = async () => {
     productsContainer.innerHTML = '<div class="col-span-full flex justify-center py-20"><div class="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600"></div></div>';
 
-    const cachedProducts = sessionStorage.getItem(PRODUCTS_CACHE_KEY);
-
-    if (cachedProducts) {
-        allProducts = JSON.parse(cachedProducts);
-    } else {
-        allProducts = await getStoreProducts();
-        sessionStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(allProducts));
-    }
+    // Se eliminó la caché de 'sessionStorage' para garantizar que siempre se obtengan los productos más recientes de la base de datos.
+    allProducts = await getStoreProducts();
+    
+    // Una nota importante: la función getStoreProducts solo trae productos con stock > 0.
+    // Asegúrate de que tus nuevos productos tengan al menos 1 en stock para que aparezcan.
     
     renderProducts();
 };
@@ -144,15 +141,16 @@ const setupProductAddListeners = () => {
 };
 
 const setupCategoryFilters = () => {
+    // Establecer el botón "Todos los productos" como activo al inicio
+    const allButton = document.querySelector('.category-filter-btn[data-category="all"]');
+    if (allButton) {
+        allButton.classList.add('active');
+    }
+    
     categoryButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            categoryButtons.forEach(b => {
-                b.classList.remove('bg-green-50', 'text-green-700', 'font-semibold');
-                b.classList.add('hover:bg-gray-100', 'text-gray-700');
-            });
-            
-            btn.classList.add('bg-green-50', 'text-green-700', 'font-semibold');
-            btn.classList.remove('hover:bg-gray-100', 'text-gray-700');
+            categoryButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
             
             currentCategory = btn.dataset.category;
             renderProducts();
@@ -160,7 +158,6 @@ const setupCategoryFilters = () => {
     });
 };
 
-// --- FUNCIÓN CORREGIDA Y MEJORADA ---
 const setupPriceFilter = () => {
     if (!priceRange) return;
 
@@ -170,12 +167,11 @@ const setupPriceFilter = () => {
             maxPriceDisplay.textContent = e.target.value;
         }
         
-        // Evita recargar en cada mínimo movimiento del slider
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             maxPrice = parseInt(e.target.value);
             renderProducts();
-        }, 250); // Espera 250ms después del último movimiento para recargar
+        }, 250);
     });
 };
 
@@ -188,12 +184,16 @@ const setupSorting = () => {
 };
 
 const setupViewToggle = () => {
+    // Establecer el botón de 4 columnas como activo al inicio
+    const defaultViewBtn = document.querySelector('.view-btn[data-cols="4"]');
+    if (defaultViewBtn) {
+        defaultViewBtn.classList.add('active');
+    }
+
     viewButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            viewButtons.forEach(b => {
-                b.classList.remove('active', 'bg-white');
-            });
-            btn.classList.add('active', 'bg-white');
+            viewButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
             
             currentCols = parseInt(btn.dataset.cols);
             renderProducts();
