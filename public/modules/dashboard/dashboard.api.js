@@ -218,8 +218,7 @@ export const uploadReceiptFile = async (appointmentId, file) => {
 export const getClientDetails = async (clientId) => {
     try {
         const [profileRes, petsRes, appointmentsRes] = await Promise.all([
-            // CORRECCIÓN: Se agrega el email y los campos de documento a la selección
-            supabase.from('profiles').select('*, email').eq('id', clientId).single(),
+            supabase.from('profiles').select('*').eq('id', clientId).single(),
             supabase.from('pets').select('*').eq('owner_id', clientId),
             supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: false })
         ]);
