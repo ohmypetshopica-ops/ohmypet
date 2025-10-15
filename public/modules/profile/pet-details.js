@@ -14,7 +14,6 @@ const sexButtons = document.querySelectorAll('.sex-btn');
 const hiddenSexInput = document.querySelector('input#sex');
 const birthDateInput = document.querySelector('#birth_date');
 const calculatedAgeSpan = document.querySelector('#calculated-age');
-// --- NUEVOS ELEMENTOS ---
 const reminderFrequencyInput = document.querySelector('#reminder_frequency_days');
 const lastGroomingDateInput = document.querySelector('#last_grooming_date');
 
@@ -90,7 +89,6 @@ const loadPetDetails = async () => {
     document.querySelector('#observations').value = pet.observations || '';
     if (birthDateInput) birthDateInput.value = pet.birth_date || '';
     
-    // --- Cargar nuevos datos de recordatorio ---
     if (reminderFrequencyInput) reminderFrequencyInput.value = pet.reminder_frequency_days || '';
     if (lastGroomingDateInput) lastGroomingDateInput.value = pet.last_grooming_date || '';
 
@@ -172,19 +170,25 @@ editPetForm.addEventListener('submit', async (e) => {
         weight: parseFloat(document.querySelector('#weight').value) || null,
         birth_date: birthDateInput.value || null,
         observations: document.querySelector('#observations').value,
-        // --- Guardar nuevos datos de recordatorio ---
         reminder_frequency_days: parseInt(reminderFrequencyInput.value) || null,
         last_grooming_date: lastGroomingDateInput.value || null
     };
 
+    // =========== INICIO DE LA CORRECCIÓN ===========
     if (photoFile) {
         const fileName = `${currentUser.id}/${Date.now()}_${photoFile.name}`;
         const { error: uploadError } = await supabase.storage.from('pet_galleries').upload(fileName, photoFile, { upsert: true });
-        if (!uploadError) {
+        
+        if (uploadError) {
+            console.error('Error al subir la nueva foto:', uploadError);
+            alert('Hubo un error al subir la nueva foto. Se guardarán los otros cambios sin actualizar la imagen.');
+        } else {
+            // Se corrige esta línea para que sea igual a la de add-pet.js
             const { data } = supabase.storage.from('pet_galleries').getPublicUrl(fileName);
             updatedPet.image_url = data.publicUrl;
         }
     }
+    // =========== FIN DE LA CORRECCIÓN ===========
 
     const { error } = await supabase
         .from('pets')
