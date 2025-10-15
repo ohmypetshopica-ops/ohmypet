@@ -1,196 +1,118 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mascotas - Dashboard</title>
+    <title>Dashboard - OhMyPet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
-        :root {
-            font-family: 'Inter', sans-serif;
-        }
+        :root { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        .sidebar-scrollable nav::-webkit-scrollbar { width: 6px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
     </style>
 </head>
+<body class="bg-gray-50 text-black">
+    
+    <div class="md:hidden flex flex-col items-center justify-center h-screen bg-gray-100 p-4 text-center">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">Acceso no permitido</h1>
+        <p class="text-gray-600">El panel de administración solo está disponible en dispositivos de escritorio (computadoras o laptops).</p>
+        <a href="/public/index.html" class="mt-6 bg-green-600 text-white font-bold py-2 px-4 rounded-lg">
+            Volver al inicio
+        </a>
+    </div>
 
-<body class="bg-gray-100 text-black">
-    <div class="flex h-screen overflow-hidden">
+    <div class="hidden md:flex h-screen overflow-hidden">
         <div id="sidebar-container"></div>
-        <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
+
+        <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
             <div id="header-container"></div>
-            <div id="main-content" class="flex-1 p-6 overflow-y-auto">
-                <section id="pets" class="space-y-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800">Gestión de Mascotas</h2>
+            
+            <div id="main-content" class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+                <section id="overview" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                       <a href="/public/modules/dashboard/dashboard-clients.html" class="block bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
+                           <div class="flex items-center justify-between mb-4">
+                               <h3 class="text-sm font-medium text-gray-600">Clientes</h3>
+                               <div class="p-2 bg-blue-50 rounded-lg">
+                                   <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                   </svg>
+                               </div>
+                           </div>
+                           <p class="text-3xl font-bold text-gray-900" id="client-count">-</p>
+                           <p class="text-xs text-gray-500 mt-2">Total registrados</p>
+                       </a>
+                       
+                       <a href="/public/modules/dashboard/dashboard-pets.html" class="block bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
+                           <div class="flex items-center justify-between mb-4">
+                               <h3 class="text-sm font-medium text-gray-600">Mascotas</h3>
+                               <div class="p-2 bg-green-50 rounded-lg">
+                                   <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                   </svg>
+                               </div>
+                           </div>
+                           <p class="text-3xl font-bold text-gray-900" id="pet-count">-</p>
+                           <p class="text-xs text-gray-500 mt-2">Total registradas</p>
+                       </a>
+                       
+                       <a href="/public/modules/dashboard/dashboard-appointments.html" class="block bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
+                           <div class="flex items-center justify-between mb-4">
+                               <h3 class="text-sm font-medium text-gray-600">Citas Pendientes</h3>
+                               <div class="p-2 bg-yellow-50 rounded-lg">
+                                   <svg class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                   </svg>
+                               </div>
+                           </div>
+                           <p class="text-3xl font-bold text-gray-900" id="appointments-count">-</p>
+                           <p class="text-xs text-gray-500 mt-2">Por confirmar</p>
+                       </a>
+                       
+                       <a href="/public/modules/dashboard/dashboard-products.html" class="block bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
+                           <div class="flex items-center justify-between mb-4">
+                               <h3 class="text-sm font-medium text-gray-600">Productos</h3>
+                               <div class="p-2 bg-purple-50 rounded-lg">
+                                   <svg class="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                   </svg>
+                               </div>
+                           </div>
+                           <p class="text-3xl font-bold text-gray-900" id="products-count">-</p>
+                           <p class="text-xs text-gray-500 mt-2">En inventario</p>
+                       </a>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Total Mascotas</p>
-                            <p class="text-2xl font-bold text-gray-900" id="total-pets-count">-</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Perros</p>
-                            <p class="text-2xl font-bold text-blue-600" id="dogs-count">-</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Citas Este Mes</p>
-                            <p class="text-2xl font-bold text-green-600" id="appointments-month-count">-</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Filtros de Búsqueda</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Buscar por nombre o
-                                    dueño</label>
-                                <input type="text" id="pet-search-input" placeholder="Buscar mascota o dueño..."
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <svg class="h-5 w-5 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Próximas Citas
+                            </h3>
+                            <div id="upcoming-appointments-list" class="space-y-3">
+                                <p class="text-sm text-gray-500 text-center py-8">Cargando...</p>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por raza</label>
-                                <div class="relative">
-                                    <button type="button" id="breed-filter-btn"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-left bg-white hover:bg-gray-50 focus:ring-2 focus:ring-green-500 focus:border-green-500 flex justify-between items-center">
-                                        <span id="breed-filter-text">Todas las razas</span>
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                    <div id="breed-filter-dropdown"
-                                        class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
-                                        <div class="p-2">
-                                            <label
-                                                class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
-                                                <input type="checkbox" value="all"
-                                                    class="breed-checkbox mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                                    checked>
-                                                <span class="text-sm text-gray-700">Todas las razas</span>
-                                            </label>
-                                            <div id="breed-options-list"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
-                        <div class="mt-4 flex items-center space-x-2" id="selected-breeds-tags"></div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mascota
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dueño
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Raza
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Edad/Tamaño</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Última
-                                        Cita</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                                        Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pets-table-body" class="divide-y divide-gray-200">
-                                <tr>
-                                    <td colspan="6" class="text-center py-8 text-gray-500">Cargando mascotas...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div id="pagination-container"></div>
                     </div>
                 </section>
             </div>
         </main>
     </div>
 
-    <div id="pet-details-modal"
-        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden">
-            <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 text-white">
-                <div class="flex justify-between items-start">
-                    <div class="flex items-center space-x-4">
-                        <img id="modal-pet-image" src="" alt="Mascota"
-                            class="h-20 w-20 rounded-full object-cover border-4 border-white shadow-lg">
-                        <div>
-                            <h2 id="modal-pet-name" class="text-2xl font-bold">Nombre Mascota</h2>
-                            <p id="modal-pet-breed" class="text-green-100">Raza</p>
-                        </div>
-                    </div>
-                    <button id="close-modal-btn" class="text-white hover:text-gray-200">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="p-6 max-h-96 overflow-y-auto">
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Raza</p>
-                        <p id="modal-pet-breed-detail" class="font-semibold text-gray-900">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Sexo</p>
-                        <p id="modal-pet-sex" class="font-semibold text-gray-900">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Edad</p>
-                        <p id="modal-pet-age" class="font-semibold text-gray-900">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Peso</p>
-                        <p id="modal-pet-weight" class="font-semibold text-gray-900">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Tamaño</p>
-                        <p id="modal-pet-size" class="font-semibold text-gray-900">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Dueño</p>
-                        <p id="modal-pet-owner" class="font-semibold text-gray-900">-</p>
-                    </div>
-                </div>
-
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                    <p class="text-sm font-semibold text-yellow-800 mb-2">📝 Observaciones</p>
-                    <p id="modal-pet-observations" class="text-sm text-gray-700">-</p>
-                </div>
-
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p class="text-sm font-semibold text-blue-800 mb-3 text-center">📅 Último Servicio</p>
-                    <div id="modal-pet-appointments" class="mb-3">
-                        <p class="text-sm text-gray-500 text-center">Cargando historial...</p>
-                    </div>
-                    <div class="flex justify-center">
-                        <button id="view-all-appointments-btn"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors">
-                            Ver Historial Completo
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gray-50 px-6 py-4 flex justify-end">
-                <button id="close-modal-bottom-btn"
-                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cerrar</button>
-            </div>
-        </div>
-    </div>
-
     <script>
+        const CACHE_VERSION = Date.now();
         async function loadComponent(url, containerId) {
             try {
-                const response = await fetch(url);
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
                 document.getElementById(containerId).innerHTML = html;
@@ -198,26 +120,21 @@
                 console.error(`Error cargando ${url}:`, error);
             }
         }
-
         document.addEventListener('DOMContentLoaded', async () => {
             await Promise.all([
                 loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
                 loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
             ]);
-
             await new Promise(resolve => setTimeout(resolve, 200));
-
             try {
-                const sidebarModule = await import('./dashboard-sidebar.js');
+                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
                 if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error inicializando sidebar:', error);
             }
         });
     </script>
-
-    <script type="module" src="../../core/auth.js"></script>
-    <script type="module" src="./dashboard-pets.js"></script>
+    <script type="module" src="../../core/auth.js"defer></script>
+    <script type="module" src="./dashboard-overview.js"defer></script>
 </body>
-
 </html>
