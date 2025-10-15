@@ -3,14 +3,13 @@
 const CART_KEY = 'ohmypet_cart';
 
 // --- ELEMENTOS DEL DOM ---
+// Se eliminan los selectores de aquí para evitar errores de carga
 const cartModal = document.querySelector('#cart-modal');
 const cartModalContent = document.querySelector('#cart-modal-content');
 const cartButton = document.querySelector('#cart-button');
 const closeCartButton = document.querySelector('#close-cart-button');
 const cartItemsContainer = document.querySelector('#cart-items-container');
 const cartSubtotal = document.querySelector('#cart-subtotal');
-// CORRECCIÓN: Se cambió el selector a '#cart-badge' para que coincida con el HTML
-const cartCountBadge = document.querySelector('#cart-badge');
 const checkoutButton = document.querySelector('#checkout-button');
 const addToCartNotification = document.querySelector('#add-to-cart-notification');
 
@@ -29,9 +28,14 @@ const saveCart = (cart) => {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
 };
 
+// --- FUNCIÓN CORREGIDA ---
 const updateCartBadge = () => {
-    // Ahora que el selector es correcto, esta función funcionará siempre.
-    if (!cartCountBadge) return;
+    // CORRECCIÓN: Se busca el elemento '#cart-badge' justo cuando se necesita.
+    // Esto asegura que el header ya se haya cargado en la página.
+    const cartCountBadge = document.querySelector('#cart-badge');
+    if (!cartCountBadge) {
+        return; // Si no está en la página, no hacer nada.
+    }
     
     const cart = getCart();
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -74,7 +78,7 @@ export const addProductToCart = (product) => {
     }
     
     saveCart(cart);
-    updateCartBadge();
+    updateCartBadge(); // Esta llamada ahora funcionará perfectamente.
     
     if (cartModal && !cartModal.classList.contains('hidden')) {
         renderCart();
@@ -117,7 +121,7 @@ const removeFromCart = (productId) => {
     let cart = getCart();
     cart = cart.filter(item => item.id !== productId);
     saveCart(cart);
-    updateCartBadge(); // Esta llamada ahora funcionará correctamente
+    updateCartBadge();
     renderCart();
     if (deleteConfirmModal) {
         deleteConfirmModal.classList.add('hidden');
