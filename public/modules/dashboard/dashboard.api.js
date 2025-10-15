@@ -292,17 +292,7 @@ export const getMonthlyAppointmentsStats = async () => {
     return Object.values(monthlyCounts).sort((a, b) => a.sortKey - b.sortKey);
 };
 
-// =======================================================
-// ===========         CÓDIGO AÑADIDO            ===========
-// =======================================================
-
-/**
- * Obtiene y procesa los datos para la sección de reportes.
- * @param {string} startDate - Fecha de inicio en formato YYYY-MM-DD.
- * @param {string} endDate - Fecha de fin en formato YYYY-MM-DD.
- */
 export const getReportData = async (startDate, endDate) => {
-    // 1. Obtener todos los servicios completados en el rango de fechas
     const { data: services, error } = await supabase
         .from('appointments')
         .select('appointment_date, service_price, payment_method, pets (name), profiles (full_name, first_name, last_name)')
@@ -324,7 +314,6 @@ export const getReportData = async (startDate, endDate) => {
         };
     }
 
-    // 2. Procesar los datos para obtener los KPIs
     let totalRevenue = 0;
     const paymentSummaryMap = new Map();
 
@@ -345,7 +334,6 @@ export const getReportData = async (startDate, endDate) => {
         total
     }));
 
-    // 3. Preparar los datos detallados para la descarga CSV
     const detailedServices = services.map(service => {
         const ownerProfile = service.profiles;
         const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
@@ -361,8 +349,6 @@ export const getReportData = async (startDate, endDate) => {
        };
    });
 
-
-    // 4. Devolver el objeto con todos los datos procesados
     return {
         totalRevenue,
         serviceCount: services.length,
@@ -371,29 +357,16 @@ export const getReportData = async (startDate, endDate) => {
     };
 };
 
-// Agregar esta función al final del archivo existente
-
-/**
- * Registra un nuevo cliente desde el dashboard (solo admin)
- * @param {Object} clientData - Datos del cliente {email, firstName, lastName, phone, district}
- * @returns {Promise<Object>} Resultado de la operación
- */
 export const registerClientFromDashboard = async (clientData) => {
     try {
-        // Generar una contraseña temporal aleatoria
-        const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
-        
-        // 1. Registrar usuario en Supabase Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: clientData.email,
-            password: tempPassword,
+            password: clientData.password,
             options: {
                 data: {
                     first_name: clientData.firstName,
                     last_name: clientData.lastName,
-                    full_name: `${clientData.firstName} ${clientData.lastName}`,
-                    phone: clientData.phone,
-                    district: clientData.district
+                    full_name: `${clientData.firstName} ${clientData.lastName}`
                 },
                 emailRedirectTo: 'https://ohmypet.codearlo.com/public/modules/login/email-confirmed.html'
             }
@@ -404,15 +377,12 @@ export const registerClientFromDashboard = async (clientData) => {
             return { success: false, error: authError };
         }
 
-        // 2. Actualizar el perfil con los datos adicionales
         if (authData.user) {
             const { error: profileError } = await supabase
                 .from('profiles')
                 .update({
                     first_name: clientData.firstName,
                     last_name: clientData.lastName,
-                    phone: clientData.phone,
-                    district: clientData.district,
                     role: 'cliente'
                 })
                 .eq('id', authData.user.id);
@@ -432,8 +402,5 @@ export const registerClientFromDashboard = async (clientData) => {
         return { success: false, error };
     }
 };
-
-// =======================================================
-// =======================================================
 
 export { supabase };
