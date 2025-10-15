@@ -12,9 +12,11 @@ registerForm.addEventListener('submit', async (event) => {
     formMessage.classList.add('hidden');
 
     // Obtenemos los valores de los campos
-    const fullName = registerForm.full_name.value;
+    const firstName = registerForm.first_name.value;
+    const lastName = registerForm.last_name.value;
     const email = registerForm.email.value;
     const password = registerForm.password.value;
+    const fullName = `${firstName} ${lastName}`;
 
     // --- MEJORA ---
     // Añadimos una validación explícita para la contraseña.
@@ -31,8 +33,9 @@ registerForm.addEventListener('submit', async (event) => {
         password: password,
         options: {
             data: {
-                // Pasamos el nombre completo en la metadata
-                // El trigger en la base de datos lo usará
+                // Pasamos los nuevos campos en la metadata
+                first_name: firstName,
+                last_name: lastName,
                 full_name: fullName
             }
         }
