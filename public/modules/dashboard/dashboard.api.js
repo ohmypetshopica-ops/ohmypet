@@ -42,6 +42,20 @@ export const getUpcomingAppointments = async () => {
     return data || [];
 };
 
+/**
+ * Obtiene las estadísticas de citas completadas de los últimos 12 meses.
+ * @returns {Promise<Array<Object>>} Un array con objetos {month_name, service_count}.
+ */
+export const getMonthlyAppointmentsStats = async () => {
+    const { data, error } = await supabase.rpc('get_monthly_appointments_stats');
+    if (error) {
+        console.error('Error al obtener estadísticas mensuales:', error);
+        return [];
+    }
+    return data;
+};
+
+
 // El resto de las funciones de la API (getClientes, getProducts, etc.) permanecen aquí
 // para ser usadas por sus respectivas secciones.
 
