@@ -9,9 +9,7 @@ const totalCount = document.querySelector('#total-count');
 const categoryButtons = document.querySelectorAll('.category-filter-btn');
 const sortSelect = document.querySelector('#sort-select');
 const priceRange = document.querySelector('#price-range');
-const minPriceDisplay = document.querySelector('#min-price-display');
 const maxPriceDisplay = document.querySelector('#max-price-display');
-const applyPriceFilter = document.querySelector('#apply-price-filter');
 const viewButtons = document.querySelectorAll('.view-btn');
 
 const PRODUCTS_CACHE_KEY = 'ohmypet_products_cache';
@@ -19,12 +17,10 @@ const PRODUCTS_CACHE_KEY = 'ohmypet_products_cache';
 let allProducts = [];
 let currentCategory = 'all';
 let currentSort = 'default';
-let maxPrice = 1500;
+let maxPrice = 200;
 let currentCols = 4;
 
 const createProductCard = (product) => {
-    // --- OPTIMIZACIÓN DE IMAGEN AQUÍ ---
-    // Construimos la URL de la imagen optimizada pidiendo a Supabase una versión de 400px de ancho.
     const optimizedImageUrl = product.image_url 
         ? `${product.image_url}?width=400&quality=75` 
         : `https://via.placeholder.com/300x300/10b981/ffffff?text=${encodeURIComponent(product.name)}`;
@@ -115,8 +111,8 @@ const updateGridColumns = () => {
 const renderProducts = () => {
     const products = getFilteredAndSortedProducts();
     
-    totalCount.textContent = allProducts.length;
-    showingCount.textContent = `1-${Math.min(products.length, 24)}`;
+    if (totalCount) totalCount.textContent = products.length;
+    if (showingCount) showingCount.textContent = products.length;
     
     if (products && products.length > 0) {
         updateGridColumns();
@@ -127,7 +123,7 @@ const renderProducts = () => {
                 <svg class="h-24 w-24 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
-                <p class="text-lg text-gray-500">No hay productos disponibles</p>
+                <p class="text-lg text-gray-500">No se encontraron productos con estos filtros.</p>
             </div>
         `;
     }
@@ -151,14 +147,12 @@ const setupCategoryFilters = () => {
     categoryButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             categoryButtons.forEach(b => {
-                b.classList.remove('active', 'bg-gray-100');
-                b.querySelector('span').classList.remove('text-gray-900', 'font-semibold');
-                b.querySelector('span').classList.add('text-gray-600');
+                b.classList.remove('bg-green-50', 'text-green-700', 'font-semibold');
+                b.classList.add('hover:bg-gray-100', 'text-gray-700');
             });
             
-            btn.classList.add('active', 'bg-gray-100');
-            btn.querySelector('span').classList.add('text-gray-900', 'font-semibold');
-            btn.querySelector('span').classList.remove('text-gray-600');
+            btn.classList.add('bg-green-50', 'text-green-700', 'font-semibold');
+            btn.classList.remove('hover:bg-gray-100', 'text-gray-700');
             
             currentCategory = btn.dataset.category;
             renderProducts();
@@ -166,18 +160,27 @@ const setupCategoryFilters = () => {
     });
 };
 
+// --- FUNCIÓN CORREGIDA Y MEJORADA ---
 const setupPriceFilter = () => {
+    if (!priceRange) return;
+
+    let debounceTimer;
     priceRange.addEventListener('input', (e) => {
-        maxPriceDisplay.textContent = e.target.value;
-    });
-    
-    applyPriceFilter.addEventListener('click', () => {
-        maxPrice = parseInt(priceRange.value);
-        renderProducts();
+        if (maxPriceDisplay) {
+            maxPriceDisplay.textContent = e.target.value;
+        }
+        
+        // Evita recargar en cada mínimo movimiento del slider
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            maxPrice = parseInt(e.target.value);
+            renderProducts();
+        }, 250); // Espera 250ms después del último movimiento para recargar
     });
 };
 
 const setupSorting = () => {
+    if (!sortSelect) return;
     sortSelect.addEventListener('change', (e) => {
         currentSort = e.target.value;
         renderProducts();
@@ -198,9 +201,7 @@ const setupViewToggle = () => {
     });
 };
 
-// Esperar a que la tienda esté completamente lista (header cargado)
 document.addEventListener('storeReady', () => {
-    console.log('🏪 Iniciando carga de productos...');
     loadProducts();
     setupProductAddListeners();
     setupCategoryFilters();
@@ -209,19 +210,3 @@ document.addEventListener('storeReady', () => {
     setupViewToggle();
     setupCartEventListeners();
 });
-
-// Fallback por si el evento ya se disparó
-if (document.readyState === 'complete') {
-    setTimeout(() => {
-        if (!allProducts.length) {
-            console.log('🔄 Fallback: Cargando productos...');
-            loadProducts();
-            setupProductAddListeners();
-            setupCategoryFilters();
-            setupPriceFilter();
-            setupSorting();
-            setupViewToggle();
-            setupCartEventListeners();
-        }
-    }, 1000);
-}
