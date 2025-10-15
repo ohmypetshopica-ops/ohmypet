@@ -236,16 +236,7 @@ export const getClientDetails = async (clientId) => {
     }
 };
 
-// =======================================================
-// ===========         CÓDIGO AÑADIDO            ===========
-// =======================================================
-
-/**
- * Obtiene las estadísticas principales para las tarjetas del dashboard.
- */
 export const getDashboardStats = async () => {
-    // Las tarjetas usan "getClientCount", "getPetCount", etc.
-    // Esta función las agrupa en una sola llamada para optimizar.
     const [clients, pets, products, { count: pendingAppointments }] = await Promise.all([
         getClientCount(),
         getPetCount(),
@@ -256,14 +247,11 @@ export const getDashboardStats = async () => {
     return {
         clients: clients || 0,
         pets: pets || 0,
-        appointments: pendingAppointments || 0, // Solo contamos las pendientes para la tarjeta
+        appointments: pendingAppointments || 0,
         products: products || 0
     };
 };
 
-/**
- * Obtiene las estadísticas de citas completadas de los últimos 12 meses.
- */
 export const getMonthlyAppointmentsStats = async () => {
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
@@ -282,7 +270,6 @@ export const getMonthlyAppointmentsStats = async () => {
     const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
     const monthlyCounts = {};
 
-    // Inicializamos un objeto con los últimos 12 meses para asegurar que todos aparezcan
     for (let i = 11; i >= 0; i--) {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
@@ -294,17 +281,94 @@ export const getMonthlyAppointmentsStats = async () => {
         };
     }
 
-    // Contamos las citas por mes
     data.forEach(appointment => {
-        const date = new Date(appointment.appointment_date + 'T12:00:00'); // Aseguramos la zona horaria correcta
+        const date = new Date(appointment.appointment_date + 'T12:00:00');
         const monthKey = `${date.getFullYear()}-${monthNames[date.getMonth()]}`;
         if (monthlyCounts[monthKey]) {
             monthlyCounts[monthKey].service_count++;
         }
     });
 
-    // Convertimos el objeto a un array y lo ordenamos
     return Object.values(monthlyCounts).sort((a, b) => a.sortKey - b.sortKey);
+};
+
+// =======================================================
+// ===========         CÓDIGO AÑADIDO            ===========
+// =======================================================
+
+/**
+ * Obtiene y procesa los datos para la sección de reportes.
+ * @param {string} startDate - Fecha de inicio en formato YYYY-MM-DD.
+ * @param {string} endDate - Fecha de fin en formato YYYY-MM-DD.
+ */
+export const getReportData = async (startDate, endDate) => {
+    // 1. Obtener todos los servicios completados en el rango de fechas
+    const { data: services, error } = await supabase
+        .from('appointments')
+        .select('appointment_date, service_price, payment_method, pets (name), profiles (full_name, first_name, last_name)')
+        .eq('status', 'completada')
+        .gte('appointment_date', startDate)
+        .lte('appointment_date', endDate);
+
+    if (error) {
+        console.error('Error al obtener datos del reporte:', error);
+        return null;
+    }
+
+    if (!services || services.length === 0) {
+        return {
+            totalRevenue: 0,
+            serviceCount: 0,
+            paymentSummary: [],
+            detailedServices: []
+        };
+    }
+
+    // 2. Procesar los datos para obtener los KPIs
+    let totalRevenue = 0;
+    const paymentSummaryMap = new Map();
+
+    services.forEach(service => {
+        const price = service.service_price || 0;
+        totalRevenue += price;
+
+        const method = service.payment_method || 'No especificado';
+        if (paymentSummaryMap.has(method)) {
+            paymentSummaryMap.set(method, paymentSummaryMap.get(method) + price);
+        } else {
+            paymentSummaryMap.set(method, price);
+        }
+    });
+
+    const paymentSummary = Array.from(paymentSummaryMap, ([payment_method, total]) => ({
+        payment_method,
+        total
+    }));
+
+    // 3. Preparar los datos detallados para la descarga CSV
+    const detailedServices = services.map(service => {
+        const ownerProfile = service.profiles;
+        const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
+           ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
+           : ownerProfile?.full_name || 'N/A';
+       
+       return {
+           fecha: service.appointment_date,
+           cliente: ownerName,
+           mascota: service.pets?.name || 'N/A',
+           metodo_pago: service.payment_method || 'N/A',
+           ingreso: service.service_price || 0
+       };
+   });
+
+
+    // 4. Devolver el objeto con todos los datos procesados
+    return {
+        totalRevenue,
+        serviceCount: services.length,
+        paymentSummary,
+        detailedServices
+    };
 };
 
 // =======================================================
