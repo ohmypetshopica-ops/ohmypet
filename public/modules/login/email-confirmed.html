@@ -48,41 +48,32 @@
             const errorMessage = document.getElementById('error-message');
             
             try {
-                // Obtener el hash completo después del #
+                // Obtener parámetros del hash
                 const hash = window.location.hash.substring(1);
-                console.log('Hash completo:', hash);
-                
-                // Convertir el hash en un objeto de parámetros
                 const params = new URLSearchParams(hash);
                 
-                const accessToken = params.get('access_token');
-                const refreshToken = params.get('refresh_token');
+                const tokenHash = params.get('access_token');
                 const type = params.get('type');
                 
-                console.log('Access Token:', accessToken ? 'Presente' : 'No encontrado');
-                console.log('Refresh Token:', refreshToken ? 'Presente' : 'No encontrado');
+                console.log('Token Hash:', tokenHash ? 'Presente' : 'No encontrado');
                 console.log('Type:', type);
                 
-                if (!accessToken) {
-                    throw new Error('No se encontró el token de acceso en la URL');
+                if (!tokenHash) {
+                    throw new Error('No se encontró el token en la URL');
                 }
                 
-                if (!refreshToken) {
-                    throw new Error('No se encontró el refresh token en la URL');
-                }
-                
-                // Establecer la sesión con Supabase
-                const { data, error: sessionError } = await supabase.auth.setSession({
-                    access_token: accessToken,
-                    refresh_token: refreshToken
+                // Verificar el token con Supabase usando verifyOtp
+                const { data, error: verifyError } = await supabase.auth.verifyOtp({
+                    token_hash: tokenHash,
+                    type: 'email'
                 });
                 
-                if (sessionError) {
-                    console.error('Error al establecer sesión:', sessionError);
-                    throw sessionError;
+                if (verifyError) {
+                    console.error('Error al verificar:', verifyError);
+                    throw verifyError;
                 }
                 
-                console.log('Sesión establecida correctamente:', data);
+                console.log('Email verificado correctamente:', data);
                 
                 // Mostrar éxito
                 loading.classList.add('hidden');
