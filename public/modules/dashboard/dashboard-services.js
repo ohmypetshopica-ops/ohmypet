@@ -20,8 +20,13 @@ const closeServiceModal = document.querySelector('#close-service-modal');
 let currentPage = 1;
 const itemsPerPage = 10;
 let totalServices = 0;
-let currentFilters = { search: '', date: '' };
+let currentFilters = { search: '', date: '', petId: '', petName: '' };
 let allCompletedServices = [];
+
+// Al inicio del archivo, después de las variables
+const urlParams = new URLSearchParams(window.location.search);
+const petIdFromUrl = urlParams.get('pet');
+const petNameFromUrl = urlParams.get('name');
 
 // --- FUNCIONES DE API ---
 const getCompletedServices = async () => {
@@ -182,6 +187,11 @@ const applyFiltersAndRender = () => {
 
     let filtered = [...allCompletedServices];
 
+    // Filtrar por mascota si viene desde URL
+    if (currentFilters.petId) {
+        filtered = filtered.filter(service => service.pets?.id === currentFilters.petId);
+    }
+
     if (searchTerm) {
         filtered = filtered.filter(service => {
             const petName = service.pets?.name?.toLowerCase() || '';
@@ -208,7 +218,16 @@ const applyFiltersAndRender = () => {
 const clearFilters = () => {
     if (serviceSearchInput) serviceSearchInput.value = '';
     if (serviceDateFilter) serviceDateFilter.value = '';
+    currentFilters.petId = '';
+    currentFilters.petName = '';
     currentPage = 1;
+    
+    // Limpiar URL
+    window.history.replaceState({}, '', '/public/modules/dashboard/dashboard-services.html');
+    
+    // Actualizar título
+    if (headerTitle) headerTitle.textContent = 'Historial de Servicios';
+    
     applyFiltersAndRender();
 };
 
@@ -336,7 +355,17 @@ const attachServiceRowListeners = () => {
 
 // --- INICIALIZACIÓN ---
 const initializeServicesPage = async () => {
-    if (headerTitle) headerTitle.textContent = 'Historial de Servicios';
+    // Si viene un filtro por mascota desde URL
+    if (petIdFromUrl) {
+        currentFilters.petId = petIdFromUrl;
+        currentFilters.petName = petNameFromUrl ? decodeURIComponent(petNameFromUrl) : '';
+        
+        if (headerTitle && currentFilters.petName) {
+            headerTitle.textContent = `Historial de Servicios - ${currentFilters.petName}`;
+        }
+    } else {
+        if (headerTitle) headerTitle.textContent = 'Historial de Servicios';
+    }
 
     servicesTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Cargando servicios...</td></tr>';
 
