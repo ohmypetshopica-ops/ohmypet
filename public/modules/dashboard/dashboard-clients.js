@@ -122,13 +122,21 @@ const setupClientModal = () => {
             email: clientForm.email.value.trim(),
             firstName: clientForm.first_name.value.trim(),
             lastName: clientForm.last_name.value.trim(),
-            phone: clientForm.phone.value.trim(),
-            district: clientForm.district.value.trim()
+            password: clientForm.password.value.trim()
         };
 
-        if (!clientData.email || !clientData.firstName || !clientData.lastName) {
+        if (!clientData.email || !clientData.firstName || !clientData.lastName || !clientData.password) {
             if (clientFormMessage) {
                 clientFormMessage.textContent = 'Por favor completa todos los campos obligatorios.';
+                clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+                clientFormMessage.classList.remove('hidden');
+            }
+            return;
+        }
+
+        if (clientData.password.length < 6) {
+            if (clientFormMessage) {
+                clientFormMessage.textContent = 'La contraseña debe tener al menos 6 caracteres.';
                 clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }

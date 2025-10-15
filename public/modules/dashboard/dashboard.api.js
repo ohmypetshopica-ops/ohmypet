@@ -1,34 +1,50 @@
+// public/modules/dashboard/dashboard.api.js
+
 import { supabase } from '../../core/supabase.js';
 
+// --- ESTADÍSTICAS DEL DASHBOARD ---
+export const getDashboardStats = async () => {
+    const [clientsRes, petsRes, appointmentsRes, productsRes] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'cliente'),
+        supabase.from('pets').select('id', { count: 'exact', head: true }),
+        supabase.from('appointments').select('id', { count: 'exact', head: true }),
+        supabase.from('products').select('id', { count: 'exact', head: true })
+    ]);
+    return {
+        clients: clientsRes.count || 0,
+        pets: petsRes.count || 0,
+        appointments: appointmentsRes.count || 0,
+        products: productsRes.count || 0
+    };
+};
+
 export const getClientCount = async () => {
-    const { count, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'cliente');
-    if (error) console.error('Error al contar clientes:', error);
+    const { count } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'cliente');
     return count || 0;
 };
 
 export const getPetCount = async () => {
-    const { count, error } = await supabase.from('pets').select('*', { count: 'exact', head: true });
-    if (error) console.error('Error al contar mascotas:', error);
+    const { count } = await supabase.from('pets').select('id', { count: 'exact', head: true });
     return count || 0;
 };
 
 export const getAppointmentsCount = async () => {
-    const { count, error } = await supabase.from('appointments').select('*', { count: 'exact', head: true });
-    if (error) console.error('Error al contar citas:', error);
+    const { count } = await supabase.from('appointments').select('id', { count: 'exact', head: true });
     return count || 0;
 };
 
 export const getProductsCount = async () => {
-    const { count, error } = await supabase.from('products').select('*', { count: 'exact', head: true });
-    if (error) console.error('Error al contar productos:', error);
+    const { count } = await supabase.from('products').select('id', { count: 'exact', head: true });
     return count || 0;
 };
 
 export const getUpcomingAppointments = async () => {
+    const today = new Date().toISOString().split('T')[0];
     const { data, error } = await supabase
         .from('appointments')
         .select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`)
-        .gte('appointment_date', new Date().toISOString().split('T')[0])
+        .gte('appointment_date', today)
+        .eq('status', 'confirmada')
         .order('appointment_date', { ascending: true })
         .order('appointment_time', { ascending: true })
         .limit(5);
@@ -36,18 +52,106 @@ export const getUpcomingAppointments = async () => {
     return data || [];
 };
 
+export const getMonthlyAppointmentsStats = async () => {
+    const { data, error } = await supabase.rpc('get_monthly_appointments_stats');
+    if (error) {
+        console.error('Error al obtener estadísticas mensuales:', error);
+        return [];
+    }
+    return data || [];
+};
+
+// --- CLIENTES ---
 export const getClients = async () => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('role', 'cliente').order('full_name', { ascending: true });
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'cliente')
+        .order('created_at', { ascending: false });
     if (error) console.error('Error al obtener clientes:', error);
     return data || [];
 };
 
 export const searchClients = async (searchTerm) => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('role', 'cliente').or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'cliente')
+        .or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`);
     if (error) console.error('Error al buscar clientes:', error);
     return data || [];
 };
 
+export const getClientDetails = async (clientId) => {
+    try {
+        const [profileRes, petsRes, appointmentsRes] = await Promise.all([
+            supabase.from('profiles').select('*').eq('id', clientId).single(),
+            supabase.from('pets').select('*').eq('owner_id', clientId),
+            supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: false })
+        ]);
+
+        if (profileRes.error) throw profileRes.error;
+
+        const { data: { user } } = await supabase.auth.admin.getUserById(clientId);
+
+        return {
+            profile: { ...profileRes.data, email: user?.email },
+            pets: petsRes.data || [],
+            appointments: appointmentsRes.data || []
+        };
+    } catch (error) {
+        console.error('Error al obtener detalles del cliente:', error);
+        return null;
+    }
+};
+
+export const registerClientFromDashboard = async (clientData) => {
+    try {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: clientData.email,
+            password: clientData.password,
+            options: {
+                data: {
+                    first_name: clientData.firstName,
+                    last_name: clientData.lastName,
+                    full_name: `${clientData.firstName} ${clientData.lastName}`
+                },
+                emailRedirectTo: 'https://ohmypet.codearlo.com/public/modules/login/email-confirmed.html'
+            }
+        });
+
+        if (authError) {
+            console.error('Error al registrar cliente:', authError);
+            return { success: false, error: authError };
+        }
+
+        if (authData.user) {
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .update({
+                    first_name: clientData.firstName,
+                    last_name: clientData.lastName,
+                    role: 'cliente'
+                })
+                .eq('id', authData.user.id);
+
+            if (profileError) {
+                console.error('Error al actualizar perfil:', profileError);
+            }
+        }
+
+        return { 
+            success: true, 
+            data: authData.user,
+            message: 'Cliente registrado exitosamente. Se ha enviado un email de confirmación.'
+        };
+    } catch (error) {
+        console.error('Error en registerClientFromDashboard:', error);
+        return { success: false, error };
+    }
+};
+
+// --- CITAS ---
 export const getAppointments = async () => {
     const { data, error } = await supabase
         .from('appointments')
@@ -87,45 +191,6 @@ export const filterAppointments = async (filters) => {
     if (filters.date) query = query.eq('appointment_date', filters.date);
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) console.error('Error al filtrar citas:', error);
-    return data || [];
-};
-
-export const getProducts = async () => {
-    const { data, error } = await supabase.from('products').select('*').order('name', { ascending: true });
-    if (error) console.error('Error al obtener productos:', error);
-    return data || [];
-};
-
-export const addProduct = async (productData) => {
-    const { error } = await supabase.from('products').insert([productData]);
-    if (error) {
-        console.error('Error al agregar producto:', error);
-        return { success: false, error };
-    }
-    return { success: true };
-};
-
-export const updateProduct = async (productId, productData) => {
-    const { error } = await supabase.from('products').update(productData).eq('id', productId);
-    if (error) {
-        console.error('Error al actualizar producto:', error);
-        return { success: false, error };
-    }
-    return { success: true };
-};
-
-export const deleteProduct = async (productId) => {
-    const { error } = await supabase.from('products').delete().eq('id', productId);
-    if (error) {
-        console.error('Error al eliminar producto:', error);
-        return { success: false, error };
-    }
-    return { success: true };
-};
-
-export const getServices = async () => {
-    const { data, error } = await supabase.from('services').select('*');
-    if (error) console.error('Error al obtener servicios:', error);
     return data || [];
 };
 
@@ -215,225 +280,70 @@ export const uploadReceiptFile = async (appointmentId, file) => {
     return { success: true, url: publicUrl };
 };
 
-export const getClientDetails = async (clientId) => {
-    try {
-        const [profileRes, petsRes, appointmentsRes] = await Promise.all([
-            supabase.from('profiles').select('*').eq('id', clientId).single(),
-            supabase.from('pets').select('*').eq('owner_id', clientId),
-            supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: false })
-        ]);
-
-        if (profileRes.error) throw profileRes.error;
-        
-        return {
-            profile: profileRes.data,
-            pets: petsRes.data || [],
-            appointments: appointmentsRes.data || []
-        };
-    } catch (error) {
-        console.error('Error al obtener los detalles del cliente:', error);
-        return null;
-    }
+// --- PRODUCTOS ---
+export const getProducts = async () => {
+    const { data, error } = await supabase.from('products').select('*').order('name', { ascending: true });
+    if (error) console.error('Error al obtener productos:', error);
+    return data || [];
 };
 
-export const getDashboardStats = async () => {
-    const [clients, pets, products, { count: pendingAppointments }] = await Promise.all([
-        getClientCount(),
-        getPetCount(),
-        getProductsCount(),
-        supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('status', 'pendiente')
-    ]);
-
-    return {
-        clients: clients || 0,
-        pets: pets || 0,
-        appointments: pendingAppointments || 0,
-        products: products || 0
-    };
-};
-
-export const getMonthlyAppointmentsStats = async () => {
-    const twelveMonthsAgo = new Date();
-    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-
-    const { data, error } = await supabase
-        .from('appointments')
-        .select('appointment_date')
-        .eq('status', 'completada')
-        .gte('appointment_date', twelveMonthsAgo.toISOString().split('T')[0]);
-
+export const addProduct = async (productData) => {
+    const { error } = await supabase.from('products').insert([productData]);
     if (error) {
-        console.error('Error al obtener estadísticas mensuales:', error);
-        return [];
-    }
-
-    const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    const monthlyCounts = {};
-
-    for (let i = 11; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        const monthKey = `${d.getFullYear()}-${monthNames[d.getMonth()]}`;
-        monthlyCounts[monthKey] = {
-            sortKey: d.getFullYear() * 100 + d.getMonth(),
-            month_name: monthNames[d.getMonth()],
-            service_count: 0
-        };
-    }
-
-    data.forEach(appointment => {
-        const date = new Date(appointment.appointment_date + 'T12:00:00');
-        const monthKey = `${date.getFullYear()}-${monthNames[date.getMonth()]}`;
-        if (monthlyCounts[monthKey]) {
-            monthlyCounts[monthKey].service_count++;
-        }
-    });
-
-    return Object.values(monthlyCounts).sort((a, b) => a.sortKey - b.sortKey);
-};
-
-// =======================================================
-// ===========         CÓDIGO AÑADIDO            ===========
-// =======================================================
-
-/**
- * Obtiene y procesa los datos para la sección de reportes.
- * @param {string} startDate - Fecha de inicio en formato YYYY-MM-DD.
- * @param {string} endDate - Fecha de fin en formato YYYY-MM-DD.
- */
-export const getReportData = async (startDate, endDate) => {
-    // 1. Obtener todos los servicios completados en el rango de fechas
-    const { data: services, error } = await supabase
-        .from('appointments')
-        .select('appointment_date, service_price, payment_method, pets (name), profiles (full_name, first_name, last_name)')
-        .eq('status', 'completada')
-        .gte('appointment_date', startDate)
-        .lte('appointment_date', endDate);
-
-    if (error) {
-        console.error('Error al obtener datos del reporte:', error);
-        return null;
-    }
-
-    if (!services || services.length === 0) {
-        return {
-            totalRevenue: 0,
-            serviceCount: 0,
-            paymentSummary: [],
-            detailedServices: []
-        };
-    }
-
-    // 2. Procesar los datos para obtener los KPIs
-    let totalRevenue = 0;
-    const paymentSummaryMap = new Map();
-
-    services.forEach(service => {
-        const price = service.service_price || 0;
-        totalRevenue += price;
-
-        const method = service.payment_method || 'No especificado';
-        if (paymentSummaryMap.has(method)) {
-            paymentSummaryMap.set(method, paymentSummaryMap.get(method) + price);
-        } else {
-            paymentSummaryMap.set(method, price);
-        }
-    });
-
-    const paymentSummary = Array.from(paymentSummaryMap, ([payment_method, total]) => ({
-        payment_method,
-        total
-    }));
-
-    // 3. Preparar los datos detallados para la descarga CSV
-    const detailedServices = services.map(service => {
-        const ownerProfile = service.profiles;
-        const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
-           ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
-           : ownerProfile?.full_name || 'N/A';
-       
-       return {
-           fecha: service.appointment_date,
-           cliente: ownerName,
-           mascota: service.pets?.name || 'N/A',
-           metodo_pago: service.payment_method || 'N/A',
-           ingreso: service.service_price || 0
-       };
-   });
-
-
-    // 4. Devolver el objeto con todos los datos procesados
-    return {
-        totalRevenue,
-        serviceCount: services.length,
-        paymentSummary,
-        detailedServices
-    };
-};
-
-// Agregar esta función al final del archivo existente
-
-/**
- * Registra un nuevo cliente desde el dashboard (solo admin)
- * @param {Object} clientData - Datos del cliente {email, firstName, lastName, phone, district}
- * @returns {Promise<Object>} Resultado de la operación
- */
-export const registerClientFromDashboard = async (clientData) => {
-    try {
-        // Generar una contraseña temporal aleatoria
-        const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
-        
-        // 1. Registrar usuario en Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: clientData.email,
-            password: tempPassword,
-            options: {
-                data: {
-                    first_name: clientData.firstName,
-                    last_name: clientData.lastName,
-                    full_name: `${clientData.firstName} ${clientData.lastName}`,
-                    phone: clientData.phone,
-                    district: clientData.district
-                },
-                emailRedirectTo: 'https://ohmypet.codearlo.com/public/modules/login/email-confirmed.html'
-            }
-        });
-
-        if (authError) {
-            console.error('Error al registrar cliente:', authError);
-            return { success: false, error: authError };
-        }
-
-        // 2. Actualizar el perfil con los datos adicionales
-        if (authData.user) {
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .update({
-                    first_name: clientData.firstName,
-                    last_name: clientData.lastName,
-                    phone: clientData.phone,
-                    district: clientData.district,
-                    role: 'cliente'
-                })
-                .eq('id', authData.user.id);
-
-            if (profileError) {
-                console.error('Error al actualizar perfil:', profileError);
-            }
-        }
-
-        return { 
-            success: true, 
-            data: authData.user,
-            message: 'Cliente registrado exitosamente. Se ha enviado un email de confirmación.'
-        };
-    } catch (error) {
-        console.error('Error en registerClientFromDashboard:', error);
+        console.error('Error al agregar producto:', error);
         return { success: false, error };
     }
+    return { success: true };
 };
 
-// =======================================================
-// =======================================================
+export const updateProduct = async (productId, productData) => {
+    const { error } = await supabase.from('products').update(productData).eq('id', productId);
+    if (error) {
+        console.error('Error al actualizar producto:', error);
+        return { success: false, error };
+    }
+    return { success: true };
+};
 
-export { supabase };
+export const deleteProduct = async (productId) => {
+    const { error } = await supabase.from('products').delete().eq('id', productId);
+    if (error) {
+        console.error('Error al eliminar producto:', error);
+        return { success: false, error };
+    }
+    return { success: true };
+};
+
+// --- SERVICIOS ---
+export const getServices = async () => {
+    const { data, error } = await supabase.from('services').select('*');
+    if (error) console.error('Error al obtener servicios:', error);
+    return data || [];
+};
+
+export const addService = async (serviceData) => {
+    const { error } = await supabase.from('services').insert([serviceData]);
+    if (error) {
+        console.error('Error al agregar servicio:', error);
+        return { success: false, error };
+    }
+    return { success: true };
+};
+
+export const updateService = async (serviceId, serviceData) => {
+    const { error } = await supabase.from('services').update(serviceData).eq('id', serviceId);
+    if (error) {
+        console.error('Error al actualizar servicio:', error);
+        return { success: false, error };
+    }
+    return { success: true };
+};
+
+export const deleteService = async (serviceId) => {
+    const { error } = await supabase.from('services').delete().eq('id', serviceId);
+    if (error) {
+        console.error('Error al eliminar servicio:', error);
+        return { success: false, error };
+    }
+    return { success: true };
+};
