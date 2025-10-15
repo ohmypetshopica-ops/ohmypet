@@ -224,9 +224,12 @@ export const getClientDetails = async (clientId) => {
         ]);
 
         if (profileRes.error) throw profileRes.error;
+
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(clientId);
+        if (userError) throw userError;
         
         return {
-            profile: profileRes.data,
+            profile: { ...profileRes.data, email: userData.user.email },
             pets: petsRes.data || [],
             appointments: appointmentsRes.data || []
         };
