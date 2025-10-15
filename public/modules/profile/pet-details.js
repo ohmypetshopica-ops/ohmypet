@@ -14,6 +14,9 @@ const sexButtons = document.querySelectorAll('.sex-btn');
 const hiddenSexInput = document.querySelector('input#sex');
 const birthDateInput = document.querySelector('#birth_date');
 const calculatedAgeSpan = document.querySelector('#calculated-age');
+// --- NUEVOS ELEMENTOS ---
+const reminderFrequencyInput = document.querySelector('#reminder_frequency_days');
+const lastGroomingDateInput = document.querySelector('#last_grooming_date');
 
 // --- ID DE LA MASCOTA DESDE LA URL ---
 const urlParams = new URLSearchParams(window.location.search);
@@ -87,6 +90,10 @@ const loadPetDetails = async () => {
     document.querySelector('#observations').value = pet.observations || '';
     if (birthDateInput) birthDateInput.value = pet.birth_date || '';
     
+    // --- Cargar nuevos datos de recordatorio ---
+    if (reminderFrequencyInput) reminderFrequencyInput.value = pet.reminder_frequency_days || '';
+    if (lastGroomingDateInput) lastGroomingDateInput.value = pet.last_grooming_date || '';
+
     updateCalculatedAge();
 
     if (pet.image_url) {
@@ -165,6 +172,9 @@ editPetForm.addEventListener('submit', async (e) => {
         weight: parseFloat(document.querySelector('#weight').value) || null,
         birth_date: birthDateInput.value || null,
         observations: document.querySelector('#observations').value,
+        // --- Guardar nuevos datos de recordatorio ---
+        reminder_frequency_days: parseInt(reminderFrequencyInput.value) || null,
+        last_grooming_date: lastGroomingDateInput.value || null
     };
 
     if (photoFile) {
