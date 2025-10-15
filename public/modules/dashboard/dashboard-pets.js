@@ -52,21 +52,6 @@ const calculateAge = (birthDate) => {
 };
 
 // --- FUNCIONES DE API ---
-const getAllBreeds = async () => {
-    const { data, error } = await supabase
-        .from('pets')
-        .select('breed')
-        .not('breed', 'is', null);
-
-    if (error) {
-        console.error('Error al obtener razas:', error);
-        return [];
-    }
-
-    const breeds = [...new Set(data.map(p => p.breed).filter(b => b && b.trim()))].sort();
-    return breeds;
-};
-
 const getPetsPaginated = async (page = 1, search = '', breeds = []) => {
     const from = (page - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
@@ -77,95 +62,91 @@ const getPetsPaginated = async (page = 1, search = '', breeds = []) => {
             id,
             name,
             breed,
-            birth_date,
+            sex,
             size,
-            profiles!pets_owner_id_fkey (
+            weight,
+            birth_date,
+            image_url,
+            profiles (
+                id,
+                full_name,
                 first_name,
-                last_name,
-                full_name
+                last_name
             )
-        `, { count: 'exact' });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
     if (search) {
-        query = query.or(`name.ilike.%${search}%,breed.ilike.%${search}%,profiles.first_name.ilike.%${search}%,profiles.last_name.ilike.%${search}%,profiles.full_name.ilike.%${search}%`);
+        query = query.or(`name.ilike.%${search}%,breed.ilike.%${search}%`);
     }
 
     if (breeds.length > 0) {
         query = query.in('breed', breeds);
     }
 
-    const { data, error, count } = await query
-        .order('name', { ascending: true })
-        .range(from, to);
+    const { data, error, count } = await query;
 
     if (error) {
-        console.error('Error al obtener mascotas paginadas:', error);
+        console.error('Error al obtener mascotas:', error);
         return { pets: [], total: 0 };
     }
 
     return { pets: data || [], total: count || 0 };
 };
 
-const getLastAppointment = async (petId) => {
-    const { data, error } = await supabase
-        .from('appointments')
-        .select('appointment_date')
-        .eq('pet_id', petId)
-        .order('appointment_date', { ascending: false })
-        .limit(1)
-        .single();
-
-    if (error && error.code !== 'PGRST116') {
-        console.error('Error al obtener última cita:', error);
-        return null;
-    }
-
-    return data;
-};
-
 const getPetDetails = async (petId) => {
     const { data, error } = await supabase
         .from('pets')
         .select(`
-            id,
-            name,
-            breed,
-            sex,
-            size,
-            birth_date,
-            weight,
-            observations,
-            image_url,
-            profiles!pets_owner_id_fkey (
+            *,
+            profiles (
+                id,
+                full_name,
                 first_name,
-                last_name,
-                full_name
+                last_name
+            ),
+            appointments (
+                id,
+                appointment_date,
+                appointment_time,
+                service,
+                status
             )
         `)
         .eq('id', petId)
         .single();
 
     if (error) {
-        console.error('Error al obtener detalles de mascota:', error);
+        console.error('Error al obtener detalles de la mascota:', error);
         return null;
+    }
+
+    if (data.appointments) {
+        data.appointments.sort((a, b) => {
+            const dateA = new Date(`${a.appointment_date}T${a.appointment_time}`);
+            const dateB = new Date(`${b.appointment_date}T${b.appointment_time}`);
+            return dateB - dateA;
+        });
     }
 
     return data;
 };
 
-const getPetAppointments = async (petId) => {
+const getAllBreeds = async () => {
     const { data, error } = await supabase
-        .from('appointments')
-        .select('id, appointment_date, appointment_time, service, status')
-        .eq('pet_id', petId)
-        .order('appointment_date', { ascending: false })
-        .limit(5);
+        .from('pets')
+        .select('breed')
+        .not('breed', 'is', null)
+        .order('breed');
 
     if (error) {
-        console.error('Error al obtener citas de la mascota:', error);
+        console.error('Error al obtener razas:', error);
         return [];
     }
-    return data || [];
+
+    const uniqueBreeds = [...new Set(data.map(p => p.breed))];
+    return uniqueBreeds.sort();
 };
 
 const getStats = async () => {
@@ -173,48 +154,41 @@ const getStats = async () => {
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
     const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
 
-    const [totalPetsRes, dogsRes, appointmentsRes] = await Promise.all([
+    const [totalRes, dogsRes, appointmentsRes] = await Promise.all([
         supabase.from('pets').select('*', { count: 'exact', head: true }),
-        supabase.from('pets').select('*', { count: 'exact', head: true }),
+        supabase.from('pets').select('*', { count: 'exact', head: true }).eq('species', 'Perro'),
         supabase.from('appointments').select('*', { count: 'exact', head: true })
             .gte('appointment_date', firstDayOfMonth)
             .lte('appointment_date', lastDayOfMonth)
     ]);
 
     return {
-        totalPets: totalPetsRes.count || 0,
+        totalPets: totalRes.count || 0,
         dogs: dogsRes.count || 0,
         appointmentsMonth: appointmentsRes.count || 0
     };
 };
 
 // --- RENDERIZADO DE TABLA ---
-const createPetRow = async (pet) => {
+const createPetRow = (pet) => {
     const ownerProfile = pet.profiles;
     const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
         ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
-        : ownerProfile?.full_name || 'Sin dueño asignado';
+        : ownerProfile?.full_name || 'Sin dueño';
 
-    const ageDisplay = calculateAge(pet.birth_date) || 'N/A';
-
-    const lastAppointment = await getLastAppointment(pet.id);
-    let lastAppointmentDisplay = 'Sin citas';
-    
-    if (lastAppointment) {
-        const date = new Date(lastAppointment.appointment_date);
-        const formattedDate = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        lastAppointmentDisplay = formattedDate;
-    }
+    const age = calculateAge(pet.birth_date) || 'N/A';
+    const weight = pet.weight ? `${pet.weight} kg` : 'N/A';
 
     return `
         <tr class="hover:bg-gray-50 transition-colors" data-pet-id="${pet.id}">
             <td class="px-6 py-4">
                 <div class="flex items-center">
-                    <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-semibold mr-3">
-                        ${pet.name.charAt(0).toUpperCase()}
-                    </div>
+                    <img src="${pet.image_url || `https://via.placeholder.com/150/A4D0A4/FFFFFF?text=${pet.name.charAt(0)}`}" 
+                         alt="${pet.name}" 
+                         class="h-10 w-10 rounded-full object-cover mr-3">
                     <div>
                         <div class="text-sm font-medium text-gray-900">${pet.name}</div>
+                        <div class="text-sm text-gray-500">${pet.breed || 'Sin raza'}</div>
                     </div>
                 </div>
             </td>
@@ -222,16 +196,16 @@ const createPetRow = async (pet) => {
                 <div class="text-sm text-gray-900">${ownerName}</div>
             </td>
             <td class="px-6 py-4">
-                <div class="text-sm text-gray-700">${pet.breed || 'No especificada'}</div>
+                <div class="text-sm text-gray-900">${pet.sex || 'N/A'}</div>
             </td>
-            <td class="px-6 py-4 text-sm text-gray-700">
-                ${ageDisplay} • ${pet.size || 'N/A'}
+            <td class="px-6 py-4">
+                <div class="text-sm text-gray-900">${age}</div>
             </td>
-            <td class="px-6 py-4 text-sm text-gray-500">
-                ${lastAppointmentDisplay}
+            <td class="px-6 py-4">
+                <div class="text-sm text-gray-900">${weight}</div>
             </td>
             <td class="px-6 py-4 text-right text-sm font-medium">
-                <button class="text-green-600 hover:text-green-900 font-semibold view-details-btn">
+                <button class="text-blue-600 hover:text-blue-900 font-semibold view-details-btn">
                     Ver Detalles
                 </button>
             </td>
@@ -239,10 +213,11 @@ const createPetRow = async (pet) => {
     `;
 };
 
-const renderPetsTable = async (pets) => {
+const renderPetsTable = (pets) => {
+    if (!petsTableBody) return;
+
     if (pets.length > 0) {
-        const rows = await Promise.all(pets.map(pet => createPetRow(pet)));
-        petsTableBody.innerHTML = rows.join('');
+        petsTableBody.innerHTML = pets.map(pet => createPetRow(pet)).join('');
     } else {
         petsTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">No se encontraron mascotas.</td></tr>';
     }
@@ -260,19 +235,21 @@ const renderPagination = () => {
     let paginationHTML = '<div class="flex items-center justify-center space-x-2 mt-4 mb-4">';
 
     if (currentPage > 1) {
-        paginationHTML += `<button class="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100" data-page="${currentPage - 1}">Anterior</button>`;
+        paginationHTML += `<button class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors" data-page="${currentPage - 1}">Anterior</button>`;
     }
 
     const startPage = Math.max(1, currentPage - 2);
     const endPage = Math.min(totalPages, currentPage + 2);
 
     for (let i = startPage; i <= endPage; i++) {
-        const activeClass = i === currentPage ? 'bg-green-600 text-white' : 'border border-gray-300 hover:bg-gray-100';
-        paginationHTML += `<button class="px-3 py-1 rounded-lg ${activeClass}" data-page="${i}">${i}</button>`;
+        const activeClass = i === currentPage 
+            ? 'bg-green-600 text-white' 
+            : 'border border-gray-300 hover:bg-gray-100';
+        paginationHTML += `<button class="px-3 py-1.5 text-sm rounded-lg transition-colors ${activeClass}" data-page="${i}">${i}</button>`;
     }
 
     if (currentPage < totalPages) {
-        paginationHTML += `<button class="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100" data-page="${currentPage + 1}">Siguiente</button>`;
+        paginationHTML += `<button class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors" data-page="${currentPage + 1}">Siguiente</button>`;
     }
 
     paginationHTML += '</div>';
@@ -293,53 +270,53 @@ const loadPets = async () => {
     const { pets, total } = await getPetsPaginated(currentPage, currentSearch, selectedBreeds);
     totalPets = total;
     
-    await renderPetsTable(pets);
+    renderPetsTable(pets);
     renderPagination();
 };
 
-// --- FILTROS DE RAZA ---
+// --- RAZAS ---
 const renderBreedOptions = async () => {
     allBreeds = await getAllBreeds();
     
-    breedOptionsList.innerHTML = allBreeds.map(breed => `
-        <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
-            <input type="checkbox" value="${breed}" class="breed-checkbox mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+    if (!breedOptionsList) return;
+
+    breedOptionsList.innerHTML = `
+        <label class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer rounded-lg">
+            <input type="checkbox" value="all" class="breed-checkbox mr-2" checked>
+            <span class="text-sm text-gray-700">Todas las razas</span>
+        </label>
+    ` + allBreeds.map(breed => `
+        <label class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer rounded-lg">
+            <input type="checkbox" value="${breed}" class="breed-checkbox mr-2">
             <span class="text-sm text-gray-700">${breed}</span>
         </label>
     `).join('');
 
-    setupBreedCheckboxes();
-};
-
-const setupBreedCheckboxes = () => {
-    const checkboxes = document.querySelectorAll('.breed-checkbox');
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', (e) => {
-            const value = e.target.value;
-            
-            if (value === 'all') {
-                if (e.target.checked) {
+    breedOptionsList.querySelectorAll('.breed-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            if (checkbox.value === 'all') {
+                if (checkbox.checked) {
                     selectedBreeds = [];
-                    checkboxes.forEach(cb => {
+                    breedOptionsList.querySelectorAll('.breed-checkbox').forEach(cb => {
                         if (cb.value !== 'all') cb.checked = false;
                     });
                 }
             } else {
-                const allCheckbox = document.querySelector('.breed-checkbox[value="all"]');
+                const allCheckbox = breedOptionsList.querySelector('.breed-checkbox[value="all"]');
                 if (allCheckbox) allCheckbox.checked = false;
-                
-                if (e.target.checked) {
-                    selectedBreeds.push(value);
-                } else {
-                    selectedBreeds = selectedBreeds.filter(b => b !== value);
-                }
 
-                if (selectedBreeds.length === 0) {
-                    if (allCheckbox) allCheckbox.checked = true;
+                if (checkbox.checked) {
+                    if (!selectedBreeds.includes(checkbox.value)) {
+                        selectedBreeds.push(checkbox.value);
+                    }
+                } else {
+                    selectedBreeds = selectedBreeds.filter(b => b !== checkbox.value);
+                    if (selectedBreeds.length === 0 && allCheckbox) {
+                        allCheckbox.checked = true;
+                    }
                 }
             }
-
+            
             updateBreedFilterDisplay();
             applyFilters();
         });
@@ -415,25 +392,22 @@ const openPetDetailsModal = async (petId) => {
     document.querySelector('#modal-pet-owner').textContent = ownerName;
     document.querySelector('#modal-pet-observations').textContent = pet.observations || 'Sin observaciones';
 
-    const modalImage = document.querySelector('#modal-pet-image');
-    if (pet.image_url) {
-        modalImage.src = pet.image_url;
-    } else {
-        modalImage.src = `https://ui-avatars.com/api/?name=${pet.name}&background=10b981&color=fff&size=80`;
+    const petImage = document.querySelector('#modal-pet-image');
+    if (petImage) {
+        petImage.src = pet.image_url || `https://via.placeholder.com/150/A4D0A4/FFFFFF?text=${pet.name.charAt(0)}`;
     }
 
-    const appointments = await getPetAppointments(pet.id);
     const appointmentsContainer = document.querySelector('#modal-pet-appointments');
-    
+    const appointments = pet.appointments || [];
+
     if (appointments.length > 0) {
         const lastAppointment = appointments[0];
         appointmentsContainer.innerHTML = `
-            <div class="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200">
-                <div>
-                    <p class="text-sm font-semibold text-gray-800">${new Date(lastAppointment.appointment_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} - ${lastAppointment.appointment_time}</p>
-                    <p class="text-xs text-gray-600">${lastAppointment.service || 'Servicio general'}</p>
-                </div>
-                <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+            <div class="text-center">
+                <p class="text-sm text-gray-600">Fecha: <span class="font-semibold">${lastAppointment.appointment_date}</span></p>
+                <p class="text-sm text-gray-600">Hora: <span class="font-semibold">${lastAppointment.appointment_time}</span></p>
+                <p class="text-sm text-gray-600 mt-2">${lastAppointment.service || 'Servicio general'}</p>
+                <span class="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
                     lastAppointment.status === 'completada' ? 'bg-green-100 text-green-800' :
                     lastAppointment.status === 'confirmada' ? 'bg-blue-100 text-blue-800' :
                     lastAppointment.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
@@ -450,7 +424,7 @@ const openPetDetailsModal = async (petId) => {
     const viewAllBtn = document.querySelector('#view-all-appointments-btn');
     if (viewAllBtn) {
         viewAllBtn.onclick = () => {
-            window.location.href = `/public/modules/dashboard/dashboard-appointments.html?pet=${pet.id}`;
+            window.location.href = `/public/modules/dashboard/dashboard-services.html?pet=${pet.id}&name=${encodeURIComponent(pet.name)}`;
         };
     }
 

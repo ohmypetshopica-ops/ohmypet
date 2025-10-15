@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         :root { font-family: 'Inter', sans-serif; }
+        .view-btn.active { background-color: #ecfdf5; color: #047857; }
+        .category-filter-btn.active { background-color: #ecfdf5; color: #047857; font-weight: 600; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -16,13 +18,13 @@
     <div id="header-container"></div>
 
     <div class="container mx-auto px-4 sm:px-6 py-6">
-        <div class="flex flex-col lg:flex-row gap-6">
+        <div class="flex flex-col lg:flex-row gap-8">
             
-            <aside class="w-full lg-w-64 flex-shrink-0">
+            <aside class="w-full lg:w-64 flex-shrink-0">
                 <div class="bg-white rounded-lg shadow-sm border p-6 sticky top-24">
                     
                     <div class="mb-6">
-                        <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase">Filtrar Por Precio</h3>
+                        <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">Filtrar Por Precio</h3>
                         <div class="space-y-3">
                             <div class="flex items-center justify-between text-sm">
                                 <span class="text-gray-600">Precio hasta:</span>
@@ -39,28 +41,28 @@
                     </div>
 
                     <div class="mb-6">
-                        <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase">Categorías</h3>
+                        <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">Categorías</h3>
                         <div class="space-y-2" id="category-buttons-container">
-                            <button class="category-filter-btn flex justify-between items-center w-full text-left px-4 py-2 rounded-lg transition-colors bg-green-50 text-green-700 font-semibold" data-category="all">
+                            <button class="category-filter-btn flex justify-between items-center w-full text-left px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors" data-category="all">
                                 <span>Todos los productos</span>
                             </button>
-                            <button class="category-filter-btn flex justify-between items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700" data-category="alimento">
+                            <button class="category-filter-btn flex justify-between items-center w-full text-left px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors" data-category="alimento">
                                 <span>Alimento</span>
                             </button>
-                            <button class="category-filter-btn flex justify-between items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700" data-category="accesorio">
+                            <button class="category-filter-btn flex justify-between items-center w-full text-left px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors" data-category="accesorio">
                                 <span>Accesorios</span>
                             </button>
-                            <button class="category-filter-btn flex justify-between items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700" data-category="juguete">
+                            <button class="category-filter-btn flex justify-between items-center w-full text-left px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors" data-category="juguete">
                                 <span>Juguetes</span>
                             </button>
-                            <button class="category-filter-btn flex justify-between items-center w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700" data-category="higiene">
+                            <button class="category-filter-btn flex justify-between items-center w-full text-left px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors" data-category="higiene">
                                 <span>Higiene</span>
                             </button>
                         </div>
                     </div>
 
                     <div>
-                        <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase">Ordenar Por</h3>
+                        <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">Ordenar Por</h3>
                         <select id="sort-select" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white">
                             <option value="default">Predeterminado</option>
                             <option value="price-asc">Precio: Menor a Mayor</option>
@@ -79,13 +81,13 @@
                             Mostrando <span id="showing-count" class="font-semibold">0</span> de <span id="total-count" class="font-semibold">0</span> productos.
                         </p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm text-gray-600">Vista:</span>
-                        <button class="view-btn p-2 rounded hover:bg-gray-100 transition" data-cols="3">
-                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                     <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                        <span class="text-sm text-gray-600 pl-2">Vista:</span>
+                        <button class="view-btn p-2 rounded-md" data-cols="3">
+                             <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                         </button>
-                        <button class="view-btn active bg-white p-2 rounded hover:bg-gray-100 transition" data-cols="4">
-                           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        <button class="view-btn p-2 rounded-md" data-cols="4">
+                           <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm2 0h10v10H5V5z" clip-rule="evenodd"></path></svg>
                         </button>
                     </div>
                 </div>
@@ -106,9 +108,7 @@
             <div class="flex justify-between items-center p-6 border-b">
                 <h2 class="text-2xl font-bold text-gray-800">Mi Carrito</h2>
                 <button id="close-cart-button" class="text-gray-500 hover:text-gray-800">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
             <div id="cart-items-container" class="flex-1 p-4 overflow-y-auto bg-gray-50"></div>
@@ -117,33 +117,25 @@
                     <span class="text-lg font-semibold text-gray-700">Subtotal:</span>
                     <span id="cart-subtotal" class="text-2xl font-bold text-green-600">S/0.00</span>
                 </div>
-                <button id="checkout-button" class="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold transition">
-                    Finalizar Compra
-                </button>
+                <button id="checkout-button" class="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold transition">Finalizar Compra</button>
             </div>
         </div>
     </div>
     
-    <div id="add-to-cart-notification" class="fixed bottom-8 left-1/2 -translate-x-1/2 transform translate-y-20 opacity-0 bg-gray-900 text-white py-3 px-6 rounded-lg shadow-xl z-50 transition-all duration-300">
+    <div id="add-to-cart-notification" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white py-3 px-6 rounded-lg shadow-xl z-50">
         <p class="font-medium">¡Producto agregado al carrito!</p>
     </div>
 
     <div id="delete-confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-lg shadow-2xl p-6 text-center">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
+                <svg class="h-6 w-6 text-red-600" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             </div>
             <h3 class="text-lg font-bold text-gray-800 mb-2">Eliminar Producto</h3>
             <p class="text-gray-600 mb-6 text-sm">¿Estás seguro de que quieres eliminar este producto del carrito?</p>
             <div class="flex gap-3">
-                <button id="modal-cancel-btn" class="flex-1 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">
-                    Cancelar
-                </button>
-                <button id="modal-confirm-btn" class="flex-1 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition">
-                    Eliminar
-                </button>
+                <button id="modal-cancel-btn" class="flex-1 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition">Cancelar</button>
+                <button id="modal-confirm-btn" class="flex-1 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition">Eliminar</button>
             </div>
         </div>
     </div>
