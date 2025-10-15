@@ -20,7 +20,7 @@
                 </svg>
             </div>
             <h1 class="text-2xl font-bold text-gray-800 mb-4">¡Email Confirmado!</h1>
-            <p class="text-gray-600 mb-6">Tu cuenta ha sido verificada exitosamente. Redirigiendo...</p>
+            <p class="text-gray-600 mb-6">Tu cuenta ha sido verificada exitosamente. Redirigiendo al onboarding...</p>
         </div>
         
         <div id="error" class="hidden">
@@ -30,7 +30,7 @@
                 </svg>
             </div>
             <h1 class="text-2xl font-bold text-gray-800 mb-4">Error al confirmar</h1>
-            <p class="text-gray-600 mb-6">Hubo un problema al confirmar tu email.</p>
+            <p class="text-gray-600 mb-6" id="error-message">Hubo un problema al confirmar tu email.</p>
             <a href="/public/modules/login/login.html" 
                class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg inline-block transition-colors">
                 Volver al Login
@@ -45,39 +45,59 @@
             const loading = document.getElementById('loading');
             const success = document.getElementById('success');
             const error = document.getElementById('error');
+            const errorMessage = document.getElementById('error-message');
             
-            // Obtener parámetros del hash
-            const hashParams = new URLSearchParams(window.location.hash.substring(1));
-            const accessToken = hashParams.get('access_token');
-            const refreshToken = hashParams.get('refresh_token');
-            
-            if (accessToken && refreshToken) {
-                try {
-                    // Establecer la sesión
-                    const { error: sessionError } = await supabase.auth.setSession({
-                        access_token: accessToken,
-                        refresh_token: refreshToken
-                    });
-                    
-                    if (sessionError) throw sessionError;
-                    
-                    // Mostrar éxito
-                    loading.classList.add('hidden');
-                    success.classList.remove('hidden');
-                    
-                    // Redirigir al onboarding después de 2 segundos
-                    setTimeout(() => {
-                        window.location.href = '/public/modules/profile/onboarding.html';
-                    }, 2000);
-                    
-                } catch (err) {
-                    console.error('Error:', err);
-                    loading.classList.add('hidden');
-                    error.classList.remove('hidden');
+            try {
+                // Obtener el hash completo después del #
+                const hash = window.location.hash.substring(1);
+                console.log('Hash completo:', hash);
+                
+                // Convertir el hash en un objeto de parámetros
+                const params = new URLSearchParams(hash);
+                
+                const accessToken = params.get('access_token');
+                const refreshToken = params.get('refresh_token');
+                const type = params.get('type');
+                
+                console.log('Access Token:', accessToken ? 'Presente' : 'No encontrado');
+                console.log('Refresh Token:', refreshToken ? 'Presente' : 'No encontrado');
+                console.log('Type:', type);
+                
+                if (!accessToken) {
+                    throw new Error('No se encontró el token de acceso en la URL');
                 }
-            } else {
+                
+                if (!refreshToken) {
+                    throw new Error('No se encontró el refresh token en la URL');
+                }
+                
+                // Establecer la sesión con Supabase
+                const { data, error: sessionError } = await supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                });
+                
+                if (sessionError) {
+                    console.error('Error al establecer sesión:', sessionError);
+                    throw sessionError;
+                }
+                
+                console.log('Sesión establecida correctamente:', data);
+                
+                // Mostrar éxito
+                loading.classList.add('hidden');
+                success.classList.remove('hidden');
+                
+                // Redirigir al onboarding después de 2 segundos
+                setTimeout(() => {
+                    window.location.href = '/public/modules/profile/onboarding.html';
+                }, 2000);
+                
+            } catch (err) {
+                console.error('Error completo:', err);
                 loading.classList.add('hidden');
                 error.classList.remove('hidden');
+                errorMessage.textContent = err.message || 'Hubo un problema al confirmar tu email.';
             }
         });
     </script>
