@@ -9,7 +9,8 @@ const cartButton = document.querySelector('#cart-button');
 const closeCartButton = document.querySelector('#close-cart-button');
 const cartItemsContainer = document.querySelector('#cart-items-container');
 const cartSubtotal = document.querySelector('#cart-subtotal');
-const cartCountBadge = document.querySelector('#cart-count-badge');
+// CORRECCIÓN: Se cambió el selector a '#cart-badge' para que coincida con el HTML
+const cartCountBadge = document.querySelector('#cart-badge');
 const checkoutButton = document.querySelector('#checkout-button');
 const addToCartNotification = document.querySelector('#add-to-cart-notification');
 
@@ -29,6 +30,7 @@ const saveCart = (cart) => {
 };
 
 const updateCartBadge = () => {
+    // Ahora que el selector es correcto, esta función funcionará siempre.
     if (!cartCountBadge) return;
     
     const cart = getCart();
@@ -40,21 +42,14 @@ const updateCartBadge = () => {
     } else {
         cartCountBadge.classList.add('hidden');
     }
-    
-    if (window.refreshCartBadge) {
-        window.refreshCartBadge();
-    }
 };
 
-// --- FUNCIÓN CORREGIDA ---
 const showNotification = () => {
     if (!addToCartNotification) return;
 
-    // Muestra la notificación cambiando las clases de opacidad y translación
     addToCartNotification.classList.remove('opacity-0', 'translate-y-10');
     addToCartNotification.classList.add('opacity-100', 'translate-y-0');
 
-    // Oculta la notificación después de 2.5 segundos
     setTimeout(() => {
         addToCartNotification.classList.remove('opacity-100', 'translate-y-0');
         addToCartNotification.classList.add('opacity-0', 'translate-y-10');
@@ -81,16 +76,11 @@ export const addProductToCart = (product) => {
     saveCart(cart);
     updateCartBadge();
     
-    // Solo renderiza el carrito si el modal está abierto
     if (cartModal && !cartModal.classList.contains('hidden')) {
         renderCart();
     }
     
     showNotification();
-    
-    if (window.refreshCartBadge) {
-        window.refreshCartBadge();
-    }
 };
 
 const updateQuantity = (productId, newQuantity) => {
@@ -105,7 +95,7 @@ const updateQuantity = (productId, newQuantity) => {
         
         if (newQuantity > product.stock) {
             alert(`Solo hay ${product.stock} unidades disponibles`);
-            renderCart(); // Re-render para restaurar el valor anterior
+            renderCart();
             return;
         }
         
@@ -127,7 +117,7 @@ const removeFromCart = (productId) => {
     let cart = getCart();
     cart = cart.filter(item => item.id !== productId);
     saveCart(cart);
-    updateCartBadge();
+    updateCartBadge(); // Esta llamada ahora funcionará correctamente
     renderCart();
     if (deleteConfirmModal) {
         deleteConfirmModal.classList.add('hidden');
