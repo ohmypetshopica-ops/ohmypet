@@ -56,14 +56,25 @@
             <form id="register-form" novalidate>
                 <div id="form-message" class="hidden mb-6 p-4 rounded-md font-medium"></div>
 
-                <div class="mb-4 relative">
-                    <label for="full_name" class="sr-only">Nombre Completo</label>
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <img src="/public/assets/icons/user-solid.svg" alt="User Icon" class="h-5 w-5 text-gray-400">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="relative">
+                        <label for="first_name" class="sr-only">Nombre</label>
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <img src="/public/assets/icons/user-solid.svg" alt="User Icon" class="h-5 w-5 text-gray-400">
+                        </div>
+                        <input type="text" id="first_name" name="first_name"
+                               class="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-3 pl-10 pr-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200"
+                               placeholder="Nombre" required>
                     </div>
-                    <input type="text" id="full_name" name="full_name"
-                           class="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-3 pl-10 pr-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200"
-                           placeholder="Nombre Completo" required>
+                    <div class="relative">
+                        <label for="last_name" class="sr-only">Apellido</label>
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <img src="/public/assets/icons/user-solid.svg" alt="User Icon" class="h-5 w-5 text-gray-400">
+                        </div>
+                        <input type="text" id="last_name" name="last_name"
+                               class="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-3 pl-10 pr-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200"
+                               placeholder="Apellido" required>
+                    </div>
                 </div>
 
                 <div class="mb-4 relative">
