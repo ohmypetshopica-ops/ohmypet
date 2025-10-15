@@ -83,7 +83,7 @@ const initializeOnboarding = async () => {
     // Cargar datos desde raw_user_meta_data (del registro)
     const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, last_name')
+        .select('first_name, last_name, doc_type, doc_num, phone, district, emergency_contact_name, emergency_contact_phone, avatar_url')
         .eq('id', user.id)
         .single();
 
@@ -91,6 +91,22 @@ const initializeOnboarding = async () => {
         // Si ya tiene datos en profiles, usarlos
         document.querySelector('#first_name').value = profile.first_name || '';
         document.querySelector('#last_name').value = profile.last_name || '';
+        document.querySelector('#doc_type').value = profile.doc_type || '';
+        document.querySelector('#doc_num').value = profile.doc_num || '';
+        document.querySelector('#phone').value = profile.phone || '';
+        document.querySelector('#district').value = profile.district || '';
+        document.querySelector('#emergency_contact_name').value = profile.emergency_contact_name || '';
+        document.querySelector('#emergency_contact_phone').value = profile.emergency_contact_phone || '';
+        
+        if (profile.avatar_url) {
+             avatarUrlInput.value = profile.avatar_url;
+             document.querySelectorAll('.avatar-option').forEach(img => {
+                if (img.src === profile.avatar_url) {
+                    img.classList.add('selected');
+                }
+            });
+        }
+
     } else if (user.user_metadata) {
         // Si no, usar metadata del registro
         document.querySelector('#first_name').value = user.user_metadata.first_name || '';
@@ -124,8 +140,12 @@ onboardingForm.addEventListener('submit', async (event) => {
     
     collectStepData(currentStep);
 
+    // Obtener email del usuario de la sesión
+    const userEmail = currentUser.email;
+
     const finalData = {
         ...onboardingData,
+        email: userEmail, // Agregamos el email a los datos finales
         onboarding_completed: true
     };
     
