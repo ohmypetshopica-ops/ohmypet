@@ -371,6 +371,68 @@ export const getReportData = async (startDate, endDate) => {
     };
 };
 
+// Agregar esta función al final del archivo existente
+
+/**
+ * Registra un nuevo cliente desde el dashboard (solo admin)
+ * @param {Object} clientData - Datos del cliente {email, firstName, lastName, phone, district}
+ * @returns {Promise<Object>} Resultado de la operación
+ */
+export const registerClientFromDashboard = async (clientData) => {
+    try {
+        // Generar una contraseña temporal aleatoria
+        const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
+        
+        // 1. Registrar usuario en Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: clientData.email,
+            password: tempPassword,
+            options: {
+                data: {
+                    first_name: clientData.firstName,
+                    last_name: clientData.lastName,
+                    full_name: `${clientData.firstName} ${clientData.lastName}`,
+                    phone: clientData.phone,
+                    district: clientData.district
+                },
+                emailRedirectTo: 'https://ohmypet.codearlo.com/public/modules/login/email-confirmed.html'
+            }
+        });
+
+        if (authError) {
+            console.error('Error al registrar cliente:', authError);
+            return { success: false, error: authError };
+        }
+
+        // 2. Actualizar el perfil con los datos adicionales
+        if (authData.user) {
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .update({
+                    first_name: clientData.firstName,
+                    last_name: clientData.lastName,
+                    phone: clientData.phone,
+                    district: clientData.district,
+                    role: 'cliente'
+                })
+                .eq('id', authData.user.id);
+
+            if (profileError) {
+                console.error('Error al actualizar perfil:', profileError);
+            }
+        }
+
+        return { 
+            success: true, 
+            data: authData.user,
+            message: 'Cliente registrado exitosamente. Se ha enviado un email de confirmación.'
+        };
+    } catch (error) {
+        console.error('Error en registerClientFromDashboard:', error);
+        return { success: false, error };
+    }
+};
+
 // =======================================================
 // =======================================================
 
