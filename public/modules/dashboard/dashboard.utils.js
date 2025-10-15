@@ -21,7 +21,7 @@ const createUpcomingAppointmentItem = (appointment) => {
     `;
 };
 
-// **AQUÍ ESTÁ LA MODIFICACIÓN**
+// **AQUÍ ESTÁ LA VERSIÓN CORREGIDA Y COMPLETA DE createClientRow**
 const createClientRow = (client) => {
     const displayName = (client.first_name && client.last_name) 
         ? `${client.first_name} ${client.last_name}` 
@@ -31,13 +31,13 @@ const createClientRow = (client) => {
         <tr>
             <td class="px-6 py-4">
                 <div class="text-sm font-medium text-gray-900">${displayName}</div>
-                <div class="text-sm text-gray-500">${client.email}</div>
+                <div class="text-sm text-gray-500">${client.email || 'Email no disponible'}</div>
             </td>
             <td class="px-6 py-4">
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${client.role}</span>
             </td>
             <td class="px-6 py-4 text-right text-sm font-medium">
-                <button data-client-id="${client.id}" class="view-details-btn text-green-600 hover:text-green-900">Ver Detalles</button>
+                <button data-client-id="${client.id}" class="view-details-btn text-green-600 hover:text-green-900 font-semibold">Ver Detalles</button>
             </td>
         </tr>
     `;

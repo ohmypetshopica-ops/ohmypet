@@ -215,7 +215,6 @@ export const uploadReceiptFile = async (appointmentId, file) => {
     return { success: true, url: publicUrl };
 };
 
-// --- NUEVA FUNCIÓN AÑADIDA ---
 export const getClientDetails = async (clientId) => {
     try {
         const [profileRes, petsRes, appointmentsRes] = await Promise.all([

@@ -26,6 +26,7 @@ const renderClientsTable = (clients) => {
 const openModal = () => clientDetailsModal.classList.remove('hidden');
 const closeModal = () => clientDetailsModal.classList.add('hidden');
 
+// **FUNCIÓN MEJORADA PARA MOSTRAR LOS DATOS**
 const populateModal = (details) => {
     const { profile, pets, appointments } = details;
 
@@ -37,23 +38,24 @@ const populateModal = (details) => {
 
     modalContentBody.innerHTML = `
         <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-2 border-b pb-2">Información de Contacto</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <p><strong>Email:</strong> ${profile.email || 'N/A'}</p>
-                <p><strong>Teléfono:</strong> ${profile.phone || 'N/A'}</p>
+            <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Información de Contacto</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                <p><strong>Email:</strong> <a href="mailto:${profile.email || ''}" class="text-blue-600 hover:underline">${profile.email || 'N/A'}</a></p>
+                <p><strong>Teléfono:</strong> <a href="https://wa.me/${profile.phone || ''}" target="_blank" class="text-blue-600 hover:underline">${profile.phone || 'N/A'}</a></p>
                 <p><strong>Distrito:</strong> ${profile.district || 'N/A'}</p>
+                <p><strong>Contacto Emergencia:</strong> ${profile.emergency_contact_name || 'N/A'} (${profile.emergency_contact_phone || 'N/A'})</p>
             </div>
         </div>
 
         <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-2 border-b pb-2">Mascotas Registradas (${pets.length})</h3>
-            <div class="space-y-2">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Mascotas Registradas (${pets.length})</h3>
+            <div class="space-y-3">
                 ${pets.length > 0 ? pets.map(pet => `
-                    <div class="bg-gray-50 p-3 rounded-lg flex items-center gap-3">
-                        <img src="${pet.image_url || 'https://via.placeholder.com/40'}" alt="${pet.name}" class="h-10 w-10 rounded-full object-cover">
+                    <div class="bg-gray-50 p-3 rounded-lg flex items-center gap-4 border border-gray-200">
+                        <img src="${pet.image_url || 'https://via.placeholder.com/40'}" alt="${pet.name}" class="h-12 w-12 rounded-full object-cover">
                         <div>
-                            <p class="font-semibold">${pet.name}</p>
-                            <p class="text-xs text-gray-600">${pet.breed || 'Raza no especificada'}</p>
+                            <p class="font-semibold text-gray-900">${pet.name}</p>
+                            <p class="text-xs text-gray-600">${pet.breed || 'Raza no especificada'} | ${pet.sex || 'N/A'}</p>
                         </div>
                     </div>
                 `).join('') : '<p class="text-sm text-gray-500">No tiene mascotas registradas.</p>'}
@@ -61,15 +63,16 @@ const populateModal = (details) => {
         </div>
 
         <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-2 border-b pb-2">Historial de Citas (${appointments.length})</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Historial de Citas (${appointments.length})</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto">
                 ${appointments.length > 0 ? appointments.map(app => `
-                    <div class="bg-gray-50 p-3 rounded-lg">
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
                         <div class="flex justify-between items-center">
-                            <p class="font-semibold">${app.appointment_date} - ${app.pets?.name || 'Mascota eliminada'}</p>
-                            <span class="px-2 text-xs font-semibold rounded-full capitalize ${
+                            <p class="font-semibold text-sm">${app.appointment_date} - ${app.pets?.name || 'Mascota eliminada'}</p>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${
                                 app.status === 'completada' ? 'bg-green-100 text-green-800' :
-                                app.status === 'cancelada' ? 'bg-red-100 text-red-800' :
+                                app.status === 'cancelada' || app.status === 'rechazada' ? 'bg-red-100 text-red-800' :
+                                app.status === 'confirmada' ? 'bg-blue-100 text-blue-800' :
                                 'bg-yellow-100 text-yellow-800'
                             }">${app.status}</span>
                         </div>
@@ -100,14 +103,17 @@ const setupEventListeners = () => {
         const viewButton = event.target.closest('.view-details-btn');
         if (viewButton) {
             const clientId = viewButton.dataset.clientId;
+            if (!clientId) return;
+
             openModal();
             modalContentBody.innerHTML = '<div class="text-center py-10 text-gray-500">Cargando...</div>';
             
             const clientDetails = await getClientDetails(clientId);
+            
             if (clientDetails) {
                 populateModal(clientDetails);
             } else {
-                modalContentBody.innerHTML = '<div class="text-center py-10 text-red-500">Error al cargar los detalles.</div>';
+                modalContentBody.innerHTML = '<div class="text-center py-10 text-red-500">Error al cargar los detalles del cliente.</div>';
             }
         }
     });
