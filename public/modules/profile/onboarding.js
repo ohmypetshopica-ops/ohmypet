@@ -11,12 +11,12 @@ const formSubtitle = document.querySelector('#form-subtitle');
 
 // --- ESTADO DEL FORMULARIO ---
 let currentStep = 1;
-const totalSteps = steps.length;
+const totalSteps = 4;
 const onboardingData = {};
 let currentUser = null;
 
-const formTitles = ["Crea tu perfil", "Datos de contacto", "Contacto de emergencia"];
-const formSubtitles = ["Cuéntanos un poco sobre ti.", "Necesitamos estos datos para coordinar los servicios.", "Es importante en caso no podamos contactarte."];
+const formTitles = ["Crea tu perfil", "Documento de Identidad", "Datos de contacto", "Contacto de emergencia"];
+const formSubtitles = ["Cuéntanos un poco sobre ti.", "Necesitamos esta información para verificarte.", "Necesitamos estos datos para coordinar los servicios.", "Es importante en caso no podamos contactarte."];
 
 // --- FUNCIONES DE NAVEGACIÓN ---
 const showStep = (stepNumber) => {
