@@ -1,20 +1,26 @@
 // public/modules/dashboard/dashboard-clients.js
 
-import { getClients, searchClients, getClientDetails } from './dashboard.api.js';
+import { getClients, searchClients, getClientDetails, registerClientFromDashboard } from './dashboard.api.js';
 import { createClientRow } from './dashboard.utils.js';
-
-
 
 // --- ELEMENTOS DEL DOM ---
 const clientsTableBody = document.querySelector('#clients-table-body');
 const clientSearchInput = document.querySelector('#client-search-input');
 const headerTitle = document.querySelector('#header-title');
 
-// --- ELEMENTOS DEL MODAL ---
+// --- ELEMENTOS DEL MODAL DE DETALLES ---
 const clientDetailsModal = document.querySelector('#client-details-modal');
 const modalCloseBtn = document.querySelector('#modal-close-btn');
 const modalClientName = document.querySelector('#modal-client-name');
 const modalContentBody = document.querySelector('#modal-content-body');
+
+// --- ELEMENTOS DEL MODAL DE REGISTRO ---
+const addClientButton = document.querySelector('#add-client-button');
+const clientModal = document.querySelector('#client-modal');
+const closeClientModalButton = document.querySelector('#close-client-modal-button');
+const cancelClientButton = document.querySelector('#cancel-client-button');
+const clientForm = document.querySelector('#client-form');
+const clientFormMessage = document.querySelector('#client-form-message');
 
 // --- RENDERIZADO DE DATOS ---
 const renderClientsTable = (clients) => {
@@ -24,11 +30,10 @@ const renderClientsTable = (clients) => {
         : `<tr><td colspan="3" class="text-center py-4 text-gray-500">No hay clientes registrados.</td></tr>`;
 };
 
-// --- LÓGICA DEL MODAL ---
+// --- LÓGICA DEL MODAL DE DETALLES ---
 const openModal = () => clientDetailsModal.classList.remove('hidden');
 const closeModal = () => clientDetailsModal.classList.add('hidden');
 
-// **FUNCIÓN MEJORADA PARA MOSTRAR LOS DATOS**
 const populateModal = (details) => {
     const { profile, pets, appointments } = details;
 
@@ -85,6 +90,74 @@ const populateModal = (details) => {
     `;
 };
 
+// --- LÓGICA DEL MODAL DE REGISTRO ---
+const setupClientModal = () => {
+    if (!addClientButton || !clientModal || !clientForm) return;
+
+    const closeRegisterModal = () => {
+        clientModal.classList.add('hidden');
+        clientForm.reset();
+        clientFormMessage?.classList.add('hidden');
+    };
+
+    addClientButton.addEventListener('click', () => {
+        clientModal.classList.remove('hidden');
+        clientForm.reset();
+        clientFormMessage?.classList.add('hidden');
+    });
+
+    closeClientModalButton?.addEventListener('click', closeRegisterModal);
+    cancelClientButton?.addEventListener('click', closeRegisterModal);
+    
+    clientModal.addEventListener('click', (e) => {
+        if (e.target === clientModal) closeRegisterModal();
+    });
+
+    clientForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (clientFormMessage) clientFormMessage.classList.add('hidden');
+
+        const clientData = {
+            email: clientForm.email.value.trim(),
+            firstName: clientForm.first_name.value.trim(),
+            lastName: clientForm.last_name.value.trim(),
+            phone: clientForm.phone.value.trim(),
+            district: clientForm.district.value.trim()
+        };
+
+        if (!clientData.email || !clientData.firstName || !clientData.lastName) {
+            if (clientFormMessage) {
+                clientFormMessage.textContent = 'Por favor completa todos los campos obligatorios.';
+                clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+                clientFormMessage.classList.remove('hidden');
+            }
+            return;
+        }
+
+        const result = await registerClientFromDashboard(clientData);
+
+        if (result.success) {
+            if (clientFormMessage) {
+                clientFormMessage.textContent = result.message || 'Cliente registrado exitosamente.';
+                clientFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
+                clientFormMessage.classList.remove('hidden');
+            }
+            
+            setTimeout(() => {
+                closeRegisterModal();
+                initializeClientsSection();
+            }, 2000);
+        } else {
+            if (clientFormMessage) {
+                clientFormMessage.textContent = `Error: ${result.error?.message || 'No se pudo registrar el cliente'}`;
+                clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+                clientFormMessage.classList.remove('hidden');
+            }
+        }
+    });
+};
+
 // --- LÓGICA DE BÚSQUEDA Y EVENTOS ---
 const setupEventListeners = () => {
     if (!clientSearchInput) return;
@@ -100,7 +173,6 @@ const setupEventListeners = () => {
         }, 300);
     });
 
-    // Event Delegation para los botones "Ver Detalles"
     clientsTableBody.addEventListener('click', async (event) => {
         const viewButton = event.target.closest('.view-details-btn');
         if (viewButton) {
@@ -120,9 +192,8 @@ const setupEventListeners = () => {
         }
     });
 
-    // Listeners para cerrar el modal
-    modalCloseBtn.addEventListener('click', closeModal);
-    clientDetailsModal.addEventListener('click', (event) => {
+    modalCloseBtn?.addEventListener('click', closeModal);
+    clientDetailsModal?.addEventListener('click', (event) => {
         if (event.target === clientDetailsModal) {
             closeModal();
         }
@@ -138,6 +209,7 @@ const initializeClientsSection = async () => {
     const initialClients = await getClients();
     renderClientsTable(initialClients);
     setupEventListeners();
+    setupClientModal();
 };
 
 document.addEventListener('DOMContentLoaded', initializeClientsSection);
