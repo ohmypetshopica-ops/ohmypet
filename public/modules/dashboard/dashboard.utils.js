@@ -1,6 +1,7 @@
 // public/modules/dashboard/dashboard.utils.js
 // VERSIÓN COMPLETA Y FINAL
 
+// Esta función es necesaria para el resumen del dashboard.
 const createUpcomingAppointmentItem = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
     const ownerProfile = appointment.profiles;
@@ -21,6 +22,7 @@ const createUpcomingAppointmentItem = (appointment) => {
     `;
 };
 
+// Esta es la función para la tabla de clientes.
 const createClientRow = (client) => {
     const displayName = (client.first_name && client.last_name) 
         ? `${client.first_name} ${client.last_name}` 
@@ -34,18 +36,56 @@ const createClientRow = (client) => {
     `;
 };
 
+// **AQUÍ ESTÁ LA MODIFICACIÓN**
+// Esta función es para la tabla de productos, ahora con categoría.
 const createProductRow = (product) => {
     const productData = JSON.stringify(product).replace(/"/g, '&quot;');
+    
+    // Estilos para la etiqueta de categoría
+    const categoryStyles = {
+        alimento: 'bg-orange-100 text-orange-800',
+        accesorio: 'bg-blue-100 text-blue-800',
+        juguete: 'bg-purple-100 text-purple-800',
+        higiene: 'bg-teal-100 text-teal-800',
+    };
+    const categoryClass = categoryStyles[product.category] || 'bg-gray-100 text-gray-800';
+
     return `
         <tr data-product-id="${product.id}">
-            <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="flex-shrink-0 h-10 w-10"><img class="h-10 w-10 rounded-full object-cover" src="${product.image_url || 'https://via.placeholder.com/40'}" alt="${product.name}"></div><div class="ml-4"><div class="text-sm font-medium text-gray-900">${product.name}</div></div></div></td>
-            <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">S/${(product.price || 0).toFixed(2)}</div></td>
-            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${product.stock} en Stock</span></td>
-            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium"><div class="flex items-center justify-center space-x-4"><button data-action="edit" data-product='${productData}' class="text-indigo-600 hover:text-indigo-900">Editar</button><button data-action="delete" data-product='${productData}' class="text-red-600 hover:text-red-900">Eliminar</button></div></td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10">
+                        <img class="h-10 w-10 rounded-full object-cover" src="${product.image_url || 'https://via.placeholder.com/40'}" alt="${product.name}">
+                    </div>
+                    <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900">${product.name}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${categoryClass} capitalize">
+                    ${product.category || 'N/A'}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">S/${(product.price || 0).toFixed(2)}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                    ${product.stock} en Stock
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                <div class="flex items-center justify-center space-x-4">
+                    <button data-action="edit" data-product='${productData}' class="text-indigo-600 hover:text-indigo-900">Editar</button>
+                    <button data-action="delete" data-product='${productData}' class="text-red-600 hover:text-red-900">Eliminar</button>
+                </div>
+            </td>
         </tr>
     `;
 };
 
+// La función createAppointmentRow se mantiene igual.
 const createAppointmentRow = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
     const ownerProfile = appointment.profiles;
@@ -104,7 +144,7 @@ const createAppointmentRow = (appointment) => {
     `;
 };
 
-// --- NUEVA FUNCIÓN ---
+// La función createServiceHistoryRow se mantiene igual.
 const createServiceHistoryRow = (service) => {
     const petName = service.pets?.name || 'N/A';
     const ownerProfile = service.profiles;
@@ -135,12 +175,13 @@ const createServiceHistoryRow = (service) => {
         </tr>
     `;
 };
-// --- FIN ---
 
+
+// El bloque de exportación final que incluye todas las funciones.
 export { 
     createUpcomingAppointmentItem, 
     createClientRow, 
     createProductRow, 
     createAppointmentRow,
-    createServiceHistoryRow // Exportar la nueva función
+    createServiceHistoryRow
 };

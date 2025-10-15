@@ -19,12 +19,12 @@ const existingImageUrlInput = document.querySelector('#existing-image-url');
 
 // --- RENDERIZADO DE LA TABLA ---
 const renderProducts = async () => {
-    productsTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-500">Cargando...</td></tr>`;
+    productsTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-gray-500">Cargando...</td></tr>`;
     const products = await getProducts();
     if (products.length > 0) {
         productsTableBody.innerHTML = products.map(createProductRow).join('');
     } else {
-        productsTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-500">No hay productos registrados.</td></tr>`;
+        productsTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-gray-500">No hay productos registrados.</td></tr>`;
     }
 };
 
@@ -46,6 +46,8 @@ const openModalForEdit = (product) => {
     // Llenar el formulario con los datos del producto
     document.querySelector('#product-name').value = product.name;
     document.querySelector('#product-description').value = product.description || '';
+    // Llenar el nuevo campo de categoría
+    document.querySelector('#product-category').value = product.category || '';
     document.querySelector('#product-price').value = product.price;
     document.querySelector('#product-stock').value = product.stock;
 
@@ -97,7 +99,6 @@ const setupEventListeners = () => {
         const imageFile = formData.get('image_file');
         let imageUrl = existingImageUrlInput.value;
 
-        // Si se subió un nuevo archivo, lo procesamos
         if (imageFile && imageFile.size > 0) {
             const fileName = `products/${Date.now()}_${imageFile.name}`;
             const { data, error } = await supabase.storage.from('product_images').upload(fileName, imageFile);
@@ -107,7 +108,6 @@ const setupEventListeners = () => {
                 submitButton.textContent = 'Guardar Producto';
                 return;
             }
-            // Obtenemos la URL pública del archivo recién subido
             const { data: { publicUrl } } = supabase.storage.from('product_images').getPublicUrl(fileName);
             imageUrl = publicUrl;
         }
@@ -115,6 +115,8 @@ const setupEventListeners = () => {
         const productData = {
             name: formData.get('name'),
             description: formData.get('description'),
+            // Obtener el valor de la categoría
+            category: formData.get('category'),
             price: parseFloat(formData.get('price')),
             stock: parseInt(formData.get('stock')),
             image_url: imageUrl,
