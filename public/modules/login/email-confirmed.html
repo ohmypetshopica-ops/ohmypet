@@ -8,39 +8,76 @@
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen">
     <div class="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
-        <div class="mb-6">
-            <svg class="w-20 h-20 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+        <div id="loading" class="mb-6">
+            <div class="animate-spin rounded-full h-20 w-20 border-b-2 border-green-500 mx-auto"></div>
+            <p class="text-gray-600 mt-4">Confirmando tu email...</p>
         </div>
-        <h1 class="text-2xl font-bold text-gray-800 mb-4">¡Email Confirmado!</h1>
-        <p class="text-gray-600 mb-6">Tu cuenta ha sido verificada exitosamente.</p>
-        <a href="/public/modules/login/login.html" 
-           class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg inline-block transition-colors">
-            Iniciar Sesión
-        </a>
+        
+        <div id="success" class="hidden">
+            <div class="mb-6">
+                <svg class="w-20 h-20 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-4">¡Email Confirmado!</h1>
+            <p class="text-gray-600 mb-6">Tu cuenta ha sido verificada exitosamente. Redirigiendo...</p>
+        </div>
+        
+        <div id="error" class="hidden">
+            <div class="mb-6">
+                <svg class="w-20 h-20 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-4">Error al confirmar</h1>
+            <p class="text-gray-600 mb-6">Hubo un problema al confirmar tu email.</p>
+            <a href="/public/modules/login/login.html" 
+               class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg inline-block transition-colors">
+                Volver al Login
+            </a>
+        </div>
     </div>
     
     <script type="module">
         import { supabase } from '/public/core/supabase.js';
         
-        // Manejar la confirmación automática
         window.addEventListener('load', async () => {
-            const urlParams = new URLSearchParams(window.location.hash.substring(1));
-            const accessToken = urlParams.get('access_token');
+            const loading = document.getElementById('loading');
+            const success = document.getElementById('success');
+            const error = document.getElementById('error');
             
-            if (accessToken) {
-                const { error } = await supabase.auth.setSession({
-                    access_token: accessToken,
-                    refresh_token: urlParams.get('refresh_token')
-                });
-                
-                if (!error) {
+            // Obtener parámetros del hash
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
+            
+            if (accessToken && refreshToken) {
+                try {
+                    // Establecer la sesión
+                    const { error: sessionError } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    });
+                    
+                    if (sessionError) throw sessionError;
+                    
+                    // Mostrar éxito
+                    loading.classList.add('hidden');
+                    success.classList.remove('hidden');
+                    
                     // Redirigir al onboarding después de 2 segundos
                     setTimeout(() => {
                         window.location.href = '/public/modules/profile/onboarding.html';
                     }, 2000);
+                    
+                } catch (err) {
+                    console.error('Error:', err);
+                    loading.classList.add('hidden');
+                    error.classList.remove('hidden');
                 }
+            } else {
+                loading.classList.add('hidden');
+                error.classList.remove('hidden');
             }
         });
     </script>
