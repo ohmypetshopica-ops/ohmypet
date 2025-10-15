@@ -45,6 +45,11 @@ const getCompletedServices = async () => {
                 full_name,
                 first_name,
                 last_name
+            ),
+            appointment_photos (
+                id,
+                photo_type,
+                image_url
             )
         `)
         .eq('status', 'completada')
@@ -222,53 +227,90 @@ const openServiceDetailsModal = (service) => {
     const finalWeight = service.final_weight ? `${service.final_weight} kg` : 'No registrado';
     const observations = service.final_observations || 'Sin observaciones';
 
+    const photos = service.appointment_photos || [];
+    const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
+    const departurePhoto = photos.find(p => p.photo_type === 'departure');
+
+    const arrivalPhotoHTML = arrivalPhoto 
+        ? `<img src="${arrivalPhoto.image_url}" alt="Foto de llegada" class="rounded-lg object-cover w-full h-full">`
+        : `<div class="text-gray-400 text-sm">Sin foto</div>`;
+
+    const departurePhotoHTML = departurePhoto 
+        ? `<img src="${departurePhoto.image_url}" alt="Foto de salida" class="rounded-lg object-cover w-full h-full">`
+        : `<div class="text-gray-400 text-sm">Sin foto</div>`;
+
     modalServiceDetails.innerHTML = `
         <div class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-500 mb-2">Cliente</h4>
-                    <p class="text-base text-gray-900">${ownerName}</p>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-500 mb-2">Mascota</h4>
-                    <p class="text-base text-gray-900">${petName}</p>
+            <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 mb-2">Cliente</h4>
+                        <p class="text-lg font-bold text-gray-900">${ownerName}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 mb-2">Mascota</h4>
+                        <p class="text-lg font-bold text-gray-900">${petName}</p>
+                    </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-500 mb-2">Fecha</h4>
-                    <p class="text-base text-gray-900">${new Date(service.appointment_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="text-sm font-semibold text-gray-500 mb-2">Fecha del Servicio</h4>
+                    <p class="text-base text-gray-900">${new Date(service.appointment_date).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</p>
                 </div>
-                <div>
+                <div class="bg-gray-50 p-4 rounded-lg">
                     <h4 class="text-sm font-semibold text-gray-500 mb-2">Hora</h4>
                     <p class="text-base text-gray-900">${service.appointment_time}</p>
                 </div>
             </div>
 
-            <div>
-                <h4 class="text-sm font-semibold text-gray-500 mb-2">Servicio</h4>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="text-sm font-semibold text-gray-500 mb-2">Servicio Realizado</h4>
                 <p class="text-base text-gray-900">${service.service || 'Servicio general'}</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 bg-green-50 rounded-lg">
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-500 mb-2">Método de Pago</h4>
-                    <p class="text-base font-medium text-gray-900">${paymentMethod}</p>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-500 mb-2">Costo</h4>
-                    <p class="text-base font-bold text-green-700">${cost}</p>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-500 mb-2">Peso Final</h4>
-                    <p class="text-base font-medium text-gray-900">${finalWeight}</p>
+            <div>
+                <h4 class="text-lg font-bold text-gray-800 mb-4">Fotos del Servicio</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-600 mb-3 text-center">Foto de Llegada</p>
+                        <div class="bg-gray-100 rounded-xl aspect-square flex items-center justify-center overflow-hidden border-2 border-gray-200">
+                            ${arrivalPhotoHTML}
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-600 mb-3 text-center">Foto de Salida</p>
+                        <div class="bg-gray-100 rounded-xl aspect-square flex items-center justify-center overflow-hidden border-2 border-gray-200">
+                            ${departurePhotoHTML}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div>
-                <h4 class="text-sm font-semibold text-gray-500 mb-2">Observaciones Finales</h4>
-                <p class="text-base text-gray-900 whitespace-pre-wrap">${observations}</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                <div class="text-center">
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Método de Pago</h4>
+                    <p class="text-lg font-bold text-gray-900">${paymentMethod}</p>
+                </div>
+                <div class="text-center">
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Costo Total</h4>
+                    <p class="text-2xl font-bold text-green-700">${cost}</p>
+                </div>
+                <div class="text-center">
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Peso Final</h4>
+                    <p class="text-lg font-bold text-gray-900">${finalWeight}</p>
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
+                <h4 class="text-sm font-bold text-yellow-800 mb-3 flex items-center gap-2">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Observaciones Finales
+                </h4>
+                <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">${observations}</p>
             </div>
         </div>
     `;
