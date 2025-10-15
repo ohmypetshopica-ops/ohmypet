@@ -8,6 +8,8 @@ const prevButtons = document.querySelectorAll('.prev-btn');
 const progressBar = document.querySelector('#progress-bar');
 const formTitle = document.querySelector('#form-title');
 const formSubtitle = document.querySelector('#form-subtitle');
+const avatarSelection = document.querySelector('#avatar-selection');
+const avatarUrlInput = document.querySelector('#avatar_url');
 
 // --- ESTADO DEL FORMULARIO ---
 let currentStep = 1;
@@ -53,6 +55,22 @@ const collectStepData = (stepNumber) => {
     });
 };
 
+// --- MANEJO DE SELECCIÓN DE AVATAR ---
+if (avatarSelection) {
+    avatarSelection.addEventListener('click', (event) => {
+        if (event.target.tagName === 'IMG' && event.target.classList.contains('avatar-option')) {
+            // Quitar selección previa
+            avatarSelection.querySelectorAll('.avatar-option').forEach(img => {
+                img.classList.remove('selected');
+            });
+
+            // Marcar nuevo avatar
+            event.target.classList.add('selected');
+            avatarUrlInput.value = event.target.src;
+        }
+    });
+}
+
 // --- LÓGICA PRINCIPAL ---
 const initializeOnboarding = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -62,14 +80,25 @@ const initializeOnboarding = async () => {
     }
     currentUser = user;
 
-    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
-    if (profile && profile.full_name) {
-        const nameParts = profile.full_name.split(' ');
-        document.querySelector('#first_name').value = nameParts[0] || '';
-        document.querySelector('#last_name').value = nameParts.slice(1).join(' ') || '';
+    // Cargar datos desde raw_user_meta_data (del registro)
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single();
+
+    if (profile) {
+        // Si ya tiene datos en profiles, usarlos
+        document.querySelector('#first_name').value = profile.first_name || '';
+        document.querySelector('#last_name').value = profile.last_name || '';
+    } else if (user.user_metadata) {
+        // Si no, usar metadata del registro
+        document.querySelector('#first_name').value = user.user_metadata.first_name || '';
+        document.querySelector('#last_name').value = user.user_metadata.last_name || '';
     }
 };
 
+// --- EVENT LISTENERS ---
 nextButtons.forEach(button => {
     button.addEventListener('click', () => {
         if (validateStep(currentStep)) {
@@ -100,7 +129,10 @@ onboardingForm.addEventListener('submit', async (event) => {
         onboarding_completed: true
     };
     
-    const { error } = await supabase.from('profiles').update(finalData).eq('id', currentUser.id);
+    const { error } = await supabase
+        .from('profiles')
+        .update(finalData)
+        .eq('id', currentUser.id);
 
     if (error) {
         alert(`Error al guardar tu perfil: ${error.message}`);
