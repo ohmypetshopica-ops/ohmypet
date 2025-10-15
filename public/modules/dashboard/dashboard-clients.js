@@ -49,6 +49,8 @@ const populateModal = (details) => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 <p><strong>Email:</strong> <a href="mailto:${profile.email || ''}" class="text-blue-600 hover:underline">${profile.email || 'N/A'}</a></p>
                 <p><strong>Teléfono:</strong> <a href="https://wa.me/${profile.phone || ''}" target="_blank" class="text-blue-600 hover:underline">${profile.phone || 'N/A'}</a></p>
+                <p><strong>Tipo de Doc.:</strong> ${profile.doc_type || 'N/A'}</p>
+                <p><strong>Nro. Doc.:</strong> ${profile.doc_num || 'N/A'}</p>
                 <p><strong>Distrito:</strong> ${profile.district || 'N/A'}</p>
                 <p><strong>Contacto Emergencia:</strong> ${profile.emergency_contact_name || 'N/A'} (${profile.emergency_contact_phone || 'N/A'})</p>
             </div>
