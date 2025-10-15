@@ -218,18 +218,16 @@ export const uploadReceiptFile = async (appointmentId, file) => {
 export const getClientDetails = async (clientId) => {
     try {
         const [profileRes, petsRes, appointmentsRes] = await Promise.all([
-            supabase.from('profiles').select('*').eq('id', clientId).single(),
+            // CORRECCIÓN FINAL: Ahora se selecciona la nueva columna 'email' de la tabla 'profiles'.
+            supabase.from('profiles').select('*, email').eq('id', clientId).single(),
             supabase.from('pets').select('*').eq('owner_id', clientId),
             supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: false })
         ]);
 
         if (profileRes.error) throw profileRes.error;
-
-        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(clientId);
-        if (userError) throw userError;
         
         return {
-            profile: { ...profileRes.data, email: userData.user.email },
+            profile: profileRes.data,
             pets: petsRes.data || [],
             appointments: appointmentsRes.data || []
         };
