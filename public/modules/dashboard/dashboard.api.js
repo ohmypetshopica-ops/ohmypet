@@ -219,3 +219,24 @@ export const uploadReceiptFile = async (appointmentId, file) => {
     }
     return { success: true, url: publicUrl };
 };
+
+// ... (mantenemos todo el código existente y agregamos al final) ...
+
+/**
+ * Obtiene los datos procesados para la sección de reportes.
+ * @param {string} startDate - Fecha de inicio en formato 'YYYY-MM-DD'.
+ * @param {string} endDate - Fecha de fin en formato 'YYYY-MM-DD'.
+ * @returns {Promise<Object>} Un objeto JSON con todas las estadísticas del reporte.
+ */
+export const getReportData = async (startDate, endDate) => {
+    const { data, error } = await supabase.rpc('get_report_data', {
+        start_date: startDate,
+        end_date: endDate
+    });
+
+    if (error) {
+        console.error('Error al obtener datos del reporte:', error);
+        return null;
+    }
+    return data;
+};

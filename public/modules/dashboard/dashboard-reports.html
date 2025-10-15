@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>:root { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 text-black">
+    <div class="flex h-screen overflow-hidden">
+        <div id="sidebar-container"></div>
+        <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
+            <div id="header-container"></div>
+            <div id="main-content" class="flex-1 p-6 overflow-y-auto">
+                <section id="reports" class="space-y-6">
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Seleccionar Rango de Fechas</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
+                                <input type="date" id="start-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
+                                <input type="date" id="end-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <button id="generate-report-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg h-10 hover:bg-green-700">
+                                Generar Reporte
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="report-content" class="hidden space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border">
+                                <h4 class="text-sm font-medium text-gray-600 mb-2">Ingresos Totales</h4>
+                                <p id="total-revenue" class="text-3xl font-bold text-green-600">-</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm border">
+                                <h4 class="text-sm font-medium text-gray-600 mb-2">Servicios Completados</h4>
+                                <p id="service-count" class="text-3xl font-bold text-gray-900">-</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm border">
+                                <h4 class="text-sm font-medium text-gray-600 mb-2">Ingreso Promedio / Servicio</h4>
+                                <p id="average-revenue" class="text-3xl font-bold text-gray-900">-</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                            <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Ingresos por Método de Pago</h3>
+                                <div class="relative h-72">
+                                    <canvas id="payment-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border flex flex-col">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Descargar Reportes</h3>
+                                <div class="space-y-4 flex-grow flex flex-col justify-center">
+                                    <button id="download-financial-csv" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                                        Descargar Reporte Financiero (CSV)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        async function loadComponent(url, containerId) {
+            try {
+                const response = await fetch(`${url}?v=${Date.now()}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const html = await response.text();
+                document.getElementById(containerId).innerHTML = html;
+            } catch (error) { console.error(`Error cargando ${url}:`, error); }
+        }
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Promise.all([
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            ]);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            try {
+                const sidebarModule = await import(`./dashboard-sidebar.js`);
+                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+            } catch (error) { console.error('Error:', error); }
+        });
+    </script>
+    <script type="module" src="../../core/auth.js"></script>
+    <script type="module" src="./dashboard-reports.js"></script>
+</body>
+</html>
