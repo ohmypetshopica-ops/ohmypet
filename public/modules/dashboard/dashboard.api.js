@@ -236,4 +236,78 @@ export const getClientDetails = async (clientId) => {
     }
 };
 
+// =======================================================
+// ===========         CÓDIGO AÑADIDO            ===========
+// =======================================================
+
+/**
+ * Obtiene las estadísticas principales para las tarjetas del dashboard.
+ */
+export const getDashboardStats = async () => {
+    // Las tarjetas usan "getClientCount", "getPetCount", etc.
+    // Esta función las agrupa en una sola llamada para optimizar.
+    const [clients, pets, products, { count: pendingAppointments }] = await Promise.all([
+        getClientCount(),
+        getPetCount(),
+        getProductsCount(),
+        supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('status', 'pendiente')
+    ]);
+
+    return {
+        clients: clients || 0,
+        pets: pets || 0,
+        appointments: pendingAppointments || 0, // Solo contamos las pendientes para la tarjeta
+        products: products || 0
+    };
+};
+
+/**
+ * Obtiene las estadísticas de citas completadas de los últimos 12 meses.
+ */
+export const getMonthlyAppointmentsStats = async () => {
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    const { data, error } = await supabase
+        .from('appointments')
+        .select('appointment_date')
+        .eq('status', 'completada')
+        .gte('appointment_date', twelveMonthsAgo.toISOString().split('T')[0]);
+
+    if (error) {
+        console.error('Error al obtener estadísticas mensuales:', error);
+        return [];
+    }
+
+    const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const monthlyCounts = {};
+
+    // Inicializamos un objeto con los últimos 12 meses para asegurar que todos aparezcan
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const monthKey = `${d.getFullYear()}-${monthNames[d.getMonth()]}`;
+        monthlyCounts[monthKey] = {
+            sortKey: d.getFullYear() * 100 + d.getMonth(),
+            month_name: monthNames[d.getMonth()],
+            service_count: 0
+        };
+    }
+
+    // Contamos las citas por mes
+    data.forEach(appointment => {
+        const date = new Date(appointment.appointment_date + 'T12:00:00'); // Aseguramos la zona horaria correcta
+        const monthKey = `${date.getFullYear()}-${monthNames[date.getMonth()]}`;
+        if (monthlyCounts[monthKey]) {
+            monthlyCounts[monthKey].service_count++;
+        }
+    });
+
+    // Convertimos el objeto a un array y lo ordenamos
+    return Object.values(monthlyCounts).sort((a, b) => a.sortKey - b.sortKey);
+};
+
+// =======================================================
+// =======================================================
+
 export { supabase };
