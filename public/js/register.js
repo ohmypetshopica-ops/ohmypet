@@ -47,6 +47,19 @@ registerForm.addEventListener('submit', async (event) => {
         formMessage.textContent = `Error: ${error.message}`;
         formMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
     } else {
+        // --- CORRECCIÓN: ACTUALIZAR EL PERFIL CON EL EMAIL ---
+        if (data.user) {
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ email: email })
+                .eq('id', data.user.id);
+
+            if (updateError) {
+                console.error('Error al guardar el email en el perfil:', updateError.message);
+            }
+        }
+        // --- FIN DE LA CORRECCIÓN ---
+
         console.log('Registro exitoso:', data.user);
         formMessage.textContent = '¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.';
         formMessage.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
