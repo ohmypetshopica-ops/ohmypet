@@ -344,6 +344,13 @@ const initializePage = async () => {
 
             uploadMessage.textContent = 'Guardando observaciones y completando cita...';
             const observations = finalObservationsTextarea.value.trim();
+            
+            // =========== INICIO DE LA CORRECCIÓN ===========
+            // 1. Obtenemos la fecha de la cita que se está completando
+            const appointment = allAppointments.find(app => app.id === currentAppointmentId);
+            const appointmentDate = appointment ? appointment.appointment_date : new Date().toISOString().split('T')[0];
+
+            // 2. Actualizamos la cita a 'completada'
             const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', {
                 observations: observations,
                 weight: parseFloat(weight),
@@ -352,6 +359,20 @@ const initializePage = async () => {
             });
 
             if (success) {
+                // 3. Si se completó con éxito, actualizamos la fecha del último baño en la tabla 'pets'
+                uploadMessage.textContent = 'Actualizando fecha de último servicio...';
+                const { error: petUpdateError } = await supabase
+                    .from('pets')
+                    .update({ last_grooming_date: appointmentDate })
+                    .eq('id', currentPetId);
+
+                if (petUpdateError) {
+                    // Si falla, informamos pero no detenemos el proceso
+                    alert('La cita se completó, pero hubo un error al actualizar la fecha del último baño en el perfil de la mascota.');
+                    console.error('Error al actualizar last_grooming_date:', petUpdateError);
+                }
+                
+                // Actualizamos la vista local
                 const index = allAppointments.findIndex(app => app.id == currentAppointmentId);
                 if (index !== -1) {
                     allAppointments[index].status = 'completada';
@@ -366,6 +387,8 @@ const initializePage = async () => {
             } else {
                 throw new Error('No se pudo actualizar el estado de la cita.');
             }
+            // =========== FIN DE LA CORRECCIÓN ===========
+
         } catch (error) {
             uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
             uploadMessage.textContent = `Error: ${error.message}`;
