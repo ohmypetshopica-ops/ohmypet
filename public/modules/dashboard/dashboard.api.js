@@ -65,20 +65,32 @@ export const getMonthlyAppointmentsStats = async () => {
 export const getClients = async () => {
     const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, first_name, last_name, email, role, phone, district, created_at')
         .eq('role', 'cliente')
         .order('created_at', { ascending: false });
-    if (error) console.error('Error al obtener clientes:', error);
+    
+    if (error) {
+        console.error('Error al obtener clientes:', error);
+        return [];
+    }
+    
+    console.log('Clientes obtenidos:', data);
     return data || [];
 };
 
 export const searchClients = async (searchTerm) => {
     const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, first_name, last_name, email, role, phone, district, created_at')
         .eq('role', 'cliente')
         .or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`);
-    if (error) console.error('Error al buscar clientes:', error);
+    
+    if (error) {
+        console.error('Error al buscar clientes:', error);
+        return [];
+    }
+    
+    console.log('Clientes encontrados:', data);
     return data || [];
 };
 
@@ -92,10 +104,8 @@ export const getClientDetails = async (clientId) => {
 
         if (profileRes.error) throw profileRes.error;
 
-        const { data: { user } } = await supabase.auth.admin.getUserById(clientId);
-
         return {
-            profile: { ...profileRes.data, email: user?.email },
+            profile: profileRes.data,
             pets: petsRes.data || [],
             appointments: appointmentsRes.data || []
         };
