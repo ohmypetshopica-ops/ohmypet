@@ -32,7 +32,7 @@ const loadUserProfile = async () => {
 
     const { data: profile, error } = await supabase
         .from('profiles')
-        .select('full_name, first_name, last_name, phone, district, emergency_contact_name, emergency_contact_phone, avatar_url')
+        .select('full_name, first_name, last_name, phone, district, emergency_contact_name, emergency_contact_phone, avatar_url, doc_type, doc_num') // <-- CORRECCIÓN AQUÍ
         .eq('id', user.id)
         .single();
 
@@ -79,6 +79,12 @@ const loadUserProfile = async () => {
         districtInput.value = profile.district || '';
         emergencyContactNameInput.value = profile.emergency_contact_name || '';
         emergencyContactPhoneInput.value = profile.emergency_contact_phone || '';
+        
+        // =========== CÓDIGO AÑADIDO ===========
+        // Rellenar nuevos campos de documento
+        document.querySelector('#doc_type').value = profile.doc_type || 'No especificado';
+        document.querySelector('#doc_num').value = profile.doc_num || 'No especificado';
+        // =======================================
     }
 };
 
