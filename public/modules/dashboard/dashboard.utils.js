@@ -1,7 +1,6 @@
 // public/modules/dashboard/dashboard.utils.js
 // VERSIÓN COMPLETA Y FINAL
 
-// Esta función es necesaria para el resumen del dashboard.
 const createUpcomingAppointmentItem = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
     const ownerProfile = appointment.profiles;
@@ -22,26 +21,30 @@ const createUpcomingAppointmentItem = (appointment) => {
     `;
 };
 
-// Esta es la función para la tabla de clientes.
+// **AQUÍ ESTÁ LA MODIFICACIÓN**
 const createClientRow = (client) => {
     const displayName = (client.first_name && client.last_name) 
         ? `${client.first_name} ${client.last_name}` 
-        : client.full_name;
+        : client.full_name || 'Nombre no disponible';
+    
     return `
-        <tr data-client-id="${client.id}">
-            <td class="px-6 py-4"><div class="text-sm font-medium text-gray-900">${displayName || 'Nombre no disponible'}</div></td>
-            <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${client.role}</span></td>
-            <td class="px-6 py-4 text-right text-sm font-medium"><a href="#" class="text-green-600 hover:text-green-900">Ver Detalles</a></td>
+        <tr>
+            <td class="px-6 py-4">
+                <div class="text-sm font-medium text-gray-900">${displayName}</div>
+                <div class="text-sm text-gray-500">${client.email}</div>
+            </td>
+            <td class="px-6 py-4">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${client.role}</span>
+            </td>
+            <td class="px-6 py-4 text-right text-sm font-medium">
+                <button data-client-id="${client.id}" class="view-details-btn text-green-600 hover:text-green-900">Ver Detalles</button>
+            </td>
         </tr>
     `;
 };
 
-// **AQUÍ ESTÁ LA MODIFICACIÓN**
-// Esta función es para la tabla de productos, ahora con categoría.
 const createProductRow = (product) => {
     const productData = JSON.stringify(product).replace(/"/g, '&quot;');
-    
-    // Estilos para la etiqueta de categoría
     const categoryStyles = {
         alimento: 'bg-orange-100 text-orange-800',
         accesorio: 'bg-blue-100 text-blue-800',
@@ -85,7 +88,6 @@ const createProductRow = (product) => {
     `;
 };
 
-// La función createAppointmentRow se mantiene igual.
 const createAppointmentRow = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
     const ownerProfile = appointment.profiles;
@@ -144,7 +146,6 @@ const createAppointmentRow = (appointment) => {
     `;
 };
 
-// La función createServiceHistoryRow se mantiene igual.
 const createServiceHistoryRow = (service) => {
     const petName = service.pets?.name || 'N/A';
     const ownerProfile = service.profiles;
@@ -176,8 +177,6 @@ const createServiceHistoryRow = (service) => {
     `;
 };
 
-
-// El bloque de exportación final que incluye todas las funciones.
 export { 
     createUpcomingAppointmentItem, 
     createClientRow, 

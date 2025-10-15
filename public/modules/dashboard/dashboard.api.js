@@ -1,63 +1,40 @@
 import { supabase } from '../../core/supabase.js';
 
-/**
- * Obtiene todas las estadísticas del dashboard en una sola llamada RPC.
- * @returns {Promise<Object>} Un objeto con los conteos de clientes, mascotas, citas y productos.
- */
-export const getDashboardStats = async () => {
-    const { data, error } = await supabase.rpc('get_dashboard_stats');
-    if (error) {
-        console.error('Error al obtener estadísticas del dashboard:', error);
-        return { clients: 0, pets: 0, appointments: 0, products: 0 };
-    }
-    // La RPC devuelve un array con un solo objeto, lo extraemos.
-    return data[0];
+export const getClientCount = async () => {
+    const { count, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'cliente');
+    if (error) console.error('Error al contar clientes:', error);
+    return count || 0;
 };
 
-/**
- * Obtiene las próximas 5 citas pendientes o confirmadas.
- * @returns {Promise<Array<Object>>} Lista de próximas citas.
- */
+export const getPetCount = async () => {
+    const { count, error } = await supabase.from('pets').select('*', { count: 'exact', head: true });
+    if (error) console.error('Error al contar mascotas:', error);
+    return count || 0;
+};
+
+export const getAppointmentsCount = async () => {
+    const { count, error } = await supabase.from('appointments').select('*', { count: 'exact', head: true });
+    if (error) console.error('Error al contar citas:', error);
+    return count || 0;
+};
+
+export const getProductsCount = async () => {
+    const { count, error } = await supabase.from('products').select('*', { count: 'exact', head: true });
+    if (error) console.error('Error al contar productos:', error);
+    return count || 0;
+};
+
 export const getUpcomingAppointments = async () => {
-    const today = new Date().toISOString().split('T')[0];
     const { data, error } = await supabase
         .from('appointments')
-        .select(`
-            id, 
-            appointment_date, 
-            appointment_time, 
-            pets ( name ), 
-            profiles ( full_name, first_name, last_name )
-        `)
-        .in('status', ['pendiente', 'confirmada'])
-        .gte('appointment_date', today)
+        .select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`)
+        .gte('appointment_date', new Date().toISOString().split('T')[0])
         .order('appointment_date', { ascending: true })
         .order('appointment_time', { ascending: true })
         .limit(5);
-
-    if (error) {
-        console.error('Error al obtener próximas citas:', error);
-        return [];
-    }
+    if (error) console.error('Error al obtener próximas citas:', error);
     return data || [];
 };
-
-/**
- * Obtiene las estadísticas de citas completadas de los últimos 12 meses.
- * @returns {Promise<Array<Object>>} Un array con objetos {month_name, service_count}.
- */
-export const getMonthlyAppointmentsStats = async () => {
-    const { data, error } = await supabase.rpc('get_monthly_appointments_stats');
-    if (error) {
-        console.error('Error al obtener estadísticas mensuales:', error);
-        return [];
-    }
-    return data;
-};
-
-
-// El resto de las funciones de la API (getClientes, getProducts, etc.) permanecen aquí
-// para ser usadas por sus respectivas secciones.
 
 export const getClients = async () => {
     const { data, error } = await supabase.from('profiles').select('*').eq('role', 'cliente').order('full_name', { ascending: true });
@@ -77,19 +54,6 @@ export const getAppointments = async () => {
         .select(`id, appointment_date, appointment_time, service, status, final_observations, final_weight, invoice_pdf_url, pet_id, service_price, payment_method, pets ( name ), profiles ( full_name, first_name, last_name )`)
         .order('created_at', { ascending: false });
     if (error) console.error('Error al obtener citas:', error);
-    return data || [];
-};
-
-export const getCompletedAppointments = async () => {
-    const { data, error } = await supabase
-        .from('appointments')
-        .select(`*, pets(name), profiles(full_name, first_name, last_name)`)
-        .eq('status', 'completada')
-        .order('appointment_date', { ascending: false });
-    if (error) {
-        console.error('Error al obtener servicios completados:', error);
-        return [];
-    }
     return data || [];
 };
 
@@ -115,6 +79,15 @@ export const updateAppointmentStatus = async (appointmentId, newStatus, details 
         return { success: false, error };
     }
     return { success: true, data: data[0] };
+};
+
+export const filterAppointments = async (filters) => {
+    let query = supabase.from('appointments').select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`);
+    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.date) query = query.eq('appointment_date', filters.date);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) console.error('Error al filtrar citas:', error);
+    return data || [];
 };
 
 export const getProducts = async () => {
@@ -150,6 +123,12 @@ export const deleteProduct = async (productId) => {
     return { success: true };
 };
 
+export const getServices = async () => {
+    const { data, error } = await supabase.from('services').select('*');
+    if (error) console.error('Error al obtener servicios:', error);
+    return data || [];
+};
+
 export const getAppointmentPhotos = async (appointmentId) => {
     const { data, error } = await supabase
         .from('appointment_photos')
@@ -170,24 +149,34 @@ export const uploadAppointmentPhoto = async (appointmentId, file, photoType) => 
     
     const { data: uploadData, error: uploadError } = await supabase.storage
         .from('appointment_images')
-        .upload(fileName, file, { cacheControl: '3600', upsert: true });
+        .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true
+        });
 
     if (uploadError) {
         console.error('Error al subir la imagen:', uploadError);
         return { success: false, error: uploadError };
     }
 
-    const { data: { publicUrl } } = supabase.storage.from('appointment_images').getPublicUrl(fileName);
+    const { data: { publicUrl } } = supabase.storage
+        .from('appointment_images')
+        .getPublicUrl(fileName);
 
     const { data: dbData, error: dbError } = await supabase
         .from('appointment_photos')
-        .upsert({ appointment_id: appointmentId, photo_type: photoType, image_url: publicUrl }, { onConflict: 'appointment_id, photo_type' })
+        .upsert({
+            appointment_id: appointmentId,
+            photo_type: photoType,
+            image_url: publicUrl
+        }, { onConflict: 'appointment_id, photo_type' })
         .select();
 
     if (dbError) {
         console.error('Error al guardar la URL en la base de datos:', dbError);
         return { success: false, error: dbError };
     }
+
     return { success: true, data: dbData[0] };
 };
 
@@ -199,14 +188,19 @@ export const uploadReceiptFile = async (appointmentId, file) => {
     
     const { data: uploadData, error: uploadError } = await supabase.storage
         .from('receipts')
-        .upload(fileName, file, { cacheControl: '3600', upsert: true });
+        .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true
+        });
 
     if (uploadError) {
         console.error('Error al subir la boleta:', uploadError);
         return { success: false, error: uploadError };
     }
 
-    const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(fileName);
+    const { data: { publicUrl } } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(fileName);
 
     const { error: dbError } = await supabase
         .from('appointments')
@@ -217,26 +211,30 @@ export const uploadReceiptFile = async (appointmentId, file) => {
         console.error('Error al guardar la URL de la boleta:', dbError);
         return { success: false, error: dbError };
     }
+
     return { success: true, url: publicUrl };
 };
 
-// ... (mantenemos todo el código existente y agregamos al final) ...
+// --- NUEVA FUNCIÓN AÑADIDA ---
+export const getClientDetails = async (clientId) => {
+    try {
+        const [profileRes, petsRes, appointmentsRes] = await Promise.all([
+            supabase.from('profiles').select('*').eq('id', clientId).single(),
+            supabase.from('pets').select('*').eq('owner_id', clientId),
+            supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: false })
+        ]);
 
-/**
- * Obtiene los datos procesados para la sección de reportes.
- * @param {string} startDate - Fecha de inicio en formato 'YYYY-MM-DD'.
- * @param {string} endDate - Fecha de fin en formato 'YYYY-MM-DD'.
- * @returns {Promise<Object>} Un objeto JSON con todas las estadísticas del reporte.
- */
-export const getReportData = async (startDate, endDate) => {
-    const { data, error } = await supabase.rpc('get_report_data', {
-        start_date: startDate,
-        end_date: endDate
-    });
-
-    if (error) {
-        console.error('Error al obtener datos del reporte:', error);
+        if (profileRes.error) throw profileRes.error;
+        
+        return {
+            profile: profileRes.data,
+            pets: petsRes.data || [],
+            appointments: appointmentsRes.data || []
+        };
+    } catch (error) {
+        console.error('Error al obtener los detalles del cliente:', error);
         return null;
     }
-    return data;
 };
+
+export { supabase };
