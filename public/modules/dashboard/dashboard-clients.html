@@ -118,10 +118,9 @@
                     <h2 id="add-pet-modal-title" class="text-xl font-bold text-gray-800">Registrar Nueva Mascota</h2>
                     <button type="button" id="close-add-pet-modal-button" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
                 </div>
-                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div class="p-6 space-y-4 max-h-96 overflow-y-auto">
                     <input type="hidden" id="pet-owner-id" name="owner_id">
                     <div id="add-pet-form-message" class="hidden"></div>
-                    
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
@@ -132,41 +131,13 @@
                             <input type="text" name="breed" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
-                            <select name="sex" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
-                                <option value="Macho">Macho</option>
-                                <option value="Hembra">Hembra</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
-                            <select name="size" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
-                                <option value="Pequeño">Pequeño</option>
-                                <option value="Mediano" selected>Mediano</option>
-                                <option value="Grande">Grande</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
-                            <input type="date" name="birth_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
-                            <input type="number" name="weight" step="0.1" placeholder="Ej: 15.5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
-                    </div>
-                    
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Foto (Opcional)</label>
-                        <input type="file" name="photo" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
+                         <select name="sex" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                            <option value="Macho">Macho</option>
+                            <option value="Hembra">Hembra</option>
+                        </select>
                     </div>
-                    
                     <div>
                          <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
                          <textarea name="observations" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Alergias, comportamiento, etc."></textarea>
@@ -179,34 +150,63 @@
             </form>
         </div>
     </div>
-    
-    <script type="module">
-        const CACHE_VERSION = Date.now();
-        async function loadComponent(url, containerId) {
-            try {
-                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const html = await response.text();
-                document.getElementById(containerId).innerHTML = html;
-            } catch (error) { console.error(`Error cargando ${url}:`, error); }
-        }
-        document.addEventListener('DOMContentLoaded', async () => {
-            await Promise.all([
-                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
-                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
-            ]);
-            await new Promise(resolve => setTimeout(resolve, 200));
-            try {
-                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
-                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
 
-                const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
-                if (headerModule?.initializeHeader) headerModule.initializeHeader();
-                
-                await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
-                await import(`./dashboard-clients.js?v=${CACHE_VERSION}`);
-            } catch (error) { console.error('Error:', error); }
-        });
-    </script>
+    <script type="module">
+    // Este script se encarga de cargar los componentes y luego inicializar los módulos de JS.
+
+    const CACHE_VERSION = Date.now();
+    
+    // Función para cargar componentes HTML (sidebar, header)
+    async function loadComponent(url, containerId) {
+        try {
+            const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const html = await response.text();
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = html;
+            }
+        } catch (error) { 
+            console.error(`Error cargando ${url}:`, error); 
+        }
+    }
+    
+    // Función principal que se ejecuta cuando el DOM está listo
+    async function initializeDashboard() {
+        // 1. Cargar todos los componentes HTML primero y esperar a que terminen
+        await Promise.all([
+            loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+            loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+        ]);
+        
+        // 2. Ahora que el HTML está en su lugar, importar y ejecutar los scripts
+        try {
+            // Importar y ejecutar el script de autenticación
+            await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
+
+            // Importar y ejecutar el script del sidebar
+            const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
+            if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+            
+            // Importar y ejecutar el script del header (CON LA LÓGICA DE LA CAMPANA)
+            const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
+            if (headerModule?.initializeHeader) headerModule.initializeHeader();
+
+            // Aquí debes asegurarte de importar el script específico de cada página.
+            // Por ejemplo, si estás en dashboard-appointments.html, la siguiente línea es correcta.
+            // Si estás en dashboard-clients.html, cámbiala a `./dashboard-clients.js`.
+            const pageModulePath = window.location.pathname.replace('.html', '.js');
+            await import(pageModulePath + `?v=${CACHE_VERSION}`);
+
+        } catch (error) { 
+            console.error('Error inicializando los scripts del dashboard:', error); 
+        }
+    }
+
+    // Ejecutar la función principal al cargar el contenido del DOM
+    document.addEventListener('DOMContentLoaded', initializeDashboard);
+</script>
+    <script type="module" src="../../core/auth.js"></script>
+    <script type="module" src="./dashboard-clients.js"></script>
 </body>
 </html>

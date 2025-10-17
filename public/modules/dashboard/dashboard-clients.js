@@ -1,4 +1,5 @@
-import { supabase } from '../../core/supabase.js';
+// public/modules/dashboard/dashboard-clients.js
+
 import { getClients, searchClients, getClientDetails, registerClientFromDashboard, addPetFromDashboard } from './dashboard.api.js';
 import { createClientRow } from './dashboard.utils.js';
 
@@ -12,7 +13,7 @@ const clientDetailsModal = document.querySelector('#client-details-modal');
 const modalCloseBtn = document.querySelector('#modal-close-btn');
 const modalClientName = document.querySelector('#modal-client-name');
 const modalContentBody = document.querySelector('#modal-content-body');
-let currentClientId = null;
+let currentClientId = null; // Variable para guardar el ID del cliente que se está viendo
 
 // --- ELEMENTOS DEL MODAL DE REGISTRO DE CLIENTE---
 const addClientButton = document.querySelector('#add-client-button');
@@ -31,7 +32,7 @@ const addPetFormMessage = document.querySelector('#add-pet-form-message');
 const petOwnerIdInput = document.querySelector('#pet-owner-id');
 
 
-// --- RENDERIZADO DE TABLA ---
+// --- RENDERIZADO DE DATOS ---
 const renderClientsTable = (clients) => {
     if (!clientsTableBody) return;
     clientsTableBody.innerHTML = clients.length > 0 
@@ -43,12 +44,16 @@ const renderClientsTable = (clients) => {
 const openModal = () => clientDetailsModal.classList.remove('hidden');
 const closeModal = () => {
     clientDetailsModal.classList.add('hidden');
-    currentClientId = null;
+    currentClientId = null; // Limpiar el ID al cerrar
 };
 
 const populateModal = (details) => {
     const { profile, pets, appointments } = details;
-    const displayName = (profile.first_name && profile.last_name) ? `${profile.first_name} ${profile.last_name}` : profile.full_name;
+
+    const displayName = (profile.first_name && profile.last_name) 
+        ? `${profile.first_name} ${profile.last_name}` 
+        : profile.full_name;
+    
     modalClientName.textContent = displayName;
 
     modalContentBody.innerHTML = `
@@ -63,6 +68,7 @@ const populateModal = (details) => {
                 <p><strong>Contacto Emergencia:</strong> ${profile.emergency_contact_name || 'N/A'} (${profile.emergency_contact_phone || 'N/A'})</p>
             </div>
         </div>
+
         <div>
             <div class="flex justify-between items-center mb-3 border-b pb-2">
                 <h3 class="text-lg font-semibold text-gray-800">Mascotas Registradas (${pets.length})</h3>
@@ -80,6 +86,7 @@ const populateModal = (details) => {
                 `).join('') : '<p class="text-sm text-gray-500">No tiene mascotas registradas.</p>'}
             </div>
         </div>
+
         <div>
             <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Historial de Citas (${appointments.length})</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto">
@@ -100,6 +107,7 @@ const populateModal = (details) => {
         </div>
     `;
 
+    // Añadir listener al nuevo botón para abrir el modal de agregar mascota
     document.querySelector('#add-pet-for-client-btn').addEventListener('click', () => {
         openAddPetModal(profile.id);
     });
@@ -185,7 +193,7 @@ const setupClientModal = () => {
 const openAddPetModal = (ownerId) => {
     addPetForm.reset();
     if (addPetFormMessage) addPetFormMessage.classList.add('hidden');
-    petOwnerIdInput.value = ownerId;
+    petOwnerIdInput.value = ownerId; // Guardar el ID del dueño en el formulario
     addPetModal.classList.remove('hidden');
 };
 
@@ -207,48 +215,20 @@ const setupAddPetModal = () => {
         e.preventDefault();
         const submitButton = addPetForm.querySelector('button[type="submit"]');
         submitButton.disabled = true;
-        submitButton.textContent = 'Guardando...';
 
         const formData = new FormData(addPetForm);
-        let imageUrl = null;
-        const imageFile = formData.get('photo');
-
-        if (imageFile && imageFile.size > 0) {
-            const ownerId = formData.get('owner_id');
-            const fileName = `${ownerId}/${Date.now()}_${imageFile.name}`;
-            
-            const { error: uploadError } = await supabase.storage
-                .from('pet_galleries')
-                .upload(fileName, imageFile);
-
-            if (uploadError) {
-                alert('Error al subir la imagen: ' + uploadError.message);
-                submitButton.disabled = false;
-                submitButton.textContent = 'Guardar Mascota';
-                return;
-            }
-
-            const { data } = supabase.storage.from('pet_galleries').getPublicUrl(fileName);
-            imageUrl = data.publicUrl;
-        }
-
         const petData = {
             owner_id: formData.get('owner_id'),
             name: formData.get('name'),
             breed: formData.get('breed'),
             sex: formData.get('sex'),
-            size: formData.get('size'),
-            birth_date: formData.get('birth_date') || null,
-            weight: parseFloat(formData.get('weight')) || null,
             observations: formData.get('observations'),
-            image_url: imageUrl,
-            species: 'Perro'
+            species: 'Perro' // Valor por defecto
         };
 
         if (!petData.name || !petData.breed) {
             alert('El nombre y la raza son obligatorios.');
             submitButton.disabled = false;
-            submitButton.textContent = 'Guardar Mascota';
             return;
         }
 
@@ -257,6 +237,7 @@ const setupAddPetModal = () => {
         if (success) {
             alert('¡Mascota registrada con éxito!');
             closeAddPetModal();
+            // Refrescar el modal de detalles del cliente para mostrar la nueva mascota
             if (currentClientId) {
                 modalContentBody.innerHTML = '<div class="text-center py-10 text-gray-500">Actualizando...</div>';
                 const updatedDetails = await getClientDetails(currentClientId);
@@ -265,7 +246,7 @@ const setupAddPetModal = () => {
                 }
             }
         } else {
-            if (addPetFormMessage) {
+            if(addPetFormMessage) {
                 addPetFormMessage.textContent = `Error: ${error.message}`;
                 addPetFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
                 addPetFormMessage.classList.remove('hidden');
@@ -273,7 +254,6 @@ const setupAddPetModal = () => {
         }
 
         submitButton.disabled = false;
-        submitButton.textContent = 'Guardar Mascota';
     });
 };
 
@@ -298,7 +278,7 @@ const setupEventListeners = () => {
             const clientId = viewButton.dataset.clientId;
             if (!clientId) return;
 
-            currentClientId = clientId;
+            currentClientId = clientId; // Guardar el ID del cliente actual
             openModal();
             modalContentBody.innerHTML = '<div class="text-center py-10 text-gray-500">Cargando...</div>';
             
@@ -330,7 +310,7 @@ const initializeClientsSection = async () => {
     renderClientsTable(initialClients);
     setupEventListeners();
     setupClientModal();
-    setupAddPetModal();
+    setupAddPetModal(); // Llamar a la nueva función de setup
 };
 
 document.addEventListener('DOMContentLoaded', initializeClientsSection);
