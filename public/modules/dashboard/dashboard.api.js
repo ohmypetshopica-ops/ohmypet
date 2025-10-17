@@ -24,7 +24,6 @@ export const getProductsCount = async () => {
     return count || 0;
 };
 
-// --- INICIO DE LA CORRECCIÓN ---
 export const getUpcomingAppointments = async () => {
     // Se obtiene la fecha y hora actual para una consulta más precisa.
     const now = new Date();
@@ -49,8 +48,6 @@ export const getUpcomingAppointments = async () => {
     }
     return data || [];
 };
-// --- FIN DE LA CORRECCIÓN ---
-
 
 export const getClients = async () => {
     const { data, error } = await supabase.from('profiles').select('*').eq('role', 'cliente').order('full_name', { ascending: true });
@@ -234,7 +231,6 @@ export const uploadReceiptFile = async (appointmentId, file) => {
 export const getClientDetails = async (clientId) => {
     try {
         const [profileRes, petsRes, appointmentsRes] = await Promise.all([
-            // CORRECCIÓN FINAL: Ahora se selecciona la nueva columna 'email' de la tabla 'profiles'.
             supabase.from('profiles').select('*, email').eq('id', clientId).single(),
             supabase.from('pets').select('*').eq('owner_id', clientId),
             supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: false })
@@ -419,5 +415,22 @@ export const registerClientFromDashboard = async (clientData) => {
         return { success: false, error };
     }
 };
+
+// --- NUEVA FUNCIÓN ---
+export const addPetFromDashboard = async (petData) => {
+    // Asegurarse de que el owner_id está incluido en petData
+    if (!petData.owner_id) {
+        return { success: false, error: { message: 'El ID del dueño es requerido.' } };
+    }
+
+    const { error } = await supabase.from('pets').insert([petData]);
+    
+    if (error) {
+        console.error('Error al agregar mascota desde el dashboard:', error);
+        return { success: false, error };
+    }
+    return { success: true };
+};
+
 
 export { supabase };
