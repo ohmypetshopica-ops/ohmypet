@@ -3,6 +3,7 @@ import { supabase } from './profile.api.js';
 // --- ELEMENTOS DEL DOM ---
 const petNameTitle = document.querySelector('#pet-name-title');
 const editPetForm = document.querySelector('#edit-pet-form');
+const skeletonLoader = document.querySelector('#skeleton-loader'); // Nuevo
 const deletePetButton = document.querySelector('#delete-pet-button');
 const petMainPhoto = document.querySelector('#pet-main-photo');
 const historyButton = document.querySelector('#history-button');
@@ -57,6 +58,11 @@ const updateCalculatedAge = () => {
 
 // --- FUNCIÓN PARA CARGAR LOS DATOS DE LA MASCOTA ---
 const loadPetDetails = async () => {
+    // ========= INICIO DE LA MEJORA DE CARGA =========
+    skeletonLoader.classList.remove('hidden');
+    editPetForm.classList.add('hidden');
+    // ========= FIN DE LA MEJORA DE CARGA =========
+
     if (!petId) {
         window.location.href = '/public/modules/profile/profile.html';
         return;
@@ -72,7 +78,7 @@ const loadPetDetails = async () => {
     const { data: pet, error } = await supabase
         .from('pets')
         .select('*')
-        .eq('id', petId)
+        .eq('id', petId) // CORRECCIÓN APLICADA AQUÍ
         .eq('owner_id', user.id)
         .single();
 
@@ -115,6 +121,11 @@ const loadPetDetails = async () => {
     });
 
     historyButton.href = `/public/modules/profile/service-history.html?id=${petId}`;
+
+    // ========= INICIO DE LA MEJORA DE CARGA =========
+    skeletonLoader.classList.add('hidden');
+    editPetForm.classList.remove('hidden');
+    // ========= FIN DE LA MEJORA DE CARGA =========
 };
 
 // --- EVENT LISTENERS ---
@@ -174,7 +185,6 @@ editPetForm.addEventListener('submit', async (e) => {
         last_grooming_date: lastGroomingDateInput.value || null
     };
 
-    // =========== INICIO DE LA CORRECCIÓN ===========
     if (photoFile) {
         const fileName = `${currentUser.id}/${Date.now()}_${photoFile.name}`;
         const { error: uploadError } = await supabase.storage.from('pet_galleries').upload(fileName, photoFile, { upsert: true });
@@ -183,12 +193,10 @@ editPetForm.addEventListener('submit', async (e) => {
             console.error('Error al subir la nueva foto:', uploadError);
             alert('Hubo un error al subir la nueva foto. Se guardarán los otros cambios sin actualizar la imagen.');
         } else {
-            // Se corrige esta línea para que sea igual a la de add-pet.js
             const { data } = supabase.storage.from('pet_galleries').getPublicUrl(fileName);
             updatedPet.image_url = data.publicUrl;
         }
     }
-    // =========== FIN DE LA CORRECCIÓN ===========
 
     const { error } = await supabase
         .from('pets')

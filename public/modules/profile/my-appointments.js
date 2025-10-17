@@ -136,6 +136,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const loadAppointments = async () => {
+        // ========= INICIO DE LA MEJORA DE CARGA =========
+        appointmentsContainer.innerHTML = '';
+        const skeletonTemplate = document.querySelector('#appointment-card-skeleton');
+        if (skeletonTemplate) {
+            for (let i = 0; i < 3; i++) {
+                appointmentsContainer.append(skeletonTemplate.content.cloneNode(true));
+            }
+        } else {
+            appointmentsContainer.innerHTML = '<p class="text-center text-gray-500 py-8">Cargando tus citas...</p>';
+        }
+        // ========= FIN DE LA MEJORA DE CARGA =========
+
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
@@ -149,6 +161,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         allAppointments = appointmentsData;
+
+        // Limpiar los esqueletos antes de renderizar los datos reales
+        appointmentsContainer.innerHTML = ''; 
+
         if (allAppointments && allAppointments.length > 0) {
             appointmentsContainer.innerHTML = allAppointments.map(createAppointmentCard).join('');
         } else {
