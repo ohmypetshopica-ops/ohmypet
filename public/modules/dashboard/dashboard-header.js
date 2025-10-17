@@ -8,7 +8,10 @@ const setupNotifications = async () => {
     const dropdown = document.getElementById('notifications-dropdown');
     const list = document.getElementById('notifications-list');
     
-    if (!button || !countBadge || !dropdown || !list) return;
+    if (!button || !countBadge || !dropdown || !list) {
+        console.error("No se encontraron los elementos de notificación en el DOM.");
+        return;
+    }
 
     const pendingAppointments = await getPendingAppointments();
 

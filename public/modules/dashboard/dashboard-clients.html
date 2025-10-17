@@ -152,27 +152,60 @@
     </div>
 
     <script type="module">
-        const CACHE_VERSION = Date.now();
-        async function loadComponent(url, containerId) {
-            try {
-                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const html = await response.text();
-                document.getElementById(containerId).innerHTML = html;
-            } catch (error) { console.error(`Error cargando ${url}:`, error); }
+    // Este script se encarga de cargar los componentes y luego inicializar los módulos de JS.
+
+    const CACHE_VERSION = Date.now();
+    
+    // Función para cargar componentes HTML (sidebar, header)
+    async function loadComponent(url, containerId) {
+        try {
+            const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const html = await response.text();
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = html;
+            }
+        } catch (error) { 
+            console.error(`Error cargando ${url}:`, error); 
         }
-        document.addEventListener('DOMContentLoaded', async () => {
-            await Promise.all([
-                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
-                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
-            ]);
-            await new Promise(resolve => setTimeout(resolve, 200));
-            try {
-                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
-                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
-            } catch (error) { console.error('Error:', error); }
-        });
-    </script>
+    }
+    
+    // Función principal que se ejecuta cuando el DOM está listo
+    async function initializeDashboard() {
+        // 1. Cargar todos los componentes HTML primero y esperar a que terminen
+        await Promise.all([
+            loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+            loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+        ]);
+        
+        // 2. Ahora que el HTML está en su lugar, importar y ejecutar los scripts
+        try {
+            // Importar y ejecutar el script de autenticación
+            await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
+
+            // Importar y ejecutar el script del sidebar
+            const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
+            if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+            
+            // Importar y ejecutar el script del header (CON LA LÓGICA DE LA CAMPANA)
+            const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
+            if (headerModule?.initializeHeader) headerModule.initializeHeader();
+
+            // Aquí debes asegurarte de importar el script específico de cada página.
+            // Por ejemplo, si estás en dashboard-appointments.html, la siguiente línea es correcta.
+            // Si estás en dashboard-clients.html, cámbiala a `./dashboard-clients.js`.
+            const pageModulePath = window.location.pathname.replace('.html', '.js');
+            await import(pageModulePath + `?v=${CACHE_VERSION}`);
+
+        } catch (error) { 
+            console.error('Error inicializando los scripts del dashboard:', error); 
+        }
+    }
+
+    // Ejecutar la función principal al cargar el contenido del DOM
+    document.addEventListener('DOMContentLoaded', initializeDashboard);
+</script>
     <script type="module" src="../../core/auth.js"></script>
     <script type="module" src="./dashboard-clients.js"></script>
 </body>
