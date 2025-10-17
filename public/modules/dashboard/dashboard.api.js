@@ -25,19 +25,14 @@ export const getProductsCount = async () => {
 };
 
 export const getUpcomingAppointments = async () => {
-    // Se obtiene la fecha y hora actual para una consulta más precisa.
     const now = new Date();
-    const today = now.toISOString().split('T')[0]; // Formato 'YYYY-MM-DD'
-    const currentTime = now.toTimeString().split(' ')[0]; // Formato 'HH:MM:SS'
+    const today = now.toISOString().split('T')[0];
+    const currentTime = now.toTimeString().split(' ')[0];
 
     const { data, error } = await supabase
         .from('appointments')
         .select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`)
-        // Se añaden filtros para obtener:
-        // 1. Citas de días futuros.
-        // 2. Citas del día de hoy que aún no han pasado.
         .or(`appointment_date.gt.${today},and(appointment_date.eq.${today},appointment_time.gte.${currentTime})`)
-        // Se muestran solo las citas que están pendientes o confirmadas, ya que son las "próximas".
         .in('status', ['pendiente', 'confirmada'])
         .order('appointment_date', { ascending: true })
         .order('appointment_time', { ascending: true })
@@ -416,15 +411,11 @@ export const registerClientFromDashboard = async (clientData) => {
     }
 };
 
-// --- NUEVA FUNCIÓN ---
 export const addPetFromDashboard = async (petData) => {
-    // Asegurarse de que el owner_id está incluido en petData
     if (!petData.owner_id) {
         return { success: false, error: { message: 'El ID del dueño es requerido.' } };
     }
-
     const { error } = await supabase.from('pets').insert([petData]);
-    
     if (error) {
         console.error('Error al agregar mascota desde el dashboard:', error);
         return { success: false, error };
@@ -432,5 +423,64 @@ export const addPetFromDashboard = async (petData) => {
     return { success: true };
 };
 
+// --- NUEVAS FUNCIONES ---
+export const getClientsWithPets = async () => {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+            id,
+            full_name,
+            first_name,
+            last_name,
+            pets ( id, name )
+        `)
+        .eq('role', 'cliente')
+        .order('first_name', { ascending: true });
+
+    if (error) {
+        console.error('Error al obtener clientes con mascotas:', error);
+        return [];
+    }
+    return data;
+};
+
+export const getBookedTimesForDashboard = async (date) => {
+    const { data: appointments, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('appointment_time')
+        .eq('appointment_date', date)
+        .in('status', ['pendiente', 'confirmada', 'completada']);
+
+    if (appointmentsError) {
+        console.error("Error al verificar horarios de citas:", appointmentsError);
+    }
+
+    const { data: blockedSlots, error: blockedError } = await supabase
+        .from('blocked_slots')
+        .select('blocked_time')
+        .eq('blocked_date', date);
+
+    if (blockedError) {
+        console.error("Error al verificar horarios bloqueados:", blockedError);
+    }
+
+    const bookedFromAppointments = appointments ? appointments.map(app => app.appointment_time.slice(0, 5)) : [];
+    const bookedFromBlocked = blockedSlots ? blockedSlots.map(slot => slot.blocked_time.slice(0, 5)) : [];
+    
+    return [...new Set([...bookedFromAppointments, ...bookedFromBlocked])];
+};
+
+export const addAppointmentFromDashboard = async (appointmentData) => {
+    const { data, error } = await supabase
+        .from('appointments')
+        .insert([appointmentData])
+        .select();
+
+    if (error) {
+        console.error('Error al crear la cita:', error);
+        return { success: false, error };
+    }
+    return { success: true, data: data[0] };
+};
 
 export { supabase };
