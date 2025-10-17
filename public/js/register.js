@@ -4,6 +4,17 @@ import { supabase } from '../core/supabase.js';
 const registerForm = document.querySelector('#register-form');
 const formMessage = document.querySelector('#form-message');
 
+// --- FUNCIÓN PARA MOSTRAR MENSAJES ---
+const showMessage = (message, type = 'error') => {
+    formMessage.textContent = message;
+    if (type === 'error') {
+        formMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700 font-medium';
+    } else {
+        formMessage.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700 font-medium';
+    }
+    formMessage.classList.remove('hidden');
+};
+
 // --- EVENT LISTENER ---
 registerForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -19,21 +30,18 @@ registerForm.addEventListener('submit', async (event) => {
     const fullName = `${firstName} ${lastName}`;
 
     // --- MEJORA ---
-    // Añadimos una validación explícita para la contraseña.
+    // Validación explícita para la contraseña.
     if (password.length < 6) {
-        formMessage.textContent = 'Error: La contraseña debe tener al menos 6 caracteres.';
-        formMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
+        showMessage('Error: La contraseña debe tener al menos 6 caracteres.');
         return; // Detenemos la ejecución si la contraseña es muy corta
     }
 
     // --- REGISTRO CON SUPABASE ---
-    // Usamos el método signUp de Supabase
     const { data, error } = await supabase.auth.signUp({
         email: email,
         password: password,
         options: {
             data: {
-                // Pasamos los nuevos campos en la metadata
                 first_name: firstName,
                 last_name: lastName,
                 full_name: fullName
@@ -41,11 +49,15 @@ registerForm.addEventListener('submit', async (event) => {
         }
     });
 
-    // --- MANEJO DE LA RESPUESTA ---
+    // --- MANEJO DE LA RESPUESTA MEJORADO ---
     if (error) {
         console.error('Error en el registro:', error.message);
-        formMessage.textContent = `Error: ${error.message}`;
-        formMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
+        // Mostramos un mensaje más específico al usuario
+        if (error.message.includes('User already registered')) {
+            showMessage('Error: Ya existe una cuenta con este correo electrónico.');
+        } else {
+            showMessage(`Error: ${error.message}`);
+        }
     } else {
         // --- CORRECCIÓN: ACTUALIZAR EL PERFIL CON EL EMAIL ---
         if (data.user) {
@@ -56,13 +68,14 @@ registerForm.addEventListener('submit', async (event) => {
 
             if (updateError) {
                 console.error('Error al guardar el email en el perfil:', updateError.message);
+                // Informar al usuario de un problema menor no crítico
+                showMessage('Registro casi completo. Hubo un problema menor al guardar tu email en el perfil, pero puedes continuar.', 'success');
             }
         }
         // --- FIN DE LA CORRECCIÓN ---
 
         console.log('Registro exitoso:', data.user);
-        formMessage.textContent = '¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.';
-        formMessage.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
+        showMessage('¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.', 'success');
         registerForm.reset(); // Limpiamos el formulario
     }
 });

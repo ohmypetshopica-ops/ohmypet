@@ -35,18 +35,20 @@
             <div id="progress-bar" class="bg-green-500 h-2.5 rounded-full" style="width: 25%; transition: width 0.3s ease-in-out;"></div>
         </div>
 
+        <div id="form-message" class="hidden mb-6 p-4 rounded-md font-medium text-sm"></div>
+
         <form id="add-pet-form" class="space-y-6">
             <div id="step-1" class="step space-y-6">
                 <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nombre <span class="text-red-500">*</span></label>
                     <input type="text" id="name" name="name" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ej: Max">
                 </div>
                 <div>
-                    <label for="breed" class="block text-sm font-medium text-gray-700 mb-1">Raza</label>
+                    <label for="breed" class="block text-sm font-medium text-gray-700 mb-1">Raza <span class="text-red-500">*</span></label>
                     <input type="text" id="breed" name="breed" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ej: Golden Retriever">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Sexo</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sexo <span class="text-red-500">*</span></label>
                     <div class="grid grid-cols-2 gap-4">
                         <button type="button" class="sex-btn p-4 border-2 border-gray-200 rounded-lg flex items-center justify-center space-x-3 focus:outline-none transition-colors duration-200" data-sex="Macho">
                             <img src="/public/assets/icons/man-icon.svg" class="h-6 w-6">
@@ -65,8 +67,8 @@
             </div>
 
             <div id="step-2" class="step hidden space-y-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Tamaño</label>
+                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tamaño <span class="text-red-500">*</span></label>
                     <div class="grid grid-cols-3 gap-3">
                         <button type="button" class="size-btn p-3 border-2 border-gray-200 rounded-lg flex flex-col items-center justify-center space-y-2 flex-1 focus:outline-none" data-size="Pequeño">
                             <img src="/public/assets/icons/dog-icon.svg" class="h-8 text-gray-600">

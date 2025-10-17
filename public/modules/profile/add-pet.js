@@ -14,6 +14,7 @@ const sizeButtons = document.querySelectorAll('.size-btn');
 const hiddenSizeInput = document.querySelector('#size');
 const sexButtons = document.querySelectorAll('.sex-btn');
 const hiddenSexInput = document.querySelector('#sex');
+const formMessage = document.querySelector('#form-message'); // Nuevo elemento
 
 // --- ESTADO ---
 let currentStep = 1;
@@ -24,8 +25,16 @@ let photoFile = null;
 const formTitles = ["Cuéntanos sobre tu mascota", "Detalles físicos", "Observaciones finales"];
 const formSubtitles = ["Comencemos con lo básico.", "Ayúdanos a conocer mejor a tu mascota.", "Agrega cualquier detalle importante."];
 
+// --- FUNCIÓN PARA MOSTRAR MENSAJES ---
+const showMessage = (message, type = 'error') => {
+    formMessage.textContent = message;
+    formMessage.className = `p-4 rounded-md font-medium text-sm mb-6 ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+    formMessage.classList.remove('hidden');
+};
+
 // --- NAVEGACIÓN ---
 const showStep = (stepNumber) => {
+    formMessage.classList.add('hidden'); // Ocultar mensajes al cambiar de paso
     steps.forEach(step => step.classList.add('hidden'));
     document.querySelector(`#step-${stepNumber}`).classList.remove('hidden');
     const progress = (stepNumber / totalSteps) * 100;
@@ -37,15 +46,11 @@ const showStep = (stepNumber) => {
 
 const validateStep = (stepNumber) => {
     const currentStepElement = document.querySelector(`#step-${stepNumber}`);
-    const inputs = currentStepElement.querySelectorAll('input[required], select[required]');
+    const inputs = currentStepElement.querySelectorAll('input[required]');
     for (const input of inputs) {
-        if (input.type === 'hidden' && !input.value.trim()) {
-            alert(`Por favor, completa todos los campos requeridos.`);
-            return false;
-        }
-        if (input.type !== 'hidden' && !input.value.trim()) {
-            alert(`Por favor, completa todos los campos requeridos.`);
-            input.focus();
+        if (!input.value.trim()) {
+            showMessage('Por favor, completa todos los campos marcados con *.');
+            if (input.type !== 'hidden') input.focus();
             return false;
         }
     }
@@ -125,8 +130,8 @@ addPetForm.addEventListener('submit', async (event) => {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        alert('Usuario no autenticado. Redirigiendo al login.');
-        window.location.href = '/public/modules/login/login.html';
+        showMessage('Usuario no autenticado. Serás redirigido al login.');
+        setTimeout(() => window.location.href = '/public/modules/login/login.html', 2000);
         return;
     }
 
@@ -136,7 +141,7 @@ addPetForm.addEventListener('submit', async (event) => {
         const { error } = await supabase.storage.from('pet_galleries').upload(fileName, photoFile);
         if (error) {
             console.error('Error al subir la foto:', error);
-            alert('Hubo un error al subir la foto. Se guardará la mascota sin imagen.');
+            showMessage('Hubo un error al subir la foto. Se guardará la mascota sin imagen.');
         } else {
             const { publicUrl } = supabase.storage.from('pet_galleries').getPublicUrl(fileName).data;
             imageUrl = publicUrl;
@@ -152,20 +157,18 @@ addPetForm.addEventListener('submit', async (event) => {
         birth_date: petData.birth_date || null,
     };
     
-    // Eliminamos propiedades no correspondientes a columnas
     delete finalPetData.photo;
-    delete finalPetData.age; // Por si acaso quedó algo
 
     const { error: insertError } = await supabase.from('pets').insert([finalPetData]);
 
     if (insertError) {
         console.error('Error al agregar la mascota:', insertError);
-        alert('Hubo un error al guardar la mascota. Inténtalo de nuevo.');
+        showMessage(`Hubo un error al guardar la mascota: ${insertError.message}`);
         submitButton.disabled = false;
         submitButton.textContent = '¡Guardar Mascota!';
     } else {
-        alert('¡Mascota agregada con éxito!');
-        window.location.href = '/public/modules/profile/profile.html';
+        showMessage('¡Mascota agregada con éxito! Redirigiendo...', 'success');
+        setTimeout(() => window.location.href = '/public/modules/profile/profile.html', 2000);
     }
 });
 
@@ -173,7 +176,6 @@ addPetForm.addEventListener('submit', async (event) => {
 document.addEventListener('DOMContentLoaded', () => {
     showStep(1);
     
-    // Establecer fecha máxima como hoy
     const birthDateInput = document.querySelector('#birth_date');
     if (birthDateInput) {
         birthDateInput.max = new Date().toISOString().split('T')[0];
