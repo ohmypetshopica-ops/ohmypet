@@ -24,17 +24,33 @@ export const getProductsCount = async () => {
     return count || 0;
 };
 
+// --- INICIO DE LA CORRECCIÓN ---
 export const getUpcomingAppointments = async () => {
+    // Se obtiene la fecha y hora actual para una consulta más precisa.
+    const now = new Date();
+    const today = now.toISOString().split('T')[0]; // Formato 'YYYY-MM-DD'
+    const currentTime = now.toTimeString().split(' ')[0]; // Formato 'HH:MM:SS'
+
     const { data, error } = await supabase
         .from('appointments')
         .select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`)
-        .gte('appointment_date', new Date().toISOString().split('T')[0])
+        // Se añaden filtros para obtener:
+        // 1. Citas de días futuros.
+        // 2. Citas del día de hoy que aún no han pasado.
+        .or(`appointment_date.gt.${today},and(appointment_date.eq.${today},appointment_time.gte.${currentTime})`)
+        // Se muestran solo las citas que están pendientes o confirmadas, ya que son las "próximas".
+        .in('status', ['pendiente', 'confirmada'])
         .order('appointment_date', { ascending: true })
         .order('appointment_time', { ascending: true })
         .limit(5);
-    if (error) console.error('Error al obtener próximas citas:', error);
+
+    if (error) {
+        console.error('Error al obtener próximas citas:', error);
+    }
     return data || [];
 };
+// --- FIN DE LA CORRECCIÓN ---
+
 
 export const getClients = async () => {
     const { data, error } = await supabase.from('profiles').select('*').eq('role', 'cliente').order('full_name', { ascending: true });
