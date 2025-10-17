@@ -31,7 +31,7 @@ const addPetFormMessage = document.querySelector('#add-pet-form-message');
 const petOwnerIdInput = document.querySelector('#pet-owner-id');
 
 
-// --- RENDERIZADO DE DATOS ---
+// --- RENDERIZADO DE TABLA ---
 const renderClientsTable = (clients) => {
     if (!clientsTableBody) return;
     clientsTableBody.innerHTML = clients.length > 0 

@@ -179,7 +179,7 @@
             </form>
         </div>
     </div>
-
+    
     <script type="module">
         const CACHE_VERSION = Date.now();
         async function loadComponent(url, containerId) {
@@ -199,8 +199,10 @@
             try {
                 const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
                 if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+
                 const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
                 if (headerModule?.initializeHeader) headerModule.initializeHeader();
+                
                 await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
                 await import(`./dashboard-clients.js?v=${CACHE_VERSION}`);
             } catch (error) { console.error('Error:', error); }
