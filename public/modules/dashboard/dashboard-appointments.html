@@ -179,10 +179,15 @@
                 </div>
                 <div class="p-6 space-y-4 overflow-y-auto">
                     <div id="add-appointment-message" class="hidden"></div>
-                    <div>
-                        <label for="client-select" class="block text-sm font-medium text-gray-700 mb-1">1. Cliente *</label>
-                        <select id="client-select" name="user_id" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500"></select>
+                    
+                    <div class="relative">
+                        <label for="client-search-input-modal" class="block text-sm font-medium text-gray-700 mb-1">1. Cliente *</label>
+                        <input type="text" id="client-search-input-modal" placeholder="Escribe para buscar un cliente..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" autocomplete="off">
+                        <input type="hidden" id="selected-client-id" name="user_id" required>
+                        <div id="client-search-results" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                            </div>
                     </div>
+
                     <div>
                         <label for="pet-select" class="block text-sm font-medium text-gray-700 mb-1">2. Mascota *</label>
                         <select id="pet-select" name="pet_id" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500" disabled>
@@ -213,6 +218,7 @@
             </form>
         </div>
     </div>
+
 
     <script type="module">
         const CACHE_VERSION = Date.now();

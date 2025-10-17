@@ -52,11 +52,13 @@ const addAppointmentBtn = document.querySelector('#add-appointment-btn');
 const addAppointmentModal = document.querySelector('#add-appointment-modal');
 const addAppointmentForm = document.querySelector('#add-appointment-form');
 const cancelAddAppointmentBtn = document.querySelector('#cancel-add-appointment-btn');
-const clientSelect = document.querySelector('#client-select');
 const petSelect = document.querySelector('#pet-select');
 const newAppointmentDateInput = document.querySelector('#new-appointment-date');
 const newAppointmentTimeSelect = document.querySelector('#new-appointment-time');
 const addAppointmentMessage = document.querySelector('#add-appointment-message');
+const clientSearchInputModal = document.querySelector('#client-search-input-modal');
+const clientSearchResults = document.querySelector('#client-search-results');
+const selectedClientIdInput = document.querySelector('#selected-client-id');
 
 // --- RENDERIZADO Y FILTROS DE TABLA ---
 
@@ -100,11 +102,14 @@ const applyFiltersAndSearch = () => {
 
 const openAddAppointmentModal = () => {
     addAppointmentForm.reset();
+    clientSearchInputModal.value = '';
+    selectedClientIdInput.value = '';
     petSelect.innerHTML = '<option>Selecciona un cliente primero</option>';
     petSelect.disabled = true;
     newAppointmentTimeSelect.innerHTML = '<option>Selecciona una fecha</option>';
     newAppointmentTimeSelect.disabled = true;
     addAppointmentMessage.classList.add('hidden');
+    clientSearchResults.classList.add('hidden');
     addAppointmentModal.classList.remove('hidden');
 };
 
@@ -112,18 +117,8 @@ const closeAddAppointmentModal = () => {
     addAppointmentModal.classList.add('hidden');
 };
 
-const populateClientSelect = () => {
-    clientSelect.innerHTML = '<option value="">Selecciona un cliente...</option>';
-    clientsWithPets.forEach(client => {
-        const displayName = (client.first_name && client.last_name) ? `${client.first_name} ${client.last_name}` : client.full_name;
-        const option = new Option(displayName, client.id);
-        clientSelect.add(option);
-    });
-};
-
-const handleClientChange = () => {
-    const selectedClientId = clientSelect.value;
-    const selectedClient = clientsWithPets.find(c => c.id === selectedClientId);
+const populatePetSelect = (clientId) => {
+    const selectedClient = clientsWithPets.find(c => c.id === clientId);
 
     if (selectedClient && selectedClient.pets.length > 0) {
         petSelect.innerHTML = '<option value="">Selecciona una mascota...</option>';
@@ -133,10 +128,23 @@ const handleClientChange = () => {
         });
         petSelect.disabled = false;
     } else {
-        petSelect.innerHTML = '<option>Este cliente no tiene mascotas</option>';
+        petSelect.innerHTML = '<option>Este cliente no tiene mascotas registradas</option>';
         petSelect.disabled = true;
     }
 };
+
+const renderClientSearchResults = (clients) => {
+    if (clients.length === 0) {
+        clientSearchResults.innerHTML = `<div class="p-3 text-sm text-gray-500">No se encontraron clientes.</div>`;
+    } else {
+        clientSearchResults.innerHTML = clients.map(client => {
+            const displayName = (client.first_name && client.last_name) ? `${client.first_name} ${client.last_name}` : client.full_name;
+            return `<div class="p-3 hover:bg-gray-100 cursor-pointer text-sm" data-client-id="${client.id}" data-client-name="${displayName}">${displayName}</div>`;
+        }).join('');
+    }
+    clientSearchResults.classList.remove('hidden');
+};
+
 
 const renderAvailableTimes = async () => {
     const selectedDate = newAppointmentDateInput.value;
@@ -162,7 +170,6 @@ const renderAvailableTimes = async () => {
 
 const initializeAddAppointmentModal = async () => {
     clientsWithPets = await getClientsWithPets();
-    populateClientSelect();
 
     addAppointmentBtn.addEventListener('click', openAddAppointmentModal);
     cancelAddAppointmentBtn.addEventListener('click', closeAddAppointmentModal);
@@ -170,7 +177,46 @@ const initializeAddAppointmentModal = async () => {
         if (e.target === addAppointmentModal) closeAddAppointmentModal();
     });
 
-    clientSelect.addEventListener('change', handleClientChange);
+    clientSearchInputModal.addEventListener('input', () => {
+        const searchTerm = clientSearchInputModal.value.toLowerCase();
+        
+        petSelect.innerHTML = '<option>Selecciona un cliente primero</option>';
+        petSelect.disabled = true;
+        selectedClientIdInput.value = '';
+
+        if (searchTerm.length < 1) {
+            clientSearchResults.classList.add('hidden');
+            return;
+        }
+
+        const matchedClients = clientsWithPets.filter(client => {
+            const fullName = ((client.first_name || '') + ' ' + (client.last_name || '')).toLowerCase();
+            return fullName.includes(searchTerm);
+        });
+
+        renderClientSearchResults(matchedClients);
+    });
+
+    clientSearchResults.addEventListener('click', (e) => {
+        const clientDiv = e.target.closest('[data-client-id]');
+        if (clientDiv) {
+            const clientId = clientDiv.dataset.clientId;
+            const clientName = clientDiv.dataset.clientName;
+
+            clientSearchInputModal.value = clientName;
+            selectedClientIdInput.value = clientId;
+
+            clientSearchResults.classList.add('hidden');
+            populatePetSelect(clientId);
+        }
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!clientSearchInputModal.contains(e.target) && !clientSearchResults.contains(e.target)) {
+            clientSearchResults.classList.add('hidden');
+        }
+    });
+
     newAppointmentDateInput.addEventListener('change', renderAvailableTimes);
     newAppointmentDateInput.min = new Date().toISOString().split("T")[0];
 
@@ -328,7 +374,6 @@ const initializePage = async () => {
         }
     });
 
-    // --- Listeners para el modal de COMPLETAR cita ---
     cancelCompletionBtn?.addEventListener('click', closeCompletionModal);
 
     arrivalPhotoInput?.addEventListener('change', (event) => {
@@ -364,13 +409,164 @@ const initializePage = async () => {
     });
 
     saveDuringAppointmentBtn?.addEventListener('click', async () => {
-        // ... (lógica sin cambios)
+        if (!currentAppointmentId) return;
+
+        saveDuringAppointmentBtn.disabled = true;
+        uploadMessage.classList.remove('hidden');
+        uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-blue-100 text-blue-700';
+        uploadMessage.textContent = 'Guardando información...';
+
+        try {
+            if (arrivalPhotoFile) {
+                uploadMessage.textContent = 'Subiendo foto de llegada...';
+                await uploadAppointmentPhoto(currentAppointmentId, arrivalPhotoFile, 'arrival');
+                arrivalPhotoFile = null;
+            }
+
+            if (departurePhotoFile) {
+                uploadMessage.textContent = 'Subiendo foto de salida...';
+                await uploadAppointmentPhoto(currentAppointmentId, departurePhotoFile, 'departure');
+                departurePhotoFile = null;
+            }
+
+            if (receiptFile) {
+                uploadMessage.textContent = 'Subiendo boleta...';
+                await uploadReceiptFile(currentAppointmentId, receiptFile);
+                receiptFile = null;
+            }
+
+            const observations = finalObservationsTextarea.value.trim();
+            const weight = petWeightInput.value.trim();
+            const price = servicePriceInput.value.trim();
+            const paymentMethod = paymentMethodSelect.value;
+
+            const updateData = {};
+            if (observations) updateData.final_observations = observations;
+            if (weight) updateData.final_weight = parseFloat(weight);
+            if (price) updateData.service_price = parseFloat(price);
+            if (paymentMethod) updateData.payment_method = paymentMethod;
+
+            if (Object.keys(updateData).length > 0) {
+                uploadMessage.textContent = 'Guardando datos adicionales...';
+                await supabase
+                    .from('appointments')
+                    .update(updateData)
+                    .eq('id', currentAppointmentId);
+            }
+
+            if (weight) {
+                uploadMessage.textContent = 'Registrando peso...';
+                await addWeightRecord(currentPetId, parseFloat(weight), currentAppointmentId);
+            }
+
+            uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-green-100 text-green-700';
+            uploadMessage.textContent = '✓ Información guardada correctamente';
+
+            await loadExistingPhotosAndReceipt(currentAppointmentId);
+
+            setTimeout(() => {
+                uploadMessage.classList.add('hidden');
+            }, 3000);
+        } catch (error) {
+            uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
+            uploadMessage.textContent = `Error: ${error.message}`;
+        } finally {
+            saveDuringAppointmentBtn.disabled = false;
+        }
     });
 
     confirmCompletionBtn?.addEventListener('click', async () => {
-        // ... (lógica sin cambios)
-    });
+        const weight = petWeightInput.value.trim();
+        const price = servicePriceInput.value.trim();
+        const paymentMethod = paymentMethodSelect.value;
+        const photos = await getAppointmentPhotos(currentAppointmentId);
+        const hasArrivalPhoto = photos.some(p => p.photo_type === 'arrival') || arrivalPhotoFile;
+        const hasDeparturePhoto = photos.some(p => p.photo_type === 'departure') || departurePhotoFile;
 
+        let missingFields = [];
+        if (!hasArrivalPhoto) missingFields.push('foto de llegada');
+        if (!hasDeparturePhoto) missingFields.push('foto de salida');
+        if (!weight) missingFields.push('peso de la mascota');
+        if (!price) missingFields.push('precio del servicio');
+        if (!paymentMethod) missingFields.push('método de pago');
+
+        if (missingFields.length > 0) {
+            alert(`❌ Para completar la cita, debes agregar:\n\n• ${missingFields.join('\n• ')}\n\nPuedes usar el botón "Guardar Información" para ir agregando los datos durante la cita.`);
+            return;
+        }
+
+        confirmCompletionBtn.disabled = true;
+        confirmCompletionBtn.textContent = 'Procesando...';
+        uploadMessage.classList.remove('hidden');
+        uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-blue-100 text-blue-700';
+        uploadMessage.textContent = 'Completando cita...';
+
+        try {
+            if (arrivalPhotoFile) {
+                uploadMessage.textContent = 'Subiendo foto de llegada...';
+                await uploadAppointmentPhoto(currentAppointmentId, arrivalPhotoFile, 'arrival');
+            }
+            if (departurePhotoFile) {
+                uploadMessage.textContent = 'Subiendo foto de salida...';
+                await uploadAppointmentPhoto(currentAppointmentId, departurePhotoFile, 'departure');
+            }
+            if (receiptFile) {
+                uploadMessage.textContent = 'Subiendo boleta...';
+                await uploadReceiptFile(currentAppointmentId, receiptFile);
+            }
+
+            uploadMessage.textContent = 'Registrando peso de la mascota...';
+            await addWeightRecord(currentPetId, parseFloat(weight), currentAppointmentId);
+
+            uploadMessage.textContent = 'Guardando observaciones y completando cita...';
+            const observations = finalObservationsTextarea.value.trim();
+            
+            const appointment = allAppointments.find(app => app.id === currentAppointmentId);
+            const appointmentDate = appointment ? appointment.appointment_date : new Date().toISOString().split('T')[0];
+
+            const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', {
+                observations: observations,
+                weight: parseFloat(weight),
+                price: parseFloat(price),
+                paymentMethod: paymentMethod
+            });
+
+            if (success) {
+                uploadMessage.textContent = 'Actualizando fecha de último servicio...';
+                const { error: petUpdateError } = await supabase
+                    .from('pets')
+                    .update({ last_grooming_date: appointmentDate })
+                    .eq('id', currentPetId);
+
+                if (petUpdateError) {
+                    alert('La cita se completó, pero hubo un error al actualizar la fecha del último baño en el perfil de la mascota.');
+                    console.error('Error al actualizar last_grooming_date:', petUpdateError);
+                }
+                
+                const index = allAppointments.findIndex(app => app.id == currentAppointmentId);
+                if (index !== -1) {
+                    allAppointments[index].status = 'completada';
+                    allAppointments[index].final_observations = observations;
+                    allAppointments[index].final_weight = parseFloat(weight);
+                    allAppointments[index].service_price = parseFloat(price);
+                    allAppointments[index].payment_method = paymentMethod;
+                    applyFiltersAndSearch();
+                }
+                closeCompletionModal();
+                alert('✓ Cita completada exitosamente');
+            } else {
+                throw new Error('No se pudo actualizar el estado de la cita.');
+            }
+
+        } catch (error) {
+            uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
+            uploadMessage.textContent = `Error: ${error.message}`;
+        } finally {
+            confirmCompletionBtn.disabled = false;
+            confirmCompletionBtn.textContent = '✓ Confirmar y Completar Cita';
+        }
+    });
+    
     // Inicializar el nuevo modal para agendar citas
     initializeAddAppointmentModal();
 };
