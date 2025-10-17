@@ -51,9 +51,7 @@
         </div>
 
         <form id="onboarding-form" class="space-y-6">
-            <!-- PASO 1: Perfil + Avatar -->
             <div id="step-1" class="step space-y-6">
-                <!-- Selección de Avatar -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-3 text-center">Elige tu Avatar</label>
                     <div id="avatar-selection" class="grid grid-cols-6 gap-3">
@@ -73,7 +71,6 @@
                     <input type="hidden" id="avatar_url" name="avatar_url">
                 </div>
 
-                <!-- Nombre y Apellidos -->
                 <div>
                     <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">Nombre <span
                             class="text-red-500">*</span></label>
@@ -94,7 +91,6 @@
                 </div>
             </div>
 
-            <!-- PASO 2: Documento -->
             <div id="step-2" class="step hidden space-y-6">
                 <div>
                     <label for="doc_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento <span
@@ -110,9 +106,10 @@
                 <div>
                     <label for="doc_num" class="block text-sm font-medium text-gray-700 mb-1">Número de Documento <span
                             class="text-red-500">*</span></label>
-                    <input type="text" id="doc_num" name="doc_num" required
+                    <input type="tel" id="doc_num" name="doc_num" required
                         class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500"
-                        placeholder="Ej: 12345678">
+                        placeholder="Ej: 12345678"
+                        inputmode="numeric">
                 </div>
                 <div class="flex justify-between pt-4">
                     <button type="button"
@@ -122,7 +119,6 @@
                 </div>
             </div>
 
-            <!-- PASO 3: Contacto -->
             <div id="step-3" class="step hidden space-y-6">
                 <div>
                     <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Teléfono / WhatsApp <span
@@ -162,7 +158,6 @@
                 </div>
             </div>
 
-            <!-- PASO 4: Emergencia -->
             <div id="step-4" class="step hidden space-y-6">
                 <div>
                     <label for="emergency_contact_name" class="block text-sm font-medium text-gray-700 mb-1">Nombre de

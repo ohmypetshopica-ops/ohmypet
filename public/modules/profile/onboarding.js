@@ -10,6 +10,8 @@ const formTitle = document.querySelector('#form-title');
 const formSubtitle = document.querySelector('#form-subtitle');
 const avatarSelection = document.querySelector('#avatar-selection');
 const avatarUrlInput = document.querySelector('#avatar_url');
+const docTypeSelect = document.querySelector('#doc_type');
+const docNumInput = document.querySelector('#doc_num');
 
 // --- ESTADO DEL FORMULARIO ---
 let currentStep = 1;
@@ -32,6 +34,7 @@ const showStep = (stepNumber) => {
     currentStep = stepNumber;
 };
 
+// --- FUNCIÓN DE VALIDACIÓN MODIFICADA ---
 const validateStep = (stepNumber) => {
     const currentStepElement = document.querySelector(`#step-${stepNumber}`);
     const inputs = currentStepElement.querySelectorAll('input[required], select[required]');
@@ -42,8 +45,28 @@ const validateStep = (stepNumber) => {
             return false;
         }
     }
+    
+    // --- INICIO DE LA NUEVA VALIDACIÓN ---
+    if (stepNumber === 2) {
+        const selectedType = docTypeSelect.value;
+        const docNum = docNumInput.value;
+
+        if (selectedType === 'DNI' && docNum.length !== 8) {
+            alert('El DNI debe tener exactamente 8 dígitos.');
+            docNumInput.focus();
+            return false;
+        }
+        if (selectedType === 'Carnet de Extranjería' && docNum.length !== 9) {
+            alert('El Carnet de Extranjería debe tener exactamente 9 dígitos.');
+            docNumInput.focus();
+            return false;
+        }
+    }
+    // --- FIN DE LA NUEVA VALIDACIÓN ---
+
     return true;
 };
+
 
 const collectStepData = (stepNumber) => {
     const currentStepElement = document.querySelector(`#step-${stepNumber}`);
@@ -59,17 +82,53 @@ const collectStepData = (stepNumber) => {
 if (avatarSelection) {
     avatarSelection.addEventListener('click', (event) => {
         if (event.target.tagName === 'IMG' && event.target.classList.contains('avatar-option')) {
-            // Quitar selección previa
             avatarSelection.querySelectorAll('.avatar-option').forEach(img => {
                 img.classList.remove('selected');
             });
-
-            // Marcar nuevo avatar
             event.target.classList.add('selected');
             avatarUrlInput.value = event.target.src;
         }
     });
 }
+
+// --- NUEVA FUNCIÓN PARA VALIDACIÓN DE DOCUMENTO ---
+const setupDocumentValidation = () => {
+    if (!docTypeSelect || !docNumInput) return;
+
+    const updateInputRules = () => {
+        const selectedType = docTypeSelect.value;
+        docNumInput.value = '';
+
+        if (selectedType === 'DNI') {
+            docNumInput.setAttribute('maxlength', '8');
+            docNumInput.setAttribute('placeholder', '8 dígitos numéricos');
+            docNumInput.setAttribute('pattern', '[0-9]{8}');
+            docNumInput.setAttribute('inputmode', 'numeric');
+        } else if (selectedType === 'Carnet de Extranjería') {
+            docNumInput.setAttribute('maxlength', '9');
+            docNumInput.setAttribute('placeholder', '9 dígitos numéricos');
+            docNumInput.setAttribute('pattern', '[0-9]{9}');
+            docNumInput.setAttribute('inputmode', 'numeric');
+        } else {
+            docNumInput.removeAttribute('maxlength');
+            docNumInput.setAttribute('placeholder', 'Número de Documento');
+            docNumInput.removeAttribute('pattern');
+            docNumInput.setAttribute('inputmode', 'text');
+        }
+    };
+
+    docTypeSelect.addEventListener('change', updateInputRules);
+
+    docNumInput.addEventListener('input', () => {
+        const selectedType = docTypeSelect.value;
+        if (selectedType === 'DNI' || selectedType === 'Carnet de Extranjería') {
+            docNumInput.value = docNumInput.value.replace(/[^0-9]/g, '');
+        }
+    });
+
+    updateInputRules();
+};
+
 
 // --- LÓGICA PRINCIPAL ---
 const initializeOnboarding = async () => {
@@ -80,7 +139,6 @@ const initializeOnboarding = async () => {
     }
     currentUser = user;
 
-    // Cargar datos desde raw_user_meta_data (del registro)
     const { data: profile } = await supabase
         .from('profiles')
         .select('first_name, last_name, doc_type, doc_num, phone, district, emergency_contact_name, emergency_contact_phone, avatar_url')
@@ -88,7 +146,6 @@ const initializeOnboarding = async () => {
         .single();
 
     if (profile) {
-        // Si ya tiene datos en profiles, usarlos
         document.querySelector('#first_name').value = profile.first_name || '';
         document.querySelector('#last_name').value = profile.last_name || '';
         document.querySelector('#doc_type').value = profile.doc_type || '';
@@ -108,7 +165,6 @@ const initializeOnboarding = async () => {
         }
 
     } else if (user.user_metadata) {
-        // Si no, usar metadata del registro
         document.querySelector('#first_name').value = user.user_metadata.first_name || '';
         document.querySelector('#last_name').value = user.user_metadata.last_name || '';
     }
@@ -140,12 +196,11 @@ onboardingForm.addEventListener('submit', async (event) => {
     
     collectStepData(currentStep);
 
-    // Obtener email del usuario de la sesión
     const userEmail = currentUser.email;
 
     const finalData = {
         ...onboardingData,
-        email: userEmail, // Agregamos el email a los datos finales
+        email: userEmail,
         onboarding_completed: true
     };
     
@@ -162,4 +217,7 @@ onboardingForm.addEventListener('submit', async (event) => {
 });
 
 // --- INICIALIZACIÓN ---
-document.addEventListener('DOMContentLoaded', initializeOnboarding);
+document.addEventListener('DOMContentLoaded', () => {
+    initializeOnboarding();
+    setupDocumentValidation(); // Se llama a la nueva función
+});
