@@ -1,20 +1,19 @@
 // public/modules/dashboard/dashboard-clients.js
 
-import { getClientsPaginated, getClientDetails, registerClientFromDashboard, addPetFromDashboard } from './dashboard.api.js';
+import { getClients, searchClients, getClientDetails, registerClientFromDashboard, addPetFromDashboard } from './dashboard.api.js';
 import { createClientRow } from './dashboard.utils.js';
 
 // --- ELEMENTOS DEL DOM ---
 const clientsTableBody = document.querySelector('#clients-table-body');
 const clientSearchInput = document.querySelector('#client-search-input');
 const headerTitle = document.querySelector('#header-title');
-const paginationContainer = document.querySelector('#pagination-container');
 
 // --- ELEMENTOS DEL MODAL DE DETALLES ---
 const clientDetailsModal = document.querySelector('#client-details-modal');
 const modalCloseBtn = document.querySelector('#modal-close-btn');
 const modalClientName = document.querySelector('#modal-client-name');
 const modalContentBody = document.querySelector('#modal-content-body');
-let currentClientId = null;
+let currentClientId = null; // Variable para guardar el ID del cliente que se está viendo
 
 // --- ELEMENTOS DEL MODAL DE REGISTRO DE CLIENTE---
 const addClientButton = document.querySelector('#add-client-button');
@@ -32,95 +31,29 @@ const addPetForm = document.querySelector('#add-pet-form');
 const addPetFormMessage = document.querySelector('#add-pet-form-message');
 const petOwnerIdInput = document.querySelector('#pet-owner-id');
 
-// --- ESTADO DE PAGINACIÓN Y BÚSQUEDA ---
-let currentPage = 1;
-const itemsPerPage = 10;
-let totalClients = 0;
-let currentSearch = '';
 
 // --- RENDERIZADO DE DATOS ---
 const renderClientsTable = (clients) => {
     if (!clientsTableBody) return;
     clientsTableBody.innerHTML = clients.length > 0 
         ? clients.map(createClientRow).join('') 
-        : `<tr><td colspan="3" class="text-center py-8 text-gray-500">No se encontraron clientes.</td></tr>`;
+        : `<tr><td colspan="3" class="text-center py-4 text-gray-500">No hay clientes registrados.</td></tr>`;
 };
 
-// --- RENDERIZADO DE PAGINACIÓN ---
-const renderPagination = () => {
-    if (!paginationContainer) return;
-    const totalPages = Math.ceil(totalClients / itemsPerPage);
-    
-    if (totalPages <= 1) {
-        paginationContainer.innerHTML = '';
-        return;
-    }
-
-    let paginationHTML = `
-        <div class="flex items-center justify-between">
-            <p class="text-sm text-gray-700">
-                Mostrando <span class="font-medium">${Math.min((currentPage - 1) * itemsPerPage + 1, totalClients)}</span>
-                a <span class="font-medium">${Math.min(currentPage * itemsPerPage, totalClients)}</span>
-                de <span class="font-medium">${totalClients}</span> resultados
-            </p>
-            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-    `;
-
-    // Botón Anterior
-    paginationHTML += `
-        <button data-page="${currentPage - 1}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 ${currentPage === 1 ? 'cursor-not-allowed opacity-50' : ''}" ${currentPage === 1 ? 'disabled' : ''}>
-            Anterior
-        </button>
-    `;
-
-    // Lógica de los números de página
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-
-    for (let i = startPage; i <= endPage; i++) {
-        const activeClass = i === currentPage ? 'z-10 bg-green-50 border-green-500 text-green-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50';
-        paginationHTML += `<button data-page="${i}" class="relative inline-flex items-center px-4 py-2 border text-sm font-medium ${activeClass}">${i}</button>`;
-    }
-
-    // Botón Siguiente
-    paginationHTML += `
-        <button data-page="${currentPage + 1}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 ${currentPage === totalPages ? 'cursor-not-allowed opacity-50' : ''}" ${currentPage === totalPages ? 'disabled' : ''}>
-            Siguiente
-        </button>
-    `;
-    
-    paginationHTML += '</nav></div>';
-    paginationContainer.innerHTML = paginationHTML;
-
-    paginationContainer.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', () => {
-            currentPage = parseInt(btn.dataset.page);
-            loadClients();
-        });
-    });
-};
-
-// --- CARGA DE DATOS ---
-const loadClients = async () => {
-    clientsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-gray-500">Cargando clientes...</td></tr>`;
-    
-    const { clients, total } = await getClientsPaginated(currentPage, itemsPerPage, currentSearch);
-    totalClients = total;
-    
-    renderClientsTable(clients);
-    renderPagination();
-};
-
-// --- LÓGICA DEL MODAL DE DETALLES (COMPLETA) ---
+// --- LÓGICA DEL MODAL DE DETALLES ---
 const openModal = () => clientDetailsModal.classList.remove('hidden');
 const closeModal = () => {
     clientDetailsModal.classList.add('hidden');
-    currentClientId = null;
+    currentClientId = null; // Limpiar el ID al cerrar
 };
 
 const populateModal = (details) => {
     const { profile, pets, appointments } = details;
-    const displayName = (profile.first_name && profile.last_name) ? `${profile.first_name} ${profile.last_name}` : profile.full_name;
+
+    const displayName = (profile.first_name && profile.last_name) 
+        ? `${profile.first_name} ${profile.last_name}` 
+        : profile.full_name;
+    
     modalClientName.textContent = displayName;
 
     modalContentBody.innerHTML = `
@@ -135,6 +68,7 @@ const populateModal = (details) => {
                 <p><strong>Contacto Emergencia:</strong> ${profile.emergency_contact_name || 'N/A'} (${profile.emergency_contact_phone || 'N/A'})</p>
             </div>
         </div>
+
         <div>
             <div class="flex justify-between items-center mb-3 border-b pb-2">
                 <h3 class="text-lg font-semibold text-gray-800">Mascotas Registradas (${pets.length})</h3>
@@ -152,6 +86,7 @@ const populateModal = (details) => {
                 `).join('') : '<p class="text-sm text-gray-500">No tiene mascotas registradas.</p>'}
             </div>
         </div>
+
         <div>
             <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Historial de Citas (${appointments.length})</h3>
             <div class="space-y-2 max-h-48 overflow-y-auto">
@@ -172,80 +107,197 @@ const populateModal = (details) => {
         </div>
     `;
 
+    // Añadir listener al nuevo botón para abrir el modal de agregar mascota
     document.querySelector('#add-pet-for-client-btn').addEventListener('click', () => {
         openAddPetModal(profile.id);
     });
 };
 
-// --- LÓGICA DEL MODAL DE REGISTRO (COMPLETA) ---
+// --- LÓGICA DEL MODAL DE REGISTRO DE CLIENTE ---
 const setupClientModal = () => {
     if (!addClientButton || !clientModal || !clientForm) return;
+
     const closeRegisterModal = () => {
         clientModal.classList.add('hidden');
         clientForm.reset();
-        if(clientFormMessage) clientFormMessage.classList.add('hidden');
+        clientFormMessage?.classList.add('hidden');
     };
+
     addClientButton.addEventListener('click', () => {
         clientModal.classList.remove('hidden');
         clientForm.reset();
-        if(clientFormMessage) clientFormMessage.classList.add('hidden');
+        clientFormMessage?.classList.add('hidden');
     });
+
     closeClientModalButton?.addEventListener('click', closeRegisterModal);
     cancelClientButton?.addEventListener('click', closeRegisterModal);
-    clientModal.addEventListener('click', (e) => { if (e.target === clientModal) closeRegisterModal(); });
+    
+    clientModal.addEventListener('click', (e) => {
+        if (e.target === clientModal) closeRegisterModal();
+    });
+
     clientForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
         if (clientFormMessage) clientFormMessage.classList.add('hidden');
-        const clientData = { /* ... */ }; // (sin cambios)
-        // ... (resto de la lógica de submit sin cambios)
+
+        const clientData = {
+            email: clientForm.email.value.trim(),
+            firstName: clientForm.first_name.value.trim(),
+            lastName: clientForm.last_name.value.trim(),
+            password: clientForm.password.value.trim()
+        };
+
+        if (!clientData.email || !clientData.firstName || !clientData.lastName || !clientData.password) {
+            if (clientFormMessage) {
+                clientFormMessage.textContent = 'Por favor completa todos los campos obligatorios.';
+                clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+                clientFormMessage.classList.remove('hidden');
+            }
+            return;
+        }
+
+        if (clientData.password.length < 6) {
+            if (clientFormMessage) {
+                clientFormMessage.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+                clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+                clientFormMessage.classList.remove('hidden');
+            }
+            return;
+        }
+
+        const result = await registerClientFromDashboard(clientData);
+
+        if (result.success) {
+            if (clientFormMessage) {
+                clientFormMessage.textContent = result.message || 'Cliente registrado exitosamente.';
+                clientFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
+                clientFormMessage.classList.remove('hidden');
+            }
+            
+            setTimeout(() => {
+                closeRegisterModal();
+                initializeClientsSection();
+            }, 2000);
+        } else {
+            if (clientFormMessage) {
+                clientFormMessage.textContent = `Error: ${result.error?.message || 'No se pudo registrar el cliente'}`;
+                clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+                clientFormMessage.classList.remove('hidden');
+            }
+        }
     });
 };
 
-// --- LÓGICA DEL MODAL DE MASCOTA (COMPLETA) ---
+// --- LÓGICA DEL MODAL DE AGREGAR MASCOTA ---
+const openAddPetModal = (ownerId) => {
+    addPetForm.reset();
+    if (addPetFormMessage) addPetFormMessage.classList.add('hidden');
+    petOwnerIdInput.value = ownerId; // Guardar el ID del dueño en el formulario
+    addPetModal.classList.remove('hidden');
+};
+
+const closeAddPetModal = () => {
+    addPetModal.classList.add('hidden');
+    addPetForm.reset();
+};
+
 const setupAddPetModal = () => {
     if (!addPetModal) return;
-    const openAddPetModal = (ownerId) => { /* ... */ };
-    const closeAddPetModal = () => { /* ... */ };
+
     closeAddPetModalButton.addEventListener('click', closeAddPetModal);
     cancelAddPetButton.addEventListener('click', closeAddPetModal);
-    addPetModal.addEventListener('click', (e) => { if (e.target === addPetModal) closeAddPetModal(); });
+    addPetModal.addEventListener('click', (e) => {
+        if (e.target === addPetModal) closeAddPetModal();
+    });
+
     addPetForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        // ... (resto de la lógica de submit sin cambios)
+        const submitButton = addPetForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+
+        const formData = new FormData(addPetForm);
+        const petData = {
+            owner_id: formData.get('owner_id'),
+            name: formData.get('name'),
+            breed: formData.get('breed'),
+            sex: formData.get('sex'),
+            observations: formData.get('observations'),
+            species: 'Perro' // Valor por defecto
+        };
+
+        if (!petData.name || !petData.breed) {
+            alert('El nombre y la raza son obligatorios.');
+            submitButton.disabled = false;
+            return;
+        }
+
+        const { success, error } = await addPetFromDashboard(petData);
+
+        if (success) {
+            alert('¡Mascota registrada con éxito!');
+            closeAddPetModal();
+            // Refrescar el modal de detalles del cliente para mostrar la nueva mascota
+            if (currentClientId) {
+                modalContentBody.innerHTML = '<div class="text-center py-10 text-gray-500">Actualizando...</div>';
+                const updatedDetails = await getClientDetails(currentClientId);
+                if (updatedDetails) {
+                    populateModal(updatedDetails);
+                }
+            }
+        } else {
+            if(addPetFormMessage) {
+                addPetFormMessage.textContent = `Error: ${error.message}`;
+                addPetFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+                addPetFormMessage.classList.remove('hidden');
+            }
+        }
+
+        submitButton.disabled = false;
     });
 };
-
 
 // --- LÓGICA DE BÚSQUEDA Y EVENTOS ---
 const setupEventListeners = () => {
     if (!clientSearchInput) return;
+    
     let debounceTimer;
     clientSearchInput.addEventListener('input', (event) => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(async () => {
-            currentSearch = event.target.value.trim();
-            currentPage = 1;
-            await loadClients();
-        }, 350);
+            const searchTerm = event.target.value.trim();
+            clientsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-500">Buscando...</td></tr>`;
+            const clients = searchTerm ? await searchClients(searchTerm) : await getClients();
+            renderClientsTable(clients);
+        }, 300);
     });
+
     clientsTableBody.addEventListener('click', async (event) => {
         const viewButton = event.target.closest('.view-details-btn');
         if (viewButton) {
             const clientId = viewButton.dataset.clientId;
             if (!clientId) return;
-            currentClientId = clientId;
+
+            currentClientId = clientId; // Guardar el ID del cliente actual
             openModal();
             modalContentBody.innerHTML = '<div class="text-center py-10 text-gray-500">Cargando...</div>';
+            
             const clientDetails = await getClientDetails(clientId);
+            
             if (clientDetails) {
                 populateModal(clientDetails);
             } else {
-                modalContentBody.innerHTML = '<div class="text-center py-10 text-red-500">Error al cargar los detalles.</div>';
+                modalContentBody.innerHTML = '<div class="text-center py-10 text-red-500">Error al cargar los detalles del cliente.</div>';
             }
         }
     });
+
     modalCloseBtn?.addEventListener('click', closeModal);
-    clientDetailsModal?.addEventListener('click', (event) => { if (event.target === clientDetailsModal) closeModal(); });
+    clientDetailsModal?.addEventListener('click', (event) => {
+        if (event.target === clientDetailsModal) {
+            closeModal();
+        }
+    });
 };
 
 // --- INICIALIZACIÓN DE LA SECCIÓN ---
@@ -253,10 +305,12 @@ const initializeClientsSection = async () => {
     if (headerTitle) {
         headerTitle.textContent = 'Gestión de Clientes';
     }
-    await loadClients();
+    
+    const initialClients = await getClients();
+    renderClientsTable(initialClients);
     setupEventListeners();
     setupClientModal();
-    setupAddPetModal();
+    setupAddPetModal(); // Llamar a la nueva función de setup
 };
 
 document.addEventListener('DOMContentLoaded', initializeClientsSection);
