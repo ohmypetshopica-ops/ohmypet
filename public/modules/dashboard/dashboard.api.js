@@ -1,5 +1,27 @@
 import { supabase } from '../../core/supabase.js';
 
+// --- NUEVA FUNCIÓN PARA NOTIFICACIONES ---
+export const getPendingAppointments = async () => {
+    const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+            id,
+            appointment_date,
+            appointment_time,
+            pets ( name ),
+            profiles ( first_name, last_name, full_name )
+        `)
+        .eq('status', 'pendiente')
+        .order('appointment_date', { ascending: true })
+        .order('appointment_time', { ascending: true });
+
+    if (error) {
+        console.error("Error al obtener citas pendientes:", error);
+        return [];
+    }
+    return data;
+};
+
 export const getClientCount = async () => {
     const { count, error } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'cliente');
     if (error) console.error('Error al contar clientes:', error);
@@ -423,7 +445,6 @@ export const addPetFromDashboard = async (petData) => {
     return { success: true };
 };
 
-// --- NUEVAS FUNCIONES ---
 export const getClientsWithPets = async () => {
     const { data, error } = await supabase
         .from('profiles')
