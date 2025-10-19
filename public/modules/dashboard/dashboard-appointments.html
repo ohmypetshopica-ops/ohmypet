@@ -220,8 +220,19 @@
                         </div>
                     </div>
                     <div>
-                        <label for="service-notes" class="block text-sm font-medium text-gray-700 mb-1">5. Notas (Opcional)</label>
-                        <textarea id="service-notes" name="service" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Ej: Corte cachorro, solo baño, etc."></textarea>
+                        <label for="service-select" class="block text-sm font-medium text-gray-700 mb-1">5. Servicio *</label>
+                        <select id="service-select" name="service" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                            <option value="">Selecciona un servicio...</option>
+                            <option value="BAÑO">BAÑO</option>
+                            <option value="BAÑO Y CORTE">BAÑO Y CORTE</option>
+                            <option value="SERVICIO DE COLORIMETRÍA">SERVICIO DE COLORIMETRÍA</option>
+                            <option value="CORTE DE UÑAS">CORTE DE UÑAS</option>
+                            <option value="DESPARASITACIÓN">DESPARASITACIÓN</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="service-notes" class="block text-sm font-medium text-gray-700 mb-1">6. Notas Adicionales (Opcional)</label>
+                        <textarea id="service-notes" name="notes" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Ej: Corte cachorro, usar champú especial, etc."></textarea>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-6 py-4 flex justify-end gap-4 rounded-b-2xl">

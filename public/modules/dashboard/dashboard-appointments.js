@@ -225,17 +225,21 @@ const initializeAddAppointmentModal = async () => {
         submitButton.disabled = true;
 
         const formData = new FormData(addAppointmentForm);
+        const serviceValue = formData.get('service');
+        const notesValue = formData.get('notes');
+        
         const appointmentData = {
             user_id: formData.get('user_id'),
             pet_id: formData.get('pet_id'),
             appointment_date: formData.get('appointment_date'),
             appointment_time: formData.get('appointment_time'),
-            service: formData.get('service') || 'Servicio de Estética',
+            service: serviceValue,
+            notes: notesValue || null,
             status: 'confirmada'
         };
 
-        if (!appointmentData.user_id || !appointmentData.pet_id || !appointmentData.appointment_date || !appointmentData.appointment_time) {
-            alert('Por favor, completa todos los campos obligatorios.');
+        if (!appointmentData.user_id || !appointmentData.pet_id || !appointmentData.appointment_date || !appointmentData.appointment_time || !appointmentData.service) {
+            alert('Por favor, completa todos los campos obligatorios (Cliente, Mascota, Fecha, Hora y Servicio).');
             submitButton.disabled = false;
             return;
         }
