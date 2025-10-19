@@ -177,19 +177,18 @@ const setupClientModal = () => {
             lastName: formData.get('last_name').trim(),
             phone: formData.get('phone').trim(),
             district: formData.get('district').trim(),
-            docType: formData.get('doc_type'),
-            docNum: formData.get('doc_num').trim(),
             
-            // Opcionales
+            // Opcionales - DNI ahora es opcional
+            docType: formData.get('doc_type') || null,
+            docNum: formData.get('doc_num')?.trim() || null,
             email: email,
             password: password,
             emergencyContactName: formData.get('emergency_contact_name')?.trim() || null,
             emergencyContactPhone: formData.get('emergency_contact_phone')?.trim() || null
         };
 
-        // Validaciones
-        if (!clientData.firstName || !clientData.lastName || !clientData.phone || 
-            !clientData.district || !clientData.docType || !clientData.docNum) {
+        // Validaciones - Solo campos obligatorios
+        if (!clientData.firstName || !clientData.lastName || !clientData.phone || !clientData.district) {
             if (clientFormMessage) {
                 clientFormMessage.textContent = '⚠️ Por favor completa todos los campos obligatorios (marcados con *).';
                 clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
