@@ -387,13 +387,10 @@ export const getReportData = async (startDate, endDate) => {
     };
 };
 
-// REEMPLAZA COMPLETAMENTE la función registerClientFromDashboard en /public/modules/dashboard/dashboard.api.js
-
 export const registerClientFromDashboard = async (clientData) => {
     try {
         let userId = null;
 
-        // CASO 1: Cliente CON email y contraseña - crear cuenta de autenticación
         if (clientData.email && clientData.password) {
             console.log('Registrando cliente CON autenticación (email + contraseña)...');
             
@@ -421,7 +418,6 @@ export const registerClientFromDashboard = async (clientData) => {
 
             userId = authData.user.id;
 
-            // Actualizar el perfil con todos los datos
             const { error: profileError } = await supabase
                 .from('profiles')
                 .update({
@@ -453,7 +449,6 @@ export const registerClientFromDashboard = async (clientData) => {
             };
 
         } else {
-            // CASO 2: Cliente SIN email - usar función RPC para bypasear RLS
             console.log('Registrando cliente SIN autenticación usando función RPC...');
             
             const { data: profileId, error: rpcError } = await supabase

@@ -2,6 +2,7 @@
 
 import { getClients, searchClients, getClientDetails, registerClientFromDashboard, addPetFromDashboard } from './dashboard.api.js';
 import { createClientRow } from './dashboard.utils.js';
+import { supabase } from '../../core/supabase.js'; // Necesario para subir imágenes
 
 // --- ELEMENTOS DEL DOM ---
 const clientsTableBody = document.querySelector('#clients-table-body');
@@ -30,6 +31,11 @@ const cancelAddPetButton = document.querySelector('#cancel-add-pet-button');
 const addPetForm = document.querySelector('#add-pet-form');
 const addPetFormMessage = document.querySelector('#add-pet-form-message');
 const petOwnerIdInput = document.querySelector('#pet-owner-id');
+// ===== INICIO NUEVOS ELEMENTOS =====
+const petPhotoInput = document.querySelector('#pet-photo');
+const petImagePreview = document.querySelector('#pet-image-preview');
+let photoFile = null; // Variable para almacenar el archivo de la foto
+// ===== FIN NUEVOS ELEMENTOS =====
 
 
 // --- RENDERIZADO DE DATOS ---
@@ -113,10 +119,6 @@ const populateModal = (details) => {
     });
 };
 
-// REEMPLAZA la función setupClientModal() en /public/modules/dashboard/dashboard-clients.js
-
-// REEMPLAZA la función setupClientModal() en /public/modules/dashboard/dashboard-clients.js
-
 const setupClientModal = () => {
     if (!addClientButton || !clientModal || !clientForm) return;
 
@@ -124,7 +126,6 @@ const setupClientModal = () => {
     const passwordField = document.getElementById('password-field');
     const passwordInput = clientForm.querySelector('input[name="password"]');
 
-    // Mostrar/ocultar campo de contraseña según si hay email
     if (emailInput && passwordField && passwordInput) {
         emailInput.addEventListener('input', () => {
             if (emailInput.value.trim()) {
@@ -166,19 +167,15 @@ const setupClientModal = () => {
         
         if (clientFormMessage) clientFormMessage.classList.add('hidden');
 
-        // Recopilar datos del formulario
         const formData = new FormData(clientForm);
         const email = formData.get('email')?.trim() || null;
         const password = formData.get('password')?.trim() || null;
 
         const clientData = {
-            // Obligatorios
             firstName: formData.get('first_name').trim(),
             lastName: formData.get('last_name').trim(),
             phone: formData.get('phone').trim(),
             district: formData.get('district').trim(),
-            
-            // Opcionales - DNI ahora es opcional
             docType: formData.get('doc_type') || null,
             docNum: formData.get('doc_num')?.trim() || null,
             email: email,
@@ -187,7 +184,6 @@ const setupClientModal = () => {
             emergencyContactPhone: formData.get('emergency_contact_phone')?.trim() || null
         };
 
-        // Validaciones - Solo campos obligatorios
         if (!clientData.firstName || !clientData.lastName || !clientData.phone || !clientData.district) {
             if (clientFormMessage) {
                 clientFormMessage.textContent = '⚠️ Por favor completa todos los campos obligatorios (marcados con *).';
@@ -197,7 +193,6 @@ const setupClientModal = () => {
             return;
         }
 
-        // Validación de teléfono
         if (clientData.phone.length !== 9 || !/^\d+$/.test(clientData.phone)) {
             if (clientFormMessage) {
                 clientFormMessage.textContent = '⚠️ El teléfono debe tener exactamente 9 dígitos numéricos.';
@@ -207,7 +202,6 @@ const setupClientModal = () => {
             return;
         }
 
-        // Si hay email, validar email y contraseña
         if (clientData.email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(clientData.email)) {
@@ -229,7 +223,6 @@ const setupClientModal = () => {
             }
         }
 
-        // Validación de teléfono de emergencia (si se proporciona)
         if (clientData.emergencyContactPhone && 
             (clientData.emergencyContactPhone.length !== 9 || !/^\d+$/.test(clientData.emergencyContactPhone))) {
             if (clientFormMessage) {
@@ -240,23 +233,19 @@ const setupClientModal = () => {
             return;
         }
 
-        // Mostrar indicador de carga
         if (clientFormMessage) {
             clientFormMessage.textContent = '⏳ Registrando cliente...';
             clientFormMessage.className = 'block p-3 rounded-md bg-blue-100 text-blue-700 text-sm mb-4';
             clientFormMessage.classList.remove('hidden');
         }
 
-        // Deshabilitar botón de envío
         const submitBtn = clientForm.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.textContent;
         submitBtn.disabled = true;
         submitBtn.textContent = 'Registrando...';
 
-        // Llamar a la API
         const result = await registerClientFromDashboard(clientData);
 
-        // Rehabilitar botón
         submitBtn.disabled = false;
         submitBtn.textContent = originalBtnText;
 
@@ -270,7 +259,6 @@ const setupClientModal = () => {
                 clientFormMessage.classList.remove('hidden');
             }
             
-            // Cerrar modal y recargar tabla después de 1.5 segundos
             setTimeout(() => {
                 closeRegisterModal();
                 initializeClientsSection();
@@ -299,7 +287,11 @@ const setupClientModal = () => {
 const openAddPetModal = (ownerId) => {
     addPetForm.reset();
     if (addPetFormMessage) addPetFormMessage.classList.add('hidden');
-    petOwnerIdInput.value = ownerId; // Guardar el ID del dueño en el formulario
+    petOwnerIdInput.value = ownerId;
+    // ===== INICIO CÓDIGO AÑADIDO =====
+    petImagePreview.src = 'https://via.placeholder.com/100'; // Resetea la imagen
+    photoFile = null; // Limpia el archivo
+    // ===== FIN CÓDIGO AÑADIDO =====
     addPetModal.classList.remove('hidden');
 };
 
@@ -316,25 +308,71 @@ const setupAddPetModal = () => {
     addPetModal.addEventListener('click', (e) => {
         if (e.target === addPetModal) closeAddPetModal();
     });
+    
+    // ===== INICIO CÓDIGO AÑADIDO =====
+    // Listener para la vista previa de la imagen
+    petPhotoInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            photoFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                petImagePreview.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    // ===== FIN CÓDIGO AÑADIDO =====
 
     addPetForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitButton = addPetForm.querySelector('button[type="submit"]');
         submitButton.disabled = true;
+        submitButton.textContent = 'Guardando...';
 
         const formData = new FormData(addPetForm);
+        
+        let imageUrl = null;
+        // ===== INICIO CÓDIGO AÑADIDO =====
+        // Lógica para subir la foto a Supabase Storage
+        if (photoFile) {
+            const fileName = `public/${currentClientId || 'unknown'}/${Date.now()}_${photoFile.name}`;
+            const { data, error: uploadError } = await supabase.storage
+                .from('pet_galleries') // Asegúrate que tu bucket se llame 'pet_galleries'
+                .upload(fileName, photoFile);
+
+            if (uploadError) {
+                alert('Error al subir la imagen: ' + uploadError.message);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Guardar Mascota';
+                return;
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('pet_galleries')
+                .getPublicUrl(fileName);
+            imageUrl = publicUrl;
+        }
+        // ===== FIN CÓDIGO AÑADIDO =====
+        
         const petData = {
             owner_id: formData.get('owner_id'),
             name: formData.get('name'),
             breed: formData.get('breed'),
             sex: formData.get('sex'),
             observations: formData.get('observations'),
-            species: 'Perro' // Valor por defecto
+            // ===== INICIO CAMPOS AÑADIDOS =====
+            birth_date: formData.get('birth_date') || null,
+            weight: parseFloat(formData.get('weight')) || null,
+            image_url: imageUrl,
+            // ===== FIN CAMPOS AÑADIDOS =====
+            species: 'Perro'
         };
 
         if (!petData.name || !petData.breed) {
             alert('El nombre y la raza son obligatorios.');
             submitButton.disabled = false;
+            submitButton.textContent = 'Guardar Mascota';
             return;
         }
 
@@ -343,7 +381,6 @@ const setupAddPetModal = () => {
         if (success) {
             alert('¡Mascota registrada con éxito!');
             closeAddPetModal();
-            // Refrescar el modal de detalles del cliente para mostrar la nueva mascota
             if (currentClientId) {
                 modalContentBody.innerHTML = '<div class="text-center py-10 text-gray-500">Actualizando...</div>';
                 const updatedDetails = await getClientDetails(currentClientId);
@@ -360,6 +397,7 @@ const setupAddPetModal = () => {
         }
 
         submitButton.disabled = false;
+        submitButton.textContent = 'Guardar Mascota';
     });
 };
 
@@ -384,7 +422,7 @@ const setupEventListeners = () => {
             const clientId = viewButton.dataset.clientId;
             if (!clientId) return;
 
-            currentClientId = clientId; // Guardar el ID del cliente actual
+            currentClientId = clientId;
             openModal();
             modalContentBody.innerHTML = '<div class="text-center py-10 text-gray-500">Cargando...</div>';
             
@@ -416,7 +454,7 @@ const initializeClientsSection = async () => {
     renderClientsTable(initialClients);
     setupEventListeners();
     setupClientModal();
-    setupAddPetModal(); // Llamar a la nueva función de setup
+    setupAddPetModal();
 };
 
 document.addEventListener('DOMContentLoaded', initializeClientsSection);
