@@ -58,6 +58,7 @@ const getCompletedServices = async () => {
             )
         `)
         .eq('status', 'completada')
+        // CAMBIO: Asegurar el orden por fecha y hora descendente
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 
@@ -107,7 +108,7 @@ const createServiceRow = (service) => {
                 <div class="text-sm text-gray-500">${petName}</div>
             </td>
             <td class="px-6 py-4">
-                <div class="text-sm text-gray-900">${new Date(service.appointment_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                <div class="text-sm text-gray-900">${new Date(service.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
                 <div class="text-sm text-gray-500">${service.appointment_time}</div>
             </td>
             <td class="px-6 py-4">
@@ -206,6 +207,10 @@ const applyFiltersAndRender = () => {
     if (selectedDate) {
         filtered = filtered.filter(service => service.appointment_date === selectedDate);
     }
+    
+    // El filtrado por estado en la página de servicios no tiene sentido ya que solo se obtienen 'completada'.
+    // Si se añade un filtro para otras citas, se debe modificar getCompletedServices.
+    // Por ahora, ignoramos el filtro de estado en esta página.
 
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -276,7 +281,7 @@ const openServiceDetailsModal = (service) => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h4 class="text-sm font-semibold text-gray-500 mb-2">Fecha del Servicio</h4>
-                    <p class="text-base text-gray-900">${new Date(service.appointment_date).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                    <p class="text-base text-gray-900">${new Date(service.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h4 class="text-sm font-semibold text-gray-500 mb-2">Hora</h4>
