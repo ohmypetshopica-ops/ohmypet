@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clientes - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <style>:root { font-family: 'Inter', sans-serif; }</style>
+    <style>
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
+
 <body class="bg-gray-100 text-black">
 
     <div class="md:hidden flex flex-col items-center justify-center h-screen bg-gray-100 p-4 text-center">
@@ -27,10 +33,13 @@
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-gray-800">Gestión de Clientes</h2>
                         <div class="flex gap-3">
-                            <input type="text" id="client-search-input" placeholder="Buscar cliente..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                            <button id="add-client-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+                            <input type="text" id="client-search-input" placeholder="Buscar cliente..."
+                                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <button id="add-client-button"
+                                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4"></path>
                                 </svg>
                                 Registrar Cliente
                             </button>
@@ -40,9 +49,11 @@
                         <table class="w-full">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente
+                                    </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rol</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                        Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="clients-table-body" class="divide-y divide-gray-200"></tbody>
@@ -55,154 +66,55 @@
 
     <!-- REEMPLAZA TODO EL MODAL #client-modal en dashboard-clients.html -->
 
-<div id="client-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
-        <div class="sticky top-0 bg-white p-6 border-b flex justify-between items-center rounded-t-2xl z-10">
-            <h2 class="text-xl font-bold text-gray-800">Registrar Nuevo Cliente</h2>
-            <button id="close-client-modal-button" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
-        </div>
-        
-        <div class="p-6">
-            <div id="client-form-message" class="hidden mb-4"></div>
-            
-            <form id="client-form" class="space-y-4">
-                <!-- Nombre y Apellidos -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                        <input type="text" name="first_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
-                        <input type="text" name="last_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                </div>
+    <div id="client-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white p-6 border-b flex justify-between items-center rounded-t-2xl z-10">
+                <h2 class="text-xl font-bold text-gray-800">Registrar Nuevo Cliente</h2>
+                <button id="close-client-modal-button"
+                    class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
+            </div>
 
-                <!-- Teléfono y Distrito -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
-                        <input type="tel" name="phone" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="987654321" maxlength="9" pattern="[0-9]{9}">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Distrito *</label>
-                        <input type="text" name="district" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Ica, La Tinguiña, etc.">
-                    </div>
-                </div>
+            <div class="p-6">
+                <div id="client-form-message" class="hidden mb-4"></div>
 
-                <!-- Tipo y Número de Documento -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento *</label>
-                        <select name="doc_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white">
-                            <option value="">Seleccionar...</option>
-                            <option value="DNI">DNI</option>
-                            <option value="CE">Carnet de Extranjería</option>
-                            <option value="Pasaporte">Pasaporte</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Número de Documento *</label>
-                        <input type="text" name="doc_num" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="12345678">
-                    </div>
-                </div>
-
-                <!-- Email (Opcional) -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email (Opcional)</label>
-                    <input type="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="ejemplo@correo.com">
-                    <p class="text-xs text-gray-500 mt-1">Solo si el cliente desea acceder a la plataforma online</p>
-                </div>
-
-                <!-- Contraseña (Solo si hay email) -->
-                <div id="password-field" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
-                    <input type="password" name="password" minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    <p class="text-xs text-gray-500 mt-1">Mínimo 6 caracteres. Requerido solo si proporciona email.</p>
-                </div>
-
-                <!-- Contacto de Emergencia (Opcional) -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Contacto de Emergencia</label>
-                        <input type="text" name="emergency_contact_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Nombre completo">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Emergencia</label>
-                        <input type="tel" name="emergency_contact_phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="987654321" maxlength="9" pattern="[0-9]{9}">
-                    </div>
-                </div>
-
-                <!-- Nota informativa -->
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p class="text-sm text-blue-800">
-                        <strong>ℹ️ Para clientes sin acceso web:</strong> Solo complete los campos obligatorios. El email y contraseña son opcionales y solo necesarios si el cliente desea usar la plataforma.
-                    </p>
-                </div>
-
-                <!-- Botones -->
-                <div class="flex gap-3 pt-4">
-                    <button type="button" id="cancel-client-button" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors">
-                        Registrar Cliente
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-                <!-- INFORMACIÓN BÁSICA -->
-                <div>
-                    <h3 class="text-md font-semibold text-gray-700 mb-3 pb-2 border-b">Información Personal</h3>
+                <form id="client-form" class="space-y-4">
+                    <!-- Nombre y Apellidos -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                            <input type="text" name="first_name" required 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <input type="text" name="first_name" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Apellido *</label>
-                            <input type="text" name="last_name" required 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+                            <input type="text" name="last_name" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         </div>
                     </div>
-                </div>
 
-                <!-- CONTACTO -->
-                <div>
-                    <h3 class="text-md font-semibold text-gray-700 mb-3 pb-2 border-b">Datos de Contacto</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                            <input type="email" name="email" required 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                   placeholder="ejemplo@correo.com">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                            <input type="tel" name="phone" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                   placeholder="987654321" maxlength="9">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Distrito</label>
-                            <input type="text" name="district" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                   placeholder="Ica, La Tinguiña, etc.">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- DOCUMENTO -->
-                <div>
-                    <h3 class="text-md font-semibold text-gray-700 mb-3 pb-2 border-b">Documento de Identidad</h3>
+                    <!-- Teléfono y Distrito -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
-                            <select name="doc_type" 
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                            <input type="tel" name="phone" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                placeholder="987654321" maxlength="9" pattern="[0-9]{9}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Distrito *</label>
+                            <input type="text" name="district" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                placeholder="Ica, La Tinguiña, etc.">
+                        </div>
+                    </div>
+
+                    <!-- Tipo y Número de Documento -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento *</label>
+                            <select name="doc_type" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white">
                                 <option value="">Seleccionar...</option>
                                 <option value="DNI">DNI</option>
                                 <option value="CE">Carnet de Extranjería</option>
@@ -210,91 +122,95 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
-                            <input type="text" name="doc_num" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                   placeholder="12345678">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de Documento *</label>
+                            <input type="text" name="doc_num" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                placeholder="12345678">
                         </div>
                     </div>
-                </div>
 
-                <!-- CONTACTO DE EMERGENCIA -->
-                <div>
-                    <h3 class="text-md font-semibold text-gray-700 mb-3 pb-2 border-b">Contacto de Emergencia</h3>
+                    <!-- Email (Opcional) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email (Opcional)</label>
+                        <input type="email" name="email"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="ejemplo@correo.com">
+                        <p class="text-xs text-gray-500 mt-1">Solo si el cliente desea acceder a la plataforma online
+                        </p>
+                    </div>
+
+                    <!-- Contraseña (Solo si hay email) -->
+                    <div id="password-field" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
+                        <input type="password" name="password" minlength="6"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Mínimo 6 caracteres. Requerido solo si proporciona email.
+                        </p>
+                    </div>
+
+                    <!-- Contacto de Emergencia (Opcional) -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de Contacto</label>
-                            <input type="text" name="emergency_contact_name" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                   placeholder="Nombre completo">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Contacto de Emergencia</label>
+                            <input type="text" name="emergency_contact_name"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                placeholder="Nombre completo">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Emergencia</label>
-                            <input type="tel" name="emergency_contact_phone" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                   placeholder="987654321" maxlength="9">
+                            <input type="tel" name="emergency_contact_phone"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                placeholder="987654321" maxlength="9" pattern="[0-9]{9}">
                         </div>
                     </div>
-                </div>
 
-                <!-- CREDENCIALES -->
-                <div>
-                    <h3 class="text-md font-semibold text-gray-700 mb-3 pb-2 border-b">Credenciales de Acceso</h3>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
-                        <input type="password" name="password" required minlength="6" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <p class="text-xs text-gray-500 mt-1">Mínimo 6 caracteres. El cliente podrá cambiarla después.</p>
+                    <!-- Nota informativa -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p class="text-sm text-blue-800">
+                            <strong>ℹ️ Para clientes sin acceso web:</strong> Solo complete los campos obligatorios. El
+                            email y contraseña son opcionales y solo necesarios si el cliente desea usar la plataforma.
+                        </p>
                     </div>
-                </div>
 
-                <!-- NOTA IMPORTANTE -->
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div class="flex items-start gap-3">
-                        <svg class="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div class="text-sm">
-                            <p class="font-semibold text-green-800 mb-1">Registro Inmediato</p>
-                            <p class="text-green-700">El cliente podrá acceder a la plataforma de inmediato sin necesidad de confirmar su correo electrónico.</p>
-                        </div>
+                    <!-- Botones -->
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" id="cancel-client-button"
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors">
+                            Registrar Cliente
+                        </button>
                     </div>
-                </div>
-
-                <!-- BOTONES -->
-                <div class="flex gap-4 pt-4">
-                    <button type="button" id="cancel-client-button" 
-                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" 
-                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                        Registrar Cliente
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-</div>
+    
 
-    <div id="client-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div id="client-details-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
             <div class="p-6 border-b flex justify-between items-center">
                 <h2 id="modal-client-name" class="text-2xl font-bold text-gray-800">Detalles del Cliente</h2>
-                <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
+                <button id="modal-close-btn"
+                    class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
             </div>
             <div id="modal-content-body" class="p-6 space-y-6 overflow-y-auto">
                 <div class="text-center py-10 text-gray-500">Cargando...</div>
             </div>
         </div>
     </div>
-    
-    <div id="add-pet-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
+
+    <div id="add-pet-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl">
             <form id="add-pet-form" class="w-full">
                 <div class="p-6 border-b flex justify-between items-center">
                     <h2 id="add-pet-modal-title" class="text-xl font-bold text-gray-800">Registrar Nueva Mascota</h2>
-                    <button type="button" id="close-add-pet-modal-button" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
+                    <button type="button" id="close-add-pet-modal-button"
+                        class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
                 </div>
                 <div class="p-6 space-y-4 max-h-96 overflow-y-auto">
                     <input type="hidden" id="pet-owner-id" name="owner_id">
@@ -302,89 +218,98 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                            <input type="text" name="name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <input type="text" name="name" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Raza *</label>
-                            <input type="text" name="breed" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <input type="text" name="breed" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
-                         <select name="sex" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                        <select name="sex"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
                             <option value="Macho">Macho</option>
                             <option value="Hembra">Hembra</option>
                         </select>
                     </div>
                     <div>
-                         <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                         <textarea name="observations" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Alergias, comportamiento, etc."></textarea>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                        <textarea name="observations" rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            placeholder="Alergias, comportamiento, etc."></textarea>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-6 py-4 flex justify-end gap-4 rounded-b-2xl">
-                    <button type="button" id="cancel-add-pet-button" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
-                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Guardar Mascota</button>
+                    <button type="button" id="cancel-add-pet-button"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
+                    <button type="submit"
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Guardar
+                        Mascota</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script type="module">
-    // Este script se encarga de cargar los componentes y luego inicializar los módulos de JS.
+        // Este script se encarga de cargar los componentes y luego inicializar los módulos de JS.
 
-    const CACHE_VERSION = Date.now();
-    
-    // Función para cargar componentes HTML (sidebar, header)
-    async function loadComponent(url, containerId) {
-        try {
-            const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const html = await response.text();
-            const container = document.getElementById(containerId);
-            if (container) {
-                container.innerHTML = html;
+        const CACHE_VERSION = Date.now();
+
+        // Función para cargar componentes HTML (sidebar, header)
+        async function loadComponent(url, containerId) {
+            try {
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const html = await response.text();
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error(`Error cargando ${url}:`, error);
             }
-        } catch (error) { 
-            console.error(`Error cargando ${url}:`, error); 
         }
-    }
-    
-    // Función principal que se ejecuta cuando el DOM está listo
-    async function initializeDashboard() {
-        // 1. Cargar todos los componentes HTML primero y esperar a que terminen
-        await Promise.all([
-            loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
-            loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
-        ]);
-        
-        // 2. Ahora que el HTML está en su lugar, importar y ejecutar los scripts
-        try {
-            // Importar y ejecutar el script de autenticación
-            await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
 
-            // Importar y ejecutar el script del sidebar
-            const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
-            if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
-            
-            // Importar y ejecutar el script del header (CON LA LÓGICA DE LA CAMPANA)
-            const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
-            if (headerModule?.initializeHeader) headerModule.initializeHeader();
+        // Función principal que se ejecuta cuando el DOM está listo
+        async function initializeDashboard() {
+            // 1. Cargar todos los componentes HTML primero y esperar a que terminen
+            await Promise.all([
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            ]);
 
-            // Aquí debes asegurarte de importar el script específico de cada página.
-            // Por ejemplo, si estás en dashboard-appointments.html, la siguiente línea es correcta.
-            // Si estás en dashboard-clients.html, cámbiala a `./dashboard-clients.js`.
-            const pageModulePath = window.location.pathname.replace('.html', '.js');
-            await import(pageModulePath + `?v=${CACHE_VERSION}`);
+            // 2. Ahora que el HTML está en su lugar, importar y ejecutar los scripts
+            try {
+                // Importar y ejecutar el script de autenticación
+                await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
 
-        } catch (error) { 
-            console.error('Error inicializando los scripts del dashboard:', error); 
+                // Importar y ejecutar el script del sidebar
+                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
+                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+
+                // Importar y ejecutar el script del header (CON LA LÓGICA DE LA CAMPANA)
+                const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
+                if (headerModule?.initializeHeader) headerModule.initializeHeader();
+
+                // Aquí debes asegurarte de importar el script específico de cada página.
+                // Por ejemplo, si estás en dashboard-appointments.html, la siguiente línea es correcta.
+                // Si estás en dashboard-clients.html, cámbiala a `./dashboard-clients.js`.
+                const pageModulePath = window.location.pathname.replace('.html', '.js');
+                await import(pageModulePath + `?v=${CACHE_VERSION}`);
+
+            } catch (error) {
+                console.error('Error inicializando los scripts del dashboard:', error);
+            }
         }
-    }
 
-    // Ejecutar la función principal al cargar el contenido del DOM
-    document.addEventListener('DOMContentLoaded', initializeDashboard);
-</script>
+        // Ejecutar la función principal al cargar el contenido del DOM
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
     <script type="module" src="../../core/auth.js"></script>
     <script type="module" src="./dashboard-clients.js"></script>
 </body>
+
 </html>
