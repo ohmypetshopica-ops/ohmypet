@@ -445,6 +445,9 @@ const initializePage = async () => {
 
             const updateData = {};
             if (observations) updateData.final_observations = observations;
+            
+            // Los campos de peso y precio/pago ya no son obligatorios en este punto,
+            // pero se pueden guardar si se proporcionan.
             if (weight) updateData.final_weight = parseFloat(weight);
             if (price) updateData.service_price = parseFloat(price);
             if (paymentMethod) updateData.payment_method = paymentMethod;
@@ -482,14 +485,11 @@ const initializePage = async () => {
         const weight = petWeightInput.value.trim();
         const price = servicePriceInput.value.trim();
         const paymentMethod = paymentMethodSelect.value;
-        const photos = await getAppointmentPhotos(currentAppointmentId);
-        const hasArrivalPhoto = photos.some(p => p.photo_type === 'arrival') || arrivalPhotoFile;
-        const hasDeparturePhoto = photos.some(p => p.photo_type === 'departure') || departurePhotoFile;
-
+        
+        // La validación de fotos y peso se ELIMINA para hacerlos opcionales.
+        // La validación de precio y método de pago se MANTIENE como obligatoria.
+        
         let missingFields = [];
-        if (!hasArrivalPhoto) missingFields.push('foto de llegada');
-        if (!hasDeparturePhoto) missingFields.push('foto de salida');
-        if (!weight) missingFields.push('peso de la mascota');
         if (!price) missingFields.push('precio del servicio');
         if (!paymentMethod) missingFields.push('método de pago');
 
@@ -505,6 +505,7 @@ const initializePage = async () => {
         uploadMessage.textContent = 'Completando cita...';
 
         try {
+            // Subida de archivos (opcional)
             if (arrivalPhotoFile) {
                 uploadMessage.textContent = 'Subiendo foto de llegada...';
                 await uploadAppointmentPhoto(currentAppointmentId, arrivalPhotoFile, 'arrival');
@@ -518,8 +519,11 @@ const initializePage = async () => {
                 await uploadReceiptFile(currentAppointmentId, receiptFile);
             }
 
-            uploadMessage.textContent = 'Registrando peso de la mascota...';
-            await addWeightRecord(currentPetId, parseFloat(weight), currentAppointmentId);
+            // Registro de peso (opcional)
+            if (weight) {
+                uploadMessage.textContent = 'Registrando peso de la mascota...';
+                await addWeightRecord(currentPetId, parseFloat(weight), currentAppointmentId);
+            }
 
             uploadMessage.textContent = 'Guardando observaciones y completando cita...';
             const observations = finalObservationsTextarea.value.trim();
@@ -529,7 +533,8 @@ const initializePage = async () => {
 
             const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', {
                 observations: observations,
-                weight: parseFloat(weight),
+                // Pasar peso solo si se proporcionó
+                weight: weight ? parseFloat(weight) : undefined, 
                 price: parseFloat(price),
                 paymentMethod: paymentMethod
             });
@@ -550,7 +555,7 @@ const initializePage = async () => {
                 if (index !== -1) {
                     allAppointments[index].status = 'completada';
                     allAppointments[index].final_observations = observations;
-                    allAppointments[index].final_weight = parseFloat(weight);
+                    allAppointments[index].final_weight = weight ? parseFloat(weight) : null; // Actualizar con valor (o null)
                     allAppointments[index].service_price = parseFloat(price);
                     allAppointments[index].payment_method = paymentMethod;
                     applyFiltersAndSearch();
