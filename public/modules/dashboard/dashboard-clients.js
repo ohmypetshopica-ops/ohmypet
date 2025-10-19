@@ -113,19 +113,44 @@ const populateModal = (details) => {
     });
 };
 
-// --- LÓGICA DEL MODAL DE REGISTRO DE CLIENTE ---
+// REEMPLAZA la función setupClientModal() en /public/modules/dashboard/dashboard-clients.js
+
+// REEMPLAZA la función setupClientModal() en /public/modules/dashboard/dashboard-clients.js
+
 const setupClientModal = () => {
     if (!addClientButton || !clientModal || !clientForm) return;
+
+    const emailInput = clientForm.querySelector('input[name="email"]');
+    const passwordField = document.getElementById('password-field');
+    const passwordInput = clientForm.querySelector('input[name="password"]');
+
+    // Mostrar/ocultar campo de contraseña según si hay email
+    if (emailInput && passwordField && passwordInput) {
+        emailInput.addEventListener('input', () => {
+            if (emailInput.value.trim()) {
+                passwordField.classList.remove('hidden');
+                passwordInput.required = true;
+            } else {
+                passwordField.classList.add('hidden');
+                passwordInput.required = false;
+                passwordInput.value = '';
+            }
+        });
+    }
 
     const closeRegisterModal = () => {
         clientModal.classList.add('hidden');
         clientForm.reset();
+        passwordField?.classList.add('hidden');
+        if (passwordInput) passwordInput.required = false;
         clientFormMessage?.classList.add('hidden');
     };
 
     addClientButton.addEventListener('click', () => {
         clientModal.classList.remove('hidden');
         clientForm.reset();
+        passwordField?.classList.add('hidden');
+        if (passwordInput) passwordInput.required = false;
         clientFormMessage?.classList.add('hidden');
     });
 
@@ -141,47 +166,129 @@ const setupClientModal = () => {
         
         if (clientFormMessage) clientFormMessage.classList.add('hidden');
 
+        // Recopilar datos del formulario
+        const formData = new FormData(clientForm);
+        const email = formData.get('email')?.trim() || null;
+        const password = formData.get('password')?.trim() || null;
+
         const clientData = {
-            email: clientForm.email.value.trim(),
-            firstName: clientForm.first_name.value.trim(),
-            lastName: clientForm.last_name.value.trim(),
-            password: clientForm.password.value.trim()
+            // Obligatorios
+            firstName: formData.get('first_name').trim(),
+            lastName: formData.get('last_name').trim(),
+            phone: formData.get('phone').trim(),
+            district: formData.get('district').trim(),
+            docType: formData.get('doc_type'),
+            docNum: formData.get('doc_num').trim(),
+            
+            // Opcionales
+            email: email,
+            password: password,
+            emergencyContactName: formData.get('emergency_contact_name')?.trim() || null,
+            emergencyContactPhone: formData.get('emergency_contact_phone')?.trim() || null
         };
 
-        if (!clientData.email || !clientData.firstName || !clientData.lastName || !clientData.password) {
+        // Validaciones
+        if (!clientData.firstName || !clientData.lastName || !clientData.phone || 
+            !clientData.district || !clientData.docType || !clientData.docNum) {
             if (clientFormMessage) {
-                clientFormMessage.textContent = 'Por favor completa todos los campos obligatorios.';
+                clientFormMessage.textContent = '⚠️ Por favor completa todos los campos obligatorios (marcados con *).';
                 clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }
             return;
         }
 
-        if (clientData.password.length < 6) {
+        // Validación de teléfono
+        if (clientData.phone.length !== 9 || !/^\d+$/.test(clientData.phone)) {
             if (clientFormMessage) {
-                clientFormMessage.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+                clientFormMessage.textContent = '⚠️ El teléfono debe tener exactamente 9 dígitos numéricos.';
                 clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }
             return;
         }
 
+        // Si hay email, validar email y contraseña
+        if (clientData.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(clientData.email)) {
+                if (clientFormMessage) {
+                    clientFormMessage.textContent = '⚠️ Por favor ingresa un email válido.';
+                    clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+                    clientFormMessage.classList.remove('hidden');
+                }
+                return;
+            }
+
+            if (!clientData.password || clientData.password.length < 6) {
+                if (clientFormMessage) {
+                    clientFormMessage.textContent = '⚠️ Si proporcionas email, la contraseña es obligatoria y debe tener mínimo 6 caracteres.';
+                    clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+                    clientFormMessage.classList.remove('hidden');
+                }
+                return;
+            }
+        }
+
+        // Validación de teléfono de emergencia (si se proporciona)
+        if (clientData.emergencyContactPhone && 
+            (clientData.emergencyContactPhone.length !== 9 || !/^\d+$/.test(clientData.emergencyContactPhone))) {
+            if (clientFormMessage) {
+                clientFormMessage.textContent = '⚠️ El teléfono de emergencia debe tener 9 dígitos numéricos.';
+                clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+                clientFormMessage.classList.remove('hidden');
+            }
+            return;
+        }
+
+        // Mostrar indicador de carga
+        if (clientFormMessage) {
+            clientFormMessage.textContent = '⏳ Registrando cliente...';
+            clientFormMessage.className = 'block p-3 rounded-md bg-blue-100 text-blue-700 text-sm mb-4';
+            clientFormMessage.classList.remove('hidden');
+        }
+
+        // Deshabilitar botón de envío
+        const submitBtn = clientForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Registrando...';
+
+        // Llamar a la API
         const result = await registerClientFromDashboard(clientData);
+
+        // Rehabilitar botón
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
 
         if (result.success) {
             if (clientFormMessage) {
-                clientFormMessage.textContent = result.message || 'Cliente registrado exitosamente.';
+                const msg = clientData.email 
+                    ? '✅ Cliente registrado con acceso a la plataforma.'
+                    : '✅ Cliente registrado exitosamente (solo datos físicos).';
+                clientFormMessage.textContent = msg;
                 clientFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }
             
+            // Cerrar modal y recargar tabla después de 1.5 segundos
             setTimeout(() => {
                 closeRegisterModal();
                 initializeClientsSection();
-            }, 2000);
+            }, 1500);
         } else {
             if (clientFormMessage) {
-                clientFormMessage.textContent = `Error: ${result.error?.message || 'No se pudo registrar el cliente'}`;
+                let errorMsg = 'No se pudo registrar el cliente.';
+                
+                if (result.error?.message?.includes('already registered')) {
+                    errorMsg = 'Ya existe un cliente con este correo electrónico.';
+                } else if (result.error?.message?.includes('duplicate')) {
+                    errorMsg = 'Ya existe un cliente con este documento.';
+                } else if (result.error?.message) {
+                    errorMsg = result.error.message;
+                }
+                
+                clientFormMessage.textContent = `❌ Error: ${errorMsg}`;
                 clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }

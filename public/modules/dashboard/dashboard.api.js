@@ -387,48 +387,108 @@ export const getReportData = async (startDate, endDate) => {
     };
 };
 
+// REEMPLAZA COMPLETAMENTE la función registerClientFromDashboard en /public/modules/dashboard/dashboard.api.js
+
 export const registerClientFromDashboard = async (clientData) => {
     try {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: clientData.email,
-            password: clientData.password,
-            options: {
-                data: {
-                    first_name: clientData.firstName,
-                    last_name: clientData.lastName,
-                    full_name: `${clientData.firstName} ${clientData.lastName}`
-                },
-                emailRedirectTo: 'https://ohmypet.codearlo.com/public/modules/login/email-confirmed.html'
+        let userId = null;
+
+        // CASO 1: Cliente CON email y contraseña - crear cuenta de autenticación
+        if (clientData.email && clientData.password) {
+            console.log('Registrando cliente CON autenticación (email + contraseña)...');
+            
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: clientData.email,
+                password: clientData.password,
+                options: {
+                    data: {
+                        first_name: clientData.firstName,
+                        last_name: clientData.lastName,
+                        full_name: `${clientData.firstName} ${clientData.lastName}`
+                    },
+                    emailRedirectTo: undefined
+                }
+            });
+
+            if (authError) {
+                console.error('Error al crear cuenta de autenticación:', authError);
+                return { success: false, error: authError };
             }
-        });
 
-        if (authError) {
-            console.error('Error al registrar cliente:', authError);
-            return { success: false, error: authError };
-        }
+            if (!authData.user) {
+                return { success: false, error: { message: 'No se pudo crear el usuario' } };
+            }
 
-        if (authData.user) {
+            userId = authData.user.id;
+
+            // Actualizar el perfil con todos los datos
             const { error: profileError } = await supabase
                 .from('profiles')
                 .update({
                     first_name: clientData.firstName,
                     last_name: clientData.lastName,
-                    role: 'cliente'
+                    full_name: `${clientData.firstName} ${clientData.lastName}`,
+                    email: clientData.email,
+                    phone: clientData.phone,
+                    doc_type: clientData.docType,
+                    doc_num: clientData.docNum,
+                    district: clientData.district,
+                    emergency_contact_name: clientData.emergencyContactName,
+                    emergency_contact_phone: clientData.emergencyContactPhone,
+                    role: 'cliente',
+                    onboarding_completed: true
                 })
-                .eq('id', authData.user.id);
+                .eq('id', userId);
 
             if (profileError) {
                 console.error('Error al actualizar perfil:', profileError);
+                return { success: false, error: profileError };
             }
+
+            console.log('✅ Cliente registrado CON acceso web');
+            return { 
+                success: true, 
+                data: { id: userId },
+                message: 'Cliente registrado con acceso a la plataforma.'
+            };
+
+        } else {
+            // CASO 2: Cliente SIN email - usar función RPC para bypasear RLS
+            console.log('Registrando cliente SIN autenticación usando función RPC...');
+            
+            const { data: profileId, error: rpcError } = await supabase
+                .rpc('create_client_profile', {
+                    p_first_name: clientData.firstName,
+                    p_last_name: clientData.lastName,
+                    p_phone: clientData.phone,
+                    p_doc_type: clientData.docType,
+                    p_doc_num: clientData.docNum,
+                    p_district: clientData.district,
+                    p_emergency_contact_name: clientData.emergencyContactName,
+                    p_emergency_contact_phone: clientData.emergencyContactPhone
+                });
+
+            if (rpcError) {
+                console.error('Error al crear perfil sin autenticación:', rpcError);
+                return { success: false, error: rpcError };
+            }
+
+            if (!profileId) {
+                return { success: false, error: { message: 'No se pudo crear el perfil' } };
+            }
+
+            userId = profileId;
+            console.log('✅ Cliente registrado SIN acceso web (solo datos físicos)');
+            
+            return { 
+                success: true, 
+                data: { id: userId },
+                message: 'Cliente registrado exitosamente (sin acceso web).'
+            };
         }
 
-        return { 
-            success: true, 
-            data: authData.user,
-            message: 'Cliente registrado exitosamente. Se ha enviado un email de confirmación.'
-        };
     } catch (error) {
-        console.error('Error en registerClientFromDashboard:', error);
+        console.error('Error general en registerClientFromDashboard:', error);
         return { success: false, error };
     }
 };
