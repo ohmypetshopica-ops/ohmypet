@@ -15,7 +15,7 @@ import { createAppointmentRow } from './dashboard.utils.js';
 console.log("🚀 dashboard-appointments.js cargado y ejecutándose...");
 
 let allAppointments = [];
-let clientsWithPets = []; // Caché para clientes y sus mascotas
+let clientsWithPets = [];
 let currentAppointmentId = null;
 let currentPetId = null;
 let arrivalPhotoFile = null;
@@ -218,7 +218,6 @@ const initializeAddAppointmentModal = async () => {
     });
 
     newAppointmentDateInput.addEventListener('change', renderAvailableTimes);
-    newAppointmentDateInput.min = new Date().toISOString().split("T")[0];
 
     addAppointmentForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -567,7 +566,6 @@ const initializePage = async () => {
         }
     });
     
-    // Inicializar el nuevo modal para agendar citas
     initializeAddAppointmentModal();
 };
 
