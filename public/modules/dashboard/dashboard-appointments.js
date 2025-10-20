@@ -396,9 +396,31 @@ const initializePage = async () => {
 
         if (action === 'confirmar' || action === 'rechazar') {
             const newStatus = action === 'confirmar' ? 'confirmada' : 'rechazada';
-            const confirmationText = action === 'confirmar' ? '¿Confirmar esta cita?' : '¿Rechazar esta cita?';
+            const confirmationText = action === 'confirmar' ? '¿Confirmar esta cita y notificar al cliente por WhatsApp?' : '¿Rechazar esta cita?';
             
             if (confirm(confirmationText)) {
+                
+                // ----- 👇 INICIO DE LA NUEVA FUNCIONALIDAD 👇 -----
+                if (action === 'confirmar') {
+                    const appointment = allAppointments.find(app => app.id == appointmentId);
+
+                    if (appointment && appointment.profiles && appointment.profiles.phone) {
+                        const clientPhone = appointment.profiles.phone;
+                        const petName = appointment.pets.name;
+                        const appointmentDate = new Date(appointment.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        const appointmentTime = appointment.appointment_time;
+
+                        const message = `¡Hola! 👋 Te confirmamos tu cita en OhMyPet:\n\n*Mascota:* ${petName}\n*Fecha:* ${appointmentDate}\n*Hora:* ${appointmentTime}\n\n¡Te esperamos! 🐾`;
+                        
+                        const whatsappUrl = `https://wa.me/51${clientPhone}?text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+
+                    } else {
+                        alert('No se pudo encontrar el número de teléfono del cliente para notificar.');
+                    }
+                }
+                // ----- 👆 FIN DE LA NUEVA FUNCIONALIDAD 👆 -----
+
                 const { success } = await updateAppointmentStatus(appointmentId, newStatus);
                 if (success) {
                     await loadAppointmentsAndRender(); // Recargar tabla

@@ -85,7 +85,12 @@ export const getAppointments = async (page = 1, itemsPerPage = 10, search = '', 
     
     let query = supabase
         .from('appointments')
-        .select(`id, appointment_date, appointment_time, service, status, final_observations, final_weight, invoice_pdf_url, pet_id, service_price, payment_method, pets ( name ), profiles ( full_name, first_name, last_name )`, { count: 'exact' });
+        .select(`
+            id, appointment_date, appointment_time, service, status, final_observations, 
+            final_weight, invoice_pdf_url, pet_id, service_price, payment_method, 
+            pets ( name ), 
+            profiles ( full_name, first_name, last_name, phone )
+        `, { count: 'exact' });
         
     // Aplicar filtros
     if (search) {
