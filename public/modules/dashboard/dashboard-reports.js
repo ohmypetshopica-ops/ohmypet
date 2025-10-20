@@ -1,4 +1,4 @@
-import { getReportData } from './dashboard.api.js';
+import { getReportData, getSalesReportData } from './dashboard.api.js';
 
 // --- ELEMENTOS DEL DOM ---
 const headerTitle = document.querySelector('#header-title');
@@ -7,23 +7,31 @@ const endDateInput = document.querySelector('#end-date');
 const generateReportBtn = document.querySelector('#generate-report-btn');
 const reportContent = document.querySelector('#report-content');
 
-// KPIs
+// KPIs de Servicios
 const totalRevenueEl = document.querySelector('#total-revenue');
 const serviceCountEl = document.querySelector('#service-count');
 const averageRevenueEl = document.querySelector('#average-revenue');
 
-// Gráfico y Descargas
+// Gráfico y Descargas de Servicios
 const paymentChartCanvas = document.querySelector('#payment-chart');
 const downloadFinancialCsvBtn = document.querySelector('#download-financial-csv');
 
-let paymentChart = null; // Variable para almacenar la instancia del gráfico
-let reportDataCache = null; // Caché para los datos del reporte actual
+// =================== NUEVOS ELEMENTOS PARA VENTAS ===================
+// KPIs de Ventas
+const totalSalesRevenueEl = document.querySelector('#total-sales-revenue');
+const productsSoldCountEl = document.querySelector('#products-sold-count');
+
+// Gráfico y Descargas de Ventas
+const productSalesChartCanvas = document.querySelector('#product-sales-chart');
+const downloadSalesCsvBtn = document.querySelector('#download-sales-csv');
+// =================== FIN DE NUEVOS ELEMENTOS ===================
+
+let paymentChart = null;
+let productSalesChart = null; // Variable para el nuevo gráfico de ventas
+let reportDataCache = null;
 
 // --- FUNCIONES ---
 
-/**
- * Actualiza las tarjetas de KPIs.
- */
 const updateKpiCards = (data) => {
     const totalRevenue = data.totalRevenue || 0;
     const serviceCount = data.serviceCount || 0;
@@ -34,18 +42,23 @@ const updateKpiCards = (data) => {
     averageRevenueEl.textContent = `S/ ${averageRevenue.toFixed(2)}`;
 };
 
-/**
- * Renderiza el gráfico de métodos de pago.
- */
+// =================== NUEVA FUNCIÓN PARA KPIs DE VENTAS ===================
+const updateSalesKpiCards = (salesData) => {
+    const totalSalesRevenue = salesData.totalSalesRevenue || 0;
+    const productsSoldCount = salesData.productsSoldCount || 0;
+
+    totalSalesRevenueEl.textContent = `S/ ${totalSalesRevenue.toFixed(2)}`;
+    productsSoldCountEl.textContent = productsSoldCount;
+};
+// =================== FIN DE LA NUEVA FUNCIÓN ===================
+
 const renderPaymentChart = (paymentSummary) => {
     if (paymentChart) {
-        paymentChart.destroy(); // Destruir gráfico anterior si existe
+        paymentChart.destroy();
     }
-
     const labels = paymentSummary.map(item => item.payment_method);
     const data = paymentSummary.map(item => item.total);
     const backgroundColors = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899'];
-
     paymentChart = new Chart(paymentChartCanvas, {
         type: 'pie',
         data: {
@@ -60,30 +73,49 @@ const renderPaymentChart = (paymentSummary) => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                }
-            }
+            plugins: { legend: { position: 'bottom' } }
         }
     });
 };
 
-/**
- * Genera y descarga un archivo CSV.
- */
+// =================== NUEVA FUNCIÓN PARA GRÁFICO DE VENTAS ===================
+const renderProductSalesChart = (categorySummary) => {
+    if (productSalesChart) {
+        productSalesChart.destroy();
+    }
+    const labels = categorySummary.map(item => item.category);
+    const data = categorySummary.map(item => item.total);
+    const backgroundColors = ['#EF4444', '#F97316', '#84CC16', '#3B82F6', '#6366F1'];
+    productSalesChart = new Chart(productSalesChartCanvas, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: backgroundColors,
+                borderColor: '#ffffff',
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+};
+// =================== FIN DE LA NUEVA FUNCIÓN ===================
+
 const downloadCsv = (filename, data) => {
     if (!data || data.length === 0) {
         alert("No hay datos para descargar.");
         return;
     }
-
     const headers = Object.keys(data[0]);
     const csvRows = [
         headers.join(','),
         ...data.map(row => headers.map(header => JSON.stringify(row[header])).join(','))
     ];
-
     const csvString = csvRows.join('\n');
     const blob = new Blob([csvString], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -93,9 +125,6 @@ const downloadCsv = (filename, data) => {
     a.click();
 };
 
-/**
- * Función principal para generar el reporte.
- */
 const generateReport = async () => {
     const startDate = startDateInput.value;
     const endDate = endDateInput.value;
@@ -108,15 +137,33 @@ const generateReport = async () => {
     generateReportBtn.disabled = true;
     generateReportBtn.textContent = 'Generando...';
 
-    const data = await getReportData(startDate, endDate);
-    reportDataCache = data; // Guardar datos en caché
+    // OBTENER AMBOS REPORTES EN PARALELO
+    const [serviceReportData, salesReportData] = await Promise.all([
+        getReportData(startDate, endDate),
+        getSalesReportData(startDate, endDate)
+    ]);
+    
+    reportDataCache = { serviceReportData, salesReportData }; // Guardar ambos en caché
 
-    if (data) {
-        updateKpiCards(data);
-        renderPaymentChart(data.paymentSummary);
+    if (serviceReportData) {
+        updateKpiCards(serviceReportData);
+        renderPaymentChart(serviceReportData.paymentSummary);
+    } else {
+        alert('No se pudieron obtener los datos para el reporte de servicios.');
+    }
+
+    // =================== LLAMAR A LAS NUEVAS FUNCIONES DE VENTAS ===================
+    if (salesReportData) {
+        updateSalesKpiCards(salesReportData);
+        renderProductSalesChart(salesReportData.categorySummary);
+    } else {
+        alert('No se pudieron obtener los datos para el reporte de ventas.');
+    }
+    // =================== FIN DE LA LLAMADA ===================
+
+    if (serviceReportData || salesReportData) {
         reportContent.classList.remove('hidden');
     } else {
-        alert('No se pudieron obtener los datos para el reporte.');
         reportContent.classList.add('hidden');
     }
 
@@ -124,32 +171,37 @@ const generateReport = async () => {
     generateReportBtn.textContent = 'Generar Reporte';
 };
 
-/**
- * Inicializa la página.
- */
 const initializeReportsPage = () => {
     if (headerTitle) {
         headerTitle.textContent = 'Reportes';
     }
 
-    // Configurar fechas por defecto (mes actual)
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
     const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
     startDateInput.value = firstDayOfMonth;
     endDateInput.value = lastDayOfMonth;
 
-    // Listeners
     generateReportBtn.addEventListener('click', generateReport);
+    
     downloadFinancialCsvBtn.addEventListener('click', () => {
-        if (reportDataCache && reportDataCache.detailedServices) {
-            downloadCsv('reporte_financiero.csv', reportDataCache.detailedServices);
+        if (reportDataCache && reportDataCache.serviceReportData?.detailedServices) {
+            downloadCsv('reporte_servicios.csv', reportDataCache.serviceReportData.detailedServices);
         } else {
             alert('Primero genera un reporte para poder descargarlo.');
         }
     });
 
-    // Generar reporte inicial al cargar la página
+    // =================== EVENT LISTENER PARA EL NUEVO BOTÓN DE DESCARGA ===================
+    downloadSalesCsvBtn.addEventListener('click', () => {
+        if (reportDataCache && reportDataCache.salesReportData?.detailedSales) {
+            downloadCsv('reporte_ventas.csv', reportDataCache.salesReportData.detailedSales);
+        } else {
+            alert('Primero genera un reporte para poder descargarlo.');
+        }
+    });
+    // =================== FIN DEL EVENT LISTENER ===================
+
     generateReport();
 };
 

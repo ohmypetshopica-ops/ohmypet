@@ -412,6 +412,85 @@ export const getReportData = async (startDate, endDate) => {
     };
 };
 
+// =================== CÓDIGO NUEVO AÑADIDO ===================
+/**
+ * Obtiene y procesa los datos de ventas de productos para el reporte.
+ */
+export const getSalesReportData = async (startDate, endDate) => {
+    const { data: sales, error } = await supabase
+        .from('sales')
+        .select(`
+            created_at,
+            total_price,
+            quantity,
+            client:client_id ( full_name, first_name, last_name ),
+            product:product_id ( name, category )
+        `)
+        .gte('created_at', startDate)
+        .lte('created_at', endDate);
+
+    if (error) {
+        console.error('Error al obtener datos del reporte de ventas:', error);
+        return null;
+    }
+
+    if (!sales || sales.length === 0) {
+        return {
+            totalSalesRevenue: 0,
+            productsSoldCount: 0,
+            categorySummary: [],
+            detailedSales: []
+        };
+    }
+
+    let totalSalesRevenue = 0;
+    let productsSoldCount = 0;
+    const categorySummaryMap = new Map();
+
+    sales.forEach(sale => {
+        const price = sale.total_price || 0;
+        totalSalesRevenue += price;
+        productsSoldCount += sale.quantity;
+
+        const category = sale.product?.category || 'Sin Categoría';
+        if (categorySummaryMap.has(category)) {
+            categorySummaryMap.set(category, categorySummaryMap.get(category) + price);
+        } else {
+            categorySummaryMap.set(category, price);
+        }
+    });
+
+    const categorySummary = Array.from(categorySummaryMap, ([category, total]) => ({
+        category,
+        total
+    }));
+
+    const detailedSales = sales.map(sale => {
+         const clientProfile = sale.client;
+         const clientName = (clientProfile?.first_name && clientProfile?.last_name) 
+            ? `${clientProfile.first_name} ${clientProfile.last_name}` 
+            : clientProfile?.full_name || 'N/A';
+
+        return {
+            fecha: new Date(sale.created_at).toISOString().split('T')[0],
+            cliente: clientName,
+            producto: sale.product?.name || 'N/A',
+            categoria: sale.product?.category || 'N/A',
+            cantidad: sale.quantity,
+            ingreso: sale.total_price || 0
+        };
+    });
+
+    return {
+        totalSalesRevenue,
+        productsSoldCount,
+        categorySummary,
+        detailedSales
+    };
+};
+// =================== FIN DEL CÓDIGO NUEVO ===================
+
+
 export const registerClientFromDashboard = async (clientData) => {
     try {
         let userId = null;
