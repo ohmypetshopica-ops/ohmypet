@@ -7,61 +7,149 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>:root { font-family: 'Inter', sans-serif; }</style>
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        .sidebar-scrollable nav::-webkit-scrollbar { width: 6px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        
+        #mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        #mobile-menu.active {
+            transform: translateX(0);
+        }
+        #mobile-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #mobile-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 text-black">
-    <div class="flex h-screen overflow-hidden">
-        <div id="sidebar-container"></div>
-        <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
-            <div id="header-container"></div>
-            <div id="main-content" class="flex-1 p-6 overflow-y-auto">
-                <section id="reports" class="space-y-6">
+<body class="bg-gray-50 text-black">
+
+    <div id="mobile-overlay" class="fixed inset-0 bg-black z-40 md:hidden"></div>
+
+    <div id="mobile-menu" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 md:hidden">
+        <div class="h-full flex flex-col">
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-green-50">
+                <div class="flex items-center space-x-2">
+                    <div class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">O</span>
+                    </div>
+                    <span class="text-lg font-bold text-gray-800">OhMyPet</span>
+                </div>
+                <button id="close-mobile-menu" class="p-2 hover:bg-green-100 rounded-lg transition-colors">
+                    <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <nav id="mobile-nav-content" class="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+            </nav>
+
+            <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-gray-50">
+                <div class="flex items-center px-3 py-2.5 rounded-lg">
+                    <div class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-bold text-sm" id="mobile-user-initial">A</span>
+                    </div>
+                    <div class="ml-3 flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 truncate" id="mobile-user-name">Administrador</p>
+                        <p class="text-xs text-gray-500">Admin</p>
+                    </div>
+                </div>
+                <a href="/public" target="_blank" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
+                    <svg class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span>Ir a la Tienda</span>
+                </a>
+                <button id="mobile-logout-button" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
+                    <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+        <div id="sidebar-container" class="hidden md:block"></div>
+        
+        <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <h1 class="text-lg md:text-xl font-semibold text-gray-800" id="header-title">Reportes</h1>
+                </div>
+                <div id="header-container"></div>
+            </header>
+
+            <div id="main-content" class="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar">
+                <section id="reports" class="space-y-4 md:space-y-6">
                     
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Seleccionar Rango de Fechas</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="text-base md:text-lg font-semibold text-gray-800 mb-3 md:mb-4">Seleccionar Rango de Fechas</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 items-end">
                             <div>
-                                <label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
-                                <input type="date" id="start-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <label for="start-date" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Desde</label>
+                                <input type="date" id="start-date" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
                             </div>
                             <div>
-                                <label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
-                                <input type="date" id="end-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <label for="end-date" class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Hasta</label>
+                                <input type="date" id="end-date" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
                             </div>
-                            <button id="generate-report-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg h-10 hover:bg-green-700">
+                            <button id="generate-report-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 text-sm md:text-base">
                                 Generar Reporte
                             </button>
                         </div>
                     </div>
 
-                    <div id="report-content" class="hidden space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="bg-white p-6 rounded-xl shadow-sm border">
-                                <h4 class="text-sm font-medium text-gray-600 mb-2">Ingresos Totales</h4>
-                                <p id="total-revenue" class="text-3xl font-bold text-green-600">-</p>
+                    <div id="report-content" class="hidden space-y-4 md:space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
+                            <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border">
+                                <h4 class="text-xs md:text-sm font-medium text-gray-600 mb-2">Ingresos Totales</h4>
+                                <p id="total-revenue" class="text-2xl md:text-3xl font-bold text-green-600">-</p>
                             </div>
-                            <div class="bg-white p-6 rounded-xl shadow-sm border">
-                                <h4 class="text-sm font-medium text-gray-600 mb-2">Servicios Completados</h4>
-                                <p id="service-count" class="text-3xl font-bold text-gray-900">-</p>
+                            <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border">
+                                <h4 class="text-xs md:text-sm font-medium text-gray-600 mb-2">Servicios Completados</h4>
+                                <p id="service-count" class="text-2xl md:text-3xl font-bold text-gray-900">-</p>
                             </div>
-                            <div class="bg-white p-6 rounded-xl shadow-sm border">
-                                <h4 class="text-sm font-medium text-gray-600 mb-2">Ingreso Promedio / Servicio</h4>
-                                <p id="average-revenue" class="text-3xl font-bold text-gray-900">-</p>
+                            <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border">
+                                <h4 class="text-xs md:text-sm font-medium text-gray-600 mb-2">Ingreso Promedio / Servicio</h4>
+                                <p id="average-revenue" class="text-2xl md:text-3xl font-bold text-gray-900">-</p>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                            <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Ingresos por Método de Pago</h3>
-                                <div class="relative h-72">
+                        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6">
+                            <div class="lg:col-span-3 bg-white p-4 md:p-6 rounded-xl shadow-sm border">
+                                <h3 class="text-base md:text-lg font-semibold text-gray-800 mb-3 md:mb-4">Ingresos por Método de Pago</h3>
+                                <div class="relative h-64 md:h-72">
                                     <canvas id="payment-chart"></canvas>
                                 </div>
                             </div>
-                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border flex flex-col">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Descargar Reportes</h3>
-                                <div class="space-y-4 flex-grow flex flex-col justify-center">
-                                    <button id="download-financial-csv" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors">
-                                        Descargar Reporte Financiero (CSV)
+                            <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl shadow-sm border flex flex-col">
+                                <h3 class="text-base md:text-lg font-semibold text-gray-800 mb-3 md:mb-4">Descargar Reportes</h3>
+                                <div class="space-y-3 md:space-y-4 flex-grow flex flex-col justify-center">
+                                    <button id="download-financial-csv" class="w-full bg-blue-500 text-white font-semibold py-2 md:py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors text-sm md:text-base">
+                                        📊 Descargar Reporte Financiero (CSV)
                                     </button>
                                 </div>
                             </div>
@@ -74,26 +162,89 @@
     </div>
     
     <script type="module">
+        const CACHE_VERSION = Date.now();
+
         async function loadComponent(url, containerId) {
             try {
-                const response = await fetch(`${url}?v=${Date.now()}`);
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, {
+                    cache: 'no-store'
+                });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
-                document.getElementById(containerId).innerHTML = html;
-            } catch (error) { console.error(`Error cargando ${url}:`, error); }
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error(`Error cargando ${url}:`, error);
+            }
         }
-        document.addEventListener('DOMContentLoaded', async () => {
+
+        function setupMobileMenu() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const closeMobileMenuButton = document.getElementById('close-mobile-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileOverlay = document.getElementById('mobile-overlay');
+            const mobileNavContent = document.getElementById('mobile-nav-content');
+
+            const toggleMenu = (show) => {
+                if (show) {
+                    mobileMenu.classList.add('active');
+                    mobileOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    mobileMenu.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            };
+
+            mobileMenuButton?.addEventListener('click', () => toggleMenu(true));
+            closeMobileMenuButton?.addEventListener('click', () => toggleMenu(false));
+            mobileOverlay?.addEventListener('click', () => toggleMenu(false));
+
+            const sidebarContainer = document.getElementById('sidebar-container');
+            if (sidebarContainer && sidebarContainer.querySelector('nav')) {
+                const navClone = sidebarContainer.querySelector('nav').cloneNode(true);
+                mobileNavContent.appendChild(navClone);
+
+                navClone.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 768) {
+                            toggleMenu(false);
+                        }
+                    });
+                });
+            }
+        }
+
+        async function initializeDashboard() {
             await Promise.all([
-                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
-                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container')
             ]);
-            await new Promise(resolve => setTimeout(resolve, 100));
+
+            setupMobileMenu();
+
             try {
-                const sidebarModule = await import(`./dashboard-sidebar.js`);
+                await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
+
+                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
                 if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
-            } catch (error) { console.error('Error:', error); }
-        });
+
+                const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
+                if (headerModule?.initializeHeader) headerModule.initializeHeader();
+
+                const pageModulePath = window.location.pathname.replace('.html', '.js');
+                await import(pageModulePath + `?v=${CACHE_VERSION}`);
+
+            } catch (error) {
+                console.error('Error inicializando los scripts del dashboard:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
+
     <script type="module" src="../../core/auth.js"></script>
     <script type="module" src="./dashboard-reports.js"></script>
 </body>
