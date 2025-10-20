@@ -9,12 +9,17 @@ const saleForm = document.querySelector('#sale-form');
 const saleFormMessage = document.querySelector('#sale-form-message');
 
 // --- CAMPOS DEL FORMULARIO ---
-const clientSelect = document.querySelector('#sale-client');
+// Input de búsqueda de cliente
+const clientSearchInput = document.querySelector('#sale-client-search');
+const clientSearchIdInput = document.querySelector('#sale-client-id');
+const clientSearchResults = document.querySelector('#sale-client-results');
+
 const productSelect = document.querySelector('#sale-product');
 const quantityInput = document.querySelector('#sale-quantity');
 const priceInput = document.querySelector('#sale-price');
 
 let allProducts = []; // Caché para guardar los productos y sus precios
+let allClients = []; // Caché para guardar los clientes para la búsqueda
 
 // --- RENDERIZADO DE LA TABLA ---
 const renderSalesTable = async () => {
@@ -46,14 +51,10 @@ const openModal = async () => {
     saleForm.reset();
     saleFormMessage.classList.add('hidden');
     
-    // Cargar clientes
-    clientSelect.innerHTML = '<option value="">Cargando clientes...</option>';
-    const clients = await getClients();
-    clientSelect.innerHTML = '<option value="" disabled selected>Selecciona un cliente</option>';
-    clients.forEach(client => {
-        const displayName = (client.first_name && client.last_name) ? `${client.first_name} ${client.last_name}` : client.full_name;
-        clientSelect.innerHTML += `<option value="${client.id}">${displayName}</option>`;
-    });
+    // Cargar clientes para la búsqueda y guardarlos en caché
+    clientSearchInput.placeholder = 'Cargando clientes...';
+    allClients = await getClients();
+    clientSearchInput.placeholder = 'Escribe para buscar un cliente...';
 
     // Cargar productos
     productSelect.innerHTML = '<option value="">Cargando productos...</option>';
@@ -86,6 +87,59 @@ const updatePrice = () => {
     }
 };
 
+// =================== NUEVAS FUNCIONES PARA BÚSQUEDA DE CLIENTES ===================
+const renderClientResults = (clients) => {
+    if (clients.length === 0) {
+        clientSearchResults.innerHTML = `<div class="p-3 text-sm text-gray-500">No se encontraron clientes.</div>`;
+    } else {
+        clientSearchResults.innerHTML = clients.map(client => {
+            const displayName = (client.first_name && client.last_name) ? `${client.first_name} ${client.last_name}` : client.full_name;
+            return `<div class="p-3 hover:bg-gray-100 cursor-pointer text-sm" data-client-id="${client.id}" data-client-name="${displayName}">${displayName}</div>`;
+        }).join('');
+    }
+    clientSearchResults.classList.remove('hidden');
+};
+
+const setupClientSearch = () => {
+    clientSearchInput.addEventListener('input', () => {
+        const searchTerm = clientSearchInput.value.toLowerCase();
+        
+        clientSearchIdInput.value = ''; // Limpiar ID si el usuario modifica la búsqueda
+
+        if (searchTerm.length < 2) {
+            clientSearchResults.classList.add('hidden');
+            return;
+        }
+
+        const matchedClients = allClients.filter(client => {
+            const fullName = ((client.first_name || '') + ' ' + (client.last_name || '')).toLowerCase();
+            return fullName.includes(searchTerm);
+        });
+
+        renderClientResults(matchedClients);
+    });
+
+    clientSearchResults.addEventListener('click', (e) => {
+        const clientDiv = e.target.closest('[data-client-id]');
+        if (clientDiv) {
+            const clientId = clientDiv.dataset.clientId;
+            const clientName = clientDiv.dataset.clientName;
+
+            clientSearchInput.value = clientName;
+            clientSearchIdInput.value = clientId;
+
+            clientSearchResults.classList.add('hidden');
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!clientSearchInput.contains(e.target) && !clientSearchResults.contains(e.target)) {
+            clientSearchResults.classList.add('hidden');
+        }
+    });
+};
+// =================== FIN DE NUEVAS FUNCIONES ===================
+
 // --- INICIALIZACIÓN Y EVENTOS ---
 const initializeSalesPage = async () => {
     await renderSalesTable();
@@ -98,6 +152,8 @@ const initializeSalesPage = async () => {
 
     productSelect.addEventListener('change', updatePrice);
     quantityInput.addEventListener('input', updatePrice);
+    
+    setupClientSearch(); // Inicializar la lógica de búsqueda de clientes
 
     saleForm.addEventListener('submit', async (e) => {
         e.preventDefault();

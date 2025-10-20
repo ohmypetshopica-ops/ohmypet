@@ -81,9 +81,13 @@
                 </div>
                 <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                     <div id="sale-form-message" class="hidden p-3 rounded-md text-sm"></div>
-                    <div>
-                        <label for="sale-client" class="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
-                        <select id="sale-client" name="client_id" required class="w-full p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500"></select>
+
+                    <div class="relative">
+                        <label for="sale-client-search" class="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+                        <input type="text" id="sale-client-search" placeholder="Escribe para buscar un cliente..." class="w-full p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500" autocomplete="off">
+                        <input type="hidden" id="sale-client-id" name="client_id" required>
+                        <div id="sale-client-results" class="hidden absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        </div>
                     </div>
                     <div>
                         <label for="sale-product" class="block text-sm font-medium text-gray-700 mb-1">Producto *</label>
