@@ -585,4 +585,20 @@ export const addAppointmentFromDashboard = async (appointmentData) => {
     return { success: true, data: data[0] };
 };
 
+// --- NUEVA FUNCIÓN PARA ACTUALIZAR PERFIL DE CLIENTE ---
+export const updateClientProfile = async (clientId, profileData) => {
+    const { data, error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', clientId)
+        .select();
+
+    if (error) {
+        console.error('Error al actualizar el perfil del cliente:', error);
+        return { success: false, error };
+    }
+    return { success: true, data: data[0] };
+};
+// --- FIN NUEVA FUNCIÓN ---
+
 export { supabase };
