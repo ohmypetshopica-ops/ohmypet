@@ -296,6 +296,28 @@ const initializeAddAppointmentModal = async () => {
 
         if (success) {
             alert('¡Cita agendada con éxito!');
+            
+            // ----- 👇 INICIO DE LA NUEVA FUNCIONALIDAD 👇 -----
+            try {
+                const client = clientsWithPets.find(c => c.id === appointmentData.user_id);
+                if (client && client.phone) {
+                    const pet = client.pets.find(p => p.id === appointmentData.pet_id);
+                    const petName = pet ? pet.name : 'su mascota';
+                    const appointmentDate = new Date(appointmentData.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    
+                    const message = `¡Hola ${client.first_name}! 👋 Te confirmamos tu cita en OhMyPet:\n\n*Mascota:* ${petName}\n*Fecha:* ${appointmentDate}\n*Hora:* ${appointmentData.appointment_time}\n*Servicio:* ${appointmentData.service}\n\n¡Te esperamos! 🐾`;
+                    
+                    const whatsappUrl = `https://wa.me/51${client.phone}?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                } else {
+                    alert('La cita fue agendada, pero no se pudo notificar por WhatsApp porque el cliente no tiene un número de teléfono registrado.');
+                }
+            } catch (e) {
+                console.error('Error al intentar enviar WhatsApp:', e);
+                alert('La cita fue agendada, pero ocurrió un error al intentar generar el mensaje de WhatsApp.');
+            }
+            // ----- 👆 FIN DE LA NUEVA FUNCIONALIDAD 👆 -----
+
             closeAddAppointmentModal();
             await loadAppointmentsAndRender(); // Recargar tabla
         } else {
@@ -400,7 +422,6 @@ const initializePage = async () => {
             
             if (confirm(confirmationText)) {
                 
-                // ----- 👇 INICIO DE LA NUEVA FUNCIONALIDAD 👇 -----
                 if (action === 'confirmar') {
                     const appointment = allAppointments.find(app => app.id == appointmentId);
 
@@ -419,7 +440,6 @@ const initializePage = async () => {
                         alert('No se pudo encontrar el número de teléfono del cliente para notificar.');
                     }
                 }
-                // ----- 👆 FIN DE LA NUEVA FUNCIONALIDAD 👆 -----
 
                 const { success } = await updateAppointmentStatus(appointmentId, newStatus);
                 if (success) {
