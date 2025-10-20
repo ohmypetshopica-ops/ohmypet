@@ -11,32 +11,172 @@
         :root {
             font-family: 'Inter', sans-serif;
         }
+
+        /* Scrollbar styles (kept for completeness) */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+
+        .sidebar-scrollable nav::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-scrollable nav::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+
+        /* Mobile menu transitions */
+        #mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #mobile-menu.active {
+            transform: translateX(0);
+        }
+
+        #mobile-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #mobile-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Custom styles for mobile table list simulation */
+        @media (max-width: 767px) {
+            #clients-table-body tr {
+                display: block;
+                margin-bottom: 1rem;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                background-color: #ffffff;
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            }
+
+            #clients-table-body td {
+                display: block;
+                padding: 0.25rem 0;
+            }
+
+            #clients-table-body tr td:nth-child(1) {
+                font-weight: bold;
+                border-bottom: 1px solid #f3f4f6;
+                padding-bottom: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            #clients-table-body tr td:nth-child(3) {
+                text-align: left;
+                padding-top: 0.5rem;
+            }
+
+            #clients thead {
+                display: none;
+            }
+        }
     </style>
 </head>
 
-<body class="bg-gray-100 text-black">
+<body class="bg-gray-50 text-black">
 
-    <div class="md:hidden flex flex-col items-center justify-center h-screen bg-gray-100 p-4 text-center">
-        <h1 class="text-2xl font-bold text-gray-800 mb-4">Acceso no permitido</h1>
-        <p class="text-gray-600">El panel de administración solo está disponible en dispositivos de escritorio.</p>
-        <a href="/public/index.html" class="mt-6 bg-green-600 text-white font-bold py-2 px-4 rounded-lg">
-            Volver al inicio
-        </a>
+    <div id="mobile-overlay" class="fixed inset-0 bg-black z-40 md:hidden"></div>
+
+    <div id="mobile-menu" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 md:hidden">
+        <div class="h-full flex flex-col">
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-green-50">
+                <div class="flex items-center space-x-2">
+                    <div class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">O</span>
+                    </div>
+                    <span class="text-lg font-bold text-gray-800">OhMyPet</span>
+                </div>
+                <button id="close-mobile-menu" class="p-2 hover:bg-green-100 rounded-lg transition-colors">
+                    <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <nav id="mobile-nav-content" class="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+            </nav>
+
+            <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-gray-50">
+                <div class="flex items-center px-3 py-2.5 rounded-lg">
+                    <div class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-bold text-sm" id="mobile-user-initial">A</span>
+                    </div>
+                    <div class="ml-3 flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 truncate" id="mobile-user-name">Administrador</p>
+                        <p class="text-xs text-gray-500">Admin</p>
+                    </div>
+                </div>
+                <a href="/public" target="_blank" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
+                    <svg class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span>Ir a la Tienda</span>
+                </a>
+                <button id="mobile-logout-button" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
+                    <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
     </div>
+    <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+        <div id="sidebar-container" class="hidden md:block"></div>
 
-    <div class="hidden md:flex h-screen overflow-hidden">
-        <div id="sidebar-container"></div>
-        <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
-            <div id="header-container"></div>
-            <div id="main-content" class="flex-1 p-6 overflow-y-auto">
+        <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <h1 class="text-lg md:text-xl font-semibold text-gray-800" id="header-title">Gestión de Clientes</h1>
+                </div>
+                <div id="header-container"></div>
+            </header>
+
+            <div id="main-content" class="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar">
                 <section id="clients" class="space-y-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800">Gestión de Clientes</h2>
-                        <div class="flex gap-3">
+
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <h2 class="text-2xl font-bold text-gray-800 hidden md:block">Gestión de Clientes</h2>
+                        <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
                             <input type="text" id="client-search-input" placeholder="Buscar cliente..."
-                                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 w-full md:w-auto">
                             <button id="add-client-button"
-                                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+                                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 w-full md:w-auto">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 4v16m8-8H4"></path>
@@ -45,9 +185,10 @@
                             </button>
                         </div>
                     </div>
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
+
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto md:overflow-x-visible">
+                        <table class="w-full md:table">
+                            <thead class="bg-gray-50 md:table-header-group">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente
                                     </th>
@@ -56,7 +197,7 @@
                                         Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="clients-table-body" class="divide-y divide-gray-200"></tbody>
+                            <tbody id="clients-table-body" class="divide-y divide-gray-200 md:table-row-group"></tbody>
                         </table>
                     </div>
                 </section>
@@ -64,121 +205,108 @@
         </main>
     </div>
 
-    <div id="client-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
-        <div class="sticky top-0 bg-white p-6 border-b flex justify-between items-center rounded-t-2xl z-10">
-            <h2 class="text-xl font-bold text-gray-800">Registrar Nuevo Cliente</h2>
-            <button id="close-client-modal-button" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
-        </div>
-        
-        <div class="p-6">
-            <div id="client-form-message" class="hidden mb-4"></div>
-            
-            <form id="client-form" class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                        <input type="text" name="first_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+    <div id="client-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 h-screen">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[95vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white p-6 border-b flex justify-between items-center rounded-t-2xl z-10">
+                <h2 class="text-xl font-bold text-gray-800">Registrar Nuevo Cliente</h2>
+                <button type="button" id="close-client-modal-button" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6">
+                <div id="client-form-message" class="hidden mb-4"></div>
+                <form id="client-form" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                            <input type="text" name="first_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+                            <input type="text" name="last_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                            <input type="tel" name="phone" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="+51 987 654 321">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Distrito *</label>
+                            <input type="text" name="district" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Ica, La Tinguiña, etc.">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
+                            <select name="doc_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white">
+                                <option value="">Seleccionar...</option>
+                                <option value="DNI">DNI</option>
+                                <option value="CE">Carnet de Extranjería</option>
+                                <option value="Pasaporte">Pasaporte</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
+                            <input type="text" name="doc_num" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="12345678">
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
-                        <input type="text" name="last_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email (Opcional)</label>
+                        <input type="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="ejemplo@correo.com">
+                        <p class="text-xs text-gray-500 mt-1">Solo si el cliente desea acceder a la plataforma online</p>
                     </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
-                        <input type="tel" name="phone" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="+51 987 654 321">
+                    <div id="password-field" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
+                        <input type="password" name="password" minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Mínimo 6 caracteres. Requerido solo si proporciona email.</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Distrito *</label>
-                        <input type="text" name="district" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Ica, La Tinguiña, etc.">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Contacto de Emergencia</label>
+                            <input type="text" name="emergency_contact_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Nombre completo">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Emergencia</label>
+                            <input type="tel" name="emergency_contact_phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="+51 987 654 321">
+                        </div>
                     </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
-                        <select name="doc_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white">
-                            <option value="">Seleccionar...</option>
-                            <option value="DNI">DNI</option>
-                            <option value="CE">Carnet de Extranjería</option>
-                            <option value="Pasaporte">Pasaporte</option>
-                        </select>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p class="text-sm text-blue-800">
+                            <strong>ℹ️ Para clientes sin acceso web:</strong> Solo complete los campos obligatorios. El email y contraseña son opcionales y solo necesarios si el cliente desea usar la plataforma.
+                        </p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
-                        <input type="text" name="doc_num" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="12345678">
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                        <button type="button" id="cancel-client-button" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors">
+                            Registrar Cliente
+                        </button>
                     </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email (Opcional)</label>
-                    <input type="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="ejemplo@correo.com">
-                    <p class="text-xs text-gray-500 mt-1">Solo si el cliente desea acceder a la plataforma online</p>
-                </div>
-
-                <div id="password-field" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
-                    <input type="password" name="password" minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    <p class="text-xs text-gray-500 mt-1">Mínimo 6 caracteres. Requerido solo si proporciona email.</p>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Contacto de Emergencia</label>
-                        <input type="text" name="emergency_contact_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Nombre completo">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Emergencia</label>
-                        <input type="tel" name="emergency_contact_phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="+51 987 654 321">
-                    </div>
-                </div>
-
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p class="text-sm text-blue-800">
-                        <strong>ℹ️ Para clientes sin acceso web:</strong> Solo complete los campos obligatorios. El email y contraseña son opcionales y solo necesarios si el cliente desea usar la plataforma.
-                    </p>
-                </div>
-
-                <div class="flex gap-3 pt-4">
-                    <button type="button" id="cancel-client-button" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors">
-                        Registrar Cliente
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-</div>
-    
 
     <div id="client-details-modal"
-        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
-            <div class="p-6 border-b flex justify-between items-center">
-                <h2 id="modal-client-name" class="text-2xl font-bold text-gray-800">Detalles del Cliente</h2>
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 h-screen">
+        <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
+            <div class="p-6 border-b flex justify-between items-center flex-shrink-0">
+                <h2 id="modal-client-name" class="text-xl font-bold text-gray-800">Detalles del Cliente</h2>
                 <button id="modal-close-btn"
                     class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
             </div>
-            
             <div class="flex-1 p-6 space-y-6 overflow-y-auto">
                 <div id="client-view-mode">
                     <div id="modal-content-body-view">
                         <div class="text-center py-10 text-gray-500">Cargando...</div>
                     </div>
                 </div>
-
                 <div id="client-edit-mode" class="hidden">
                     <form id="client-edit-form" class="space-y-6">
                         <input type="hidden" name="id" id="edit-client-id">
                         <div id="edit-form-message" class="hidden p-3 rounded-md text-sm font-medium"></div>
-
                         <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Información de Perfil</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                                 <input type="text" name="first_name" required id="edit-first-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
@@ -187,7 +315,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
                                 <input type="text" name="last_name" required id="edit-last-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             </div>
-                            <div class="md:col-span-2">
+                            <div class="sm:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Email (No Editable)</label>
                                 <input type="email" name="email" id="edit-email" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed">
                             </div>
@@ -213,9 +341,8 @@
                                 <input type="text" name="doc_num" id="edit-doc-num" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             </div>
                         </div>
-                        
                         <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Contacto de Emergencia</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Nombre Contacto</label>
                                 <input type="text" name="emergency_contact_name" id="edit-emergency-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
@@ -228,33 +355,31 @@
                     </form>
                 </div>
             </div>
-
-            <div id="modal-footer" class="p-4 border-t flex justify-between items-center">
-                <div class="flex items-center">
-                    <button id="edit-client-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+            <div id="modal-footer" class="p-4 border-t flex flex-col sm:flex-row justify-between items-center flex-shrink-0 gap-2">
+                <div class="flex items-center w-full sm:w-auto">
+                    <button id="edit-client-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         Editar Cliente
                     </button>
-                    <button id="save-client-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+                    <button id="save-client-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                         Guardar Cambios
                     </button>
-                    <button id="cancel-edit-client-btn" class="hidden ml-3 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                    <button id="cancel-edit-client-btn" class="hidden ml-3 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto mt-2 sm:mt-0">
                         Cancelar
                     </button>
                 </div>
-                <button id="modal-add-pet-btn-footer" class="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 px-3 rounded-full transition-colors flex items-center gap-1">
+                <button id="modal-add-pet-btn-footer" class="bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 px-4 rounded-full transition-colors flex items-center justify-center gap-1 w-full sm:w-auto">
                     + Agregar Mascota
                 </button>
             </div>
-
         </div>
     </div>
 
-    <div id="add-pet-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl">
+    <div id="add-pet-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4 h-screen">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl max-h-[95vh] overflow-y-auto">
             <form id="add-pet-form" class="w-full">
-                <div class="p-6 border-b flex justify-between items-center">
+                <div class="p-6 border-b flex justify-between items-center flex-shrink-0">
                     <h2 id="add-pet-modal-title" class="text-xl font-bold text-gray-800">Registrar Nueva Mascota</h2>
                     <button type="button" id="close-add-pet-modal-button"
                         class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
@@ -262,16 +387,14 @@
                 <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                     <input type="hidden" id="pet-owner-id" name="owner_id">
                     <div id="add-pet-form-message" class="hidden"></div>
-                    
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Foto de la Mascota (Opcional)</label>
                         <div class="flex items-center space-x-4">
-                            <img id="pet-image-preview" src="https://via.placeholder.com/100" alt="Vista previa de la mascota" class="h-24 w-24 rounded-full object-cover border-2 border-gray-300">
+                            <img id="pet-image-preview" src="https://via.placeholder.com/100" alt="Vista previa de la mascota" class="h-24 w-24 rounded-full object-cover border-2 border-gray-300 flex-shrink-0">
                             <input type="file" id="pet-photo" name="photo" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer">
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
                             <input type="text" name="name" required
@@ -283,8 +406,7 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                          <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
                             <input type="date" name="birth_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
@@ -294,7 +416,6 @@
                             <input type="number" name="weight" step="0.1" placeholder="Ej: 5.5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
                         <select name="sex"
@@ -310,7 +431,7 @@
                             placeholder="Alergias, comportamiento, etc."></textarea>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-4 rounded-b-2xl">
+                <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row justify-end gap-4 rounded-b-2xl flex-shrink-0">
                     <button type="button" id="cancel-add-pet-button"
                         class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
                     <button type="submit"
@@ -320,15 +441,15 @@
             </form>
         </div>
     </div>
-    <script type="module">
-        // Este script se encarga de cargar los componentes y luego inicializar los módulos de JS.
 
+    <script type="module">
         const CACHE_VERSION = Date.now();
 
-        // Función para cargar componentes HTML (sidebar, header)
         async function loadComponent(url, containerId) {
             try {
-                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, {
+                    cache: 'no-store'
+                });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
                 const container = document.getElementById(containerId);
@@ -340,15 +461,54 @@
             }
         }
 
-        // Función principal que se ejecuta cuando el DOM está listo
+        function setupMobileMenu() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const closeMobileMenuButton = document.getElementById('close-mobile-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileOverlay = document.getElementById('mobile-overlay');
+            const mobileNavContent = document.getElementById('mobile-nav-content');
+
+            const toggleMenu = (show) => {
+                if (show) {
+                    mobileMenu.classList.add('active');
+                    mobileOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    mobileMenu.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            };
+
+            mobileMenuButton?.addEventListener('click', () => toggleMenu(true));
+            closeMobileMenuButton?.addEventListener('click', () => toggleMenu(false));
+            mobileOverlay?.addEventListener('click', () => toggleMenu(false));
+
+            const sidebarContainer = document.getElementById('sidebar-container');
+            if (sidebarContainer && sidebarContainer.querySelector('nav')) {
+                const navClone = sidebarContainer.querySelector('nav').cloneNode(true);
+                mobileNavContent.appendChild(navClone);
+
+                // Close mobile menu on navigation click
+                navClone.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 768) { // Check if it's a mobile device
+                            toggleMenu(false);
+                        }
+                    });
+                });
+            }
+        }
+
         async function initializeDashboard() {
-            // 1. Cargar todos los componentes HTML primero y esperar a que terminen
+            // 1. Cargar el sidebar primero
             await Promise.all([
-                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
-                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container')
             ]);
 
-            // 2. Ahora que el HTML está en su lugar, importar y ejecutar los scripts
+            setupMobileMenu();
+
+            // 2. Cargar el resto de componentes y scripts
             try {
                 // Importar y ejecutar el script de autenticación
                 await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
@@ -361,9 +521,7 @@
                 const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
                 if (headerModule?.initializeHeader) headerModule.initializeHeader();
 
-                // Aquí debes asegurarte de importar el script específico de cada página.
-                // Por ejemplo, si estás en dashboard-appointments.html, la siguiente línea es correcta.
-                // Si estás en dashboard-clients.html, cámbiala a `./dashboard-clients.js`.
+                // Importar y ejecutar el script específico de esta página.
                 const pageModulePath = window.location.pathname.replace('.html', '.js');
                 await import(pageModulePath + `?v=${CACHE_VERSION}`);
 
