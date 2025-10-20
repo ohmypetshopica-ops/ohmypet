@@ -24,14 +24,29 @@
     </header>
 
     <main class="flex-grow overflow-y-auto no-scrollbar pb-24">
+        
         <div id="clients-view" class="view-section p-4">
-            <input type="text" id="client-search" placeholder="Buscar cliente..." class="w-full p-3 border rounded-lg mb-4">
-            <div id="clients-list" class="space-y-3"></div>
+            <div id="clients-list-view">
+                <input type="text" id="client-search" placeholder="Buscar cliente..." class="w-full p-3 border rounded-lg mb-4">
+                <div id="clients-list" class="space-y-3"></div>
+            </div>
+            <div id="client-details-view" class="hidden">
+                <button id="back-to-clients-btn" class="mb-4 flex items-center text-sm font-semibold text-green-600">&lt; Volver a la lista</button>
+                <div id="client-details-content" class="space-y-4"></div>
+            </div>
         </div>
+
         <div id="pets-view" class="view-section hidden p-4">
-            <input type="text" id="pet-search" placeholder="Buscar mascota o dueño..." class="w-full p-3 border rounded-lg mb-4">
-            <div id="pets-list" class="space-y-3"></div>
+            <div id="pets-list-view">
+                <input type="text" id="pet-search" placeholder="Buscar mascota o dueño..." class="w-full p-3 border rounded-lg mb-4">
+                <div id="pets-list" class="space-y-3"></div>
+            </div>
+            <div id="pet-details-view" class="hidden">
+                <button id="back-to-pets-btn" class="mb-4 flex items-center text-sm font-semibold text-green-600">&lt; Volver a la lista</button>
+                <div id="pet-details-content" class="space-y-4"></div>
+            </div>
         </div>
+        
         <div id="calendar-view" class="view-section hidden p-4">
             <div class="bg-white rounded-lg shadow-md p-4">
                 <div class="flex justify-between items-center mb-4">
