@@ -6,24 +6,201 @@
     <title>Productos - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <style>:root { font-family: 'Inter', sans-serif; }</style>
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+        
+        /* Scrollbar styles (kept for completeness) */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        .sidebar-scrollable nav::-webkit-scrollbar { width: 6px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        
+        /* Mobile menu transitions (from dashboard-overview.html) */
+        #mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        #mobile-menu.active {
+            transform: translateX(0);
+        }
+        #mobile-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #mobile-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Custom styles for mobile table list simulation (Card View) */
+        @media (max-width: 767px) {
+            /* Hide desktop table headers */
+            .min-w-full thead {
+                display: none;
+            }
+            
+            /* Transform each table row into a compact card */
+            #products-table-body tr {
+                display: flex; 
+                flex-direction: column;
+                margin-bottom: 0.5rem; 
+                padding: 0.5rem; /* Reduced padding for compact list */
+                border-radius: 0.5rem;
+                background-color: #ffffff;
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+                position: relative; /* Needed for absolute positioning of price */
+            }
+            
+            /* Make all table data cells block elements */
+            #products-table-body td {
+                display: block;
+                width: 100%;
+                padding: 0; 
+                white-space: normal !important;
+            }
+
+            /* 1. Product Image / Name (TD:1) and 3. Price (TD:3) - ALIGN HORIZONTALLY */
+            #products-table-body tr td:first-child { 
+                order: 1; 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center;
+                /* Remove border/margin from the top section to make it compact */
+                border-bottom: none;
+                padding-bottom: 0;
+                margin-bottom: 0;
+            }
+            
+            /* Inner Flex to align image and text vertically in first TD */
+            #products-table-body tr td:first-child > div {
+                display: flex; 
+                align-items: center; 
+            }
+
+            /* Adjust image size for more compact view (h-10 w-10) */
+            #products-table-body tr td:first-child .flex-shrink-0 {
+                height: 2.5rem; /* h-10 */
+                width: 2.5rem; /* w-10 */
+            }
+            
+            /* TD:3 Price - Move to the top right section (using order and flex) */
+            #products-table-body tr td:nth-child(3) { 
+                order: 2; 
+                text-align: right;
+                font-weight: bold;
+                font-size: 1rem; /* Smaller font for price */
+                color: #10B981; 
+                display: block; 
+                /* Absolute positioning for compact price */
+                position: absolute;
+                right: 0.75rem;
+                top: 0.75rem; 
+            }
+            
+            /* 2. Category (TD:2) and 4. Stock (TD:4) - Combine them as status badges */
+            #products-table-body tr td:nth-child(2),
+            #products-table-body tr td:nth-child(4) {
+                order: 3; 
+                display: inline-block;
+                width: auto;
+                margin-right: 0.5rem;
+                padding-top: 0.25rem;
+                padding-bottom: 0.25rem;
+                margin-left: 3.5rem; /* Align badges with text area */
+            }
+            
+            /* 5. Actions (TD:5) */
+            #products-table-body tr td:last-child { 
+                order: 4; 
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.5rem;
+                padding-top: 0.5rem; 
+                border-top: 1px solid #f3f4f6;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 text-black">
-    <div class="flex h-screen overflow-hidden">
-        <div id="sidebar-container"></div>
-        <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
-            <div id="header-container"></div>
-            <div id="main-content" class="flex-1 p-6 overflow-y-auto">
+<body class="bg-gray-50 text-black">
+
+    <div id="mobile-overlay" class="fixed inset-0 bg-black z-40 md:hidden"></div>
+
+    <div id="mobile-menu" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 md:hidden">
+        <div class="h-full flex flex-col">
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-green-50">
+                <div class="flex items-center space-x-2">
+                    <div class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">O</span>
+                    </div>
+                    <span class="text-lg font-bold text-gray-800">OhMyPet</span>
+                </div>
+                <button id="close-mobile-menu" class="p-2 hover:bg-green-100 rounded-lg transition-colors">
+                    <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <nav id="mobile-nav-content" class="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+            </nav>
+
+            <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-gray-50">
+                <div class="flex items-center px-3 py-2.5 rounded-lg">
+                    <div class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-bold text-sm" id="mobile-user-initial">A</span>
+                    </div>
+                    <div class="ml-3 flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 truncate" id="mobile-user-name">Administrador</p>
+                        <p class="text-xs text-gray-500">Admin</p>
+                    </div>
+                </div>
+                <a href="/public" target="_blank" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
+                    <svg class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span>Ir a la Tienda</span>
+                </a>
+                <button id="mobile-logout-button" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
+                    <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+        <div id="sidebar-container" class="hidden md:block"></div>
+        <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <h1 class="text-lg md:text-xl font-semibold text-gray-800" id="header-title">Gestión de Productos</h1>
+                </div>
+                <div id="header-container"></div>
+            </header>
+            
+            <div id="main-content" class="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar">
                 <section id="products" class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-2xl font-bold text-gray-800">Gestión de Productos</h2>
-                        <button id="add-product-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-transform hover:scale-105">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                        <h2 class="text-2xl font-bold text-gray-800 hidden md:block">Gestión de Productos</h2>
+                        <button id="add-product-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-transform hover:scale-105 w-full md:w-auto">
                             + Agregar Producto
                         </button>
                     </div>
 
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-                        <table class="w-full">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto md:overflow-x-visible">
+                        <table class="w-full min-w-full">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
@@ -43,13 +220,13 @@
         </main>
     </div>
 
-    <div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl">
+    <div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 h-screen">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <form id="product-form" class="w-full">
-                <div class="p-6 border-b">
-                    <h2 id="product-modal-title" class="text-2xl font-bold text-gray-800">Agregar Producto</h2>
+                <div class="sticky top-0 bg-white p-4 md:p-6 border-b flex-shrink-0">
+                    <h2 id="product-modal-title" class="text-xl font-bold text-gray-800">Agregar Producto</h2>
                 </div>
-                <div class="p-6 space-y-4 max-h-96 overflow-y-auto">
+                <div class="p-4 md:p-6 space-y-3 max-h-[70vh] overflow-y-auto">
                     <input type="hidden" id="product-id" name="id">
                     <input type="hidden" id="existing-image-url" name="existing_image_url">
                     <div>
@@ -88,7 +265,7 @@
                         <p class="text-xs text-gray-500 mt-1">Sube una nueva imagen para cambiar la actual.</p>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-4 rounded-b-2xl">
+                <div class="bg-gray-50 p-4 flex justify-end gap-4 rounded-b-2xl flex-shrink-0">
                     <button type="button" id="close-modal-button" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Guardar Producto</button>
                 </div>
@@ -97,27 +274,95 @@
     </div>
     
     <script type="module">
+        const CACHE_VERSION = Date.now();
+
         async function loadComponent(url, containerId) {
             try {
-                const response = await fetch(`${url}?v=${Date.now()}`);
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, {
+                    cache: 'no-store'
+                });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
-                document.getElementById(containerId).innerHTML = html;
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = html;
+                }
             } catch (error) {
                 console.error(`Error cargando ${url}:`, error);
             }
         }
-        document.addEventListener('DOMContentLoaded', async () => {
+
+        function setupMobileMenu() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const closeMobileMenuButton = document.getElementById('close-mobile-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileOverlay = document.getElementById('mobile-overlay');
+            const mobileNavContent = document.getElementById('mobile-nav-content');
+
+            const toggleMenu = (show) => {
+                if (show) {
+                    mobileMenu.classList.add('active');
+                    mobileOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    mobileMenu.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            };
+
+            mobileMenuButton?.addEventListener('click', () => toggleMenu(true));
+            closeMobileMenuButton?.addEventListener('click', () => toggleMenu(false));
+            mobileOverlay?.addEventListener('click', () => toggleMenu(false));
+
+            const sidebarContainer = document.getElementById('sidebar-container');
+            if (sidebarContainer && sidebarContainer.querySelector('nav')) {
+                const navClone = sidebarContainer.querySelector('nav').cloneNode(true);
+                mobileNavContent.appendChild(navClone);
+
+                // Close mobile menu on navigation click
+                navClone.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 768) { // Check if it's a mobile device
+                            toggleMenu(false);
+                        }
+                    });
+                });
+            }
+        }
+
+        async function initializeDashboard() {
+            // 1. Cargar el sidebar primero
             await Promise.all([
-                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
-                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container')
             ]);
-            await new Promise(resolve => setTimeout(resolve, 100));
+
+            setupMobileMenu();
+
+            // 2. Cargar el resto de componentes y scripts
             try {
-                const sidebarModule = await import(`./dashboard-sidebar.js`);
+                // Importar y ejecutar el script de autenticación
+                await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
+
+                // Importar y ejecutar el script del sidebar
+                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
                 if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
-            } catch (error) { console.error('Error inicializando sidebar:', error); }
-        });
+
+                // Importar y ejecutar el script del header (CON LA LÓGICA DE LA CAMPANA)
+                const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
+                if (headerModule?.initializeHeader) headerModule.initializeHeader();
+
+                // Importar y ejecutar el script específico de esta página.
+                const pageModulePath = window.location.pathname.replace('.html', '.js');
+                await import(pageModulePath + `?v=${CACHE_VERSION}`);
+
+            } catch (error) {
+                console.error('Error inicializando los scripts del dashboard:', error);
+            }
+        }
+
+        // Ejecutar la función principal al cargar el contenido del DOM
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
     
     <script type="module" src="../../core/auth.js"></script>
