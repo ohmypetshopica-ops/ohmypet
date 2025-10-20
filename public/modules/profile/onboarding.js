@@ -1,5 +1,26 @@
 import { supabase } from './profile.api.js';
 
+// --- UTILITY: LIMPIEZA DE NÚMEROS DE TELÉFONO ---
+const cleanPhoneNumber = (rawNumber) => {
+    if (!rawNumber) return null;
+    
+    // 1. Eliminar todos los caracteres que no son dígitos (espacios, guiones, paréntesis)
+    let cleaned = rawNumber.replace(/\D/g, '');
+    
+    // 2. Eliminar el código de país '+51' o '51' si existe y el número tiene más de 9 dígitos.
+    if (cleaned.startsWith('51') && cleaned.length > 9) {
+        cleaned = cleaned.replace(/^51/, '');
+    }
+    
+    // 3. Asegurarse de que el número final sea de 9 dígitos (Perú)
+    if (cleaned.length > 9) {
+        cleaned = cleaned.slice(-9);
+    }
+    
+    return cleaned;
+};
+// --- FIN UTILITY ---
+
 // --- ELEMENTOS DEL DOM ---
 const onboardingForm = document.querySelector('#onboarding-form');
 const steps = document.querySelectorAll('.step');
@@ -46,7 +67,21 @@ const validateStep = (stepNumber) => {
         }
     }
     
-    // --- INICIO DE LA NUEVA VALIDACIÓN ---
+    // --- INICIO DE LA NUEVA VALIDACIÓN (TELÉFONO) ---
+    if (stepNumber === 3) {
+        const phoneInput = document.querySelector('#phone');
+        const phoneRaw = phoneInput.value;
+        const cleanedPhone = cleanPhoneNumber(phoneRaw);
+        
+        if (cleanedPhone.length !== 9) {
+            alert('El Teléfono/WhatsApp debe tener exactamente 9 dígitos (sin incluir el código de país).');
+            phoneInput.focus();
+            return false;
+        }
+    }
+    // --- FIN DE LA NUEVA VALIDACIÓN (TELÉFONO) ---
+    
+    // --- VALIDACIÓN DE DOCUMENTO ---
     if (stepNumber === 2) {
         const selectedType = docTypeSelect.value;
         const docNum = docNumInput.value;
@@ -201,7 +236,10 @@ onboardingForm.addEventListener('submit', async (event) => {
     const finalData = {
         ...onboardingData,
         email: userEmail,
-        onboarding_completed: true
+        onboarding_completed: true,
+        // Limpiar números de teléfono antes de guardar
+        phone: cleanPhoneNumber(onboardingData.phone),
+        emergency_contact_phone: cleanPhoneNumber(onboardingData.emergency_contact_phone)
     };
     
     const { error } = await supabase
