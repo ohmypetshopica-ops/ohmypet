@@ -12,6 +12,9 @@
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
+        .sidebar-scrollable nav::-webkit-scrollbar { width: 6px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
         #mobile-menu { transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
         #mobile-menu.active { transform: translateX(0); }
         #mobile-overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
@@ -19,9 +22,22 @@
     </style>
 </head>
 <body class="bg-gray-50 text-black">
-    <div id="mobile-overlay" class="fixed inset-0 bg-black z-40 md:hidden"></div>
-    <div id="mobile-menu" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 md:hidden">
+    <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-60 z-40 md:hidden"></div>
+    
+    <div id="mobile-menu" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 md:hidden h-full flex flex-col">
+        <div class="h-16 flex items-center justify-between px-4 border-b bg-green-50">
+            <div class="flex items-center space-x-2">
+                <div class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">O</span>
+                </div>
+                <span class="text-lg font-bold text-gray-800">OhMyPet</span>
+            </div>
+            <button id="close-mobile-menu" class="p-2 hover:bg-green-100 rounded-lg">
+                <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+            </button>
         </div>
+        <nav id="mobile-nav-content" class="flex-1 p-4 overflow-y-auto"></nav>
+    </div>
 
     <div class="flex flex-col md:flex-row h-screen overflow-hidden">
         <div id="sidebar-container" class="hidden md:block"></div>
@@ -30,7 +46,7 @@
             <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30 shrink-0">
                 <div class="flex items-center space-x-3">
                     <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     </button>
                     <h1 class="text-lg md:text-xl font-semibold text-gray-800" id="header-title">Reportes</h1>
                 </div>
@@ -39,7 +55,6 @@
 
             <div id="main-content" class="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar">
                 <section id="reports" class="space-y-6">
-                    
                     <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
                         <h3 class="text-base md:text-lg font-semibold text-gray-800 mb-4">Seleccionar Rango de Fechas</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -56,7 +71,6 @@
                             </button>
                         </div>
                     </div>
-
                     <div id="report-content" class="hidden space-y-8">
                         <div class="space-y-6">
                             <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-green-500 pb-2">Reporte de Servicios</h2>
@@ -123,47 +137,6 @@
         </main>
     </div>
     
-    <script type="module">
-        const CACHE_VERSION = Date.now();
-        async function loadComponent(url, containerId) {
-            try {
-                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const html = await response.text();
-                const container = document.getElementById(containerId);
-                if (container) container.innerHTML = html;
-            } catch (error) { console.error(`Error cargando ${url}:`, error); }
-        }
-        function setupMobileMenu() {
-            const btn = document.getElementById('mobile-menu-button');
-            const closeBtn = document.getElementById('close-mobile-menu');
-            const menu = document.getElementById('mobile-menu');
-            const overlay = document.getElementById('mobile-overlay');
-            if(btn && menu && overlay) {
-                const toggle = (show) => {
-                    menu.classList.toggle('active', show);
-                    overlay.classList.toggle('active', show);
-                };
-                btn.addEventListener('click', () => toggle(true));
-                closeBtn.addEventListener('click', () => toggle(false));
-                overlay.addEventListener('click', () => toggle(false));
-                const navClone = document.getElementById('sidebar-container')?.querySelector('nav')?.cloneNode(true);
-                if(navClone) document.getElementById('mobile-nav-content').appendChild(navClone);
-            }
-        }
-        async function initializeDashboard() {
-            await loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container');
-            setupMobileMenu();
-            try {
-                await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
-                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
-                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
-                const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
-                if (headerModule?.initializeHeader) headerModule.initializeHeader();
-                await import(window.location.pathname.replace('.html', '.js') + `?v=${CACHE_VERSION}`);
-            } catch (error) { console.error('Error inicializando scripts:', error); }
-        }
-        document.addEventListener('DOMContentLoaded', initializeDashboard);
-    </script>
+    <script type="module" src="./dashboard-loader.js"></script>
 </body>
 </html>
