@@ -601,4 +601,71 @@ export const updateClientProfile = async (clientId, profileData) => {
 };
 // --- FIN NUEVA FUNCIÓN ---
 
+// =================== CÓDIGO A AGREGAR ===================
+/**
+ * Obtiene un listado de ventas con datos del cliente y producto.
+ */
+export const getSales = async () => {
+    const { data, error } = await supabase
+        .from('sales')
+        .select(`
+            *,
+            client:client_id ( id, first_name, last_name, full_name ),
+            product:product_id ( id, name )
+        `)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error al obtener ventas:', error);
+        return [];
+    }
+    return data;
+};
+
+/**
+ * Registra una nueva venta y descuenta el stock del producto.
+ */
+export const addSale = async (saleData) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: { message: 'Usuario no autenticado' } };
+
+    // 1. Registrar la venta
+    const { error: saleError } = await supabase.from('sales').insert([{
+        ...saleData,
+        recorded_by: user.id
+    }]);
+
+    if (saleError) {
+        console.error('Error al registrar la venta:', saleError);
+        return { success: false, error: saleError };
+    }
+
+    // 2. Obtener el stock actual del producto
+    const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('stock')
+        .eq('id', saleData.product_id)
+        .single();
+
+    if (productError) {
+        console.error('Error al obtener stock para actualizar:', productError);
+        return { success: true, warning: 'Venta registrada, pero no se pudo actualizar el stock.' };
+    }
+
+    // 3. Calcular y actualizar el nuevo stock
+    const newStock = product.stock - saleData.quantity;
+    const { error: updateStockError } = await supabase
+        .from('products')
+        .update({ stock: newStock })
+        .eq('id', saleData.product_id);
+
+    if (updateStockError) {
+        console.error('Error al actualizar el stock:', updateStockError);
+        return { success: true, warning: 'Venta registrada, pero no se pudo actualizar el stock.' };
+    }
+
+    return { success: true };
+};
+// =================== FIN DEL CÓDIGO ===================
+
 export { supabase };
