@@ -83,7 +83,7 @@ const downloadCsv = (filename, data) => {
         ...data.map(row => headers.map(header => JSON.stringify(row[header] !== null ? row[header] : '')).join(','))
     ];
     const csvString = csvRows.join('\n');
-    const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' }); // Añadir BOM para Excel
+    const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -108,10 +108,17 @@ const generateReport = async () => {
     reportDataCache = data;
 
     if (data) {
+        // =================== CORRECCIÓN APLICADA AQUÍ ===================
+        // 1. Hacemos visible el contenedor de reportes ANTES de dibujar los gráficos.
+        reportContent.classList.remove('hidden');
+
+        // 2. Actualizamos los textos de las tarjetas (esto es seguro).
         updateKpiCards(data);
+
+        // 3. Ahora que los contenedores de los gráficos son visibles, los renderizamos.
         servicesChart = renderChart(paymentChartServicesCanvas, servicesChart, data.services.paymentSummary, 'services');
         salesChart = renderChart(paymentChartSalesCanvas, salesChart, data.sales.paymentSummary, 'sales');
-        reportContent.classList.remove('hidden');
+        // =================== FIN DE LA CORRECCIÓN ===================
     } else {
         alert('No se pudieron obtener los datos para el reporte.');
         reportContent.classList.add('hidden');
