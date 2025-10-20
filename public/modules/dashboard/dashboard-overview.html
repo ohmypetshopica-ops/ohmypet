@@ -17,96 +17,180 @@
         .sidebar-scrollable nav::-webkit-scrollbar-track { background: transparent; }
         .sidebar-scrollable nav::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
         .sidebar-scrollable nav::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        
+        #mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        #mobile-menu.active {
+            transform: translateX(0);
+        }
+        #mobile-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #mobile-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-black">
     
-    <div class="md:hidden flex flex-col items-center justify-center h-screen bg-gray-100 p-4 text-center">
-        <h1 class="text-2xl font-bold text-gray-800 mb-4">Acceso no permitido</h1>
-        <p class="text-gray-600">El panel de administración solo está disponible en dispositivos de escritorio (computadoras o laptops).</p>
-        <a href="/public/index.html" class="mt-6 bg-green-600 text-white font-bold py-2 px-4 rounded-lg">
-            Volver al inicio
-        </a>
+    <div id="mobile-overlay" class="fixed inset-0 bg-black z-40 md:hidden"></div>
+    
+    <div id="mobile-menu" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 md:hidden">
+        <div class="h-full flex flex-col">
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-green-50">
+                <div class="flex items-center space-x-2">
+                    <div class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">O</span>
+                    </div>
+                    <span class="text-lg font-bold text-gray-800">OhMyPet</span>
+                </div>
+                <button id="close-mobile-menu" class="p-2 hover:bg-green-100 rounded-lg transition-colors">
+                    <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <nav id="mobile-nav-content" class="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+            </nav>
+            
+            <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-gray-50">
+                <div class="flex items-center px-3 py-2.5 rounded-lg">
+                    <div class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-bold text-sm" id="mobile-user-initial">A</span>
+                    </div>
+                    <div class="ml-3 flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 truncate" id="mobile-user-name">Administrador</p>
+                        <p class="text-xs text-gray-500">Admin</p>
+                    </div>
+                </div>
+                <a href="/public" target="_blank" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
+                    <svg class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span>Ir a la Tienda</span>
+                </a>
+                <button id="mobile-logout-button" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
+                    <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div class="hidden md:flex h-screen overflow-hidden">
-        <div id="sidebar-container"></div>
+    <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+        <div id="sidebar-container" class="hidden md:block"></div>
 
         <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
-            <div id="header-container"></div>
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <h1 class="text-lg md:text-xl font-semibold text-gray-800" id="header-title">Dashboard</h1>
+                </div>
+                
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <div class="relative" id="notifications-container">
+                        <button id="notifications-button" class="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                            <svg class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span id="notifications-count" class="hidden absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"></span>
+                        </button>
+                        
+                        <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200">
+                            <div class="p-3 border-b font-semibold text-sm text-gray-700">Citas Pendientes</div>
+                            <div id="notifications-list" class="max-h-80 overflow-y-auto"></div>
+                            <a href="/public/modules/dashboard/dashboard-appointments.html" class="block text-center p-2 border-t text-sm font-medium text-green-600 hover:bg-gray-50">
+                                Ver todas las citas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
             
-            <div id="main-content" class="flex-1 p-6 overflow-y-auto custom-scrollbar">
-                <section id="overview" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                       <a href="/public/modules/dashboard/dashboard-clients.html" class="block bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
-                           <div class="flex items-center justify-between mb-4">
-                               <h3 class="text-sm font-medium text-gray-600">Clientes</h3>
-                               <div class="p-2 bg-blue-50 rounded-lg">
-                                   <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                   </svg>
-                               </div>
-                           </div>
-                           <p class="text-3xl font-bold text-gray-900" id="client-count">-</p>
-                           <p class="text-xs text-gray-500 mt-2">Total registrados</p>
-                       </a>
-                       
-                       <a href="/public/modules/dashboard/dashboard-pets.html" class="block bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
-                           <div class="flex items-center justify-between mb-4">
-                               <h3 class="text-sm font-medium text-gray-600">Mascotas</h3>
-                               <div class="p-2 bg-green-50 rounded-lg">
-                                   <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                   </svg>
-                               </div>
-                           </div>
-                           <p class="text-3xl font-bold text-gray-900" id="pet-count">-</p>
-                           <p class="text-xs text-gray-500 mt-2">Total registradas</p>
-                       </a>
-                       
-                       <a href="/public/modules/dashboard/dashboard-appointments.html" class="block bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
-                           <div class="flex items-center justify-between mb-4">
-                               <h3 class="text-sm font-medium text-gray-600">Citas Pendientes</h3>
-                               <div class="p-2 bg-yellow-50 rounded-lg">
-                                   <svg class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                   </svg>
-                               </div>
-                           </div>
-                           <p class="text-3xl font-bold text-gray-900" id="appointments-count">-</p>
-                           <p class="text-xs text-gray-500 mt-2">Por confirmar</p>
-                       </a>
-                       
-                       <a href="/public/modules/dashboard/dashboard-products.html" class="block bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
-                           <div class="flex items-center justify-between mb-4">
-                               <h3 class="text-sm font-medium text-gray-600">Productos</h3>
-                               <div class="p-2 bg-purple-50 rounded-lg">
-                                   <svg class="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                   </svg>
-                               </div>
-                           </div>
-                           <p class="text-3xl font-bold text-gray-900" id="products-count">-</p>
-                           <p class="text-xs text-gray-500 mt-2">En inventario</p>
-                       </a>
+            <div id="main-content" class="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar">
+                <section id="overview" class="space-y-4 md:space-y-6">
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+                        <a href="/public/modules/dashboard/dashboard-clients.html" class="block bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
+                            <div class="flex items-center justify-between mb-3 md:mb-4">
+                                <h3 class="text-xs md:text-sm font-medium text-gray-600">Clientes</h3>
+                                <div class="p-1.5 md:p-2 bg-blue-50 rounded-lg">
+                                    <svg class="h-4 w-4 md:h-5 md:w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-gray-900" id="client-count">-</p>
+                            <p class="text-xs text-gray-500 mt-1 md:mt-2">Registrados</p>
+                        </a>
+                        
+                        <a href="/public/modules/dashboard/dashboard-pets.html" class="block bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
+                            <div class="flex items-center justify-between mb-3 md:mb-4">
+                                <h3 class="text-xs md:text-sm font-medium text-gray-600">Mascotas</h3>
+                                <div class="p-1.5 md:p-2 bg-green-50 rounded-lg">
+                                    <svg class="h-4 w-4 md:h-5 md:w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-gray-900" id="pet-count">-</p>
+                            <p class="text-xs text-gray-500 mt-1 md:mt-2">Total registradas</p>
+                        </a>
+                        
+                        <a href="/public/modules/dashboard/dashboard-appointments.html" class="block bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
+                            <div class="flex items-center justify-between mb-3 md:mb-4">
+                                <h3 class="text-xs md:text-sm font-medium text-gray-600">Citas Pendientes</h3>
+                                <div class="p-1.5 md:p-2 bg-yellow-50 rounded-lg">
+                                    <svg class="h-4 w-4 md:h-5 md:w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-gray-900" id="appointments-count">-</p>
+                            <p class="text-xs text-gray-500 mt-1 md:mt-2">Por confirmar</p>
+                        </a>
+                        
+                        <a href="/public/modules/dashboard/dashboard-products.html" class="block bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all">
+                            <div class="flex items-center justify-between mb-3 md:mb-4">
+                                <h3 class="text-xs md:text-sm font-medium text-gray-600">Productos</h3>
+                                <div class="p-1.5 md:p-2 bg-purple-50 rounded-lg">
+                                    <svg class="h-4 w-4 md:h-5 md:w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-gray-900" id="products-count">-</p>
+                            <p class="text-xs text-gray-500 mt-1 md:mt-2">En inventario</p>
+                        </a>
                     </div>
                     
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Servicios Completados (Últimos 12 meses)</h3>
-                            <div class="relative h-72">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                        <div class="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 class="text-base md:text-lg font-semibold text-gray-800 mb-3 md:mb-4">Servicios Completados (Últimos 12 meses)</h3>
+                            <div class="relative h-64 md:h-72">
                                 <canvas id="appointments-chart"></canvas>
                             </div>
                         </div>
 
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 class="text-base md:text-lg font-semibold text-gray-800 mb-3 md:mb-4 flex items-center">
                                 <svg class="h-5 w-5 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                                 Próximas Citas
                             </h3>
-                            <div id="upcoming-appointments-list" class="space-y-3">
+                            <div id="upcoming-appointments-list" class="space-y-2 md:space-y-3">
                                 <p class="text-sm text-gray-500 text-center py-8">Cargando...</p>
                             </div>
                         </div>
@@ -117,11 +201,8 @@
     </div>
 
     <script type="module">
-    // Este script se encarga de cargar los componentes y luego inicializar los módulos de JS.
-
     const CACHE_VERSION = Date.now();
     
-    // Función para cargar componentes HTML (sidebar, header)
     async function loadComponent(url, containerId) {
         try {
             const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
@@ -136,30 +217,52 @@
         }
     }
     
-    // Función principal que se ejecuta cuando el DOM está listo
+    function setupMobileMenu() {
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const closeMobileMenuButton = document.getElementById('close-mobile-menu');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileOverlay = document.getElementById('mobile-overlay');
+        const mobileNavContent = document.getElementById('mobile-nav-content');
+        
+        const toggleMenu = (show) => {
+            if (show) {
+                mobileMenu.classList.add('active');
+                mobileOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                mobileMenu.classList.remove('active');
+                mobileOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        };
+        
+        mobileMenuButton?.addEventListener('click', () => toggleMenu(true));
+        closeMobileMenuButton?.addEventListener('click', () => toggleMenu(false));
+        mobileOverlay?.addEventListener('click', () => toggleMenu(false));
+        
+        const sidebarContainer = document.getElementById('sidebar-container');
+        if (sidebarContainer && sidebarContainer.querySelector('nav')) {
+            const navClone = sidebarContainer.querySelector('nav').cloneNode(true);
+            mobileNavContent.appendChild(navClone);
+        }
+    }
+    
     async function initializeDashboard() {
-        // 1. Cargar todos los componentes HTML primero y esperar a que terminen
         await Promise.all([
-            loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
-            loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container')
         ]);
         
-        // 2. Ahora que el HTML está en su lugar, importar y ejecutar los scripts
+        setupMobileMenu();
+        
         try {
-            // Importar y ejecutar el script de autenticación
             await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
 
-            // Importar y ejecutar el script del sidebar
             const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
             if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
             
-            // Importar y ejecutar el script del header (CON LA LÓGICA DE LA CAMPANA)
             const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
             if (headerModule?.initializeHeader) headerModule.initializeHeader();
 
-            // Aquí debes asegurarte de importar el script específico de cada página.
-            // Por ejemplo, si estás en dashboard-appointments.html, la siguiente línea es correcta.
-            // Si estás en dashboard-clients.html, cámbiala a `./dashboard-clients.js`.
             const pageModulePath = window.location.pathname.replace('.html', '.js');
             await import(pageModulePath + `?v=${CACHE_VERSION}`);
 
@@ -168,7 +271,6 @@
         }
     }
 
-    // Ejecutar la función principal al cargar el contenido del DOM
     document.addEventListener('DOMContentLoaded', initializeDashboard);
 </script>
     <script type="module" src="../../core/auth.js"defer></script>
