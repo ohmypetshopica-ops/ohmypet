@@ -9,11 +9,9 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         :root { font-family: 'Inter', sans-serif; }
-        /* Ocultar scrollbar */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        /* Transiciones suaves para las vistas */
-        .view-section { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
+        .view-section { transition: opacity 0.3s ease-in-out; }
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col">
@@ -29,37 +27,24 @@
         
         <div id="clients-view" class="view-section p-4">
             <input type="text" id="client-search" placeholder="Buscar cliente..." class="w-full p-3 border rounded-lg mb-4">
-            <div id="clients-list" class="space-y-3">
-                <div class="bg-white p-4 rounded-lg shadow-sm animate-pulse">
-                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div class="h-3 bg-gray-200 rounded w-1/2 mt-2"></div>
-                </div>
-            </div>
+            <div id="clients-list" class="space-y-3"></div>
         </div>
 
         <div id="pets-view" class="view-section hidden p-4">
             <input type="text" id="pet-search" placeholder="Buscar mascota o dueño..." class="w-full p-3 border rounded-lg mb-4">
-            <div id="pets-list" class="space-y-3">
-                <div class="bg-white p-4 rounded-lg shadow-sm animate-pulse flex items-center gap-4">
-                    <div class="h-12 w-12 rounded-full bg-gray-200"></div>
-                    <div class="flex-grow">
-                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                        <div class="h-3 bg-gray-200 rounded w-1/2 mt-2"></div>
-                    </div>
-                </div>
-            </div>
+            <div id="pets-list" class="space-y-3"></div>
         </div>
         
         <div id="calendar-view" class="view-section hidden p-4">
-             <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="bg-white rounded-lg shadow-md p-4">
                 <div class="flex justify-between items-center mb-4">
                     <button id="prev-month" class="p-2 rounded-full hover:bg-gray-100">&lt;</button>
                     <h2 id="current-month-year" class="font-bold text-lg"></h2>
                     <button id="next-month" class="p-2 rounded-full hover:bg-gray-100">&gt;</button>
                 </div>
                 <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
-                <div id="appointments-for-day" class="mt-4"></div>
             </div>
+            <p class="text-center text-gray-500 mt-4 text-sm">Toca un día con citas (resaltado en verde) para ver los detalles.</p>
         </div>
     </main>
 
@@ -79,6 +64,27 @@
             </button>
         </div>
     </nav>
+    
+    <div id="calendar-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-30 flex items-end">
+        <div id="modal-content" class="w-full bg-gray-100 rounded-t-2xl shadow-lg transition-transform duration-300 transform translate-y-full">
+            <div id="modal-daily-view">
+                <div class="p-4 border-b bg-white rounded-t-2xl">
+                    <h3 id="modal-date-title" class="font-bold text-center text-lg">Citas del Día</h3>
+                </div>
+                <div id="modal-appointments-list" class="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
+                    </div>
+            </div>
+            <div id="modal-pet-details-view" class="hidden">
+                 <div class="p-4 border-b bg-white rounded-t-2xl flex items-center">
+                    <button id="modal-back-btn" class="text-green-600 font-semibold">&lt; Volver</button>
+                    <h3 class="font-bold text-center text-lg flex-grow">Detalles de la Mascota</h3>
+                </div>
+                <div id="modal-pet-details-content" class="p-4 space-y-4 max-h-[50vh] overflow-y-auto">
+                    </div>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module" src="../../core/auth-employee.js"></script>
     <script type="module" src="./dashboard.js"></script>
