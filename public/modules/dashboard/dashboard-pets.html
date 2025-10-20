@@ -134,55 +134,128 @@
             </div>
 
             <div class="p-6 max-h-96 overflow-y-auto">
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Raza</p>
-                        <p id="modal-pet-breed-detail" class="font-semibold text-gray-900">-</p>
+                <div id="pet-view-mode">
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Raza</p>
+                            <p id="modal-pet-breed-detail" class="font-semibold text-gray-900">-</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Sexo</p>
+                            <p id="modal-pet-sex" class="font-semibold text-gray-900">-</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Edad</p>
+                            <p id="modal-pet-age" class="font-semibold text-gray-900">-</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Peso</p>
+                            <p id="modal-pet-weight" class="font-semibold text-gray-900">-</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Tamaño</p>
+                            <p id="modal-pet-size" class="font-semibold text-gray-900">-</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Dueño</p>
+                            <p id="modal-pet-owner" class="font-semibold text-gray-900">-</p>
+                        </div>
                     </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Sexo</p>
-                        <p id="modal-pet-sex" class="font-semibold text-gray-900">-</p>
+
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">📝 Observaciones</p>
+                        <p id="modal-pet-observations" class="text-sm text-gray-700">-</p>
                     </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Edad</p>
-                        <p id="modal-pet-age" class="font-semibold text-gray-900">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Peso</p>
-                        <p id="modal-pet-weight" class="font-semibold text-gray-900">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Tamaño</p>
-                        <p id="modal-pet-size" class="font-semibold text-gray-900">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-1">Dueño</p>
-                        <p id="modal-pet-owner" class="font-semibold text-gray-900">-</p>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-sm font-semibold text-blue-800 mb-3 text-center">📅 Último Servicio</p>
+                        <div id="modal-pet-appointments" class="mb-3">
+                            <p class="text-sm text-gray-500 text-center">Cargando historial...</p>
+                        </div>
+                        <div class="flex justify-center">
+                            <button id="view-all-appointments-btn"
+                                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                                Ver Historial Completo
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                    <p class="text-sm font-semibold text-yellow-800 mb-2">📝 Observaciones</p>
-                    <p id="modal-pet-observations" class="text-sm text-gray-700">-</p>
-                </div>
+                <form id="pet-edit-mode" class="hidden space-y-4">
+                    <input type="hidden" id="edit-pet-id">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Foto de la Mascota</label>
+                        <div class="flex items-center space-x-4">
+                            <img id="edit-pet-image-preview" src="" alt="Vista previa" class="h-20 w-20 rounded-full object-cover border-2 border-gray-300">
+                            <input type="file" id="edit-pet-photo" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                            <input type="text" id="edit-pet-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Raza *</label>
+                            <input type="text" id="edit-pet-breed" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                    </div>
 
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p class="text-sm font-semibold text-blue-800 mb-3 text-center">📅 Último Servicio</p>
-                    <div id="modal-pet-appointments" class="mb-3">
-                        <p class="text-sm text-gray-500 text-center">Cargando historial...</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
+                            <select id="edit-pet-sex" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                                <option value="Macho">Macho</option>
+                                <option value="Hembra">Hembra</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+                            <input type="date" id="edit-pet-birth-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
                     </div>
-                    <div class="flex justify-center">
-                        <button id="view-all-appointments-btn"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors">
-                            Ver Historial Completo
-                        </button>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
+                            <input type="number" id="edit-pet-weight" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
+                            <select id="edit-pet-size" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                                <option value="Pequeño">Pequeño</option>
+                                <option value="Mediano">Mediano</option>
+                                <option value="Grande">Grande</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                        <textarea id="edit-pet-observations" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></textarea>
+                    </div>
+                </form>
             </div>
 
-            <div class="bg-gray-50 px-6 py-4 flex justify-end">
+            <div class="bg-gray-50 px-6 py-4 flex justify-between">
                 <button id="close-modal-bottom-btn"
-                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cerrar</button>
+                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                    Cerrar
+                </button>
+                <div class="flex gap-2">
+                    <button id="edit-pet-btn"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Editar
+                    </button>
+                    <button id="save-pet-btn" class="hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                        Guardar
+                    </button>
+                    <button id="cancel-edit-btn" class="hidden px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors">
+                        Cancelar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
