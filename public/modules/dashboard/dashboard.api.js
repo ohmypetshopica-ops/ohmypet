@@ -82,7 +82,9 @@ export const getAppointments = async () => {
     const { data, error } = await supabase
         .from('appointments')
         .select(`id, appointment_date, appointment_time, service, status, final_observations, final_weight, invoice_pdf_url, pet_id, service_price, payment_method, pets ( name ), profiles ( full_name, first_name, last_name )`)
-        .order('created_at', { ascending: false });
+        // CAMBIO CLAVE: Ordenar por fecha y hora de la cita de forma ascendente (ASC)
+        .order('appointment_date', { ascending: true })
+        .order('appointment_time', { ascending: true });
     if (error) console.error('Error al obtener citas:', error);
     return data || [];
 };
@@ -115,7 +117,10 @@ export const filterAppointments = async (filters) => {
     let query = supabase.from('appointments').select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`);
     if (filters.status) query = query.eq('status', filters.status);
     if (filters.date) query = query.eq('appointment_date', filters.date);
-    const { data, error } = await query.order('created_at', { ascending: false });
+    // CAMBIO CLAVE: Aplicar la misma ordenación ascendente para mantener la coherencia
+    const { data, error } = await query
+        .order('appointment_date', { ascending: true })
+        .order('appointment_time', { ascending: true });
     if (error) console.error('Error al filtrar citas:', error);
     return data || [];
 };
@@ -250,7 +255,8 @@ export const getClientDetails = async (clientId) => {
         const [profileRes, petsRes, appointmentsRes] = await Promise.all([
             supabase.from('profiles').select('*, email').eq('id', clientId).single(),
             supabase.from('pets').select('*').eq('owner_id', clientId),
-            supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: false })
+            // CAMBIO: Ordenar citas por fecha y hora ascendente
+            supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: true }).order('appointment_time', { ascending: true })
         ]);
 
         if (profileRes.error) throw profileRes.error;

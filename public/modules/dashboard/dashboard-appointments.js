@@ -72,9 +72,15 @@ const renderAppointmentsTable = (appointments) => {
 const applyFiltersAndSearch = () => {
     let filtered = [...allAppointments];
     const searchTerm = searchInput.value.toLowerCase().trim();
-    const selectedStatus = statusFilter.value;
+    let selectedStatus = statusFilter.value;
     const selectedDate = dateFilter.value;
 
+    // LÓGICA: Si selectedStatus tiene valor, se aplica el filtro. 
+    // Si es '', no se aplica filtro de estado, mostrando TODAS las citas.
+    if (selectedStatus) {
+        filtered = filtered.filter(app => app.status === selectedStatus);
+    }
+    
     if (searchTerm) {
         filtered = filtered.filter(app => {
             const petName = app.pets?.name?.toLowerCase() || '';
@@ -84,10 +90,6 @@ const applyFiltersAndSearch = () => {
                 : ownerProfile?.full_name?.toLowerCase() || '';
             return petName.includes(searchTerm) || ownerName.includes(searchTerm);
         });
-    }
-
-    if (selectedStatus) {
-        filtered = filtered.filter(app => app.status === selectedStatus);
     }
 
     if (selectedDate) {
@@ -327,11 +329,15 @@ const closeCompletionModal = () => {
 
 const initializePage = async () => {
     console.log("🔄 Obteniendo citas...");
+    // La función getAppointments ya ordena por appointment_date y appointment_time de forma ascendente.
     allAppointments = await getAppointments();
     if (allAppointments) {
         console.log(`✅ Se obtuvieron ${allAppointments.length} citas.`);
     }
-    renderAppointmentsTable(allAppointments);
+    
+    // Configuración inicial de filtro: "Todos los estados" por defecto.
+    statusFilter.value = ''; // Valor por defecto
+    applyFiltersAndSearch();
 
     searchInput?.addEventListener('input', applyFiltersAndSearch);
     statusFilter?.addEventListener('change', applyFiltersAndSearch);
@@ -486,9 +492,6 @@ const initializePage = async () => {
         const price = servicePriceInput.value.trim();
         const paymentMethod = paymentMethodSelect.value;
         
-        // La validación de fotos y peso se ELIMINA para hacerlos opcionales.
-        // La validación de precio y método de pago se MANTIENE como obligatoria.
-        
         let missingFields = [];
         if (!price) missingFields.push('precio del servicio');
         if (!paymentMethod) missingFields.push('método de pago');
@@ -551,6 +554,7 @@ const initializePage = async () => {
                     console.error('Error al actualizar last_grooming_date:', petUpdateError);
                 }
                 
+                // Actualizar la lista local y aplicar filtros para reflejar el cambio
                 const index = allAppointments.findIndex(app => app.id == currentAppointmentId);
                 if (index !== -1) {
                     allAppointments[index].status = 'completada';
