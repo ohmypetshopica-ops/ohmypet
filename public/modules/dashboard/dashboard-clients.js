@@ -8,22 +8,26 @@ import { supabase } from '../../core/supabase.js'; // Necesario para subir imág
 const cleanPhoneNumber = (rawNumber) => {
     if (!rawNumber) return null;
     
-    // 1. Eliminar todos los caracteres que no son dígitos (espacios, guiones, paréntesis)
-    let cleaned = rawNumber.replace(/\D/g, '');
+    // 1. Eliminar todos los caracteres que no son dígitos, excepto el signo '+'
+    let cleaned = rawNumber.replace(/[^\d+]/g, '');
     
-    // 2. Eliminar el código de país '+51' o '51' si existe y el número tiene más de 9 dígitos.
-    if (cleaned.startsWith('51') && cleaned.length > 9) {
-        cleaned = cleaned.replace(/^51/, '');
+    // 2. Si el número no tiene 9 dígitos exactos y no comienza con '+', se considera inválido por ahora.
+    //    Si comienza con '+', se almacena el número completo (código de país).
+    if (cleaned.length < 9 || (cleaned.length > 9 && !cleaned.startsWith('+'))) {
+        // En este caso, si no tiene 9 dígitos exactos, y no tiene un '+' inicial (que indica código de país),
+        // lo forzamos a ser 9 dígitos si es posible, si no, se devuelve como inválido.
+        let digitsOnly = cleaned.replace(/\D/g, '');
+        if (digitsOnly.length === 9) {
+            return digitsOnly; // 9 dígitos locales
+        }
+        if (digitsOnly.length > 9) {
+            return digitsOnly.slice(-9); // Forzar 9 dígitos locales si es más largo
+        }
+        return null; // Inválido
     }
     
-    // 3. Asegurarse de que el número final sea de 9 dígitos (Perú)
-    if (cleaned.length > 9) {
-        // Si aún tiene más, se asume que se metió otro prefijo o se usó un formato largo, se toman los últimos 9.
-        cleaned = cleaned.slice(-9);
-    }
-    
-    // 4. Si el resultado es exactamente 9 dígitos, se retorna. Si no, se retorna la entrada original para que falle la validación.
-    return cleaned.length === 9 ? cleaned : rawNumber;
+    // 3. Si tiene un '+' o tiene 9 dígitos exactos, se devuelve limpio (ej: +51987654321 o 987654321)
+    return cleaned;
 };
 // --- FIN UTILITY ---
 
@@ -150,8 +154,8 @@ const handleSaveClient = async () => {
     const formData = new FormData(form);
     const clientId = formData.get('id');
     
-    const phoneRaw = formData.get('phone').trim();
-    const emergencyPhoneRaw = formData.get('emergency_contact_phone').trim();
+    const phoneRaw = formData.get('phone');
+    const emergencyPhoneRaw = formData.get('emergency_contact_phone');
     
     // Limpiar números de teléfono para la validación y el guardado
     const phoneCleaned = cleanPhoneNumber(phoneRaw);
@@ -177,16 +181,16 @@ const handleSaveClient = async () => {
         return;
     }
     
-    // Validación de teléfonos (9 dígitos)
-    if (phoneRaw && phoneCleaned.length !== 9) {
-        editFormMessage.textContent = '⚠️ El teléfono debe tener exactamente 9 dígitos numéricos (después de limpiar el código de país).';
+    // Validación de teléfonos
+    if (phoneRaw && phoneCleaned === null) {
+        editFormMessage.textContent = '⚠️ El teléfono principal debe tener 9 dígitos o un formato con código de país.';
         editFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         editFormMessage.classList.remove('hidden');
         return;
     }
     
-    if (emergencyPhoneRaw && emergencyPhoneCleaned.length !== 9) {
-        editFormMessage.textContent = '⚠️ El teléfono de emergencia debe tener exactamente 9 dígitos numéricos (después de limpiar el código de país).';
+    if (emergencyPhoneRaw && emergencyPhoneCleaned === null) {
+        editFormMessage.textContent = '⚠️ El teléfono de emergencia debe tener 9 dígitos o un formato con código de país.';
         editFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         editFormMessage.classList.remove('hidden');
         return;
@@ -374,9 +378,9 @@ const setupClientModal = () => {
             return;
         }
 
-        if (clientData.phone.length !== 9) {
+        if (clientData.phone === null) {
             if (clientFormMessage) {
-                clientFormMessage.textContent = '⚠️ El teléfono principal debe tener exactamente 9 dígitos numéricos.';
+                clientFormMessage.textContent = '⚠️ El teléfono principal debe tener 9 dígitos o incluir un código de país válido.';
                 clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }
@@ -404,9 +408,9 @@ const setupClientModal = () => {
             }
         }
 
-        if (clientData.emergencyContactPhone && clientData.emergencyContactPhone.length !== 9) {
+        if (clientData.emergencyContactPhone !== null && clientData.emergencyContactPhone.length < 9) {
             if (clientFormMessage) {
-                clientFormMessage.textContent = '⚠️ El teléfono de emergencia debe tener 9 dígitos numéricos.';
+                clientFormMessage.textContent = '⚠️ El teléfono de emergencia debe tener 9 dígitos o incluir un código de país válido.';
                 clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }

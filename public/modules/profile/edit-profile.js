@@ -1,5 +1,30 @@
 import { supabase } from './profile.api.js';
 
+// --- UTILITY: LIMPIEZA DE NÚMEROS DE TELÉFONO ---
+const cleanPhoneNumber = (rawNumber) => {
+    if (!rawNumber) return null;
+    
+    // 1. Eliminar todos los caracteres que no son dígitos, excepto el signo '+'
+    let cleaned = rawNumber.replace(/[^\d+]/g, '');
+    
+    // 2. Si el número no tiene 9 dígitos exactos y no comienza con '+', se considera que le falta el formato.
+    //    Si tiene más de 9 dígitos y comienza con '+', se asume formato internacional.
+    //    Si tiene 9 dígitos, se asume formato local.
+    if (cleaned.length < 9 || (cleaned.length > 9 && !cleaned.startsWith('+'))) {
+        // Si no cumple el formato estricto de 9 dígitos locales o +código, lo consideramos inválido
+        let digitsOnly = cleaned.replace(/\D/g, '');
+        if (digitsOnly.length === 9) {
+            return digitsOnly; // 9 dígitos locales
+        }
+        return null; // Inválido
+    }
+    
+    // 3. Si tiene un '+' o tiene 9 dígitos exactos, se devuelve limpio (ej: +51987654321 o 987654321)
+    return cleaned;
+};
+// --- FIN UTILITY ---
+
+
 // --- ELEMENTOS DEL DOM ---
 const editProfileForm = document.querySelector('#edit-profile-form');
 const formMessage = document.querySelector('#form-message');
@@ -73,12 +98,12 @@ const loadUserProfile = async () => {
         }
         
         // Rellenar formulario
-        firstNameInput.value = profile.first_name || '';
-        lastNameInput.value = profile.last_name || '';
         phoneInput.value = profile.phone || '';
         districtInput.value = profile.district || '';
         emergencyContactNameInput.value = profile.emergency_contact_name || '';
         emergencyContactPhoneInput.value = profile.emergency_contact_phone || '';
+        firstNameInput.value = profile.first_name || '';
+        lastNameInput.value = profile.last_name || '';
         
         // =========== CÓDIGO AÑADIDO ===========
         // Rellenar nuevos campos de documento
@@ -117,17 +142,41 @@ if (editProfileForm) {
     editProfileForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         
+        formMessage.classList.add('hidden');
         const submitButton = editProfileForm.querySelector('button[type="submit"]');
         submitButton.disabled = true;
+
+        const phoneRaw = phoneInput.value;
+        const emergencyPhoneRaw = emergencyContactPhoneInput.value;
+
+        const phoneCleaned = cleanPhoneNumber(phoneRaw);
+        const emergencyPhoneCleaned = cleanPhoneNumber(emergencyPhoneRaw);
+        
+        // VALIDACIÓN DE NÚMEROS DE TELÉFONO
+        if (phoneRaw && phoneCleaned === null) {
+            formMessage.textContent = 'Error: El número de teléfono/WhatsApp es inválido. Debe tener 9 dígitos o incluir un código de país (ej: +51 987...).';
+            formMessage.className = 'p-4 rounded-md font-medium text-sm bg-red-100 text-red-700';
+            formMessage.classList.remove('hidden');
+            submitButton.disabled = false;
+            return;
+        }
+
+        if (emergencyContactPhoneInput.value.trim() && emergencyPhoneCleaned === null) {
+            formMessage.textContent = 'Error: El número de teléfono de emergencia es inválido. Debe tener 9 dígitos o incluir un código de país.';
+            formMessage.className = 'p-4 rounded-md font-medium text-sm bg-red-100 text-red-700';
+            formMessage.classList.remove('hidden');
+            submitButton.disabled = false;
+            return;
+        }
 
         const updatedProfile = {
             first_name: firstNameInput.value.trim(),
             last_name: lastNameInput.value.trim(),
             full_name: `${firstNameInput.value.trim()} ${lastNameInput.value.trim()}`,
-            phone: phoneInput.value.trim(),
+            phone: phoneCleaned, // Guardar el número limpio
             district: districtInput.value,
             emergency_contact_name: emergencyContactNameInput.value.trim(),
-            emergency_contact_phone: emergencyContactPhoneInput.value.trim(),
+            emergency_contact_phone: emergencyPhoneCleaned, // Guardar el número limpio
             avatar_url: avatarUrlInput.value // Guardar la URL del avatar
         };
 

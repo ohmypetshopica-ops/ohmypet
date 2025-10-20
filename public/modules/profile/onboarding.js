@@ -4,19 +4,22 @@ import { supabase } from './profile.api.js';
 const cleanPhoneNumber = (rawNumber) => {
     if (!rawNumber) return null;
     
-    // 1. Eliminar todos los caracteres que no son dígitos (espacios, guiones, paréntesis)
-    let cleaned = rawNumber.replace(/\D/g, '');
+    // 1. Eliminar todos los caracteres que no son dígitos, excepto el signo '+'
+    let cleaned = rawNumber.replace(/[^\d+]/g, '');
     
-    // 2. Eliminar el código de país '+51' o '51' si existe y el número tiene más de 9 dígitos.
-    if (cleaned.startsWith('51') && cleaned.length > 9) {
-        cleaned = cleaned.replace(/^51/, '');
+    // 2. Si el número no tiene 9 dígitos exactos y no comienza con '+', se considera que le falta el formato.
+    //    Si tiene más de 9 dígitos y comienza con '+', se asume formato internacional.
+    //    Si tiene 9 dígitos, se asume formato local.
+    if (cleaned.length < 9 || (cleaned.length > 9 && !cleaned.startsWith('+'))) {
+        // Si no cumple el formato estricto de 9 dígitos locales o +código, lo consideramos inválido
+        let digitsOnly = cleaned.replace(/\D/g, '');
+        if (digitsOnly.length === 9) {
+            return digitsOnly; // 9 dígitos locales
+        }
+        return null; // Inválido
     }
     
-    // 3. Asegurarse de que el número final sea de 9 dígitos (Perú)
-    if (cleaned.length > 9) {
-        cleaned = cleaned.slice(-9);
-    }
-    
+    // 3. Si tiene un '+' o tiene 9 dígitos exactos, se devuelve limpio (ej: +51987654321 o 987654321)
     return cleaned;
 };
 // --- FIN UTILITY ---
@@ -73,8 +76,8 @@ const validateStep = (stepNumber) => {
         const phoneRaw = phoneInput.value;
         const cleanedPhone = cleanPhoneNumber(phoneRaw);
         
-        if (cleanedPhone.length !== 9) {
-            alert('El Teléfono/WhatsApp debe tener exactamente 9 dígitos (sin incluir el código de país).');
+        if (cleanedPhone === null) {
+            alert('El Teléfono/WhatsApp es inválido. Debe tener 9 dígitos o incluir un código de país válido (ej: +51 987...).');
             phoneInput.focus();
             return false;
         }
