@@ -6,88 +6,224 @@
     <title>Servicios - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <style>:root { font-family: 'Inter', sans-serif; }</style>
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        .sidebar-scrollable nav::-webkit-scrollbar { width: 6px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+        .sidebar-scrollable nav::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        
+        #mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        #mobile-menu.active {
+            transform: translateX(0);
+        }
+        #mobile-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #mobile-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 767px) {
+            .min-w-full thead {
+                display: none;
+            }
+            
+            #services-table-body tr {
+                display: block;
+                margin-bottom: 0.75rem;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                background-color: #ffffff;
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            }
+            
+            #services-table-body td {
+                display: block;
+                width: 100%;
+                padding: 0.25rem 0;
+                white-space: normal !important;
+            }
+
+            #services-table-body tr td:nth-child(1) {
+                font-weight: bold;
+                border-bottom: 1px solid #f3f4f6;
+                padding-bottom: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            #services-table-body tr td:nth-child(2)::before {
+                content: "Fecha: ";
+                font-weight: 600;
+                color: #6b7280;
+            }
+
+            #services-table-body tr td:nth-child(3)::before {
+                content: "Servicio: ";
+                font-weight: 600;
+                color: #6b7280;
+            }
+
+            #services-table-body tr td:nth-child(4)::before {
+                content: "Pago: ";
+                font-weight: 600;
+                color: #6b7280;
+            }
+
+            #services-table-body tr td:nth-child(5)::before {
+                content: "Costo: ";
+                font-weight: 600;
+                color: #6b7280;
+            }
+
+            #services-table-body tr td:nth-child(6) {
+                text-align: left;
+                padding-top: 0.5rem;
+                border-top: 1px solid #f3f4f6;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 text-black">
-    <div class="flex h-screen overflow-hidden">
-        <div id="sidebar-container"></div>
-        <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
-            <div id="header-container"></div>
-            <div id="main-content" class="flex-1 p-6 overflow-y-auto">
-                <section id="services" class="space-y-6">
-                    <div class="flex justify-between items-center mb-6">
+<body class="bg-gray-50 text-black">
+
+    <div id="mobile-overlay" class="fixed inset-0 bg-black z-40 md:hidden"></div>
+
+    <div id="mobile-menu" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 md:hidden">
+        <div class="h-full flex flex-col">
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-green-50">
+                <div class="flex items-center space-x-2">
+                    <div class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">O</span>
+                    </div>
+                    <span class="text-lg font-bold text-gray-800">OhMyPet</span>
+                </div>
+                <button id="close-mobile-menu" class="p-2 hover:bg-green-100 rounded-lg transition-colors">
+                    <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <nav id="mobile-nav-content" class="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+            </nav>
+
+            <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-gray-50">
+                <div class="flex items-center px-3 py-2.5 rounded-lg">
+                    <div class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-bold text-sm" id="mobile-user-initial">A</span>
+                    </div>
+                    <div class="ml-3 flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 truncate" id="mobile-user-name">Administrador</p>
+                        <p class="text-xs text-gray-500">Admin</p>
+                    </div>
+                </div>
+                <a href="/public" target="_blank" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
+                    <svg class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span>Ir a la Tienda</span>
+                </a>
+                <button id="mobile-logout-button" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
+                    <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+        <div id="sidebar-container" class="hidden md:block"></div>
+        
+        <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <h1 class="text-lg md:text-xl font-semibold text-gray-800" id="header-title">Historial de Servicios</h1>
+                </div>
+                <div id="header-container"></div>
+            </header>
+
+            <div id="main-content" class="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar">
+                <section id="services" class="space-y-4 md:space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 md:mb-6 gap-3">
                         <div>
-                            <h2 class="text-2xl font-bold text-gray-800">Historial de Servicios</h2>
+                            <h2 class="text-xl md:text-2xl font-bold text-gray-800 hidden md:block">Historial de Servicios</h2>
                             <p id="filter-subtitle" class="text-sm text-gray-600 mt-1"></p>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Total Servicios</p>
-                            <p class="text-2xl font-bold text-gray-900" id="total-services-count">-</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
+                        <div class="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-gray-100">
+                            <p class="text-xs md:text-sm text-gray-600 mb-1">Total Servicios</p>
+                            <p class="text-xl md:text-2xl font-bold text-gray-900" id="total-services-count">-</p>
                         </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Completados</p>
-                            <p class="text-2xl font-bold text-green-600" id="completed-services-count">-</p>
+                        <div class="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-gray-100">
+                            <p class="text-xs md:text-sm text-gray-600 mb-1">Completados</p>
+                            <p class="text-xl md:text-2xl font-bold text-green-600" id="completed-services-count">-</p>
                         </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Pendientes</p>
-                            <p class="text-2xl font-bold text-yellow-600" id="pending-services-count">-</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <p class="text-sm text-gray-600 mb-1">Este Mes</p>
-                            <p class="text-2xl font-bold text-blue-600" id="month-services-count">-</p>
+                        <div class="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-gray-100 col-span-2 md:col-span-1">
+                            <p class="text-xs md:text-sm text-gray-600 mb-1">Este Mes</p>
+                            <p class="text-xl md:text-2xl font-bold text-blue-600" id="month-services-count">-</p>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Filtros de Búsqueda</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 mb-4 md:mb-6">
+                        <h3 class="text-base md:text-lg font-semibold text-gray-800 mb-3 md:mb-4">Filtros de Búsqueda</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
-                                <input type="text" id="service-search-input" placeholder="Buscar por cliente o mascota..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                <label for="service-search-input" class="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">Buscar por Cliente o Mascota</label>
+                                <input type="text" id="service-search-input" placeholder="Escribe un nombre..." class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-                                <select id="service-status-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                                    <option value="">Todos los estados</option>
-                                    <option value="pendiente">Pendiente</option>
-                                    <option value="confirmada">Confirmada</option>
-                                    <option value="completada">Completada</option>
-                                    <option value="cancelada">Cancelada</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
-                                <input type="date" id="service-date-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                <label for="service-date-filter" class="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">Filtrar por Fecha</label>
+                                <input type="date" id="service-date-filter" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             </div>
                         </div>
-                        <div class="mt-4 flex space-x-3">
-                            <button id="clear-filters-btn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm font-semibold">
+                        <div class="mt-3 md:mt-4 flex justify-start">
+                            <button id="clear-filters-btn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-xs md:text-sm font-semibold">
                                 Limpiar Filtros
                             </button>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente / Mascota</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha y Hora</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Método de Pago</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Costo</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ver Detalles</th>
-                                </tr>
-                            </thead>
-                            <tbody id="services-table-body" class="divide-y divide-gray-200">
-                                <tr>
-                                    <td colspan="6" class="text-center py-8 text-gray-500">Cargando servicios...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente / Mascota</th>
+                                        <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha y Hora</th>
+                                        <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio</th>
+                                        <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Método de Pago</th>
+                                        <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Costo</th>
+                                        <th class="px-4 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ver Detalles</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="services-table-body" class="divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-8 text-gray-500">Cargando servicios...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         <div id="pagination-container"></div>
                     </div>
                 </section>
@@ -96,41 +232,105 @@
     </div>
 
     <div id="service-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white">
-                <h3 class="text-xl font-bold text-gray-800">Detalles del Servicio</h3>
-                <p class="text-sm text-gray-500 mt-1">Información completa del servicio realizado</p>
+        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl max-h-[95vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 md:p-6 flex justify-between items-center z-10">
+                <h3 class="text-xl md:text-2xl font-bold text-gray-800">Detalles del Servicio</h3>
+                <button id="close-service-modal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
-            <div id="modal-service-details" class="flex-1 p-6 overflow-y-auto"></div>
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
-                <button id="close-service-modal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">Cerrar</button>
+            <div id="modal-service-details" class="p-4 md:p-6 space-y-4 md:space-y-6">
             </div>
         </div>
     </div>
 
     <script type="module">
         const CACHE_VERSION = Date.now();
+
         async function loadComponent(url, containerId) {
             try {
-                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, {
+                    cache: 'no-store'
+                });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
-                document.getElementById(containerId).innerHTML = html;
-            } catch (error) { console.error(`Error cargando ${url}:`, error); }
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error(`Error cargando ${url}:`, error);
+            }
         }
-        document.addEventListener('DOMContentLoaded', async () => {
+
+        function setupMobileMenu() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const closeMobileMenuButton = document.getElementById('close-mobile-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileOverlay = document.getElementById('mobile-overlay');
+            const mobileNavContent = document.getElementById('mobile-nav-content');
+
+            const toggleMenu = (show) => {
+                if (show) {
+                    mobileMenu.classList.add('active');
+                    mobileOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    mobileMenu.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            };
+
+            mobileMenuButton?.addEventListener('click', () => toggleMenu(true));
+            closeMobileMenuButton?.addEventListener('click', () => toggleMenu(false));
+            mobileOverlay?.addEventListener('click', () => toggleMenu(false));
+
+            const sidebarContainer = document.getElementById('sidebar-container');
+            if (sidebarContainer && sidebarContainer.querySelector('nav')) {
+                const navClone = sidebarContainer.querySelector('nav').cloneNode(true);
+                mobileNavContent.appendChild(navClone);
+
+                navClone.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 768) {
+                            toggleMenu(false);
+                        }
+                    });
+                });
+            }
+        }
+
+        async function initializeDashboard() {
             await Promise.all([
-                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
-                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container')
             ]);
-            await new Promise(resolve => setTimeout(resolve, 100));
+
+            setupMobileMenu();
+
             try {
+                await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
+
                 const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
                 if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
-                await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
-                await import(`./dashboard-services.js?v=${CACHE_VERSION}`);
-            } catch (error) { console.error('Error inicializando scripts:', error); }
-        });
+
+                const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
+                if (headerModule?.initializeHeader) headerModule.initializeHeader();
+
+                const pageModulePath = window.location.pathname.replace('.html', '.js');
+                await import(pageModulePath + `?v=${CACHE_VERSION}`);
+
+            } catch (error) {
+                console.error('Error inicializando los scripts del dashboard:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
+
+    <script type="module" src="../../core/auth.js"></script>
+    <script type="module" src="./dashboard-services.js"></script>
 </body>
 </html>
