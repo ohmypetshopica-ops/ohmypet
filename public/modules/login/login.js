@@ -67,10 +67,13 @@ clientLoginForm.addEventListener('submit', async (event) => {
             return;
         }
 
-        // 3. REDIRECCIÓN BASADA EN EL ROL
-        if (profile.role === 'dueño' || profile.role === 'empleado') {
-            // Usuarios administrativos van directo al dashboard
+        // 3. REDIRECCIÓN BASADA EN EL ROL (AQUÍ ESTÁ LA CORRECCIÓN)
+        if (profile.role === 'dueño') {
+            // Dueños van al dashboard de administrador
             window.location.href = '/public/modules/dashboard/dashboard-overview.html';
+        } else if (profile.role === 'empleado') {
+            // Empleados van a su nuevo dashboard móvil
+            window.location.href = '/public/modules/employee/dashboard.html';
         } else if (profile.role === 'cliente') {
             // Clientes verifican si completaron onboarding
             if (profile.onboarding_completed) {
