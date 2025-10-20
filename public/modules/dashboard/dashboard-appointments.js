@@ -1,6 +1,6 @@
 import { supabase } from '../../core/supabase.js';
 import { 
-    getAppointments, // Ahora soporta paginación
+    getAppointments,
     updateAppointmentStatus, 
     getAppointmentPhotos, 
     uploadAppointmentPhoto, 
@@ -15,7 +15,7 @@ import { createAppointmentRow } from './dashboard.utils.js';
 console.log("🚀 dashboard-appointments.js cargado y ejecutándose...");
 
 // --- VARIABLES GLOBALES Y PAGINACIÓN ---
-let allAppointments = []; // Solo almacenará la página actual de citas
+let allAppointments = [];
 let clientsWithPets = [];
 let currentAppointmentId = null;
 let currentPetId = null;
@@ -25,7 +25,7 @@ let receiptFile = null;
 
 let currentPage = 1;
 const itemsPerPage = 10;
-let totalAppointmentsCount = 0; // Para el total de la paginación
+let totalAppointmentsCount = 0;
 
 // --- ELEMENTOS DEL DOM GENERAL ---
 const appointmentsTableBody = document.querySelector('#appointments-table-body');
@@ -35,7 +35,7 @@ const dateFilter = document.querySelector('#appointment-date-filter');
 const clearFiltersButton = document.querySelector('#clear-filters-button');
 const paginationContainer = document.querySelector('#pagination-container');
 
-// --- MODAL DE COMPLETAR CITA (omitiendo para brevedad) ---
+// --- MODAL DE COMPLETAR CITA ---
 const completionModal = document.querySelector('#completion-modal');
 const completionModalSubtitle = document.querySelector('#completion-modal-subtitle');
 const finalObservationsTextarea = document.querySelector('#final-observations-textarea');
@@ -53,7 +53,7 @@ const departurePhotoInput = document.querySelector('#departure-photo-input');
 const receiptInput = document.querySelector('#receipt-input');
 const uploadMessage = document.querySelector('#upload-message');
 
-// --- MODAL DE AGENDAR CITA (omitiendo para brevedad) ---
+// --- MODAL DE AGENDAR CITA ---
 const addAppointmentBtn = document.querySelector('#add-appointment-btn');
 const addAppointmentModal = document.querySelector('#add-appointment-modal');
 const addAppointmentForm = document.querySelector('#add-appointment-form');
@@ -134,7 +134,7 @@ const loadAppointmentsAndRender = async () => {
         selectedDate
     );
 
-    allAppointments = appointments; // Guardar solo los resultados de la página actual
+    allAppointments = appointments;
     totalAppointmentsCount = totalCount;
     
     renderAppointmentsTable(appointments);
@@ -142,11 +142,9 @@ const loadAppointmentsAndRender = async () => {
 };
 
 const applyFiltersAndSearch = async () => {
-    currentPage = 1; // Resetear a la primera página al aplicar nuevos filtros
+    currentPage = 1;
     await loadAppointmentsAndRender();
 };
-
-// --- LÓGICA DEL MODAL PARA AGENDAR CITA (Se mantiene la lógica original) ---
 
 const openAddAppointmentModal = () => {
     addAppointmentForm.reset();
@@ -297,7 +295,6 @@ const initializeAddAppointmentModal = async () => {
         if (success) {
             alert('¡Cita agendada con éxito!');
             
-            // ----- 👇 INICIO DE LA NUEVA FUNCIONALIDAD 👇 -----
             try {
                 const client = clientsWithPets.find(c => c.id === appointmentData.user_id);
                 if (client && client.phone) {
@@ -316,10 +313,9 @@ const initializeAddAppointmentModal = async () => {
                 console.error('Error al intentar enviar WhatsApp:', e);
                 alert('La cita fue agendada, pero ocurrió un error al intentar generar el mensaje de WhatsApp.');
             }
-            // ----- 👆 FIN DE LA NUEVA FUNCIONALIDAD 👆 -----
 
             closeAddAppointmentModal();
-            await loadAppointmentsAndRender(); // Recargar tabla
+            await loadAppointmentsAndRender();
         } else {
             addAppointmentMessage.textContent = `Error: ${error.message}`;
             addAppointmentMessage.className = 'p-3 rounded-md bg-red-100 text-red-700 text-sm';
@@ -330,8 +326,6 @@ const initializeAddAppointmentModal = async () => {
     });
 };
 
-
-// --- LÓGICA DEL MODAL PARA COMPLETAR CITA (Se mantiene la lógica original) ---
 
 const openCompletionModal = async (appointmentId, petName, petId) => {
     currentAppointmentId = appointmentId;
@@ -392,10 +386,7 @@ const closeCompletionModal = () => {
 };
 
 
-// --- INICIALIZACIÓN DE LA PÁGINA ---
-
 const initializePage = async () => {
-    // La carga inicial se hace a través de loadAppointmentsAndRender
     await loadAppointmentsAndRender();
 
     searchInput?.addEventListener('input', applyFiltersAndSearch);
@@ -443,7 +434,7 @@ const initializePage = async () => {
 
                 const { success } = await updateAppointmentStatus(appointmentId, newStatus);
                 if (success) {
-                    await loadAppointmentsAndRender(); // Recargar tabla
+                    await loadAppointmentsAndRender();
                 } else {
                     alert(`Error al ${action} la cita.`);
                 }
@@ -527,8 +518,6 @@ const initializePage = async () => {
             const updateData = {};
             if (observations) updateData.final_observations = observations;
             
-            // Los campos de peso y precio/pago ya no son obligatorios en este punto,
-            // pero se pueden guardar si se proporcionan.
             if (weight) updateData.final_weight = parseFloat(weight);
             if (price) updateData.service_price = parseFloat(price);
             if (paymentMethod) updateData.payment_method = paymentMethod;
@@ -583,7 +572,6 @@ const initializePage = async () => {
         uploadMessage.textContent = 'Completando cita...';
 
         try {
-            // Subida de archivos (opcional)
             if (arrivalPhotoFile) {
                 uploadMessage.textContent = 'Subiendo foto de llegada...';
                 await uploadAppointmentPhoto(currentAppointmentId, arrivalPhotoFile, 'arrival');
@@ -597,7 +585,6 @@ const initializePage = async () => {
                 await uploadReceiptFile(currentAppointmentId, receiptFile);
             }
 
-            // Registro de peso (opcional)
             if (weight) {
                 uploadMessage.textContent = 'Registrando peso de la mascota...';
                 await addWeightRecord(currentPetId, parseFloat(weight), currentAppointmentId);
@@ -611,7 +598,6 @@ const initializePage = async () => {
 
             const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', {
                 observations: observations,
-                // Pasar peso solo si se proporcionó
                 weight: weight ? parseFloat(weight) : undefined, 
                 price: parseFloat(price),
                 paymentMethod: paymentMethod
@@ -629,7 +615,7 @@ const initializePage = async () => {
                     console.error('Error al actualizar last_grooming_date:', petUpdateError);
                 }
                 
-                await loadAppointmentsAndRender(); // Recargar tabla
+                await loadAppointmentsAndRender();
                 closeCompletionModal();
                 alert('✓ Cita completada exitosamente');
             } else {

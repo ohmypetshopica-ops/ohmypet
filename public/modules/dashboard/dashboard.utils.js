@@ -21,7 +21,6 @@ const createUpcomingAppointmentItem = (appointment) => {
     `;
 };
 
-// **AQUÍ ESTÁ LA VERSIÓN CORREGIDA Y COMPLETA DE createClientRow**
 const createClientRow = (client) => {
     const displayName = (client.first_name && client.last_name) 
         ? `${client.first_name} ${client.last_name}` 
@@ -88,6 +87,8 @@ const createProductRow = (product) => {
     `;
 };
 
+// =================== INICIO DE LA CORRECCIÓN ===================
+// Se eliminó la columna extra de "Pago" que no correspondía a esta tabla.
 const createAppointmentRow = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
     const ownerProfile = appointment.profiles;
@@ -116,12 +117,6 @@ const createAppointmentRow = (appointment) => {
         actionButtons = `<span class="text-xs text-gray-400">Sin acciones</span>`;
     }
 
-    let paymentDetails = '<span class="text-xs text-gray-400">N/A</span>';
-    if (status === 'completada' && appointment.service_price && appointment.payment_method) {
-        paymentDetails = `<div class="text-sm font-bold text-gray-900">S/ ${appointment.service_price.toFixed(2)}</div>
-                          <div class="text-xs text-gray-600">${appointment.payment_method}</div>`;
-    }
-
     return `
         <tr data-appointment-id="${appointment.id}">
             <td class="px-6 py-4 whitespace-nowrap">
@@ -138,13 +133,13 @@ const createAppointmentRow = (appointment) => {
             <td class="px-6 py-4 whitespace-nowrap">
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${currentStyle.bg} ${currentStyle.textColor}">${currentStyle.text}</span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">${paymentDetails}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                 <div class="flex items-center justify-center gap-2">${actionButtons}</div>
             </td>
         </tr>
     `;
 };
+// =================== FIN DE LA CORRECCIÓN ===================
 
 const createServiceHistoryRow = (service) => {
     const petName = service.pets?.name || 'N/A';

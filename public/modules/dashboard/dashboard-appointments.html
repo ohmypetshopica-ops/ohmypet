@@ -13,7 +13,6 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
 
-        /* Mobile menu transitions (from dashboard-overview.html) */
         #mobile-menu {
             transform: translateX(-100%);
             transition: transform 0.3s ease-in-out;
@@ -31,14 +30,11 @@
             pointer-events: auto;
         }
 
-        /* Custom styles for mobile table list simulation (Card View) */
         @media (max-width: 767px) {
-            /* Hide desktop table headers */
             .min-w-full thead {
                 display: none;
             }
             
-            /* Transform each table row into a card */
             #appointments-table-body tr {
                 display: block;
                 margin-bottom: 0.75rem;
@@ -48,54 +44,44 @@
                 box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
             }
             
-            /* Make all table data cells block elements */
             #appointments-table-body td {
                 display: block;
                 width: 100%;
                 padding: 0.25rem 0;
-                /* Remove unwanted whitespace in utility class spacing */
                 white-space: normal !important; 
             }
 
-            /* --- Custom Layout for Mobile Card --- */
-            
-            /* 1. Client / Mascota (Main Title) */
             #appointments-table-body tr td:nth-child(1) {
                 font-weight: bold;
                 padding-bottom: 0.5rem;
                 border-bottom: 1px solid #f3f4f6;
-                /* Align Client Name and Status Badge horizontally */
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-start;
             }
             
-            /* Move Status Badge (TD:4) next to the client name by moving it inside TD:1 on mobile */
             #appointments-table-body tr td:nth-child(4) {
-                order: 1; /* Place status first in its row */
+                order: 1;
                 text-align: right;
                 padding-top: 0;
                 padding-bottom: 0;
             }
             
-            /* 2. Fecha / Hora (Subtitle) and 3. Notas (Truncated) */
             #appointments-table-body tr td:nth-child(2),
             #appointments-table-body tr td:nth-child(3) {
-                font-size: 0.875rem; /* text-sm */
-                color: #4b5563; /* text-gray-600 */
+                font-size: 0.875rem;
+                color: #4b5563;
             }
 
-            /* Truncate Notes (TD:3) */
             #appointments-table-body tr td:nth-child(3) {
                 overflow: hidden;
                 text-overflow: ellipsis;
                 display: -webkit-box;
-                -webkit-line-clamp: 1; /* Limit to 1 line */
+                -webkit-line-clamp: 1;
                 -webkit-box-orient: vertical;
                 padding-top: 0;
             }
 
-            /* 5. Acciones (Action Buttons) */
             #appointments-table-body tr td:last-child {
                 display: flex;
                 justify-content: flex-end;
@@ -105,7 +91,6 @@
                 margin-top: 0.5rem;
             }
             
-            /* Override default TD padding for mobile blocks */
             #appointments-table-body .px-6 { padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
         }
 
@@ -159,9 +144,9 @@
             </div>
         </div>
     </div>
-    <div class="md:flex h-screen overflow-hidden">
-        
-        <div id="sidebar-container" class="hidden md:block"></div>
+    
+    <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+    <div id="sidebar-container" class="hidden md:block"></div>
 
         <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
             
