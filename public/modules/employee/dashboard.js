@@ -7,24 +7,18 @@ const headerTitle = document.getElementById('header-title');
 const navButtons = document.querySelectorAll('.nav-btn');
 const views = document.querySelectorAll('.view-section');
 const logoutButton = document.getElementById('logout-button');
-
-// --- DOM de Clientes ---
 const clientSearch = document.getElementById('client-search');
 const clientsListView = document.getElementById('clients-list-view');
 const clientsList = document.getElementById('clients-list');
 const clientDetailsView = document.getElementById('client-details-view');
 const clientDetailsContent = document.getElementById('client-details-content');
 const backToClientsBtn = document.getElementById('back-to-clients-btn');
-
-// --- DOM de Mascotas ---
 const petSearch = document.getElementById('pet-search');
 const petsListView = document.getElementById('pets-list-view');
 const petsList = document.getElementById('pets-list');
 const petDetailsView = document.getElementById('pet-details-view');
 const petDetailsContent = document.getElementById('pet-details-content');
 const backToPetsBtn = document.getElementById('back-to-pets-btn');
-
-// --- DOM de Calendario y Modal ---
 const calendarGrid = document.getElementById('calendar-grid');
 const currentMonthYear = document.getElementById('current-month-year');
 const prevMonthBtn = document.getElementById('prev-month');
@@ -42,9 +36,8 @@ const modalBackBtn = document.getElementById('modal-back-btn');
 let allClients = [];
 let allPets = [];
 let monthlyAppointments = [];
-let allAppointments = []; // Almacenará TODAS las citas para el historial
+let allAppointments = [];
 let currentDate = new Date();
-
 
 // --- FUNCIONES AUXILIARES ---
 const calculateAge = (birthDate) => {
@@ -64,7 +57,6 @@ const calculateAge = (birthDate) => {
 const showView = (viewId) => {
     views.forEach(view => view.classList.add('hidden'));
     document.getElementById(`${viewId}-view`).classList.remove('hidden');
-
     navButtons.forEach(btn => {
         const isActive = btn.dataset.view === viewId;
         btn.classList.toggle('text-green-600', isActive);
@@ -85,12 +77,10 @@ const renderClients = (clients) => {
         </button>
     `).join('') : `<p class="text-center text-gray-500 mt-8">No se encontraron clientes.</p>`;
 };
-
 const showClientDetails = (clientId) => {
     const client = allClients.find(c => c.id === clientId);
     if (!client) return;
     const clientPets = allPets.filter(pet => pet.owner_id === clientId);
-
     clientDetailsContent.innerHTML = `
         <div class="bg-white p-4 rounded-lg shadow-sm">
             <h3 class="font-bold text-xl mb-2">${client.first_name || ''} ${client.last_name || ''}</h3>
@@ -116,7 +106,6 @@ const showClientDetails = (clientId) => {
     clientsListView.classList.add('hidden');
     clientDetailsView.classList.remove('hidden');
 };
-
 const showClientsListView = () => {
     clientDetailsView.classList.add('hidden');
     clientsListView.classList.remove('hidden');
@@ -135,15 +124,10 @@ const renderPets = (pets) => {
         </button>
     `).join('') : `<p class="text-center text-gray-500 mt-8">No se encontraron mascotas.</p>`;
 };
-
 const showPetDetails = (petId) => {
     const pet = allPets.find(p => p.id === petId);
     if (!pet) return;
-
-    const petHistory = allAppointments
-        .filter(app => app.pet_id === petId)
-        .sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
-
+    const petHistory = allAppointments.filter(app => app.pet_id === petId).sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
     petDetailsContent.innerHTML = `
         <div class="bg-white p-4 rounded-lg shadow-sm text-center">
             <img src="${pet.image_url || `https://ui-avatars.com/api/?name=${pet.name.charAt(0)}&background=A4D0A4&color=FFFFFF`}" class="h-24 w-24 rounded-full object-cover mx-auto border-4 border-white shadow-lg">
@@ -159,7 +143,7 @@ const showPetDetails = (petId) => {
                 <p><strong>Peso:</strong> ${pet.weight ? pet.weight + ' kg' : 'N/A'}</p>
             </div>
             <div class="bg-yellow-50 p-2 rounded-md mt-2">
-                <p class="text-xs font-semibold">Observaciones:</p>
+                <p class="text-xs font-semibold">Observaciones Generales:</p>
                 <p class="text-xs">${pet.observations || 'Sin observaciones.'}</p>
             </div>
         </div>
@@ -178,7 +162,6 @@ const showPetDetails = (petId) => {
     petsListView.classList.add('hidden');
     petDetailsView.classList.remove('hidden');
 };
-
 const showPetsListView = () => {
     petDetailsView.classList.add('hidden');
     petsListView.classList.remove('hidden');
@@ -216,18 +199,85 @@ const renderCalendar = async () => {
 const renderAppointmentsInModal = (date) => {
     const appointmentsOnDay = monthlyAppointments.filter(app => app.appointment_date === date).sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
     modalDateTitle.textContent = `Citas del ${new Date(date + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`;
-    if (appointmentsOnDay.length > 0) {
-        modalAppointmentsList.innerHTML = appointmentsOnDay.map(app => `<button data-appointment-id="${app.id}" class="appointment-btn w-full text-left bg-white p-3 rounded-lg shadow-sm border hover:bg-gray-50 flex items-center gap-4"><img src="${app.pets.image_url || `https://ui-avatars.com/api/?name=${app.pets.name.charAt(0)}&background=A4D0A4&color=FFFFFF`}" class="h-12 w-12 rounded-full object-cover flex-shrink-0"><div><p class="font-semibold">${app.appointment_time.slice(0, 5)} - ${app.pets.name}</p><p class="text-sm text-gray-600">Dueño: ${app.profiles.first_name || ''} ${app.profiles.last_name || ''}</p><p class="text-xs text-gray-500">${app.service}</p></div></button>`).join('');
-    } else { modalAppointmentsList.innerHTML = `<p class="text-center text-gray-500">No hay citas para este día.</p>`; }
+    modalAppointmentsList.innerHTML = appointmentsOnDay.length > 0 ? appointmentsOnDay.map(app => `
+        <button data-appointment-id="${app.id}" class="appointment-btn w-full text-left bg-white p-3 rounded-lg shadow-sm border hover:bg-gray-50 flex items-center gap-4">
+            <img src="${app.pets.image_url || `https://ui-avatars.com/api/?name=${app.pets.name.charAt(0)}&background=A4D0A4&color=FFFFFF`}" class="h-12 w-12 rounded-full object-cover flex-shrink-0">
+            <div>
+                <p class="font-semibold">${app.appointment_time.slice(0, 5)} - ${app.pets.name}</p>
+                <p class="text-sm text-gray-600">Dueño: ${app.profiles.first_name || ''} ${app.profiles.last_name || ''}</p>
+                <p class="text-xs text-gray-500">${app.service}</p>
+            </div>
+        </button>
+    `).join('') : `<p class="text-center text-gray-500">No hay citas para este día.</p>`;
 };
 
 const showAppointmentDetails = async (appointmentId) => {
-    const appointment = monthlyAppointments.find(app => app.id === appointmentId); if (!appointment) return;
+    const appointment = monthlyAppointments.find(app => app.id === appointmentId);
+    if (!appointment) return;
+
     const pet = appointment.pets;
-    const { data: petHistory, error } = await supabase.from('appointments').select('appointment_date, service, status').eq('pet_id', pet.id).neq('id', appointment.id).order('appointment_date', { ascending: false });
+    
+    // CORRECCIÓN: La consulta para el historial debe traer también 'final_observations'
+    const { data: petHistory, error } = await supabase
+        .from('appointments')
+        .select('appointment_date, service, status, final_observations')
+        .eq('pet_id', pet.id)
+        .neq('id', appointment.id)
+        .order('appointment_date', { ascending: false });
+
     if (error) console.error("Error cargando historial completo de la mascota:", error);
-    modalDetailsContent.innerHTML = `<div class="bg-white p-4 rounded-lg shadow-sm"><h4 class="font-bold text-lg mb-2">Cita Actual</h4><div class="flex items-center gap-4"><img src="${pet.image_url || `https://ui-avatars.com/api/?name=${pet.name.charAt(0)}&background=A4D0A4&color=FFFFFF`}" class="h-16 w-16 rounded-full object-cover"><div><p><strong>Hora:</strong> ${appointment.appointment_time.slice(0, 5)}</p><p><strong>Mascota:</strong> ${pet.name}</p><p><strong>Servicio:</strong> ${appointment.service}</p></div></div></div><div class="bg-white p-4 rounded-lg shadow-sm"><h4 class="font-bold text-lg mb-2">Información de la Mascota</h4><div class="grid grid-cols-2 gap-2 text-sm"><p><strong>Raza:</strong> ${pet.breed}</p><p><strong>Sexo:</strong> ${pet.sex || 'N/A'}</p><p><strong>Edad:</strong> ${calculateAge(pet.birth_date)}</p><p><strong>Peso:</strong> ${pet.weight ? pet.weight + ' kg' : 'N/A'}</p></div><div class="bg-yellow-50 p-2 rounded-md mt-2"><p class="text-xs font-semibold">Observaciones:</p><p class="text-xs">${pet.observations || 'Sin observaciones.'}</p></div></div><div class="bg-white p-4 rounded-lg shadow-sm"><h4 class="font-bold text-lg mb-2">Historial Completo</h4><div class="space-y-2 max-h-40 overflow-y-auto">${petHistory && petHistory.length > 0 ? petHistory.map(hist => `<div class="bg-gray-50 p-2 rounded-md text-sm flex justify-between items-center"><p><strong>${hist.appointment_date}:</strong> ${hist.service}</p><span class="text-xs font-semibold px-2 py-0.5 rounded-full ${hist.status === 'completada' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${hist.status}</span></div>`).join('') : '<p class="text-sm text-gray-500">No hay historial de citas anteriores.</p>'}</div></div>`;
-    modalDailyView.classList.add('hidden'); modalDetailsView.classList.remove('hidden');
+
+    // NUEVO: Lógica para obtener las notas de la última cita
+    let lastAppointmentNotes = 'No hay observaciones de citas anteriores.';
+    if (petHistory && petHistory.length > 0) {
+        lastAppointmentNotes = petHistory[0].final_observations || 'La cita anterior no tuvo observaciones.';
+    }
+
+    modalDetailsContent.innerHTML = `
+        <div class="bg-white p-4 rounded-lg shadow-sm">
+            <h4 class="font-bold text-lg mb-2">Cita Actual</h4>
+            <div class="flex items-center gap-4">
+                <img src="${pet.image_url || `https://ui-avatars.com/api/?name=${pet.name.charAt(0)}&background=A4D0A4&color=FFFFFF`}" class="h-16 w-16 rounded-full object-cover">
+                <div>
+                    <p><strong>Hora:</strong> ${appointment.appointment_time.slice(0, 5)}</p>
+                    <p><strong>Mascota:</strong> ${pet.name}</p>
+                    <p><strong>Servicio:</strong> ${appointment.service}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-lg shadow-sm">
+            <h4 class="font-semibold text-sm text-blue-800 mb-1">Observaciones de la Última Cita</h4>
+            <p class="text-sm text-gray-700">${lastAppointmentNotes}</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg shadow-sm">
+            <h4 class="font-bold text-lg mb-2">Información de la Mascota</h4>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+                <p><strong>Raza:</strong> ${pet.breed}</p>
+                <p><strong>Sexo:</strong> ${pet.sex || 'N/A'}</p>
+                <p><strong>Edad:</strong> ${calculateAge(pet.birth_date)}</p>
+                <p><strong>Peso:</strong> ${pet.weight ? pet.weight + ' kg' : 'N/A'}</p>
+            </div>
+            <div class="bg-yellow-50 p-2 rounded-md mt-2">
+                <p class="text-xs font-semibold">Observaciones Generales:</p>
+                <p class="text-xs">${pet.observations || 'Sin observaciones.'}</p>
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow-sm">
+            <h4 class="font-bold text-lg mb-2">Historial Completo</h4>
+            <div class="space-y-2 max-h-40 overflow-y-auto">
+                ${petHistory && petHistory.length > 0 ? petHistory.map(hist => `
+                    <div class="bg-gray-50 p-2 rounded-md text-sm flex justify-between items-center">
+                        <p><strong>${hist.appointment_date}:</strong> ${hist.service}</p>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${hist.status === 'completada' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${hist.status}</span>
+                    </div>
+                `).join('') : '<p class="text-sm text-gray-500">No hay historial de citas anteriores.</p>'}
+            </div>
+        </div>
+    `;
+    modalDailyView.classList.add('hidden');
+    modalDetailsView.classList.remove('hidden');
 };
 
 // --- CARGA INICIAL DE DATOS ---
@@ -247,27 +297,14 @@ const loadInitialData = async () => {
 
 // --- INICIALIZACIÓN Y EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Listeners de navegación
     navButtons.forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view)));
     logoutButton.addEventListener('click', async () => { await supabase.auth.signOut(); window.location.href = '/public/modules/login/login.html'; });
-    
-    // Listeners de la vista de Clientes
     clientSearch.addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); renderClients(allClients.filter(c => `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase().includes(term))); });
-    clientsList.addEventListener('click', (e) => {
-        const clientButton = e.target.closest('.client-btn');
-        if (clientButton) showClientDetails(clientButton.dataset.clientId);
-    });
+    clientsList.addEventListener('click', (e) => { const btn = e.target.closest('.client-btn'); if (btn) showClientDetails(btn.dataset.clientId); });
     backToClientsBtn.addEventListener('click', showClientsListView);
-
-    // Listeners de la vista de Mascotas
     petSearch.addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); renderPets(allPets.filter(p => p.name.toLowerCase().includes(term) || `${p.profiles.first_name || ''} ${p.profiles.last_name || ''}`.toLowerCase().includes(term))); });
-    petsList.addEventListener('click', (e) => {
-        const petButton = e.target.closest('.pet-btn');
-        if (petButton) showPetDetails(petButton.dataset.petId);
-    });
+    petsList.addEventListener('click', (e) => { const btn = e.target.closest('.pet-btn'); if (btn) showPetDetails(btn.dataset.petId); });
     backToPetsBtn.addEventListener('click', showPetsListView);
-
-    // Listeners de Calendario y Modal
     prevMonthBtn.addEventListener('click', async () => { currentDate.setMonth(currentDate.getMonth() - 1); await renderCalendar(); });
     nextMonthBtn.addEventListener('click', async () => { currentDate.setMonth(currentDate.getMonth() + 1); await renderCalendar(); });
     calendarGrid.addEventListener('click', (e) => {
@@ -280,16 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     calendarModal.addEventListener('click', (e) => { if (e.target === calendarModal) closeModal(); });
-    modalAppointmentsList.addEventListener('click', (e) => {
-        const appointmentButton = e.target.closest('.appointment-btn');
-        if (appointmentButton) showAppointmentDetails(appointmentButton.dataset.appointmentId);
-    });
-    modalBackBtn.addEventListener('click', () => {
-        modalDetailsView.classList.add('hidden');
-        modalDailyView.classList.remove('hidden');
-    });
-
-    // Carga inicial
+    modalAppointmentsList.addEventListener('click', (e) => { const btn = e.target.closest('.appointment-btn'); if (btn) showAppointmentDetails(btn.dataset.appointmentId); });
+    modalBackBtn.addEventListener('click', () => { modalDetailsView.classList.add('hidden'); modalDailyView.classList.remove('hidden'); });
     showView('clients');
     loadInitialData();
 });
