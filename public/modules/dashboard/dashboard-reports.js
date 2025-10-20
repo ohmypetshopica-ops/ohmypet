@@ -16,7 +16,6 @@ const averageRevenueEl = document.querySelector('#average-revenue');
 const paymentChartCanvas = document.querySelector('#payment-chart');
 const downloadFinancialCsvBtn = document.querySelector('#download-financial-csv');
 
-// =================== NUEVOS ELEMENTOS PARA VENTAS ===================
 // KPIs de Ventas
 const totalSalesRevenueEl = document.querySelector('#total-sales-revenue');
 const productsSoldCountEl = document.querySelector('#products-sold-count');
@@ -24,7 +23,6 @@ const productsSoldCountEl = document.querySelector('#products-sold-count');
 // Gráfico y Descargas de Ventas
 const productSalesChartCanvas = document.querySelector('#product-sales-chart');
 const downloadSalesCsvBtn = document.querySelector('#download-sales-csv');
-// =================== FIN DE NUEVOS ELEMENTOS ===================
 
 let paymentChart = null;
 let productSalesChart = null; // Variable para el nuevo gráfico de ventas
@@ -42,7 +40,6 @@ const updateKpiCards = (data) => {
     averageRevenueEl.textContent = `S/ ${averageRevenue.toFixed(2)}`;
 };
 
-// =================== NUEVA FUNCIÓN PARA KPIs DE VENTAS ===================
 const updateSalesKpiCards = (salesData) => {
     const totalSalesRevenue = salesData.totalSalesRevenue || 0;
     const productsSoldCount = salesData.productsSoldCount || 0;
@@ -50,7 +47,6 @@ const updateSalesKpiCards = (salesData) => {
     totalSalesRevenueEl.textContent = `S/ ${totalSalesRevenue.toFixed(2)}`;
     productsSoldCountEl.textContent = productsSoldCount;
 };
-// =================== FIN DE LA NUEVA FUNCIÓN ===================
 
 const renderPaymentChart = (paymentSummary) => {
     if (paymentChart) {
@@ -78,19 +74,23 @@ const renderPaymentChart = (paymentSummary) => {
     });
 };
 
-// =================== NUEVA FUNCIÓN PARA GRÁFICO DE VENTAS ===================
-const renderProductSalesChart = (categorySummary) => {
+// =================== LÓGICA DE GRÁFICO ACTUALIZADA ===================
+const renderProductSalesChart = (summary) => {
     if (productSalesChart) {
         productSalesChart.destroy();
     }
-    const labels = categorySummary.map(item => item.category);
-    const data = categorySummary.map(item => item.total);
-    const backgroundColors = ['#EF4444', '#F97316', '#84CC16', '#3B82F6', '#6366F1'];
+    // Ahora las etiquetas se basan en 'payment_method'
+    const labels = summary.map(item => item.payment_method);
+    const data = summary.map(item => item.total);
+    // Usamos los mismos colores que el otro gráfico para consistencia
+    const backgroundColors = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899', '#EF4444'];
+    
     productSalesChart = new Chart(productSalesChartCanvas, {
         type: 'doughnut',
         data: {
             labels: labels,
             datasets: [{
+                label: 'Ventas por Método de Pago',
                 data: data,
                 backgroundColor: backgroundColors,
                 borderColor: '#ffffff',
@@ -104,7 +104,7 @@ const renderProductSalesChart = (categorySummary) => {
         }
     });
 };
-// =================== FIN DE LA NUEVA FUNCIÓN ===================
+// =================== FIN DE LA ACTUALIZACIÓN ===================
 
 const downloadCsv = (filename, data) => {
     if (!data || data.length === 0) {
@@ -137,13 +137,12 @@ const generateReport = async () => {
     generateReportBtn.disabled = true;
     generateReportBtn.textContent = 'Generando...';
 
-    // OBTENER AMBOS REPORTES EN PARALELO
     const [serviceReportData, salesReportData] = await Promise.all([
         getReportData(startDate, endDate),
         getSalesReportData(startDate, endDate)
     ]);
     
-    reportDataCache = { serviceReportData, salesReportData }; // Guardar ambos en caché
+    reportDataCache = { serviceReportData, salesReportData };
 
     if (serviceReportData) {
         updateKpiCards(serviceReportData);
@@ -152,14 +151,14 @@ const generateReport = async () => {
         alert('No se pudieron obtener los datos para el reporte de servicios.');
     }
 
-    // =================== LLAMAR A LAS NUEVAS FUNCIONES DE VENTAS ===================
     if (salesReportData) {
         updateSalesKpiCards(salesReportData);
-        renderProductSalesChart(salesReportData.categorySummary);
+        // =================== LLAMADA ACTUALIZADA ===================
+        renderProductSalesChart(salesReportData.paymentMethodSummary);
+        // =================== FIN DE LA ACTUALIZACIÓN ===================
     } else {
         alert('No se pudieron obtener los datos para el reporte de ventas.');
     }
-    // =================== FIN DE LA LLAMADA ===================
 
     if (serviceReportData || salesReportData) {
         reportContent.classList.remove('hidden');
@@ -192,15 +191,14 @@ const initializeReportsPage = () => {
         }
     });
 
-    // =================== EVENT LISTENER PARA EL NUEVO BOTÓN DE DESCARGA ===================
     downloadSalesCsvBtn.addEventListener('click', () => {
         if (reportDataCache && reportDataCache.salesReportData?.detailedSales) {
-            downloadCsv('reporte_ventas.csv', reportDataCache.salesReportData.detailedSales);
+            // Se actualiza el nombre del archivo para mayor claridad
+            downloadCsv('reporte_ventas_productos.csv', reportDataCache.salesReportData.detailedSales);
         } else {
             alert('Primero genera un reporte para poder descargarlo.');
         }
     });
-    // =================== FIN DEL EVENT LISTENER ===================
 
     generateReport();
 };

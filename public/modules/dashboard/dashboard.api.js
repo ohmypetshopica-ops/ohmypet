@@ -412,7 +412,6 @@ export const getReportData = async (startDate, endDate) => {
     };
 };
 
-// =================== CÓDIGO NUEVO AÑADIDO ===================
 /**
  * Obtiene y procesa los datos de ventas de productos para el reporte.
  */
@@ -423,6 +422,7 @@ export const getSalesReportData = async (startDate, endDate) => {
             created_at,
             total_price,
             quantity,
+            payment_method,
             client:client_id ( full_name, first_name, last_name ),
             product:product_id ( name, category )
         `)
@@ -438,30 +438,32 @@ export const getSalesReportData = async (startDate, endDate) => {
         return {
             totalSalesRevenue: 0,
             productsSoldCount: 0,
-            categorySummary: [],
+            paymentMethodSummary: [],
             detailedSales: []
         };
     }
 
     let totalSalesRevenue = 0;
     let productsSoldCount = 0;
-    const categorySummaryMap = new Map();
+    const paymentMethodSummaryMap = new Map();
 
     sales.forEach(sale => {
         const price = sale.total_price || 0;
         totalSalesRevenue += price;
         productsSoldCount += sale.quantity;
 
-        const category = sale.product?.category || 'Sin Categoría';
-        if (categorySummaryMap.has(category)) {
-            categorySummaryMap.set(category, categorySummaryMap.get(category) + price);
+        // =================== CÓDIGO ACTUALIZADO ===================
+        const method = sale.payment_method || 'No especificado';
+        if (paymentMethodSummaryMap.has(method)) {
+            paymentMethodSummaryMap.set(method, paymentMethodSummaryMap.get(method) + price);
         } else {
-            categorySummaryMap.set(category, price);
+            paymentMethodSummaryMap.set(method, price);
         }
+        // =================== FIN CÓDIGO ACTUALIZADO ===================
     });
 
-    const categorySummary = Array.from(categorySummaryMap, ([category, total]) => ({
-        category,
+    const paymentMethodSummary = Array.from(paymentMethodSummaryMap, ([payment_method, total]) => ({
+        payment_method,
         total
     }));
 
@@ -477,6 +479,7 @@ export const getSalesReportData = async (startDate, endDate) => {
             producto: sale.product?.name || 'N/A',
             categoria: sale.product?.category || 'N/A',
             cantidad: sale.quantity,
+            metodo_pago: sale.payment_method || 'N/A',
             ingreso: sale.total_price || 0
         };
     });
@@ -484,11 +487,10 @@ export const getSalesReportData = async (startDate, endDate) => {
     return {
         totalSalesRevenue,
         productsSoldCount,
-        categorySummary,
+        paymentMethodSummary,
         detailedSales
     };
 };
-// =================== FIN DEL CÓDIGO NUEVO ===================
 
 
 export const registerClientFromDashboard = async (clientData) => {
