@@ -78,15 +78,29 @@ export const searchClients = async (searchTerm) => {
     return data || [];
 };
 
-export const getAppointments = async () => {
-    const { data, error } = await supabase
+// MODIFICACIÓN CLAVE: Se añade paginación (range) a getAppointments y se invierte el orden a DESC
+export const getAppointments = async (page = 1, itemsPerPage = 10, search = '', status = '', date = '') => {
+    const from = (page - 1) * itemsPerPage;
+    const to = from + itemsPerPage - 1;
+    
+    let query = supabase
         .from('appointments')
-        .select(`id, appointment_date, appointment_time, service, status, final_observations, final_weight, invoice_pdf_url, pet_id, service_price, payment_method, pets ( name ), profiles ( full_name, first_name, last_name )`)
-        // CAMBIO CLAVE: Ordenar por fecha y hora de la cita de forma ascendente (ASC)
-        .order('appointment_date', { ascending: true })
-        .order('appointment_time', { ascending: true });
+        .select(`id, appointment_date, appointment_time, service, status, final_observations, final_weight, invoice_pdf_url, pet_id, service_price, payment_method, pets ( name ), profiles ( full_name, first_name, last_name )`, { count: 'exact' });
+        
+    // Aplicar filtros
+    if (search) {
+        query = query.or(`pets.name.ilike.%${search}%,profiles.full_name.ilike.%${search}%`);
+    }
+    if (status) query = query.eq('status', status);
+    if (date) query = query.eq('appointment_date', date);
+
+    const { data, error, count } = await query
+        .order('appointment_date', { ascending: false }) // Más reciente primero
+        .order('appointment_time', { ascending: false }) // En caso de misma fecha, por hora
+        .range(from, to);
+    
     if (error) console.error('Error al obtener citas:', error);
-    return data || [];
+    return { data: data || [], count: count || 0 };
 };
 
 export const updateAppointmentStatus = async (appointmentId, newStatus, details = {}) => {
@@ -117,10 +131,10 @@ export const filterAppointments = async (filters) => {
     let query = supabase.from('appointments').select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`);
     if (filters.status) query = query.eq('status', filters.status);
     if (filters.date) query = query.eq('appointment_date', filters.date);
-    // CAMBIO CLAVE: Aplicar la misma ordenación ascendente para mantener la coherencia
+    // ORDENACIÓN: Descendente para la gestión (más reciente primero)
     const { data, error } = await query
-        .order('appointment_date', { ascending: true })
-        .order('appointment_time', { ascending: true });
+        .order('appointment_date', { ascending: false })
+        .order('appointment_time', { ascending: false });
     if (error) console.error('Error al filtrar citas:', error);
     return data || [];
 };
@@ -255,8 +269,8 @@ export const getClientDetails = async (clientId) => {
         const [profileRes, petsRes, appointmentsRes] = await Promise.all([
             supabase.from('profiles').select('*, email').eq('id', clientId).single(),
             supabase.from('pets').select('*').eq('owner_id', clientId),
-            // CAMBIO: Ordenar citas por fecha y hora ascendente
-            supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: true }).order('appointment_time', { ascending: true })
+            // ORDENACIÓN: Descendente para que el historial muestre la más reciente primero
+            supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: false }).order('appointment_time', { ascending: false })
         ]);
 
         if (profileRes.error) throw profileRes.error;

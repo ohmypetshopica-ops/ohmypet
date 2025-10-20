@@ -1,6 +1,6 @@
 import { supabase } from '../../core/supabase.js';
 import { 
-    getAppointments, 
+    getAppointments, // Ahora soporta paginación
     updateAppointmentStatus, 
     getAppointmentPhotos, 
     uploadAppointmentPhoto, 
@@ -14,7 +14,8 @@ import { createAppointmentRow } from './dashboard.utils.js';
 
 console.log("🚀 dashboard-appointments.js cargado y ejecutándose...");
 
-let allAppointments = [];
+// --- VARIABLES GLOBALES Y PAGINACIÓN ---
+let allAppointments = []; // Solo almacenará la página actual de citas
 let clientsWithPets = [];
 let currentAppointmentId = null;
 let currentPetId = null;
@@ -22,14 +23,19 @@ let arrivalPhotoFile = null;
 let departurePhotoFile = null;
 let receiptFile = null;
 
+let currentPage = 1;
+const itemsPerPage = 10;
+let totalAppointmentsCount = 0; // Para el total de la paginación
+
 // --- ELEMENTOS DEL DOM GENERAL ---
 const appointmentsTableBody = document.querySelector('#appointments-table-body');
 const searchInput = document.querySelector('#appointment-search-input');
 const statusFilter = document.querySelector('#appointment-status-filter');
 const dateFilter = document.querySelector('#appointment-date-filter');
 const clearFiltersButton = document.querySelector('#clear-filters-button');
+const paginationContainer = document.querySelector('#pagination-container');
 
-// --- MODAL DE COMPLETAR CITA ---
+// --- MODAL DE COMPLETAR CITA (omitiendo para brevedad) ---
 const completionModal = document.querySelector('#completion-modal');
 const completionModalSubtitle = document.querySelector('#completion-modal-subtitle');
 const finalObservationsTextarea = document.querySelector('#final-observations-textarea');
@@ -47,7 +53,7 @@ const departurePhotoInput = document.querySelector('#departure-photo-input');
 const receiptInput = document.querySelector('#receipt-input');
 const uploadMessage = document.querySelector('#upload-message');
 
-// --- MODAL DE AGENDAR CITA ---
+// --- MODAL DE AGENDAR CITA (omitiendo para brevedad) ---
 const addAppointmentBtn = document.querySelector('#add-appointment-btn');
 const addAppointmentModal = document.querySelector('#add-appointment-modal');
 const addAppointmentForm = document.querySelector('#add-appointment-form');
@@ -60,7 +66,51 @@ const clientSearchInputModal = document.querySelector('#client-search-input-moda
 const clientSearchResults = document.querySelector('#client-search-results');
 const selectedClientIdInput = document.querySelector('#selected-client-id');
 
-// --- RENDERIZADO Y FILTROS DE TABLA ---
+// --- PAGINACIÓN ---
+const renderPagination = (totalCount) => {
+    const totalPages = Math.ceil(totalCount / itemsPerPage);
+    
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+
+    let paginationHTML = '<div class="flex items-center justify-center space-x-2 mt-4 mb-4">';
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage + 1 < maxPagesToShow) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    if (currentPage > 1) {
+        paginationHTML += `<button class="page-btn px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors" data-page="${currentPage - 1}">Anterior</button>`;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const activeClass = i === currentPage 
+            ? 'bg-green-600 text-white' 
+            : 'border border-gray-300 hover:bg-gray-100';
+        paginationHTML += `<button class="page-btn px-3 py-1.5 text-sm rounded-lg transition-colors ${activeClass}" data-page="${i}">${i}</button>`;
+    }
+
+    if (currentPage < totalPages) {
+        paginationHTML += `<button class="page-btn px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors" data-page="${currentPage + 1}">Siguiente</button>`;
+    }
+
+    paginationHTML += '</div>';
+    paginationContainer.innerHTML = paginationHTML;
+
+    paginationContainer.querySelectorAll('.page-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            currentPage = parseInt(btn.dataset.page);
+            await loadAppointmentsAndRender();
+        });
+    });
+};
+
+// --- CARGA Y RENDERIZADO PRINCIPAL ---
 
 const renderAppointmentsTable = (appointments) => {
     if (!appointmentsTableBody) return;
@@ -69,38 +119,34 @@ const renderAppointmentsTable = (appointments) => {
         : `<tr><td colspan="5" class="text-center py-8 text-gray-500">No se encontraron citas.</td></tr>`;
 };
 
-const applyFiltersAndSearch = () => {
-    let filtered = [...allAppointments];
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    let selectedStatus = statusFilter.value;
+const loadAppointmentsAndRender = async () => {
+    appointmentsTableBody.innerHTML = `<tr><td colspan="5" class="block md:table-cell text-center py-8 text-gray-500">Cargando citas...</td></tr>`;
+
+    const searchTerm = searchInput.value.trim();
+    const selectedStatus = statusFilter.value;
     const selectedDate = dateFilter.value;
 
-    // LÓGICA: Si selectedStatus tiene valor, se aplica el filtro. 
-    // Si es '', no se aplica filtro de estado, mostrando TODAS las citas.
-    if (selectedStatus) {
-        filtered = filtered.filter(app => app.status === selectedStatus);
-    }
+    const { data: appointments, count: totalCount } = await getAppointments(
+        currentPage,
+        itemsPerPage,
+        searchTerm,
+        selectedStatus,
+        selectedDate
+    );
+
+    allAppointments = appointments; // Guardar solo los resultados de la página actual
+    totalAppointmentsCount = totalCount;
     
-    if (searchTerm) {
-        filtered = filtered.filter(app => {
-            const petName = app.pets?.name?.toLowerCase() || '';
-            const ownerProfile = app.profiles;
-            const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name)
-                ? `${ownerProfile.first_name} ${ownerProfile.last_name}`.toLowerCase()
-                : ownerProfile?.full_name?.toLowerCase() || '';
-            return petName.includes(searchTerm) || ownerName.includes(searchTerm);
-        });
-    }
-
-    if (selectedDate) {
-        filtered = filtered.filter(app => app.appointment_date === selectedDate);
-    }
-
-    renderAppointmentsTable(filtered);
+    renderAppointmentsTable(appointments);
+    renderPagination(totalCount);
 };
 
+const applyFiltersAndSearch = async () => {
+    currentPage = 1; // Resetear a la primera página al aplicar nuevos filtros
+    await loadAppointmentsAndRender();
+};
 
-// --- LÓGICA DEL MODAL PARA AGENDAR CITA ---
+// --- LÓGICA DEL MODAL PARA AGENDAR CITA (Se mantiene la lógica original) ---
 
 const openAddAppointmentModal = () => {
     addAppointmentForm.reset();
@@ -251,8 +297,7 @@ const initializeAddAppointmentModal = async () => {
         if (success) {
             alert('¡Cita agendada con éxito!');
             closeAddAppointmentModal();
-            allAppointments = await getAppointments();
-            applyFiltersAndSearch();
+            await loadAppointmentsAndRender(); // Recargar tabla
         } else {
             addAppointmentMessage.textContent = `Error: ${error.message}`;
             addAppointmentMessage.className = 'p-3 rounded-md bg-red-100 text-red-700 text-sm';
@@ -264,7 +309,7 @@ const initializeAddAppointmentModal = async () => {
 };
 
 
-// --- LÓGICA DEL MODAL PARA COMPLETAR CITA ---
+// --- LÓGICA DEL MODAL PARA COMPLETAR CITA (Se mantiene la lógica original) ---
 
 const openCompletionModal = async (appointmentId, petName, petId) => {
     currentAppointmentId = appointmentId;
@@ -328,16 +373,8 @@ const closeCompletionModal = () => {
 // --- INICIALIZACIÓN DE LA PÁGINA ---
 
 const initializePage = async () => {
-    console.log("🔄 Obteniendo citas...");
-    // La función getAppointments ya ordena por appointment_date y appointment_time de forma ascendente.
-    allAppointments = await getAppointments();
-    if (allAppointments) {
-        console.log(`✅ Se obtuvieron ${allAppointments.length} citas.`);
-    }
-    
-    // Configuración inicial de filtro: "Todos los estados" por defecto.
-    statusFilter.value = ''; // Valor por defecto
-    applyFiltersAndSearch();
+    // La carga inicial se hace a través de loadAppointmentsAndRender
+    await loadAppointmentsAndRender();
 
     searchInput?.addEventListener('input', applyFiltersAndSearch);
     statusFilter?.addEventListener('change', applyFiltersAndSearch);
@@ -364,11 +401,7 @@ const initializePage = async () => {
             if (confirm(confirmationText)) {
                 const { success } = await updateAppointmentStatus(appointmentId, newStatus);
                 if (success) {
-                    const index = allAppointments.findIndex(app => app.id == appointmentId);
-                    if (index !== -1) {
-                        allAppointments[index].status = newStatus;
-                        applyFiltersAndSearch();
-                    }
+                    await loadAppointmentsAndRender(); // Recargar tabla
                 } else {
                     alert(`Error al ${action} la cita.`);
                 }
@@ -554,16 +587,7 @@ const initializePage = async () => {
                     console.error('Error al actualizar last_grooming_date:', petUpdateError);
                 }
                 
-                // Actualizar la lista local y aplicar filtros para reflejar el cambio
-                const index = allAppointments.findIndex(app => app.id == currentAppointmentId);
-                if (index !== -1) {
-                    allAppointments[index].status = 'completada';
-                    allAppointments[index].final_observations = observations;
-                    allAppointments[index].final_weight = weight ? parseFloat(weight) : null; // Actualizar con valor (o null)
-                    allAppointments[index].service_price = parseFloat(price);
-                    allAppointments[index].payment_method = paymentMethod;
-                    applyFiltersAndSearch();
-                }
+                await loadAppointmentsAndRender(); // Recargar tabla
                 closeCompletionModal();
                 alert('✓ Cita completada exitosamente');
             } else {
