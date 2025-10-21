@@ -88,23 +88,36 @@ export const getAppointments = async (page = 1, itemsPerPage = 10, search = '', 
         .select(`
             id, appointment_date, appointment_time, service, status, final_observations, 
             final_weight, invoice_pdf_url, pet_id, service_price, payment_method, 
-            pets ( name ), 
+            pets ( name, image_url ), 
             profiles ( full_name, first_name, last_name, phone )
         `, { count: 'exact' });
         
     // Aplicar filtros
     if (search) {
-        query = query.or(`pets.name.ilike.%${search}%,profiles.full_name.ilike.%${search}%`);
+        query = query.or(`pets.name.ilike.%${search}%,profiles.full_name.ilike.%${search}%,profiles.first_name.ilike.%${search}%,profiles.last_name.ilike.%${search}%`);
     }
-    if (status) query = query.eq('status', status);
-    if (date) query = query.eq('appointment_date', date);
-
-    const { data, error, count } = await query
-        .order('appointment_date', { ascending: false }) // Más reciente primero
-        .order('appointment_time', { ascending: false }) // En caso de misma fecha, por hora
+    
+    if (status) {
+        query = query.eq('status', status);
+    }
+    
+    if (date) {
+        query = query.eq('appointment_date', date);
+    }
+    
+    // Orden descendente (más recientes primero) y aplicar rango de paginación
+    query = query
+        .order('appointment_date', { ascending: false })
+        .order('appointment_time', { ascending: false })
         .range(from, to);
     
-    if (error) console.error('Error al obtener citas:', error);
+    const { data, error, count } = await query;
+    
+    if (error) {
+        console.error('Error al obtener citas:', error);
+        return { data: [], count: 0 };
+    }
+    
     return { data: data || [], count: count || 0 };
 };
 

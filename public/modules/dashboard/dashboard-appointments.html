@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,24 +8,42 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
-        :root { font-family: 'Inter', sans-serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
 
         #mobile-menu {
             transform: translateX(-100%);
             transition: transform 0.3s ease-in-out;
         }
+
         #mobile-menu.active {
             transform: translateX(0);
         }
+
         #mobile-overlay {
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease-in-out;
         }
+
         #mobile-overlay.active {
             opacity: 1;
             pointer-events: auto;
@@ -34,7 +53,7 @@
             .min-w-full thead {
                 display: none;
             }
-            
+
             #appointments-table-body tr {
                 display: block;
                 margin-bottom: 0.75rem;
@@ -43,12 +62,12 @@
                 background-color: #ffffff;
                 box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
             }
-            
+
             #appointments-table-body td {
                 display: block;
                 width: 100%;
                 padding: 0.25rem 0;
-                white-space: normal !important; 
+                white-space: normal !important;
             }
 
             #appointments-table-body tr td:nth-child(1) {
@@ -59,14 +78,14 @@
                 justify-content: space-between;
                 align-items: flex-start;
             }
-            
+
             #appointments-table-body tr td:nth-child(4) {
                 order: 1;
                 text-align: right;
                 padding-top: 0;
                 padding-bottom: 0;
             }
-            
+
             #appointments-table-body tr td:nth-child(2),
             #appointments-table-body tr td:nth-child(3) {
                 font-size: 0.875rem;
@@ -90,28 +109,33 @@
                 border-top: 1px solid #f3f4f6;
                 margin-top: 0.5rem;
             }
-            
-            #appointments-table-body .px-6 { padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
-        }
 
+            #appointments-table-body .px-6 {
+                padding-left: 0.25rem !important;
+                padding-right: 0.25rem !important;
+            }
+        }
     </style>
 </head>
+
 <body class="bg-gray-50 text-black">
-    
+
     <div id="mobile-overlay" class="fixed inset-0 bg-black z-40 md:hidden"></div>
 
     <div id="mobile-menu" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 md:hidden">
         <div class="h-full flex flex-col">
             <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-green-50">
                 <div class="flex items-center space-x-2">
-                    <div class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                    <div
+                        class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
                         <span class="text-white font-bold text-sm">O</span>
                     </div>
                     <span class="text-lg font-bold text-gray-800">OhMyPet</span>
                 </div>
                 <button id="close-mobile-menu" class="p-2 hover:bg-green-100 rounded-lg transition-colors">
                     <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
@@ -121,7 +145,8 @@
 
             <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-gray-50">
                 <div class="flex items-center px-3 py-2.5 rounded-lg">
-                    <div class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div
+                        class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <span class="text-white font-bold text-sm" id="mobile-user-initial">A</span>
                     </div>
                     <div class="ml-3 flex-1 min-w-0">
@@ -129,53 +154,66 @@
                         <p class="text-xs text-gray-500">Admin</p>
                     </div>
                 </div>
-                <a href="/public" target="_blank" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
+                <a href="/public" target="_blank"
+                    class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
                     <svg class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                     <span>Ir a la Tienda</span>
                 </a>
-                <button id="mobile-logout-button" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
+                <button id="mobile-logout-button"
+                    class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
                     <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                     <span>Cerrar Sesión</span>
                 </button>
             </div>
         </div>
     </div>
-    
+
     <div class="flex flex-col md:flex-row h-screen overflow-hidden">
-    <div id="sidebar-container" class="hidden md:block"></div>
+        <div id="sidebar-container" class="hidden md:block"></div>
 
         <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
-            
+
             <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30 shrink-0">
                 <div class="flex items-center space-x-3">
-                    <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <button id="mobile-menu-button"
+                        class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
                         <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
                     <h1 class="text-lg md:text-xl font-semibold text-gray-800" id="header-title">Gestión de Citas</h1>
                 </div>
                 <div id="header-container"></div>
             </header>
-            
-            <div id="main-content" class="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar">
-                <section>
+
+            <div id="main-content" class="flex-1 p-3 md:p-6 overflow-hidden flex flex-col">
+                <section class="flex flex-col h-full">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-3">
                         <h2 class="text-2xl font-bold text-gray-800 hidden md:block">Gestión de Citas</h2>
-                        <button id="add-appointment-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 w-full md:w-auto">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <button id="add-appointment-btn"
+                            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 w-full md:w-auto">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4"></path>
+                            </svg>
                             Agendar Cita
                         </button>
                     </div>
-                    
+
                     <div class="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <input type="text" id="appointment-search-input" placeholder="Buscar por cliente o mascota..." class="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-green-500">
-                            <select id="appointment-status-filter" class="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <input type="text" id="appointment-search-input"
+                                placeholder="Buscar por cliente o mascota..."
+                                class="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <select id="appointment-status-filter"
+                                class="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-green-500">
                                 <option value="">Todos los estados</option>
                                 <option value="pendiente">Pendiente</option>
                                 <option value="confirmada">Confirmada</option>
@@ -183,40 +221,59 @@
                                 <option value="cancelada">Cancelada</option>
                                 <option value="rechazada">Rechazada</option>
                             </select>
-                            <input type="date" id="appointment-date-filter" class="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <input type="date" id="appointment-date-filter"
+                                class="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
-                        <button id="clear-filters-button" class="mt-4 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm">Limpiar Filtros</button>
+                        <button id="clear-filters-button"
+                            class="mt-4 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm">Limpiar
+                            Filtros</button>
                     </div>
-                    
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                        <table class="min-w-full block md:table overflow-x-auto">
-                            <thead class="bg-gray-50 hidden md:table-header-group">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente / Mascota</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha / Hora</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notas del Cliente</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="appointments-table-body" class="divide-y divide-gray-200">
-                                <tr><td colspan="5" class="block md:table-cell text-center py-8 text-gray-500">Cargando citas...</td></tr>
-                            </tbody>
-                        </table>
-                         <div id="pagination-container" class="flex justify-center p-4">
-                            </div>
+
+                    <div class="bg-white rounded-lg shadow-md flex-1 overflow-hidden flex flex-col">
+                        <div class="overflow-x-auto overflow-y-auto flex-1" style="max-height: calc(100vh - 400px);">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-50 sticky top-0 z-10">
+                                    <tr>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Mascota / Cliente</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Fecha y Hora</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Servicio</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Estado</th>
+                                        <th
+                                            class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appointments-table-body" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="5" class="text-center py-8 text-gray-500">Cargando citas...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    <div id="pagination-container" class="mt-4"></div>
                 </section>
             </div>
         </main>
     </div>
 
-    <div id="completion-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 h-screen">
+    <div id="completion-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 h-screen">
         <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
-            
+
             <div class="px-6 py-4 border-b border-gray-200 flex-shrink-0">
                 <h3 class="text-xl font-bold text-gray-800">Completar Cita</h3>
-                <p id="completion-modal-subtitle" class="text-sm text-gray-500 mt-1">Registra los datos del servicio completado.</p>
+                <p id="completion-modal-subtitle" class="text-sm text-gray-500 mt-1">Registra los datos del servicio
+                    completado.</p>
             </div>
 
             <div class="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar">
@@ -225,7 +282,8 @@
                         <h4 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                             <span>1. Foto de Llegada (Opcional)</span>
                         </h4>
-                        <label for="arrival-photo-input" id="arrival-photo-container" class="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-64 flex items-center justify-center text-center hover:bg-gray-50 transition-colors">
+                        <label for="arrival-photo-input" id="arrival-photo-container"
+                            class="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-64 flex items-center justify-center text-center hover:bg-gray-50 transition-colors">
                             <p class="text-sm text-gray-500">Clic para subir foto de llegada</p>
                         </label>
                         <input type="file" id="arrival-photo-input" accept="image/*" class="hidden">
@@ -235,7 +293,8 @@
                         <h4 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                             <span>2. Foto de Salida (Opcional)</span>
                         </h4>
-                        <label for="departure-photo-input" id="departure-photo-container" class="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-64 flex items-center justify-center text-center hover:bg-gray-50 transition-colors">
+                        <label for="departure-photo-input" id="departure-photo-container"
+                            class="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-64 flex items-center justify-center text-center hover:bg-gray-50 transition-colors">
                             <p class="text-sm text-gray-500">Clic para subir foto de salida</p>
                         </label>
                         <input type="file" id="departure-photo-input" accept="image/*" class="hidden">
@@ -247,21 +306,24 @@
                         <h4 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                             <span>3. Peso de la Mascota (kg) (Opcional)</span>
                         </h4>
-                        <input type="number" id="pet-weight-input" step="0.1" min="0" placeholder="Ej: 5.5" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <input type="number" id="pet-weight-input" step="0.1" min="0" placeholder="Ej: 5.5"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
                     <div>
                         <h4 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                             <span class="text-red-500">*</span>
                             <span>Precio del Servicio (S/.)</span>
                         </h4>
-                        <input type="number" id="service-price-input" step="0.01" min="0" placeholder="Ej: 50.00" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <input type="number" id="service-price-input" step="0.01" min="0" placeholder="Ej: 50.00"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
                     <div>
                         <h4 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                             <span class="text-red-500">*</span>
                             <span>Método de Pago</span>
                         </h4>
-                        <select id="payment-method-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 bg-white">
+                        <select id="payment-method-select"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 bg-white">
                             <option value="" disabled selected>Seleccionar...</option>
                             <option value="Efectivo">Efectivo</option>
                             <option value="Yape">Yape</option>
@@ -275,7 +337,8 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <h4 class="font-semibold text-gray-700 mb-2">4. Boleta / Comprobante (Opcional)</h4>
-                        <label for="receipt-input" id="receipt-container" class="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-20 flex items-center justify-center text-center hover:bg-gray-50 transition-colors">
+                        <label for="receipt-input" id="receipt-container"
+                            class="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-20 flex items-center justify-center text-center hover:bg-gray-50 transition-colors">
                             <p class="text-sm text-gray-500">Clic para subir boleta (opcional)</p>
                         </label>
                         <input type="file" id="receipt-input" accept="image/*,application/pdf" class="hidden">
@@ -284,62 +347,89 @@
 
                 <div>
                     <h4 class="font-semibold text-gray-700 mb-2">5. Observaciones Finales (Opcional)</h4>
-                    <textarea id="final-observations-textarea" rows="4" placeholder="Escribe cualquier observación relevante sobre el servicio, comportamiento de la mascota, etc." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-vertical"></textarea>
+                    <textarea id="final-observations-textarea" rows="4"
+                        placeholder="Escribe cualquier observación relevante sobre el servicio, comportamiento de la mascota, etc."
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-vertical"></textarea>
                 </div>
 
                 <div>
-                    <button id="save-during-appointment-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors">
+                    <button id="save-during-appointment-btn"
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors">
                         💾 Guardar Información (Continuar editando)
                     </button>
-                    <p class="text-xs text-gray-500 mt-2 text-center">Puedes guardar la información sin completar la cita aún</p>
+                    <p class="text-xs text-gray-500 mt-2 text-center">Puedes guardar la información sin completar la
+                        cita aún</p>
                 </div>
 
                 <div id="upload-message" class="hidden"></div>
             </div>
 
             <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t flex-shrink-0">
-                <button type="button" id="cancel-completion-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors">Cancelar</button>
-                <button type="button" id="confirm-completion-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:bg-gray-400">✓ Confirmar y Completar Cita</button>
+                <button type="button" id="cancel-completion-btn"
+                    class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors">Cancelar</button>
+                <button type="button" id="confirm-completion-btn"
+                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:bg-gray-400">✓
+                    Confirmar y Completar Cita</button>
             </div>
         </div>
     </div>
 
-    <div id="add-appointment-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4 h-screen">
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col"> <form id="add-appointment-form" class="w-full flex flex-col flex-1"> <div class="p-6 border-b flex-shrink-0"> <h2 class="text-2xl font-bold text-gray-800">Agendar Nueva Cita</h2>
+    <div id="add-appointment-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4 h-screen">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
+            <form id="add-appointment-form" class="w-full flex flex-col flex-1">
+                <div class="p-6 border-b flex-shrink-0">
+                    <h2 class="text-2xl font-bold text-gray-800">Agendar Nueva Cita</h2>
                     <p class="text-sm text-gray-500 mt-1">Completa los datos para registrar una cita</p>
                 </div>
-                <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0"> <div id="add-appointment-message" class="hidden"></div>
-                    
-                    
+                <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                    <div id="add-appointment-message" class="hidden"></div>
+
+
                     <div class="relative">
-                        <label for="client-search-input-modal" class="block text-sm font-medium text-gray-700 mb-1">1. Cliente *</label>
-                        <input type="text" id="client-search-input-modal" placeholder="Escribe para buscar un cliente..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" autocomplete="off">
+                        <label for="client-search-input-modal" class="block text-sm font-medium text-gray-700 mb-1">1.
+                            Cliente *</label>
+                        <input type="text" id="client-search-input-modal"
+                            placeholder="Escribe para buscar un cliente..."
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            autocomplete="off">
                         <input type="hidden" id="selected-client-id" name="user_id" required>
-                        <div id="client-search-results" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        <div id="client-search-results"
+                            class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         </div>
                     </div>
 
                     <div>
-                        <label for="pet-select" class="block text-sm font-medium text-gray-700 mb-1">2. Mascota *</label>
-                        <select id="pet-select" name="pet_id" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500" disabled>
+                        <label for="pet-select" class="block text-sm font-medium text-gray-700 mb-1">2. Mascota
+                            *</label>
+                        <select id="pet-select" name="pet_id" required
+                            class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500"
+                            disabled>
                             <option>Selecciona un cliente primero</option>
                         </select>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                           <label for="new-appointment-date" class="block text-sm font-medium text-gray-700 mb-1">3. Fecha *</label>
-                           <input type="date" id="new-appointment-date" name="appointment_date" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <label for="new-appointment-date" class="block text-sm font-medium text-gray-700 mb-1">3.
+                                Fecha *</label>
+                            <input type="date" id="new-appointment-date" name="appointment_date" required
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
                         <div>
-                           <label for="new-appointment-time" class="block text-sm font-medium text-gray-700 mb-1">4. Hora *</label>
-                           <select id="new-appointment-time" name="appointment_time" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500" disabled>
-                               <option>Selecciona una fecha</option>
-                           </select>
+                            <label for="new-appointment-time" class="block text-sm font-medium text-gray-700 mb-1">4.
+                                Hora *</label>
+                            <select id="new-appointment-time" name="appointment_time" required
+                                class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500"
+                                disabled>
+                                <option>Selecciona una fecha</option>
+                            </select>
                         </div>
                     </div>
                     <div>
-                        <label for="service-select" class="block text-sm font-medium text-gray-700 mb-1">5. Servicio *</label>
-                        <select id="service-select" name="service" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                        <label for="service-select" class="block text-sm font-medium text-gray-700 mb-1">5. Servicio
+                            *</label>
+                        <select id="service-select" name="service" required
+                            class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
                             <option value="">Selecciona un servicio...</option>
                             <option value="BAÑO">BAÑO</option>
                             <option value="BAÑO Y CORTE">BAÑO Y CORTE</option>
@@ -349,13 +439,19 @@
                         </select>
                     </div>
                     <div>
-                        <label for="service-notes" class="block text-sm font-medium text-gray-700 mb-1">6. Notas Adicionales (Opcional)</label>
-                        <textarea id="service-notes" name="notes" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Ej: Corte cachorro, usar champú especial, etc."></textarea>
+                        <label for="service-notes" class="block text-sm font-medium text-gray-700 mb-1">6. Notas
+                            Adicionales (Opcional)</label>
+                        <textarea id="service-notes" name="notes" rows="3"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            placeholder="Ej: Corte cachorro, usar champú especial, etc."></textarea>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-6 py-4 flex justify-end gap-4 rounded-b-2xl flex-shrink-0">
-                    <button type="button" id="cancel-add-appointment-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
-                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Agendar Cita</button>
+                    <button type="button" id="cancel-add-appointment-btn"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
+                    <button type="submit"
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Agendar
+                        Cita</button>
                 </div>
             </form>
         </div>
@@ -363,88 +459,89 @@
 
 
     <script type="module">
-    const CACHE_VERSION = Date.now();
-    
-    async function loadComponent(url, containerId) {
-        try {
-            const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const html = await response.text();
-            const container = document.getElementById(containerId);
-            if (container) {
-                container.innerHTML = html;
+        const CACHE_VERSION = Date.now();
+
+        async function loadComponent(url, containerId) {
+            try {
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const html = await response.text();
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error(`Error cargando ${url}:`, error);
             }
-        } catch (error) { 
-            console.error(`Error cargando ${url}:`, error); 
         }
-    }
-    
-    function setupMobileMenu() {
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
-        const closeMobileMenuButton = document.getElementById('close-mobile-menu');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const mobileOverlay = document.getElementById('mobile-overlay');
-        const mobileNavContent = document.getElementById('mobile-nav-content');
 
-        const toggleMenu = (show) => {
-            if (show) {
-                mobileMenu.classList.add('active');
-                mobileOverlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            } else {
-                mobileMenu.classList.remove('active');
-                mobileOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        };
+        function setupMobileMenu() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const closeMobileMenuButton = document.getElementById('close-mobile-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileOverlay = document.getElementById('mobile-overlay');
+            const mobileNavContent = document.getElementById('mobile-nav-content');
 
-        mobileMenuButton?.addEventListener('click', () => toggleMenu(true));
-        closeMobileMenuButton?.addEventListener('click', () => toggleMenu(false));
-        mobileOverlay?.addEventListener('click', () => toggleMenu(false));
+            const toggleMenu = (show) => {
+                if (show) {
+                    mobileMenu.classList.add('active');
+                    mobileOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    mobileMenu.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            };
 
-        const sidebarContainer = document.getElementById('sidebar-container');
-        if (sidebarContainer && sidebarContainer.querySelector('nav')) {
-            const navClone = sidebarContainer.querySelector('nav').cloneNode(true);
-            mobileNavContent.appendChild(navClone);
+            mobileMenuButton?.addEventListener('click', () => toggleMenu(true));
+            closeMobileMenuButton?.addEventListener('click', () => toggleMenu(false));
+            mobileOverlay?.addEventListener('click', () => toggleMenu(false));
 
-            // Close mobile menu on navigation click
-            navClone.querySelectorAll('a').forEach(link => {
-                link.addEventListener('click', () => {
-                    if (window.innerWidth < 768) { // Check if it's a mobile device
-                        toggleMenu(false);
-                    }
+            const sidebarContainer = document.getElementById('sidebar-container');
+            if (sidebarContainer && sidebarContainer.querySelector('nav')) {
+                const navClone = sidebarContainer.querySelector('nav').cloneNode(true);
+                mobileNavContent.appendChild(navClone);
+
+                // Close mobile menu on navigation click
+                navClone.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 768) { // Check if it's a mobile device
+                            toggleMenu(false);
+                        }
+                    });
                 });
-            });
+            }
         }
-    }
 
-    async function initializeDashboard() {
-        await Promise.all([
-            loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
-            loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
-        ]);
-        
-        setupMobileMenu();
-        
-        try {
-            await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
+        async function initializeDashboard() {
+            await Promise.all([
+                loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container'),
+                loadComponent('/public/modules/dashboard/dashboard-header.html', 'header-container')
+            ]);
 
-            const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
-            if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
-            
-            const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
-            if (headerModule?.initializeHeader) headerModule.initializeHeader();
+            setupMobileMenu();
 
-            const pageModulePath = window.location.pathname.replace('.html', '.js');
-            await import(pageModulePath + `?v=${CACHE_VERSION}`);
+            try {
+                await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
 
-        } catch (error) { 
-            console.error('Error inicializando los scripts del dashboard:', error); 
+                const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
+                if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
+
+                const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
+                if (headerModule?.initializeHeader) headerModule.initializeHeader();
+
+                const pageModulePath = window.location.pathname.replace('.html', '.js');
+                await import(pageModulePath + `?v=${CACHE_VERSION}`);
+
+            } catch (error) {
+                console.error('Error inicializando los scripts del dashboard:', error);
+            }
         }
-    }
 
-    document.addEventListener('DOMContentLoaded', initializeDashboard);
-</script> 
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
 
 </body>
+
 </html>

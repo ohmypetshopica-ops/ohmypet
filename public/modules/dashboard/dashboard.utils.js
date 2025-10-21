@@ -3,6 +3,7 @@
 
 const createUpcomingAppointmentItem = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
+    const petImage = appointment.pets?.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(petName)}&background=A4D0A4&color=FFFFFF`;
     const ownerProfile = appointment.profiles;
     const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
         ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
@@ -24,56 +25,49 @@ const createUpcomingAppointmentItem = (appointment) => {
 const createClientRow = (client) => {
     const displayName = (client.first_name && client.last_name) 
         ? `${client.first_name} ${client.last_name}` 
-        : client.full_name || 'Nombre no disponible';
-    
+        : client.full_name || 'Sin nombre';
+    const avatarUrl = client.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=A4D0A4&color=FFFFFF`;
+    const phone = client.phone ? `<a href="https://wa.me/51${client.phone}" target="_blank" class="text-green-600 hover:underline">${client.phone}</a>` : 'N/A';
+
     return `
-        <tr>
-            <td class="px-6 py-4">
-                <div class="text-sm font-medium text-gray-900">${displayName}</div>
-                <div class="text-sm text-gray-500">${client.email || 'Email no disponible'}</div>
+        <tr class="hover:bg-gray-50 cursor-pointer" data-client-id="${client.id}">
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                    <img src="${avatarUrl}" alt="Avatar" class="h-10 w-10 rounded-full object-cover">
+                    <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900">${displayName}</div>
+                        <div class="text-sm text-gray-500">${client.email || 'N/A'}</div>
+                    </div>
+                </div>
             </td>
-            <td class="px-6 py-4">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${client.role}</span>
-            </td>
-            <td class="px-6 py-4 text-right text-sm font-medium">
-                <button data-client-id="${client.id}" class="view-details-btn text-green-600 hover:text-green-900 font-semibold">Ver Detalles</button>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${phone}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                <button class="text-indigo-600 hover:text-indigo-900 view-client-btn">Ver Detalles</button>
             </td>
         </tr>
     `;
 };
 
 const createProductRow = (product) => {
-    const productData = JSON.stringify(product).replace(/"/g, '&quot;');
-    const categoryStyles = {
-        alimento: 'bg-orange-100 text-orange-800',
-        accesorio: 'bg-blue-100 text-blue-800',
-        juguete: 'bg-purple-100 text-purple-800',
-        higiene: 'bg-teal-100 text-teal-800',
-    };
-    const categoryClass = categoryStyles[product.category] || 'bg-gray-100 text-gray-800';
+    const imageUrl = product.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=D1D5DB&color=FFFFFF`;
+    const productData = JSON.stringify({ id: product.id, name: product.name, description: product.description, price: product.price, stock: product.stock, image_url: product.image_url }).replace(/"/g, '&quot;');
 
     return `
-        <tr data-product-id="${product.id}">
+        <tr class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 h-10 w-10">
-                        <img class="h-10 w-10 rounded-full object-cover" src="${product.image_url || 'https://via.placeholder.com/40'}" alt="${product.name}">
-                    </div>
+                    <img src="${imageUrl}" alt="${product.name}" class="h-12 w-12 rounded object-cover">
                     <div class="ml-4">
                         <div class="text-sm font-medium text-gray-900">${product.name}</div>
+                        <div class="text-sm text-gray-500">${product.description || 'Sin descripción'}</div>
                     </div>
                 </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${categoryClass} capitalize">
-                    ${product.category || 'N/A'}
-                </span>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">
+                S/ ${product.price.toFixed(2)}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">S/${(product.price || 0).toFixed(2)}</div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+            <td class="px-6 py-4 whitespace-nowrap text-center">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.stock > 10 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
                     ${product.stock} en Stock
                 </span>
             </td>
@@ -87,10 +81,9 @@ const createProductRow = (product) => {
     `;
 };
 
-// =================== INICIO DE LA CORRECCIÓN ===================
-// Se eliminó la columna extra de "Pago" que no correspondía a esta tabla.
 const createAppointmentRow = (appointment) => {
     const petName = appointment.pets?.name || 'N/A';
+    const petImage = appointment.pets?.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(petName)}&background=A4D0A4&color=FFFFFF`;
     const ownerProfile = appointment.profiles;
     const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
         ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
@@ -120,8 +113,13 @@ const createAppointmentRow = (appointment) => {
     return `
         <tr data-appointment-id="${appointment.id}">
             <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">${ownerName}</div>
-                <div class="text-sm text-gray-500">${petName}</div>
+                <div class="flex items-center">
+                    <img src="${petImage}" alt="${petName}" class="h-10 w-10 rounded-full object-cover">
+                    <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900">${petName}</div>
+                        <div class="text-sm text-gray-500">${ownerName}</div>
+                    </div>
+                </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm text-gray-900">${appointment.appointment_date}</div>
@@ -139,7 +137,6 @@ const createAppointmentRow = (appointment) => {
         </tr>
     `;
 };
-// =================== FIN DE LA CORRECCIÓN ===================
 
 const createServiceHistoryRow = (service) => {
     const petName = service.pets?.name || 'N/A';
