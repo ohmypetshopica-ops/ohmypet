@@ -31,7 +31,15 @@ const createClientRow = (client) => {
         ? `${client.first_name} ${client.last_name}` 
         : client.full_name || 'Sin nombre';
     const avatarUrl = client.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=A4D0A4&color=FFFFFF`;
-    const phone = client.phone ? `<a href="https://wa.me/51${client.phone}" target="_blank" class="text-green-600 hover:underline">${client.phone}</a>` : 'N/A';
+    const phone = client.phone || 'Sin teléfono';
+    const petsCount = client.pets_count || 0;
+    
+    // Formatear última cita
+    let lastAppointmentText = 'Sin citas';
+    if (client.last_appointment_date) {
+        const date = new Date(client.last_appointment_date);
+        lastAppointmentText = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
 
     return `
         <tr class="hover:bg-gray-50 cursor-pointer" data-client-id="${client.id}">
@@ -40,11 +48,14 @@ const createClientRow = (client) => {
                     <img src="${avatarUrl}" alt="Avatar" class="h-10 w-10 rounded-full object-cover">
                     <div class="ml-4">
                         <div class="text-sm font-medium text-gray-900">${displayName}</div>
-                        <div class="text-sm text-gray-500">${client.email || 'N/A'}</div>
+                        <div class="text-sm text-gray-500">${phone}</div>
                     </div>
                 </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${phone}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                ${petsCount} ${petsCount === 1 ? 'mascota' : 'mascotas'}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${lastAppointmentText}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                 <button class="text-indigo-600 hover:text-indigo-900 view-details-btn" data-client-id="${client.id}">Ver Detalles</button>
             </td>

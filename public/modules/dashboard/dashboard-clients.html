@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clientes - Dashboard</title>
+    <title>Gestión de Clientes - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
@@ -12,9 +12,37 @@
             font-family: 'Inter', sans-serif;
         }
 
-        /* Scrollbar styles (kept for completeness) */
+        .sidebar-scrollable {
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #A4D0A4 #f1f1f1;
+        }
+
+        .sidebar-scrollable::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-scrollable::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .sidebar-scrollable::-webkit-scrollbar-thumb {
+            background: #A4D0A4;
+            border-radius: 3px;
+        }
+
+        .sidebar-scrollable::-webkit-scrollbar-thumb:hover {
+            background: #8BC68B;
+        }
+
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #A4D0A4 #f1f1f1;
+        }
+
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
+            height: 8px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -22,32 +50,14 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e0;
+            background: #A4D0A4;
             border-radius: 4px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #a0aec0;
+            background: #8BC68B;
         }
 
-        .sidebar-scrollable nav::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar-scrollable nav::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .sidebar-scrollable nav::-webkit-scrollbar-thumb {
-            background: #cbd5e0;
-            border-radius: 3px;
-        }
-
-        .sidebar-scrollable nav::-webkit-scrollbar-thumb:hover {
-            background: #a0aec0;
-        }
-
-        /* Mobile menu transitions */
         #mobile-menu {
             transform: translateX(-100%);
             transition: transform 0.3s ease-in-out;
@@ -64,39 +74,38 @@
         }
 
         #mobile-overlay.active {
-            opacity: 1;
+            opacity: 0.5;
             pointer-events: auto;
         }
 
-        /* Custom styles for mobile table list simulation */
         @media (max-width: 767px) {
             #clients-table-body tr {
                 display: block;
                 margin-bottom: 1rem;
-                padding: 1rem;
+                border: 1px solid #e5e7eb;
                 border-radius: 0.5rem;
-                background-color: #ffffff;
-                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+                padding: 1rem;
+                background: white;
             }
 
             #clients-table-body td {
                 display: block;
-                padding: 0.25rem 0;
+                text-align: left !important;
+                padding: 0.5rem 0 !important;
+                border: none;
             }
 
-            #clients-table-body tr td:nth-child(1) {
-                font-weight: bold;
-                border-bottom: 1px solid #f3f4f6;
-                padding-bottom: 0.5rem;
-                margin-bottom: 0.5rem;
+            #clients-table-body td:before {
+                content: attr(data-label);
+                font-weight: 600;
+                display: block;
+                color: #6b7280;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                margin-bottom: 0.25rem;
             }
 
-            #clients-table-body tr td:nth-child(3) {
-                text-align: left;
-                padding-top: 0.5rem;
-            }
-
-            #clients thead {
+            thead {
                 display: none;
             }
         }
@@ -111,7 +120,8 @@
         <div class="h-full flex flex-col">
             <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-green-50">
                 <div class="flex items-center space-x-2">
-                    <div class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                    <div
+                        class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
                         <span class="text-white font-bold text-sm">O</span>
                     </div>
                     <span class="text-lg font-bold text-gray-800">OhMyPet</span>
@@ -126,9 +136,10 @@
             <nav id="mobile-nav-content" class="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
             </nav>
 
-            <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-gray-50">
+            <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-gray-50 flex-shrink-0">
                 <div class="flex items-center px-3 py-2.5 rounded-lg">
-                    <div class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div
+                        class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <span class="text-white font-bold text-sm" id="mobile-user-initial">A</span>
                     </div>
                     <div class="ml-3 flex-1 min-w-0">
@@ -136,21 +147,26 @@
                         <p class="text-xs text-gray-500">Admin</p>
                     </div>
                 </div>
-                <a href="/public" target="_blank" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
+                <a href="/public" target="_blank"
+                    class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
                     <svg class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                     <span>Ir a la Tienda</span>
                 </a>
-                <button id="mobile-logout-button" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
+                <button id="mobile-logout-button"
+                    class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
                     <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                     <span>Cerrar Sesión</span>
                 </button>
             </div>
         </div>
     </div>
+
     <div class="flex flex-col md:flex-row h-screen overflow-hidden">
         <div id="sidebar-container" class="hidden md:block"></div>
 
@@ -159,7 +175,8 @@
                 <div class="flex items-center space-x-3">
                     <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
                         <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
                     <h1 class="text-lg md:text-xl font-semibold text-gray-800" id="header-title">Gestión de Clientes</h1>
@@ -168,7 +185,7 @@
             </header>
 
             <div id="main-content" class="flex-1 p-3 md:p-6 overflow-y-auto custom-scrollbar">
-                <section id="clients" class="space-y-6">
+                <section id="clients" class="space-y-4 md:space-y-6">
 
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                         <h2 class="text-2xl font-bold text-gray-800 hidden md:block">Gestión de Clientes</h2>
@@ -190,11 +207,10 @@
                         <table class="w-full md:table">
                             <thead class="bg-gray-50 md:table-header-group">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rol</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                                        Acciones</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mascotas</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Última Cita</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="clients-table-body" class="divide-y divide-gray-200 md:table-row-group"></tbody>
@@ -205,238 +221,281 @@
         </main>
     </div>
 
-    <div id="client-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 h-screen">
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[95vh] overflow-y-auto">
-            <div class="sticky top-0 bg-white p-6 border-b flex justify-between items-center rounded-t-2xl z-10">
-                <h2 class="text-xl font-bold text-gray-800">Registrar Nuevo Cliente</h2>
-                <button type="button" id="close-client-modal-button" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
+    <div id="client-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Registrar Nuevo Cliente</h3>
+                <button id="close-client-modal-button" class="text-white hover:text-gray-200">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
-            <div class="p-6">
+
+            <form id="client-form" class="p-6">
                 <div id="client-form-message" class="hidden mb-4"></div>
-                <form id="client-form" class="space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                            <input type="text" name="first_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
-                            <input type="text" name="last_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
-                            <input type="tel" name="phone" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="+51 987 654 321">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Distrito *</label>
-                            <input type="text" name="district" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Ica, La Tinguiña, etc.">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
-                            <select name="doc_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white">
-                                <option value="">Seleccionar...</option>
-                                <option value="DNI">DNI</option>
-                                <option value="CE">Carnet de Extranjería</option>
-                                <option value="Pasaporte">Pasaporte</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
-                            <input type="text" name="doc_num" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="12345678">
-                        </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+                        <input type="text" id="first_name" name="first_name" required
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email (Opcional)</label>
-                        <input type="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="ejemplo@correo.com">
-                        <p class="text-xs text-gray-500 mt-1">Solo si el cliente desea acceder a la plataforma online</p>
+                        <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+                        <input type="text" id="last_name" name="last_name" required
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
-                    <div id="password-field" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
-                        <input type="password" name="password" minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <p class="text-xs text-gray-500 mt-1">Mínimo 6 caracteres. Requerido solo si proporciona email.</p>
+                </div>
+
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico *</label>
+                    <input type="email" id="email" name="email" required
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                    <input type="tel" id="phone" name="phone" placeholder="987654321" required
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="doc_type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
+                        <select id="doc_type" name="doc_type"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <option value="DNI">DNI</option>
+                            <option value="CE">Carné de Extranjería</option>
+                            <option value="Pasaporte">Pasaporte</option>
+                        </select>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Contacto de Emergencia</label>
-                            <input type="text" name="emergency_contact_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Nombre completo">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Emergencia</label>
-                            <input type="tel" name="emergency_contact_phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="+51 987 654 321">
-                        </div>
+                    <div>
+                        <label for="doc_num" class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
+                        <input type="text" id="doc_num" name="doc_num" placeholder="12345678"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <p class="text-sm text-blue-800">
-                            <strong>ℹ️ Para clientes sin acceso web:</strong> Solo complete los campos obligatorios. El email y contraseña son opcionales y solo necesarios si el cliente desea usar la plataforma.
-                        </p>
+                </div>
+
+                <div class="mb-4">
+                    <label for="district" class="block text-sm font-medium text-gray-700 mb-1">Distrito</label>
+                    <input type="text" id="district" name="district" placeholder="San Isidro"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="emergency_contact_name" class="block text-sm font-medium text-gray-700 mb-1">Contacto de Emergencia</label>
+                        <input type="text" id="emergency_contact_name" name="emergency_contact_name" placeholder="Nombre completo"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
-                        <button type="button" id="cancel-client-button" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
-                            Cancelar
-                        </button>
-                        <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors">
-                            Registrar Cliente
-                        </button>
+                    <div>
+                        <label for="emergency_contact_phone" class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Emergencia</label>
+                        <input type="tel" id="emergency_contact_phone" name="emergency_contact_phone" placeholder="987654321"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
-                </form>
-            </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit"
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        Registrar Cliente
+                    </button>
+                    <button type="button" id="cancel-client-button"
+                        class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <div id="client-details-modal"
-        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 h-screen">
-        <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
-            <div class="p-6 border-b flex justify-between items-center flex-shrink-0">
-                <h2 id="modal-client-name" class="text-xl font-bold text-gray-800">Detalles del Cliente</h2>
-                <button id="modal-close-btn"
-                    class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
+    <div id="client-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center flex-shrink-0">
+                <h3 id="modal-client-name" class="text-xl font-bold text-white">Detalles del Cliente</h3>
+                <button id="modal-close-btn" class="text-white hover:text-gray-200">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
-            <div class="flex-1 p-6 space-y-6 overflow-y-auto">
-                <div id="client-view-mode">
-                    <div id="modal-content-body-view">
-                        <div class="text-center py-10 text-gray-500">Cargando...</div>
-                    </div>
-                </div>
-                <div id="client-edit-mode" class="hidden">
-                    <form id="client-edit-form" class="space-y-6">
-                        <input type="hidden" name="id" id="edit-client-id">
-                        <div id="edit-form-message" class="hidden p-3 rounded-md text-sm font-medium"></div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Información de Perfil</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <div id="modal-content-body-view" class="p-6"></div>
+
+                <div id="client-edit-mode" class="hidden p-6">
+                    <form id="client-edit-form">
+                        <div id="edit-form-message" class="hidden mb-4"></div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                                <input type="text" name="first_name" required id="edit-first-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+                                <input type="text" name="first_name" required
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
-                                <input type="text" name="last_name" required id="edit-last-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+                                <input type="text" name="last_name" required
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             </div>
-                            <div class="sm:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Email (No Editable)</label>
-                                <input type="email" name="email" id="edit-email" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed">
-                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                            <input type="tel" name="phone" required
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                                <input type="tel" name="phone" id="edit-phone" placeholder="+51 987 654 321" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Distrito</label>
-                                <input type="text" name="district" id="edit-district" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Doc.</label>
-                                <select name="doc_type" id="edit-doc-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
-                                    <option value="">Seleccionar...</option>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
+                                <select name="doc_type"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                                     <option value="DNI">DNI</option>
-                                    <option value="CE">Carnet de Extranjería</option>
+                                    <option value="CE">Carné de Extranjería</option>
                                     <option value="Pasaporte">Pasaporte</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nro. Doc.</label>
-                                <input type="text" name="doc_num" id="edit-doc-num" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
+                                <input type="text" name="doc_num"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             </div>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Contacto de Emergencia</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Distrito</label>
+                            <input type="text" name="district"
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre Contacto</label>
-                                <input type="text" name="emergency_contact_name" id="edit-emergency-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Contacto de Emergencia</label>
+                                <input type="text" name="emergency_contact_name"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono Contacto</label>
-                                <input type="tel" name="emergency_contact_phone" id="edit-emergency-phone" placeholder="+51 987 654 321" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Emergencia</label>
+                                <input type="tel" name="emergency_contact_phone"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             </div>
                         </div>
                     </form>
                 </div>
             </div>
-            <div id="modal-footer" class="p-4 border-t flex flex-col sm:flex-row justify-between items-center flex-shrink-0 gap-2">
-                <div class="flex items-center w-full sm:w-auto">
-                    <button id="edit-client-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                        Editar Cliente
-                    </button>
-                    <button id="save-client-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                        Guardar Cambios
-                    </button>
-                    <button id="cancel-edit-client-btn" class="hidden ml-3 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full sm:w-auto mt-2 sm:mt-0">
-                        Cancelar
-                    </button>
-                </div>
-                <button id="modal-add-pet-btn-footer" class="bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 px-4 rounded-full transition-colors flex items-center justify-center gap-1 w-full sm:w-auto">
+
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t flex-shrink-0">
+                <button id="edit-client-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
+                    Editar Cliente
+                </button>
+                <button id="save-client-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">
+                    Guardar Cambios
+                </button>
+                <button id="cancel-edit-client-btn" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">
+                    Cancelar
+                </button>
+                <button id="modal-add-pet-btn-footer" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">
                     + Agregar Mascota
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="add-pet-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4 h-screen">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl max-h-[95vh] overflow-y-auto">
-            <form id="add-pet-form" class="w-full">
-                <div class="p-6 border-b flex justify-between items-center flex-shrink-0">
-                    <h2 id="add-pet-modal-title" class="text-xl font-bold text-gray-800">Registrar Nueva Mascota</h2>
-                    <button type="button" id="close-add-pet-modal-button"
-                        class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
+    <div id="add-pet-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Registrar Nueva Mascota</h3>
+                <button id="close-add-pet-modal-button" class="text-white hover:text-gray-200">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <form id="add-pet-form" class="p-6">
+                <div id="add-pet-form-message" class="hidden mb-4"></div>
+                <input type="hidden" id="pet-owner-id" name="owner_id">
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Foto de la Mascota</label>
+                    <div class="flex items-center gap-4">
+                        <img id="pet-image-preview" src="" alt="Preview" class="hidden h-20 w-20 rounded-full object-cover border-2 border-gray-300">
+                        <input type="file" id="pet-photo" accept="image/*"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                    </div>
                 </div>
-                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                    <input type="hidden" id="pet-owner-id" name="owner_id">
-                    <div id="add-pet-form-message" class="hidden"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Foto de la Mascota (Opcional)</label>
-                        <div class="flex items-center space-x-4">
-                            <img id="pet-image-preview" src="https://via.placeholder.com/100" alt="Vista previa de la mascota" class="h-24 w-24 rounded-full object-cover border-2 border-gray-300 flex-shrink-0">
-                            <input type="file" id="pet-photo" name="photo" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer">
-                        </div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                        <input type="text" name="name" required
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                            <input type="text" name="name" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Raza *</label>
-                            <input type="text" name="breed" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Especie *</label>
+                        <select name="species" required
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <option value="">Seleccionar...</option>
+                            <option value="Perro">Perro</option>
+                            <option value="Gato">Gato</option>
+                            <option value="Otro">Otro</option>
+                        </select>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
-                            <input type="date" name="birth_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
-                            <input type="number" name="weight" step="0.1" placeholder="Ej: 5.5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Raza</label>
+                        <input type="text" name="breed" placeholder="Ej: Labrador"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+                        <input type="date" name="birth_date"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
                         <select name="sex"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <option value="">Seleccionar...</option>
                             <option value="Macho">Macho</option>
                             <option value="Hembra">Hembra</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                        <textarea name="observations" rows="3"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                            placeholder="Alergias, comportamiento, etc."></textarea>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
+                        <input type="number" name="weight" step="0.1" placeholder="5.5"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
                 </div>
-                <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row justify-end gap-4 rounded-b-2xl flex-shrink-0">
-                    <button type="button" id="cancel-add-pet-button"
-                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                    <input type="text" name="color" placeholder="Ej: Marrón con blanco"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones Médicas</label>
+                    <textarea name="medical_notes" rows="3" placeholder="Alergias, condiciones especiales, etc."
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></textarea>
+                </div>
+
+                <div class="flex gap-3">
                     <button type="submit"
-                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Guardar
-                        Mascota</button>
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        Guardar Mascota
+                    </button>
+                    <button type="button" id="cancel-add-pet-button"
+                        class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+                        Cancelar
+                    </button>
                 </div>
             </form>
         </div>
@@ -447,15 +506,11 @@
 
         async function loadComponent(url, containerId) {
             try {
-                const response = await fetch(`${url}?v=${CACHE_VERSION}`, {
-                    cache: 'no-store'
-                });
+                const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
                 const container = document.getElementById(containerId);
-                if (container) {
-                    container.innerHTML = html;
-                }
+                if (container) container.innerHTML = html;
             } catch (error) {
                 console.error(`Error cargando ${url}:`, error);
             }
@@ -468,8 +523,8 @@
             const mobileOverlay = document.getElementById('mobile-overlay');
             const mobileNavContent = document.getElementById('mobile-nav-content');
 
-            const toggleMenu = (show) => {
-                if (show) {
+            const toggleMenu = (open) => {
+                if (open) {
                     mobileMenu.classList.add('active');
                     mobileOverlay.classList.add('active');
                     document.body.style.overflow = 'hidden';
@@ -489,10 +544,9 @@
                 const navClone = sidebarContainer.querySelector('nav').cloneNode(true);
                 mobileNavContent.appendChild(navClone);
 
-                // Close mobile menu on navigation click
                 navClone.querySelectorAll('a').forEach(link => {
                     link.addEventListener('click', () => {
-                        if (window.innerWidth < 768) { // Check if it's a mobile device
+                        if (window.innerWidth < 768) {
                             toggleMenu(false);
                         }
                     });
@@ -501,27 +555,21 @@
         }
 
         async function initializeDashboard() {
-            // 1. Cargar el sidebar primero
             await Promise.all([
                 loadComponent('/public/modules/dashboard/dashboard-sidebar.html', 'sidebar-container')
             ]);
 
             setupMobileMenu();
 
-            // 2. Cargar el resto de componentes y scripts
             try {
-                // Importar y ejecutar el script de autenticación
                 await import(`/public/core/auth.js?v=${CACHE_VERSION}`);
 
-                // Importar y ejecutar el script del sidebar
                 const sidebarModule = await import(`./dashboard-sidebar.js?v=${CACHE_VERSION}`);
                 if (sidebarModule?.initSidebar) sidebarModule.initSidebar();
 
-                // Importar y ejecutar el script del header (CON LA LÓGICA DE LA CAMPANA)
                 const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
                 if (headerModule?.initializeHeader) headerModule.initializeHeader();
 
-                // Importar y ejecutar el script específico de esta página.
                 const pageModulePath = window.location.pathname.replace('.html', '.js');
                 await import(pageModulePath + `?v=${CACHE_VERSION}`);
 
@@ -530,7 +578,6 @@
             }
         }
 
-        // Ejecutar la función principal al cargar el contenido del DOM
         document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
     <script type="module" src="../../core/auth.js"></script>

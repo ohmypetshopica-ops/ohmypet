@@ -67,17 +67,79 @@ export const getUpcomingAppointments = async () => {
 };
 
 export const getClients = async () => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('role', 'cliente').order('full_name', { ascending: true });
-    if (error) console.error('Error al obtener clientes:', error);
-    return data || [];
+    const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+            *,
+            pets:pets(count),
+            last_appointment:appointments(appointment_date)
+        `)
+        .eq('role', 'cliente')
+        .order('first_name', { ascending: true });
+
+    if (error) {
+        console.error('Error al obtener clientes:', error);
+        return [];
+    }
+
+    // Procesar datos para agregar conteo de mascotas y última cita
+    return data.map(client => {
+        const petsCount = client.pets?.[0]?.count || 0;
+        
+        // Obtener la fecha de la última cita
+        let lastAppointmentDate = null;
+        if (client.last_appointment && client.last_appointment.length > 0) {
+            const sortedAppointments = client.last_appointment.sort((a, b) => 
+                new Date(b.appointment_date) - new Date(a.appointment_date)
+            );
+            lastAppointmentDate = sortedAppointments[0].appointment_date;
+        }
+
+        return {
+            ...client,
+            pets_count: petsCount,
+            last_appointment_date: lastAppointmentDate
+        };
+    });
 };
 
 export const searchClients = async (searchTerm) => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('role', 'cliente').or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-    if (error) console.error('Error al buscar clientes:', error);
-    return data || [];
-};
+    const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+            *,
+            pets:pets(count),
+            last_appointment:appointments(appointment_date)
+        `)
+        .eq('role', 'cliente')
+        .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+        .order('first_name', { ascending: true });
 
+    if (error) {
+        console.error('Error al buscar clientes:', error);
+        return [];
+    }
+
+    // Procesar datos para agregar conteo de mascotas y última cita
+    return data.map(client => {
+        const petsCount = client.pets?.[0]?.count || 0;
+        
+        // Obtener la fecha de la última cita
+        let lastAppointmentDate = null;
+        if (client.last_appointment && client.last_appointment.length > 0) {
+            const sortedAppointments = client.last_appointment.sort((a, b) => 
+                new Date(b.appointment_date) - new Date(a.appointment_date)
+            );
+            lastAppointmentDate = sortedAppointments[0].appointment_date;
+        }
+
+        return {
+            ...client,
+            pets_count: petsCount,
+            last_appointment_date: lastAppointmentDate
+        };
+    });
+};
 // MODIFICACIÓN CLAVE: Se añade paginación (range) a getAppointments y se invierte el orden a DESC
 export const getAppointments = async (page = 1, itemsPerPage = 10, search = '', status = '', date = '') => {
     const from = (page - 1) * itemsPerPage;
