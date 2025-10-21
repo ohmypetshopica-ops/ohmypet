@@ -1,23 +1,27 @@
 // public/modules/dashboard/dashboard.utils.js
-// VERSIÓN COMPLETA Y FINAL
 
 const createUpcomingAppointmentItem = (appointment) => {
-    const petName = appointment.pets?.name || 'N/A';
-    const petImage = appointment.pets?.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(petName)}&background=A4D0A4&color=FFFFFF`;
+    const petName = appointment.pets?.name || 'Mascota';
     const ownerProfile = appointment.profiles;
     const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
         ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
-        : ownerProfile?.full_name || 'N/A';
-    const dateParts = appointment.appointment_date.split('-');
-    const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-    const formattedDate = date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+        : ownerProfile?.full_name || 'Dueño';
+    
+    const appointmentDate = new Date(appointment.appointment_date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+    const appointmentTime = appointment.appointment_time ? appointment.appointment_time.slice(0, 5) : 'Hora no especificada';
+
     return `
-        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
-            <div>
-                <p class="font-bold text-green-700">${formattedDate} - ${appointment.appointment_time}</p>
-                <p class="text-sm text-gray-600">Mascota: <span class="font-medium">${petName}</span> (Dueño: ${ownerName})</p>
+        <div class="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+            <div class="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
             </div>
-            <a href="/public/modules/dashboard/dashboard-appointments.html" class="text-sm font-medium text-green-600 hover:text-green-800">Ver</a>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-900">${petName}</p>
+                <p class="text-xs text-gray-600">${ownerName}</p>
+                <p class="text-xs text-gray-500">${appointmentDate} a las ${appointmentTime}</p>
+            </div>
         </div>
     `;
 };
@@ -42,7 +46,7 @@ const createClientRow = (client) => {
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${phone}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                <button class="text-indigo-600 hover:text-indigo-900 view-client-btn">Ver Detalles</button>
+                <button class="text-indigo-600 hover:text-indigo-900 view-details-btn" data-client-id="${client.id}">Ver Detalles</button>
             </td>
         </tr>
     `;
@@ -50,10 +54,10 @@ const createClientRow = (client) => {
 
 const createProductRow = (product) => {
     const imageUrl = product.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=D1D5DB&color=FFFFFF`;
-    const productData = JSON.stringify({ id: product.id, name: product.name, description: product.description, price: product.price, stock: product.stock, image_url: product.image_url }).replace(/"/g, '&quot;');
+    const productData = JSON.stringify({ id: product.id, name: product.name, description: product.description, category: product.category, price: product.price, stock: product.stock, image_url: product.image_url }).replace(/"/g, '&quot;');
 
     return `
-        <tr class="hover:bg-gray-50">
+        <tr class="hover:bg-gray-50" data-product-id="${product.id}">
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                     <img src="${imageUrl}" alt="${product.name}" class="h-12 w-12 rounded object-cover">
@@ -62,6 +66,11 @@ const createProductRow = (product) => {
                         <div class="text-sm text-gray-500">${product.description || 'Sin descripción'}</div>
                     </div>
                 </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                    ${product.category || 'Sin categoría'}
+                </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">
                 S/ ${product.price.toFixed(2)}
