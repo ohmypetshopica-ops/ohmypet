@@ -1,3 +1,5 @@
+// public/modules/dashboard/dashboard-appointments.js
+
 import { supabase } from '../../core/supabase.js';
 import { 
     getAppointments,
@@ -214,6 +216,36 @@ const renderAvailableTimes = async () => {
     newAppointmentTimeSelect.disabled = false;
 };
 
+// --- NUEVA FUNCIÓN PARA MANEJAR PARÁMETROS DE URL ---
+const handleUrlParams = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientId = urlParams.get('clientId');
+    const petId = urlParams.get('petId');
+
+    if (clientId && petId) {
+        // Abrir el modal
+        openAddAppointmentModal();
+
+        // Encontrar y seleccionar el cliente
+        const client = clientsWithPets.find(c => c.id === clientId);
+        if (client) {
+            const clientName = (client.first_name && client.last_name) ? `${client.first_name} ${client.last_name}` : client.full_name;
+            clientSearchInputModal.value = clientName;
+            selectedClientIdInput.value = clientId;
+
+            // Llenar el select de mascotas
+            populatePetSelect(clientId);
+            
+            // Seleccionar la mascota correcta
+            petSelect.value = petId;
+        }
+        
+        // Limpiar la URL para no volver a abrir el modal al recargar
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+};
+
+
 const initializeAddAppointmentModal = async () => {
     clientsWithPets = await getClientsWithPets();
 
@@ -324,6 +356,9 @@ const initializeAddAppointmentModal = async () => {
 
         submitButton.disabled = false;
     });
+
+    // LLAMAR A LA FUNCIÓN PARA MANEJAR PARÁMETROS DE URL
+    handleUrlParams();
 };
 
 

@@ -1,3 +1,5 @@
+// public/modules/dashboard/dashboard.api.js
+
 import { supabase } from '../../core/supabase.js';
 
 // --- NUEVA FUNCIÓN PARA NOTIFICACIONES ---
@@ -821,6 +823,50 @@ export const addSale = async (saleData) => {
     }
 
     return { success: true };
+};
+
+/**
+ * Obtiene las mascotas que necesitan una cita.
+ */
+export const getPetsNeedingAppointment = async () => {
+    // 1. Obtiene todas las mascotas que tienen una fecha de último servicio y una frecuencia.
+    const { data: pets, error } = await supabase
+        .from('pets')
+        .select(`
+            id,
+            name,
+            image_url,
+            owner_id,
+            last_grooming_date,
+            reminder_frequency_days,
+            profiles (
+                first_name,
+                last_name,
+                full_name
+            )
+        `)
+        .not('last_grooming_date', 'is', null)
+        .not('reminder_frequency_days', 'is', null);
+
+    if (error) {
+        console.error('Error al obtener mascotas para recordatorios:', error);
+        return [];
+    }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalizar a medianoche para comparar solo fechas
+
+    // 2. Filtra en JavaScript las que ya están "vencidas".
+    const petsNeedingCare = pets.filter(pet => {
+        const lastGrooming = new Date(pet.last_grooming_date + 'T00:00:00');
+        const nextAppointmentDate = new Date(lastGrooming);
+        nextAppointmentDate.setDate(lastGrooming.getDate() + pet.reminder_frequency_days);
+        
+        // Retorna true si la fecha de la próxima cita es hoy o ya pasó.
+        return nextAppointmentDate <= today;
+    });
+
+    return petsNeedingCare;
 };
 // =================== FIN DEL CÓDIGO ===================
 

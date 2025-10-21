@@ -1,3 +1,4 @@
+// public/modules/dashboard/dashboard-pets.js
 import { supabase } from '../../core/supabase.js';
 
 const petsTableBody = document.querySelector('#pets-table-body');
@@ -33,6 +34,34 @@ let allBreeds = [];
 let currentPetData = null;
 let photoFile = null;
 
+// --- FUNCIÓN CORREGIDA PARA CALCULAR ESTADO DE RECORDATORIO ---
+const getReminderStatus = (lastDate, frequency) => {
+    if (!lastDate || !frequency) {
+        return { text: 'Sin configurar', color: 'gray' };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const lastGroomingDate = new Date(lastDate + 'T00:00:00');
+    const nextAppointmentDate = new Date(lastGroomingDate);
+    nextAppointmentDate.setDate(lastGroomingDate.getDate() + frequency);
+
+    const diffTime = nextAppointmentDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 7) {
+        return { text: `Faltan ${diffDays} días`, color: 'blue' };
+    } else if (diffDays > 0) {
+        return { text: `Faltan ${diffDays} días`, color: 'green' };
+    } else if (diffDays === 0) {
+        return { text: 'Cita hoy', color: 'green' };
+    } else {
+        return { text: `Vencido por ${Math.abs(diffDays)} días`, color: 'red' };
+    }
+};
+
+
 const calculateAge = (birthDate) => {
     if (!birthDate) return null;
     const birth = new Date(birthDate);
@@ -48,7 +77,7 @@ const calculateAge = (birthDate) => {
 const getPetsPaginated = async (page = 1, search = '', breeds = []) => {
     const from = (page - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
-    let query = supabase.from('pets').select(`id, name, breed, sex, size, weight, birth_date, image_url, profiles (id, full_name, first_name, last_name)`, { count: 'exact' }).order('created_at', { ascending: false }).range(from, to);
+    let query = supabase.from('pets').select(`id, name, breed, sex, size, weight, birth_date, image_url, last_grooming_date, reminder_frequency_days, profiles (id, full_name, first_name, last_name)`, { count: 'exact' }).order('created_at', { ascending: false }).range(from, to);
     if (search) query = query.or(`name.ilike.%${search}%,breed.ilike.%${search}%`);
     if (breeds.length > 0) query = query.in('breed', breeds);
     const { data, error, count } = await query;
@@ -92,6 +121,15 @@ const createPetRow = (pet) => {
     const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) ? `${ownerProfile.first_name} ${ownerProfile.last_name}` : ownerProfile?.full_name || 'Sin dueño';
     const age = calculateAge(pet.birth_date) || 'N/A';
     const weight = pet.weight ? `${pet.weight} kg` : 'N/A';
+    
+    const reminder = getReminderStatus(pet.last_grooming_date, pet.reminder_frequency_days);
+    const reminderColors = {
+        gray: 'bg-gray-100 text-gray-800',
+        blue: 'bg-blue-100 text-blue-800',
+        green: 'bg-green-100 text-green-800',
+        red: 'bg-red-100 text-red-800',
+    };
+    
     return `
         <tr class="hover:bg-gray-50 transition-colors" data-pet-id="${pet.id}">
             <td class="px-6 py-4">
@@ -104,6 +142,7 @@ const createPetRow = (pet) => {
             <td class="px-6 py-4"><div class="text-sm text-gray-900">${pet.sex || 'N/A'}</div></td>
             <td class="px-6 py-4"><div class="text-sm text-gray-900">${age}</div></td>
             <td class="px-6 py-4"><div class="text-sm text-gray-900">${weight}</div></td>
+            <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${reminderColors[reminder.color]}">${reminder.text}</span></td>
             <td class="px-6 py-4 text-right text-sm font-medium"><button class="text-blue-600 hover:text-blue-900 font-semibold view-details-btn">Ver Detalles</button></td>
         </tr>
     `;
@@ -111,7 +150,7 @@ const createPetRow = (pet) => {
 
 const renderPetsTable = (pets) => {
     if (!petsTableBody) return;
-    petsTableBody.innerHTML = pets.length > 0 ? pets.map(pet => createPetRow(pet)).join('') : '<tr><td colspan="6" class="text-center py-8 text-gray-500">No se encontraron mascotas.</td></tr>';
+    petsTableBody.innerHTML = pets.length > 0 ? pets.map(pet => createPetRow(pet)).join('') : '<tr><td colspan="7" class="text-center py-8 text-gray-500">No se encontraron mascotas.</td></tr>';
 };
 
 const renderPagination = () => {
@@ -134,7 +173,7 @@ const renderPagination = () => {
 };
 
 const loadPets = async () => {
-    petsTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Cargando mascotas...</td></tr>';
+    petsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Cargando mascotas...</td></tr>';
     const { pets, total } = await getPetsPaginated(currentPage, currentSearch, selectedBreeds);
     totalPets = total;
     renderPetsTable(pets);
@@ -202,6 +241,18 @@ const openPetDetailsModal = async (petId) => {
     const ownerProfile = pet.profiles;
     const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) ? `${ownerProfile.first_name} ${ownerProfile.last_name}` : ownerProfile?.full_name || 'Sin dueño asignado';
 
+    const reminder = getReminderStatus(pet.last_grooming_date, pet.reminder_frequency_days);
+    const reminderColors = {
+        gray: 'bg-gray-100 text-gray-800',
+        blue: 'bg-blue-100 text-blue-800',
+        green: 'bg-green-100 text-green-800',
+        red: 'bg-red-100 text-red-800',
+    };
+    const reminderElement = document.querySelector('#modal-pet-reminder');
+    if (reminderElement) {
+        reminderElement.innerHTML = `<span class="px-3 py-1 text-sm font-semibold rounded-full ${reminderColors[reminder.color]}">${reminder.text}</span>`;
+    }
+
     document.querySelector('#modal-pet-name').textContent = pet.name;
     document.querySelector('#modal-pet-breed').textContent = pet.breed || 'Raza no especificada';
     document.querySelector('#modal-pet-breed-detail').textContent = pet.breed || 'No especificada';
@@ -266,6 +317,8 @@ const switchToEditMode = () => {
     document.querySelector('#edit-pet-weight').value = currentPetData.weight || '';
     document.querySelector('#edit-pet-size').value = currentPetData.size || 'Mediano';
     document.querySelector('#edit-pet-observations').value = currentPetData.observations || '';
+    // --- CAMBIO: Poblar el nuevo campo de frecuencia ---
+    document.querySelector('#edit-reminder-frequency').value = currentPetData.reminder_frequency_days || '';
 
     if (editPetImagePreview) {
         editPetImagePreview.src = currentPetData.image_url || `https://via.placeholder.com/150/A4D0A4/FFFFFF?text=${currentPetData.name.charAt(0)}`;
@@ -290,6 +343,7 @@ const switchToViewMode = () => {
 const savePetChanges = async () => {
     const petId = document.querySelector('#edit-pet-id').value;
     
+    // --- CAMBIO: Guardar el valor del nuevo campo de frecuencia ---
     const updates = {
         name: document.querySelector('#edit-pet-name').value.trim(),
         breed: document.querySelector('#edit-pet-breed').value.trim(),
@@ -297,7 +351,8 @@ const savePetChanges = async () => {
         birth_date: document.querySelector('#edit-pet-birth-date').value || null,
         weight: parseFloat(document.querySelector('#edit-pet-weight').value) || null,
         size: document.querySelector('#edit-pet-size').value,
-        observations: document.querySelector('#edit-pet-observations').value.trim() || null
+        observations: document.querySelector('#edit-pet-observations').value.trim() || null,
+        reminder_frequency_days: parseInt(document.querySelector('#edit-reminder-frequency').value) || null
     };
 
     if (!updates.name || !updates.breed) {
