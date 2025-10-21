@@ -15,82 +15,52 @@
         #mobile-menu.active { transform: translateX(0); }
         #mobile-overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
         #mobile-overlay.active { opacity: 1; pointer-events: auto; }
-
-        /* =================== CÓDIGO NUEVO AÑADIDO =================== */
-        /* Estilos para la vista de tabla en móviles (formato de tarjetas) */
-        @media (max-width: 767px) {
-            /* Ocultar la cabecera de la tabla en móvil */
-            .min-w-full thead {
-                display: none;
-            }
-            
-            /* Convertir cada fila de la tabla en una tarjeta */
-            #sales-table-body tr {
-                display: block;
-                margin-bottom: 0.75rem; /* 12px */
-                padding: 1rem; /* 16px */
-                border-radius: 0.5rem; /* 8px */
-                background-color: #ffffff;
-                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-            }
-            
-            /* Hacer que cada celda ocupe todo el ancho y se apile verticalmente */
-            #sales-table-body td {
-                display: block;
-                padding: 0.25rem 0; /* 4px arriba y abajo */
-                white-space: normal !important;
-            }
-            
-            /* --- Diseño personalizado para la tarjeta de venta --- */
-
-            /* Celda del Cliente (td:2): Título principal */
-            #sales-table-body tr td:nth-child(2) {
-                font-weight: bold;
-                font-size: 1.125rem; /* text-lg */
-            }
-
-            /* Celda del Producto (td:3): Subtítulo */
-            #sales-table-body tr td:nth-child(3) {
-                font-size: 0.875rem; /* text-sm */
-                color: #4b5563; /* text-gray-600 */
-                padding-bottom: 0.75rem;
-            }
-            
-            /* Celda del Total (td:4): Precio destacado a la derecha */
-            #sales-table-body tr td:nth-child(4) {
-                font-weight: bold;
-                font-size: 1.25rem; /* text-xl */
-                color: #10B981; /* text-green-600 */
-                text-align: right;
-                padding-top: 0.5rem;
-            }
-            
-            /* Celda de la Fecha (td:1) y Método de Pago (td:5) al final con separador */
-            #sales-table-body tr td:nth-child(1) {
-                font-size: 0.75rem; /* text-xs */
-                color: #6b7280; /* text-gray-500 */
-                padding-top: 0.75rem;
-                margin-top: 0.75rem;
-                border-top: 1px solid #f3f4f6; /* gray-100 */
-            }
-            
-            #sales-table-body tr td:nth-child(5) {
-                font-size: 0.75rem; /* text-xs */
-                color: #6b7280; /* text-gray-500 */
-            }
-        }
-        /* =================== FIN DEL CÓDIGO NUEVO =================== */
     </style>
 </head>
 <body class="bg-gray-50 text-black">
     <div id="mobile-overlay" class="fixed inset-0 bg-black z-40 md:hidden"></div>
-    <div id="mobile-menu" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 md:hidden">
+    
+    <div id="mobile-menu" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 md:hidden overflow-y-auto">
         <div class="h-full flex flex-col">
-            <div class="h-16 flex items-center justify-between px-4 border-b">
-                <span class="text-lg font-bold">OhMyPet</span>
-                <button id="close-mobile-menu" class="p-2">&times;</button>
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-green-50 flex-shrink-0">
+                <div class="flex items-center space-x-2">
+                    <div class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">O</span>
+                    </div>
+                    <span class="text-lg font-bold text-gray-800">OhMyPet</span>
+                </div>
+                <button id="close-mobile-menu" class="p-2 hover:bg-green-100 rounded-lg transition-colors">
+                    <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
-            <nav id="mobile-nav-content" class="flex-1 p-4"></nav>
+            
+            <nav id="mobile-nav-content" class="flex-1 px-3 py-4 space-y-6 overflow-y-auto"></nav>
+            
+            <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-gray-50 flex-shrink-0">
+                <div class="flex items-center px-3 py-2.5 rounded-lg">
+                    <div class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-bold text-sm" id="mobile-user-initial">A</span>
+                    </div>
+                    <div class="ml-3 flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-gray-900 truncate" id="mobile-user-name">Administrador</p>
+                        <p class="text-xs text-gray-500">Admin</p>
+                    </div>
+                </div>
+                <a href="/public" target="_blank" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
+                    <svg class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span>Ir a la Tienda</span>
+                </a>
+                <button id="mobile-logout-button" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
+                    <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -101,7 +71,9 @@
             <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30 shrink-0">
                 <div class="flex items-center space-x-3">
                     <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
                     </button>
                     <h1 class="text-lg md:text-xl font-semibold text-gray-800" id="header-title">Ventas</h1>
                 </div>
@@ -123,13 +95,14 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Productos</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Método de Pago</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="sales-table-body" class="divide-y divide-gray-200">
-                                <tr><td colspan="5" class="text-center py-8 text-gray-500">Cargando ventas...</td></tr>
+                                <tr><td colspan="6" class="text-center py-8 text-gray-500">Cargando ventas...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -138,6 +111,7 @@
         </main>
     </div>
 
+    <!-- MODAL DE AGREGAR VENTA -->
     <div id="sale-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl">
             <form id="sale-form" class="w-full">
@@ -151,14 +125,14 @@
                         <label for="sale-client-search" class="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
                         <input type="text" id="sale-client-search" placeholder="Escribe para buscar un cliente..." class="w-full p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500" autocomplete="off">
                         <input type="hidden" id="sale-client-id" name="client_id" required>
-                        <div id="sale-client-results" class="hidden absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        </div>
+                        <div id="sale-client-results" class="hidden absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto"></div>
                     </div>
 
                     <div>
                         <label for="sale-product" class="block text-sm font-medium text-gray-700 mb-1">Producto *</label>
                         <select id="sale-product" name="product_id" required class="w-full p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500"></select>
                     </div>
+                    
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label for="sale-quantity" class="block text-sm font-medium text-gray-700 mb-1">Cantidad *</label>
@@ -166,22 +140,22 @@
                         </div>
                         <div>
                             <label for="sale-price" class="block text-sm font-medium text-gray-700 mb-1">Precio Total (S/.)</label>
-                            <input type="text" id="sale-price" name="total_price" readonly class="w-full p-2 border border-gray-300 rounded-lg bg-gray-100">
+                            <input type="text" id="sale-price" readonly class="w-full p-2 border border-gray-300 rounded-lg bg-gray-100">
                         </div>
                     </div>
+
                     <div>
-                        <label for="sale-payment" class="block text-sm font-medium text-gray-700 mb-1">Método de Pago *</label>
-                        <select id="sale-payment" name="payment_method" required class="w-full p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
-                            <option value="" disabled selected>Seleccionar...</option>
-                            <option value="Efectivo">Efectivo</option>
-                            <option value="Yape">Yape</option>
-                            <option value="Plin">Plin</option>
-                            <option value="Tarjeta">Tarjeta</option>
-                            <option value="Transferencia">Transferencia</option>
+                        <label for="sale-payment-method" class="block text-sm font-medium text-gray-700 mb-1">Método de Pago *</label>
+                        <select id="sale-payment-method" name="payment_method" required class="w-full p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                            <option value="" disabled selected>Selecciona un método</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="yape">Yape</option>
+                            <option value="plin">Plin</option>
                         </select>
                     </div>
                 </div>
-                <div class="bg-gray-50 p-4 flex justify-end gap-4 rounded-b-2xl">
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                     <button type="button" id="close-sale-modal-button" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Guardar Venta</button>
                 </div>
@@ -189,38 +163,77 @@
         </div>
     </div>
 
+    <!-- MODAL DE DETALLES DE VENTA -->
+    <div id="sale-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Detalles de la Venta</h3>
+                <button id="close-sale-details-btn" class="text-white hover:text-gray-200">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="sale-details-content" class="p-6">
+                <!-- El contenido se carga dinámicamente -->
+            </div>
+            
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t">
+                <button id="delete-sale-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">
+                    Eliminar Venta
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         const CACHE_VERSION = Date.now();
+        
         async function loadComponent(url, containerId) {
             try {
                 const response = await fetch(`${url}?v=${CACHE_VERSION}`, { cache: 'no-store' });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
                 const container = document.getElementById(containerId);
-                if(container) container.innerHTML = html;
-            } catch (error) { console.error(`Error cargando ${url}:`, error); }
+                if (container) container.innerHTML = html;
+            } catch (error) { 
+                console.error(`Error cargando ${url}:`, error); 
+            }
         }
-
+        
         function setupMobileMenu() {
-            const btn = document.getElementById('mobile-menu-button');
-            const closeBtn = document.getElementById('close-mobile-menu');
-            const menu = document.getElementById('mobile-menu');
-            const overlay = document.getElementById('mobile-overlay');
-            if(btn && menu && overlay) {
-                btn.addEventListener('click', () => {
-                    menu.classList.add('active');
-                    overlay.classList.add('active');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const closeMobileMenuButton = document.getElementById('close-mobile-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileOverlay = document.getElementById('mobile-overlay');
+            const mobileNavContent = document.getElementById('mobile-nav-content');
+
+            const toggleMenu = (show) => {
+                if (show) {
+                    mobileMenu.classList.add('active');
+                    mobileOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    mobileMenu.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            };
+
+            mobileMenuButton?.addEventListener('click', () => toggleMenu(true));
+            closeMobileMenuButton?.addEventListener('click', () => toggleMenu(false));
+            mobileOverlay?.addEventListener('click', () => toggleMenu(false));
+
+            const sidebarContainer = document.getElementById('sidebar-container');
+            if (sidebarContainer && sidebarContainer.querySelector('nav')) {
+                const navClone = sidebarContainer.querySelector('nav').cloneNode(true);
+                mobileNavContent.appendChild(navClone);
+                navClone.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 768) toggleMenu(false);
+                    });
                 });
-                closeBtn.addEventListener('click', () => {
-                    menu.classList.remove('active');
-                    overlay.classList.remove('active');
-                });
-                overlay.addEventListener('click', () => {
-                    menu.classList.remove('active');
-                    overlay.classList.remove('active');
-                });
-                const navClone = document.getElementById('sidebar-container')?.querySelector('nav')?.cloneNode(true);
-                if(navClone) document.getElementById('mobile-nav-content').appendChild(navClone);
             }
         }
         

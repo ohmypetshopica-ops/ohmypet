@@ -55,16 +55,30 @@ const getClients = async () => {
 };
 
 const saveSale = async (saleData) => {
+    // Obtener el usuario actual para recorded_by
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Crear múltiples registros de venta (uno por cada producto)
+    const salesRecords = saleData.items.map(item => ({
+        client_id: saleData.client_id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.subtotal,
+        payment_method: saleData.payment_method,
+        recorded_by: user?.id || null
+    }));
+    
     const { data, error } = await supabase
         .from('sales')
-        .insert([saleData])
+        .insert(salesRecords)
         .select();
     
     if (error) {
         console.error('Error al guardar venta:', error);
         return { success: false, error };
     }
-    return { success: true, data: data[0] };
+    return { success: true, data };
 };
 
 const updateProductStock = async (productId, newStock) => {
@@ -339,13 +353,10 @@ const processSale = async () => {
     const paymentMethod = paymentMethodSelect.value;
     
     const saleData = {
-        sale_date: new Date().toISOString().split('T')[0],
-        total_amount: total,
-        payment_method: paymentMethod,
         client_id: customerId,
+        payment_method: paymentMethod,
         items: cart.map(item => ({
             product_id: item.id,
-            product_name: item.name,
             quantity: item.quantity,
             unit_price: item.price,
             subtotal: item.price * item.quantity
@@ -355,12 +366,14 @@ const processSale = async () => {
     const { success, error } = await saveSale(saleData);
     
     if (!success) {
-        alert('Error al procesar la venta');
+        console.error('Error completo:', error);
+        alert('Error al procesar la venta: ' + (error.message || 'Error desconocido'));
         confirmPaymentBtn.disabled = false;
         confirmPaymentBtn.textContent = 'Confirmar Venta';
         return;
     }
     
+    // Actualizar stock de productos
     for (const item of cart) {
         const product = allProducts.find(p => p.id === item.id);
         if (product) {
