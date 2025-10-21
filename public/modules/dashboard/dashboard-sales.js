@@ -1,15 +1,10 @@
 // public/modules/dashboard/dashboard-sales.js
 
 import { supabase } from '../../core/supabase.js';
-import { getSales, addSale, getClients, getProducts } from './dashboard.api.js';
+import { getSales } from './dashboard.api.js';
 
 // --- ELEMENTOS DEL DOM ---
 const salesTableBody = document.querySelector('#sales-table-body');
-const addSaleButton = document.querySelector('#add-sale-button');
-const saleModal = document.querySelector('#sale-modal');
-const closeSaleModalButton = document.querySelector('#close-sale-modal-button');
-const saleForm = document.querySelector('#sale-form');
-const saleFormMessage = document.querySelector('#sale-form-message');
 
 // Modal de detalles
 const saleDetailsModal = document.querySelector('#sale-details-modal');
@@ -17,17 +12,7 @@ const closeSaleDetailsBtn = document.querySelector('#close-sale-details-btn');
 const saleDetailsContent = document.querySelector('#sale-details-content');
 const deleteSaleBtn = document.querySelector('#delete-sale-btn');
 
-// --- CAMPOS DEL FORMULARIO ---
-const clientSearchInput = document.querySelector('#sale-client-search');
-const clientSearchIdInput = document.querySelector('#sale-client-id');
-const clientSearchResults = document.querySelector('#sale-client-results');
-
-const productSelect = document.querySelector('#sale-product');
-const quantityInput = document.querySelector('#sale-quantity');
-const priceInput = document.querySelector('#sale-price');
-
-let allProducts = [];
-let allClients = [];
+// --- VARIABLES GLOBALES ---
 let allSales = [];
 let selectedSaleGroup = null;
 
@@ -222,170 +207,14 @@ const deleteSale = async () => {
     deleteSaleBtn.textContent = 'Eliminar Venta';
 };
 
-// --- LÓGICA DEL MODAL DE AGREGAR ---
-const openModal = async () => {
-    saleForm.reset();
-    saleFormMessage.classList.add('hidden');
-    
-    clientSearchInput.placeholder = 'Cargando clientes...';
-    allClients = await getClients();
-    clientSearchInput.placeholder = 'Escribe para buscar un cliente...';
-
-    productSelect.innerHTML = '<option value="">Cargando productos...</option>';
-    allProducts = await getProducts();
-    productSelect.innerHTML = '<option value="" disabled selected>Selecciona un producto</option>';
-    allProducts.forEach(product => {
-        if (product.stock > 0) {
-            productSelect.innerHTML += `<option value="${product.id}">${product.name} (Stock: ${product.stock})</option>`;
-        }
-    });
-
-    priceInput.value = '';
-    saleModal.classList.remove('hidden');
-};
-
-const closeModal = () => {
-    saleModal.classList.add('hidden');
-};
-
-const updatePrice = () => {
-    const selectedProductId = productSelect.value;
-    const quantity = parseInt(quantityInput.value) || 1;
-    const selectedProduct = allProducts.find(p => p.id === selectedProductId);
-
-    if (selectedProduct) {
-        const totalPrice = selectedProduct.price * quantity;
-        priceInput.value = totalPrice.toFixed(2);
-    } else {
-        priceInput.value = '';
-    }
-};
-
-const renderClientResults = (clients) => {
-    if (clients.length === 0) {
-        clientSearchResults.innerHTML = `<div class="p-3 text-sm text-gray-500">No se encontraron clientes.</div>`;
-    } else {
-        clientSearchResults.innerHTML = clients.map(client => {
-            const displayName = (client.first_name && client.last_name) ? `${client.first_name} ${client.last_name}` : client.full_name;
-            return `<div class="p-3 hover:bg-gray-100 cursor-pointer text-sm" data-client-id="${client.id}" data-client-name="${displayName}">${displayName}</div>`;
-        }).join('');
-    }
-    clientSearchResults.classList.remove('hidden');
-};
-
-const setupClientSearch = () => {
-    clientSearchInput.addEventListener('input', () => {
-        const searchTerm = clientSearchInput.value.toLowerCase();
-        clientSearchIdInput.value = '';
-
-        if (searchTerm.length < 2) {
-            clientSearchResults.classList.add('hidden');
-            return;
-        }
-
-        const matchedClients = allClients.filter(client => {
-            const fullName = ((client.first_name || '') + ' ' + (client.last_name || '')).toLowerCase();
-            return fullName.includes(searchTerm);
-        });
-
-        renderClientResults(matchedClients);
-    });
-
-    clientSearchResults.addEventListener('click', (e) => {
-        const clientDiv = e.target.closest('[data-client-id]');
-        if (clientDiv) {
-            clientSearchInput.value = clientDiv.dataset.clientName;
-            clientSearchIdInput.value = clientDiv.dataset.clientId;
-            clientSearchResults.classList.add('hidden');
-        }
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!clientSearchInput.contains(e.target) && !clientSearchResults.contains(e.target)) {
-            clientSearchResults.classList.add('hidden');
-        }
-    });
-};
-
 // --- INICIALIZACIÓN Y EVENTOS ---
 const initializeSalesPage = async () => {
     await renderSalesTable();
-
-    addSaleButton.addEventListener('click', openModal);
-    closeSaleModalButton.addEventListener('click', closeModal);
-    saleModal.addEventListener('click', (e) => {
-        if (e.target === saleModal) closeModal();
-    });
 
     closeSaleDetailsBtn.addEventListener('click', closeSaleDetails);
     deleteSaleBtn.addEventListener('click', deleteSale);
     saleDetailsModal.addEventListener('click', (e) => {
         if (e.target === saleDetailsModal) closeSaleDetails();
-    });
-
-    productSelect.addEventListener('change', updatePrice);
-    quantityInput.addEventListener('input', updatePrice);
-    
-    setupClientSearch();
-
-    saleForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const submitButton = saleForm.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-        submitButton.textContent = 'Guardando...';
-        saleFormMessage.classList.add('hidden');
-
-        const formData = new FormData(saleForm);
-        const selectedProductId = formData.get('product_id');
-        const selectedProduct = allProducts.find(p => p.id === selectedProductId);
-        const quantity = parseInt(formData.get('quantity'));
-
-        if (!formData.get('client_id') || !selectedProductId || !formData.get('payment_method') || quantity < 1) {
-            saleFormMessage.className = 'p-3 rounded-md bg-red-100 text-red-700 text-sm';
-            saleFormMessage.textContent = 'Error: Por favor, complete todos los campos requeridos.';
-            saleFormMessage.classList.remove('hidden');
-            submitButton.disabled = false;
-            submitButton.textContent = 'Guardar Venta';
-            return;
-        }
-
-        if (quantity > selectedProduct.stock) {
-            alert(`Error: El stock disponible para "${selectedProduct.name}" es de ${selectedProduct.stock} unidades.`);
-            submitButton.disabled = false;
-            submitButton.textContent = 'Guardar Venta';
-            return;
-        }
-
-        const saleData = {
-            client_id: formData.get('client_id'),
-            product_id: selectedProductId,
-            quantity: quantity,
-            unit_price: selectedProduct.price,
-            total_price: selectedProduct.price * quantity,
-            payment_method: formData.get('payment_method')
-        };
-        
-        const { success, error, warning } = await addSale(saleData);
-
-        if (success) {
-            saleFormMessage.className = 'p-3 rounded-md bg-green-100 text-green-700 text-sm';
-            saleFormMessage.textContent = '¡Venta registrada con éxito!';
-            if (warning) {
-                saleFormMessage.textContent += ` (${warning})`;
-            }
-            saleFormMessage.classList.remove('hidden');
-            
-            await renderSalesTable();
-            setTimeout(closeModal, 1500);
-
-        } else {
-            saleFormMessage.className = 'p-3 rounded-md bg-red-100 text-red-700 text-sm';
-            saleFormMessage.textContent = `Error: ${error.message}`;
-            saleFormMessage.classList.remove('hidden');
-        }
-
-        submitButton.disabled = false;
-        submitButton.textContent = 'Guardar Venta';
     });
 };
 
