@@ -28,6 +28,7 @@ const editPetImagePreview = document.querySelector('#edit-pet-image-preview');
 // --- NUEVOS ELEMENTOS DEL MODAL DE EDICIÓN ---
 const editReminderStartDateInput = document.querySelector('#edit-reminder-start-date');
 const editSetLastServiceDateBtn = document.querySelector('#edit-set-last-service-date-btn');
+const toggleReminderBtn = document.querySelector('#toggle-reminder-btn');
 
 let currentPage = 1;
 const itemsPerPage = 10;
@@ -345,6 +346,25 @@ const switchToEditMode = () => {
     // --- CAMBIO: Mapear el valor al nuevo input de fecha de inicio ---
     editReminderStartDateInput.value = currentPetData.last_grooming_date || '';
 
+    // Lógica para el botón de alternancia
+    const isReminderActive = currentPetData.reminder_frequency_days > 0;
+    
+    if (isReminderActive) {
+        toggleReminderBtn.textContent = 'Desactivar Recordatorios';
+        toggleReminderBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+        toggleReminderBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+        editReminderStartDateInput.disabled = false;
+        document.querySelector('#edit-reminder-frequency').disabled = false;
+        editSetLastServiceDateBtn.disabled = false;
+    } else {
+        toggleReminderBtn.textContent = 'Activar Recordatorios';
+        toggleReminderBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+        toggleReminderBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        editReminderStartDateInput.disabled = true;
+        document.querySelector('#edit-reminder-frequency').disabled = true;
+        editSetLastServiceDateBtn.disabled = true;
+    }
+
 
     if (editPetImagePreview) {
         editPetImagePreview.src = currentPetData.image_url || `https://via.placeholder.com/150/A4D0A4/FFFFFF?text=${currentPetData.name.charAt(0)}`;
@@ -470,7 +490,7 @@ const initializePetsSection = async () => {
         });
     }
     
-    // --- NUEVO LISTENER PARA EL BOTÓN DE ÚLTIMA CITA EN EL DASHBOARD ---
+    // --- LISTENER PARA EL BOTÓN DE ÚLTIMA CITA EN EL DASHBOARD ---
     if (editSetLastServiceDateBtn) {
         editSetLastServiceDateBtn.addEventListener('click', async () => {
             editSetLastServiceDateBtn.disabled = true;
@@ -492,7 +512,53 @@ const initializePetsSection = async () => {
             }, 3000);
         });
     }
-    // --- FIN NUEVO LISTENER ---
+    // --- FIN LISTENER ÚLTIMA CITA ---
+
+    // --- LISTENER DE ALTERNANCIA ---
+    if (toggleReminderBtn) {
+        toggleReminderBtn.addEventListener('click', async () => {
+            if (!currentPetData) return;
+
+            const isCurrentlyActive = currentPetData.reminder_frequency_days > 0;
+            const newFrequency = isCurrentlyActive ? null : (parseInt(document.querySelector('#edit-reminder-frequency').value) || 30); // Usar valor actual si existe, sino 30 por defecto
+            const newDate = isCurrentlyActive ? null : (editReminderStartDateInput.value || new Date().toISOString().split('T')[0]);
+            
+            if (!isCurrentlyActive && (!newFrequency || newFrequency < 1)) {
+                alert('Debes ingresar una frecuencia válida para activar los recordatorios.');
+                return;
+            }
+
+            const confirmation = isCurrentlyActive 
+                ? '¿Estás seguro de DESACTIVAR los recordatorios para esta mascota?'
+                : `¿Estás seguro de ACTIVAR los recordatorios con una frecuencia de ${newFrequency} días?`;
+            
+            if (!confirm(confirmation)) return;
+
+            toggleReminderBtn.disabled = true;
+            toggleReminderBtn.textContent = isCurrentlyActive ? 'Desactivando...' : 'Activando...';
+
+            const updates = { 
+                reminder_frequency_days: newFrequency,
+                last_grooming_date: newDate
+            };
+            
+            const result = await updatePet(currentPetData.id, updates);
+
+            if (result.success) {
+                alert(`Recordatorios ${isCurrentlyActive ? 'desactivados' : 'activados'} con éxito.`);
+                
+                // Recargar detalles y actualizar la vista
+                await openPetDetailsModal(currentPetData.id); 
+                await loadPets();
+            } else {
+                alert(`Error al alternar recordatorios: ${result.error?.message || 'Error desconocido'}`);
+            }
+
+            toggleReminderBtn.disabled = false;
+        });
+    }
+    // --- FIN LISTENER DE ALTERNANCIA ---
+
 
     document.addEventListener('click', (e) => {
         if (breedFilterBtn && breedFilterDropdown && !breedFilterBtn.contains(e.target) && !breedFilterDropdown.contains(e.target)) {

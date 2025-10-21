@@ -70,6 +70,7 @@
 
         /* Custom styles for mobile table list simulation (Card View) */
         @media (max-width: 767px) {
+
             /* Transform each table row into a self-contained card */
             #pets-table-body tr {
                 display: block;
@@ -83,24 +84,24 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             /* Make cells block elements within the flex container */
-            #pets-table-body tr > td {
+            #pets-table-body tr>td {
                 display: block;
                 width: 100%;
                 padding: 0.25rem 0;
             }
-            
+
             /* Hide the cells that are not needed for the mobile card (owner, sex, age, weight) */
-            #pets-table-body tr > td:nth-child(2),
-            #pets-table-body tr > td:nth-child(3),
-            #pets-table-body tr > td:nth-child(4),
-            #pets-table-body tr > td:nth-child(5) {
+            #pets-table-body tr>td:nth-child(2),
+            #pets-table-body tr>td:nth-child(3),
+            #pets-table-body tr>td:nth-child(4),
+            #pets-table-body tr>td:nth-child(5) {
                 display: none;
             }
 
             /* Style the main pet info (image/name/breed) and action row */
-            #pets-table-body tr > td:first-child {
+            #pets-table-body tr>td:first-child {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -108,11 +109,12 @@
                 padding-bottom: 0.5rem;
                 margin-bottom: 0.5rem;
             }
-            
+
             /* Style the action cell explicitly (last-child) */
-            #pets-table-body tr > td:last-child {
+            #pets-table-body tr>td:last-child {
                 display: flex;
-                justify-content: flex-end; /* Push button to the right */
+                justify-content: flex-end;
+                /* Push button to the right */
                 text-align: right;
                 padding-top: 0.5rem;
                 border-top: 1px solid #f3f4f6;
@@ -135,14 +137,16 @@
         <div class="h-full flex flex-col">
             <div class="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-green-50">
                 <div class="flex items-center space-x-2">
-                    <div class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                    <div
+                        class="h-8 w-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
                         <span class="text-white font-bold text-sm">O</span>
                     </div>
                     <span class="text-lg font-bold text-gray-800">OhMyPet</span>
                 </div>
                 <button id="close-mobile-menu" class="p-2 hover:bg-green-100 rounded-lg transition-colors">
                     <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
@@ -152,7 +156,8 @@
 
             <div class="px-3 py-3 border-t border-gray-200 space-y-1 bg-gray-50">
                 <div class="flex items-center px-3 py-2.5 rounded-lg">
-                    <div class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div
+                        class="h-9 w-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <span class="text-white font-bold text-sm" id="mobile-user-initial">A</span>
                     </div>
                     <div class="ml-3 flex-1 min-w-0">
@@ -160,15 +165,19 @@
                         <p class="text-xs text-gray-500">Admin</p>
                     </div>
                 </div>
-                <a href="/public" target="_blank" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
+                <a href="/public" target="_blank"
+                    class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50">
                     <svg class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
                     <span>Ir a la Tienda</span>
                 </a>
-                <button id="mobile-logout-button" class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
+                <button id="mobile-logout-button"
+                    class="flex items-center w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">
                     <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                     <span>Cerrar Sesión</span>
                 </button>
@@ -181,9 +190,11 @@
         <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
             <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-30 shrink-0">
                 <div class="flex items-center space-x-3">
-                    <button id="mobile-menu-button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <button id="mobile-menu-button"
+                        class="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
                         <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
                     <h1 class="text-lg md:text-xl font-semibold text-gray-800" id="header-title">Mascotas</h1>
@@ -208,12 +219,13 @@
                             <p class="text-2xl font-bold text-green-600" id="appointments-month-count">-</p>
                         </div>
                     </div>
-                    
+
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-4">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Filtros de Búsqueda</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Buscar por nombre o dueño</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Buscar por nombre o
+                                    dueño</label>
                                 <input type="text" id="pet-search-input" placeholder="Buscar mascota o dueño..."
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                             </div>
@@ -248,17 +260,25 @@
                         <div class="mt-4 flex items-center space-x-2 flex-wrap gap-y-2" id="selected-breeds-tags"></div>
                     </div>
 
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto md:overflow-x-visible">
+                    <div
+                        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto md:overflow-x-visible">
                         <table class="w-full md:table">
                             <thead class="bg-gray-50 md:table-header-group">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mascota</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dueño</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sexo</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Edad</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Peso</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Próxima Cita</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mascota
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dueño
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sexo
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Edad
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Peso
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Próxima
+                                        Cita</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                        Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="pets-table-body" class="divide-y divide-gray-200 md:table-row-group">
@@ -347,48 +367,56 @@
 
                 <form id="pet-edit-mode" class="hidden space-y-4">
                     <input type="hidden" id="edit-pet-id">
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Foto de la Mascota</label>
                         <div class="flex items-center space-x-4">
-                            <img id="edit-pet-image-preview" src="" alt="Vista previa" class="h-20 w-20 rounded-full object-cover border-2 border-gray-300">
-                            <input type="file" id="edit-pet-photo" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer">
+                            <img id="edit-pet-image-preview" src="" alt="Vista previa"
+                                class="h-20 w-20 rounded-full object-cover border-2 border-gray-300">
+                            <input type="file" id="edit-pet-photo" accept="image/*"
+                                class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer">
                         </div>
                     </div>
-                    
+
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                            <input type="text" id="edit-pet-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <input type="text" id="edit-pet-name" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Raza *</label>
-                            <input type="text" id="edit-pet-breed" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <input type="text" id="edit-pet-breed" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
-                            <select id="edit-pet-sex" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                            <select id="edit-pet-sex"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
                                 <option value="Macho">Macho</option>
                                 <option value="Hembra">Hembra</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
-                            <input type="date" id="edit-pet-birth-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <input type="date" id="edit-pet-birth-date"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
-                            <input type="number" id="edit-pet-weight" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <input type="number" id="edit-pet-weight" step="0.1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
-                            <select id="edit-pet-size" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                            <select id="edit-pet-size"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
                                 <option value="Pequeño">Pequeño</option>
                                 <option value="Mediano">Mediano</option>
                                 <option value="Grande">Grande</option>
@@ -397,24 +425,43 @@
                     </div>
 
                     <div class="pt-4 border-t">
-                         <h3 class="text-lg font-semibold text-gray-800 mb-3">Configuración de Recordatorios</h3>
-                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Configuración de Recordatorios</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="edit-reminder-frequency" class="block text-sm font-medium text-gray-700 mb-1">Frecuencia de Recordatorio (días)</label>
-                                <input type="number" id="edit-reminder-frequency" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Ej: 30">
+                                <label for="edit-reminder-frequency"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Frecuencia de Recordatorio
+                                    (días)</label>
+                                <input type="number" id="edit-reminder-frequency"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                    placeholder="Ej: 30">
                             </div>
                             <div>
-                                <label for="edit-reminder-start-date" class="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio del Recordatorio</label>
-                                <input type="date" id="edit-reminder-start-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                                <button type="button" id="edit-set-last-service-date-btn" class="mt-1 text-xs text-blue-600 hover:text-blue-800 font-semibold disabled:text-gray-400">Usar Última Cita Completada</button>
-                                 <p class="text-xs text-gray-500 mt-1">Es la fecha base para calcular cuándo enviar el recordatorio de la próxima cita.</p>
+                                <label for="edit-reminder-start-date"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio del
+                                    Recordatorio</label>
+                                <input type="date" id="edit-reminder-start-date"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                <button type="button" id="edit-set-last-service-date-btn"
+                                    class="mt-1 text-xs text-blue-600 hover:text-blue-800 font-semibold disabled:text-gray-400">Usar
+                                    Última Cita Completada</button>
+                                <p class="text-xs text-gray-500 mt-1">Es la fecha base para calcular cuándo enviar el
+                                    recordatorio de la próxima cita.</p>
                             </div>
-                         </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" id="toggle-reminder-btn"
+                                class="w-full py-2 px-4 rounded-lg font-bold transition-colors text-white bg-red-500 hover:bg-red-600">
+                                Desactivar Recordatorios
+                            </button>
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                        <textarea id="edit-pet-observations" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></textarea>
-                    </div>
+                        ...
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                            <textarea id="edit-pet-observations" rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></textarea>
+                        </div>
                 </form>
             </div>
 
@@ -428,10 +475,12 @@
                         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                         Editar
                     </button>
-                    <button id="save-pet-btn" class="hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <button id="save-pet-btn"
+                        class="hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                         Guardar
                     </button>
-                    <button id="cancel-edit-btn" class="hidden px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors">
+                    <button id="cancel-edit-btn"
+                        class="hidden px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors">
                         Cancelar
                     </button>
                 </div>
