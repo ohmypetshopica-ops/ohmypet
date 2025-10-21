@@ -238,6 +238,14 @@ const populateModal = (details) => {
     currentClientProfile = details; // Guardar detalles en caché
     const { profile, pets, appointments } = details;
 
+    // ================== INICIO DE LA CORRECCIÓN ==================
+    // Filtramos las mascotas para asegurarnos de que no haya duplicados por ID
+    // Esto previene que se muestren mascotas duplicadas si hay un error en los datos.
+    const uniquePets = pets.filter((pet, index, self) =>
+        index === self.findIndex((p) => p.id === pet.id)
+    );
+    // =================== FIN DE LA CORRECCIÓN ====================
+
     const displayName = (profile.first_name && profile.last_name) 
         ? `${profile.first_name} ${profile.last_name}` 
         : profile.full_name;
@@ -260,10 +268,10 @@ const populateModal = (details) => {
 
             <div>
                 <div class="flex justify-between items-center mb-3 border-b pb-2">
-                    <h3 class="text-lg font-semibold text-gray-800">Mascotas Registradas (${pets.length})</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">Mascotas Registradas (${uniquePets.length})</h3>
                 </div>
                 <div class="space-y-3">
-                    ${pets.length > 0 ? pets.map(pet => `
+                    ${uniquePets.length > 0 ? uniquePets.map(pet => `
                         <div class="bg-gray-50 p-3 rounded-lg flex items-center gap-4 border border-gray-200">
                             <img src="${pet.image_url || 'https://via.placeholder.com/40'}" alt="${pet.name}" class="h-12 w-12 rounded-full object-cover">
                             <div>
