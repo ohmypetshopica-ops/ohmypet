@@ -26,9 +26,12 @@ const editPetPhoto = document.querySelector('#edit-pet-photo');
 const editPetImagePreview = document.querySelector('#edit-pet-image-preview');
 
 // --- NUEVOS ELEMENTOS DEL MODAL DE EDICIÓN ---
+const editReminderFrequencyInput = document.querySelector('#edit-reminder-frequency');
 const editReminderStartDateInput = document.querySelector('#edit-reminder-start-date');
 const editSetLastServiceDateBtn = document.querySelector('#edit-set-last-service-date-btn');
-const toggleReminderBtn = document.querySelector('#toggle-reminder-btn');
+const reminderFieldsContainer = document.querySelector('#reminder-fields-container');
+const toggleReminderInput = document.querySelector('#toggle-reminder-input');
+const toggleReminderLabel = document.querySelector('#toggle-reminder-label');
 
 let currentPage = 1;
 const itemsPerPage = 10;
@@ -331,6 +334,32 @@ const openPetDetailsModal = async (petId) => {
     petDetailsModal.classList.remove('hidden');
 };
 
+const toggleReminderFields = (enable) => {
+    if (reminderFieldsContainer) {
+        reminderFieldsContainer.querySelectorAll('input, select, button').forEach(el => {
+            el.disabled = !enable;
+            el.classList.toggle('bg-gray-50', !enable);
+        });
+    }
+    if (toggleReminderLabel) {
+        toggleReminderLabel.textContent = enable ? 'Activado' : 'Desactivado';
+        // Asume que los estilos del switch se manejan con la clase sr-only y :checked
+        const dot = document.querySelector('#toggle-reminder-input + div .dot');
+        const track = document.querySelector('#toggle-reminder-input + div');
+        if (dot && track) {
+            if (enable) {
+                track.classList.add('bg-green-600');
+                track.classList.remove('bg-gray-300');
+                dot.classList.add('translate-x-full');
+            } else {
+                track.classList.add('bg-gray-300');
+                track.classList.remove('bg-green-600');
+                dot.classList.remove('translate-x-full');
+            }
+        }
+    }
+};
+
 const switchToEditMode = () => {
     if (!currentPetData) return;
 
@@ -343,28 +372,11 @@ const switchToEditMode = () => {
     document.querySelector('#edit-pet-size').value = currentPetData.size || 'Mediano';
     document.querySelector('#edit-pet-observations').value = currentPetData.observations || '';
     document.querySelector('#edit-reminder-frequency').value = currentPetData.reminder_frequency_days || '';
-    // --- CAMBIO: Mapear el valor al nuevo input de fecha de inicio ---
     editReminderStartDateInput.value = currentPetData.last_grooming_date || '';
 
-    // Lógica para el botón de alternancia
     const isReminderActive = currentPetData.reminder_frequency_days > 0;
-    
-    if (isReminderActive) {
-        toggleReminderBtn.textContent = 'Desactivar Recordatorios';
-        toggleReminderBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-        toggleReminderBtn.classList.add('bg-red-500', 'hover:bg-red-600');
-        editReminderStartDateInput.disabled = false;
-        document.querySelector('#edit-reminder-frequency').disabled = false;
-        editSetLastServiceDateBtn.disabled = false;
-    } else {
-        toggleReminderBtn.textContent = 'Activar Recordatorios';
-        toggleReminderBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
-        toggleReminderBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-        editReminderStartDateInput.disabled = true;
-        document.querySelector('#edit-reminder-frequency').disabled = true;
-        editSetLastServiceDateBtn.disabled = true;
-    }
-
+    if (toggleReminderInput) toggleReminderInput.checked = isReminderActive;
+    toggleReminderFields(isReminderActive);
 
     if (editPetImagePreview) {
         editPetImagePreview.src = currentPetData.image_url || `https://via.placeholder.com/150/A4D0A4/FFFFFF?text=${currentPetData.name.charAt(0)}`;
@@ -388,8 +400,23 @@ const switchToViewMode = () => {
 
 const savePetChanges = async () => {
     const petId = document.querySelector('#edit-pet-id').value;
+    const isReminderActive = toggleReminderInput ? toggleReminderInput.checked : false;
     
-    // --- CAMBIO: Guardar el valor del nuevo campo de fecha de inicio ---
+    // Si no está activo, la frecuencia y fecha se guardan como NULL.
+    let reminderFrequency = null;
+    let reminderStartDate = null;
+
+    if (isReminderActive) {
+        reminderFrequency = parseInt(editReminderFrequencyInput.value) || null;
+        reminderStartDate = editReminderStartDateInput.value || null;
+        
+        if (reminderFrequency === null || reminderFrequency < 1) {
+            alert('Debes ingresar una frecuencia válida (mayor a 0) para guardar los recordatorios activos.');
+            return;
+        }
+    }
+
+
     const updates = {
         name: document.querySelector('#edit-pet-name').value.trim(),
         breed: document.querySelector('#edit-pet-breed').value.trim(),
@@ -398,8 +425,8 @@ const savePetChanges = async () => {
         weight: parseFloat(document.querySelector('#edit-pet-weight').value) || null,
         size: document.querySelector('#edit-pet-size').value,
         observations: document.querySelector('#edit-pet-observations').value.trim() || null,
-        reminder_frequency_days: parseInt(document.querySelector('#edit-reminder-frequency').value) || null,
-        last_grooming_date: editReminderStartDateInput.value || null
+        reminder_frequency_days: reminderFrequency,
+        last_grooming_date: reminderStartDate
     };
 
     if (!updates.name || !updates.breed) {
@@ -514,50 +541,13 @@ const initializePetsSection = async () => {
     }
     // --- FIN LISTENER ÚLTIMA CITA ---
 
-    // --- LISTENER DE ALTERNANCIA ---
-    if (toggleReminderBtn) {
-        toggleReminderBtn.addEventListener('click', async () => {
-            if (!currentPetData) return;
-
-            const isCurrentlyActive = currentPetData.reminder_frequency_days > 0;
-            const newFrequency = isCurrentlyActive ? null : (parseInt(document.querySelector('#edit-reminder-frequency').value) || 30); // Usar valor actual si existe, sino 30 por defecto
-            const newDate = isCurrentlyActive ? null : (editReminderStartDateInput.value || new Date().toISOString().split('T')[0]);
-            
-            if (!isCurrentlyActive && (!newFrequency || newFrequency < 1)) {
-                alert('Debes ingresar una frecuencia válida para activar los recordatorios.');
-                return;
-            }
-
-            const confirmation = isCurrentlyActive 
-                ? '¿Estás seguro de DESACTIVAR los recordatorios para esta mascota?'
-                : `¿Estás seguro de ACTIVAR los recordatorios con una frecuencia de ${newFrequency} días?`;
-            
-            if (!confirm(confirmation)) return;
-
-            toggleReminderBtn.disabled = true;
-            toggleReminderBtn.textContent = isCurrentlyActive ? 'Desactivando...' : 'Activando...';
-
-            const updates = { 
-                reminder_frequency_days: newFrequency,
-                last_grooming_date: newDate
-            };
-            
-            const result = await updatePet(currentPetData.id, updates);
-
-            if (result.success) {
-                alert(`Recordatorios ${isCurrentlyActive ? 'desactivados' : 'activados'} con éxito.`);
-                
-                // Recargar detalles y actualizar la vista
-                await openPetDetailsModal(currentPetData.id); 
-                await loadPets();
-            } else {
-                alert(`Error al alternar recordatorios: ${result.error?.message || 'Error desconocido'}`);
-            }
-
-            toggleReminderBtn.disabled = false;
+    // --- LISTENER PARA EL SWITCH DE ALTERNANCIA ---
+    if (toggleReminderInput) {
+        toggleReminderInput.addEventListener('change', (e) => {
+            toggleReminderFields(e.target.checked);
         });
     }
-    // --- FIN LISTENER DE ALTERNANCIA ---
+    // --- FIN LISTENER PARA EL SWITCH DE ALTERNANCIA ---
 
 
     document.addEventListener('click', (e) => {
