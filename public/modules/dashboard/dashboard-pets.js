@@ -25,6 +25,10 @@ const petEditMode = document.querySelector('#pet-edit-mode');
 const editPetPhoto = document.querySelector('#edit-pet-photo');
 const editPetImagePreview = document.querySelector('#edit-pet-image-preview');
 
+// --- NUEVOS ELEMENTOS DEL MODAL DE EDICIÓN ---
+const editReminderStartDateInput = document.querySelector('#edit-reminder-start-date');
+const editSetLastServiceDateBtn = document.querySelector('#edit-set-last-service-date-btn');
+
 let currentPage = 1;
 const itemsPerPage = 10;
 let totalPets = 0;
@@ -33,6 +37,26 @@ let selectedBreeds = [];
 let allBreeds = [];
 let currentPetData = null;
 let photoFile = null;
+
+// --- FUNCIÓN ADICIONAL PARA OBTENER ÚLTIMA CITA COMPLETADA ---
+const getPetLastServiceDate = async (petId) => {
+    const { data, error } = await supabase
+        .from('appointments')
+        .select('appointment_date')
+        .eq('pet_id', petId)
+        .eq('status', 'completada')
+        .order('appointment_date', { ascending: false })
+        .limit(1)
+        .single();
+    
+    if (error && error.code !== 'PGRST116') {
+        console.error('Error al obtener la última fecha de servicio:', error);
+        return null;
+    }
+    
+    return data ? data.appointment_date : null;
+};
+
 
 // --- FUNCIÓN CORREGIDA PARA CALCULAR ESTADO DE RECORDATORIO ---
 const getReminderStatus = (lastDate, frequency) => {
@@ -88,7 +112,7 @@ const getPetsPaginated = async (page = 1, search = '', breeds = []) => {
 const getPetDetails = async (petId) => {
     const { data, error } = await supabase.from('pets').select(`*, profiles (id, full_name, first_name, last_name), appointments (id, appointment_date, appointment_time, service, status)`).eq('id', petId).single();
     if (error) { console.error('Error al obtener detalles de la mascota:', error); return null; }
-    if (data.appointments) data.appointments.sort((a, b) => new Date(`${b.appointment_date}T${b.appointment_time}`) - new Date(`${a.appointment_date}T${a.appointment_time}`));
+    if (data.appointments) data.appointments.sort((a, b) => new Date(`${b.appointment_date}T${b.appointment_time}`) - new Date(`${b.appointment_date}T${b.appointment_time}`));
     return data;
 };
 
@@ -317,8 +341,10 @@ const switchToEditMode = () => {
     document.querySelector('#edit-pet-weight').value = currentPetData.weight || '';
     document.querySelector('#edit-pet-size').value = currentPetData.size || 'Mediano';
     document.querySelector('#edit-pet-observations').value = currentPetData.observations || '';
-    // --- CAMBIO: Poblar el nuevo campo de frecuencia ---
     document.querySelector('#edit-reminder-frequency').value = currentPetData.reminder_frequency_days || '';
+    // --- CAMBIO: Mapear el valor al nuevo input de fecha de inicio ---
+    editReminderStartDateInput.value = currentPetData.last_grooming_date || '';
+
 
     if (editPetImagePreview) {
         editPetImagePreview.src = currentPetData.image_url || `https://via.placeholder.com/150/A4D0A4/FFFFFF?text=${currentPetData.name.charAt(0)}`;
@@ -343,7 +369,7 @@ const switchToViewMode = () => {
 const savePetChanges = async () => {
     const petId = document.querySelector('#edit-pet-id').value;
     
-    // --- CAMBIO: Guardar el valor del nuevo campo de frecuencia ---
+    // --- CAMBIO: Guardar el valor del nuevo campo de fecha de inicio ---
     const updates = {
         name: document.querySelector('#edit-pet-name').value.trim(),
         breed: document.querySelector('#edit-pet-breed').value.trim(),
@@ -352,7 +378,8 @@ const savePetChanges = async () => {
         weight: parseFloat(document.querySelector('#edit-pet-weight').value) || null,
         size: document.querySelector('#edit-pet-size').value,
         observations: document.querySelector('#edit-pet-observations').value.trim() || null,
-        reminder_frequency_days: parseInt(document.querySelector('#edit-reminder-frequency').value) || null
+        reminder_frequency_days: parseInt(document.querySelector('#edit-reminder-frequency').value) || null,
+        last_grooming_date: editReminderStartDateInput.value || null
     };
 
     if (!updates.name || !updates.breed) {
@@ -442,6 +469,30 @@ const initializePetsSection = async () => {
             }
         });
     }
+    
+    // --- NUEVO LISTENER PARA EL BOTÓN DE ÚLTIMA CITA EN EL DASHBOARD ---
+    if (editSetLastServiceDateBtn) {
+        editSetLastServiceDateBtn.addEventListener('click', async () => {
+            editSetLastServiceDateBtn.disabled = true;
+            editSetLastServiceDateBtn.textContent = 'Buscando...';
+            
+            const lastDate = await getPetLastServiceDate(currentPetData.id);
+            
+            if (lastDate) {
+                editReminderStartDateInput.value = lastDate;
+                editSetLastServiceDateBtn.textContent = '¡Fecha establecida! (Usar Última Cita Completada)';
+            } else {
+                editSetLastServiceDateBtn.textContent = 'No se encontró cita completada.';
+                editReminderStartDateInput.value = '';
+            }
+
+            setTimeout(() => {
+                editSetLastServiceDateBtn.textContent = 'Usar Última Cita Completada';
+                editSetLastServiceDateBtn.disabled = false;
+            }, 3000);
+        });
+    }
+    // --- FIN NUEVO LISTENER ---
 
     document.addEventListener('click', (e) => {
         if (breedFilterBtn && breedFilterDropdown && !breedFilterBtn.contains(e.target) && !breedFilterDropdown.contains(e.target)) {
@@ -457,8 +508,10 @@ const initializePetsSection = async () => {
 
     if (petsTableBody) {
         petsTableBody.addEventListener('click', async (e) => {
-            if (e.target.classList.contains('view-details-btn')) {
-                const row = e.target.closest('tr');
+            // FIX: Usar closest para asegurar que encontramos el botón o el elemento que lo contiene
+            const button = e.target.closest('.view-details-btn');
+            if (button) {
+                const row = button.closest('tr');
                 const petId = row.dataset.petId;
                 await openPetDetailsModal(petId);
             }

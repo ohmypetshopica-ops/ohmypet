@@ -1,4 +1,5 @@
-import { supabase } from './profile.api.js';
+// public/modules/profile/pet-details.js
+import { supabase, getPetLastServiceDate } from './profile.api.js';
 
 // --- ELEMENTOS DEL DOM ---
 const petNameTitle = document.querySelector('#pet-name-title');
@@ -16,7 +17,8 @@ const hiddenSexInput = document.querySelector('input#sex');
 const birthDateInput = document.querySelector('#birth_date');
 const calculatedAgeSpan = document.querySelector('#calculated-age');
 const reminderFrequencyInput = document.querySelector('#reminder_frequency_days');
-const lastGroomingDateInput = document.querySelector('#last_grooming_date');
+const reminderStartDateInput = document.querySelector('#reminder_start_date_input'); // Cambiado de last_grooming_date_input
+const setLastServiceDateBtn = document.querySelector('#set-last-service-date-btn');
 
 // --- ID DE LA MASCOTA DESDE LA URL ---
 const urlParams = new URLSearchParams(window.location.search);
@@ -96,7 +98,8 @@ const loadPetDetails = async () => {
     if (birthDateInput) birthDateInput.value = pet.birth_date || '';
     
     if (reminderFrequencyInput) reminderFrequencyInput.value = pet.reminder_frequency_days || '';
-    if (lastGroomingDateInput) lastGroomingDateInput.value = pet.last_grooming_date || '';
+    // Mapear al nuevo ID
+    if (reminderStartDateInput) reminderStartDateInput.value = pet.last_grooming_date || ''; 
 
     updateCalculatedAge();
 
@@ -170,6 +173,30 @@ if (photoUploadInput) {
     });
 }
 
+// --- NUEVO LISTENER PARA EL BOTÓN DE ÚLTIMA CITA ---
+if (setLastServiceDateBtn) {
+    setLastServiceDateBtn.addEventListener('click', async () => {
+        setLastServiceDateBtn.disabled = true;
+        setLastServiceDateBtn.textContent = 'Buscando...';
+        
+        const lastDate = await getPetLastServiceDate(petId);
+        
+        if (lastDate) {
+            reminderStartDateInput.value = lastDate;
+            setLastServiceDateBtn.textContent = '¡Fecha establecida! (Usar Última Cita Completada)';
+        } else {
+            setLastServiceDateBtn.textContent = 'No se encontró cita completada.';
+            reminderStartDateInput.value = '';
+        }
+
+        setTimeout(() => {
+            setLastServiceDateBtn.textContent = 'Usar Última Cita Completada';
+            setLastServiceDateBtn.disabled = false;
+        }, 3000);
+    });
+}
+
+
 editPetForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -182,7 +209,7 @@ editPetForm.addEventListener('submit', async (e) => {
         birth_date: birthDateInput.value || null,
         observations: document.querySelector('#observations').value,
         reminder_frequency_days: parseInt(reminderFrequencyInput.value) || null,
-        last_grooming_date: lastGroomingDateInput.value || null
+        last_grooming_date: reminderStartDateInput.value || null // Usa el valor del nuevo campo
     };
 
     if (photoFile) {

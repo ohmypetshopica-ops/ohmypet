@@ -1,3 +1,5 @@
+// public/modules/profile/profile.api.js
+
 import { supabase } from '../../core/supabase.js';
 
 export const getUserProfile = async (userId) => {
@@ -86,6 +88,25 @@ export const rescheduleAppointment = async (appointmentId, newDate, newTime) => 
         return { success: false, error };
     }
     return { success: true, data: data[0] };
+};
+
+// --- NUEVA FUNCIÓN ---
+export const getPetLastServiceDate = async (petId) => {
+    const { data, error } = await supabase
+        .from('appointments')
+        .select('appointment_date')
+        .eq('pet_id', petId)
+        .eq('status', 'completada')
+        .order('appointment_date', { ascending: false })
+        .limit(1)
+        .single();
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 is no rows found
+        console.error('Error al obtener la última fecha de servicio:', error);
+        return null;
+    }
+    
+    return data ? data.appointment_date : null;
 };
 
 export { supabase };

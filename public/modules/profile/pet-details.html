@@ -138,11 +138,12 @@
                         <input type="number" id="reminder_frequency_days" name="reminder_frequency_days" min="1" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ej: 30">
                     </div>
                     <div>
-                        <label for="last_grooming_date" class="block text-sm font-medium text-gray-700 mb-1">Fecha del Último Baño</label>
-                        <input type="date" id="last_grooming_date" name="last_grooming_date" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+                        <label for="reminder_start_date_input" class="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio del Recordatorio</label>
+                        <input type="date" id="reminder_start_date_input" name="last_grooming_date" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+                        <button type="button" id="set-last-service-date-btn" class="mt-1 text-xs text-blue-600 hover:text-blue-800 font-semibold disabled:text-gray-400">Usar Última Cita Completada</button>
                     </div>
                 </div>
-                 <p class="text-xs text-gray-500 mt-2">La "Fecha del Último Baño" se actualizará automáticamente cada vez que completes un servicio para esta mascota en el dashboard.</p>
+                 <p class="text-xs text-gray-500 mt-2">La "Fecha de Inicio del Recordatorio" es la fecha base para calcular cuándo enviar el recordatorio de la próxima cita. Puedes actualizarla manualmente o usar la fecha de tu última cita.</p>
             </div>
             <div>
                 <label for="observations" class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
