@@ -2,7 +2,13 @@
 
 import { supabase } from '../../core/supabase.js';
 // IMPORTACIONES ADICIONALES para manejar la lógica del modal de completar cita
-import { uploadAppointmentPhoto, uploadReceiptFile } from '../dashboard/dashboard.api.js';
+import { 
+    uploadAppointmentPhoto, 
+    uploadReceiptFile,
+    getClientsWithPets,
+    getBookedTimesForDashboard,
+    addAppointmentFromDashboard 
+} from '../dashboard/dashboard.api.js';
 import { addWeightRecord } from '../dashboard/pet-weight.api.js';
 
 
@@ -51,6 +57,206 @@ let allPets = [];
 let monthlyAppointments = [];
 let allAppointments = [];
 let currentDate = new Date();
+let clientsWithPets = []; // Nueva variable global
+
+
+// --- INICIO: LÓGICA DEL MODAL PARA AGENDAR CITAS (NUEVO) ---
+
+const addAppointmentBtnEmployee = document.querySelector('#add-appointment-btn-employee');
+const addAppointmentModal = document.querySelector('#add-appointment-modal-employee');
+const addAppointmentForm = document.querySelector('#add-appointment-form-employee');
+const cancelAddAppointmentBtn = document.querySelector('#cancel-add-appointment-btn-employee');
+const petSelect = document.querySelector('#pet-select-employee');
+const newAppointmentDateInput = document.querySelector('#new-appointment-date-employee');
+const newAppointmentTimeSelect = document.querySelector('#new-appointment-time-employee');
+const addAppointmentMessage = document.querySelector('#add-appointment-message-employee');
+const clientSearchInputModal = document.querySelector('#client-search-input-modal-employee');
+const clientSearchResults = document.querySelector('#client-search-results-employee');
+const selectedClientIdInput = document.querySelector('#selected-client-id-employee');
+
+const openAddAppointmentModal = () => {
+    addAppointmentForm.reset();
+    clientSearchInputModal.value = '';
+    selectedClientIdInput.value = '';
+    petSelect.innerHTML = '<option>Selecciona un cliente primero</option>';
+    petSelect.disabled = true;
+    newAppointmentTimeSelect.innerHTML = '<option>Selecciona una fecha</option>';
+    newAppointmentTimeSelect.disabled = true;
+    addAppointmentMessage.classList.add('hidden');
+    clientSearchResults.classList.add('hidden');
+    addAppointmentModal.classList.remove('hidden');
+};
+
+const closeAddAppointmentModal = () => {
+    addAppointmentModal.classList.add('hidden');
+};
+
+const populatePetSelect = (clientId) => {
+    const selectedClient = clientsWithPets.find(c => c.id === clientId);
+
+    if (selectedClient && selectedClient.pets.length > 0) {
+        petSelect.innerHTML = '<option value="">Selecciona una mascota...</option>';
+        selectedClient.pets.forEach(pet => {
+            const option = new Option(pet.name, pet.id);
+            petSelect.add(option);
+        });
+        petSelect.disabled = false;
+    } else {
+        petSelect.innerHTML = '<option>Este cliente no tiene mascotas registradas</option>';
+        petSelect.disabled = true;
+    }
+};
+
+const renderClientSearchResults = (clients) => {
+    if (clients.length === 0) {
+        clientSearchResults.innerHTML = `<div class="p-3 text-sm text-gray-500">No se encontraron clientes.</div>`;
+    } else {
+        clientSearchResults.innerHTML = clients.map(client => {
+            const displayName = (client.first_name && client.last_name) ? `${client.first_name} ${client.last_name}` : client.full_name;
+            return `<div class="p-3 hover:bg-gray-100 cursor-pointer text-sm" data-client-id="${client.id}" data-client-name="${displayName}">${displayName}</div>`;
+        }).join('');
+    }
+    clientSearchResults.classList.remove('hidden');
+};
+
+const renderAvailableTimes = async () => {
+    const selectedDate = newAppointmentDateInput.value;
+    if (!selectedDate) {
+        newAppointmentTimeSelect.innerHTML = '<option>Selecciona una fecha</option>';
+        newAppointmentTimeSelect.disabled = true;
+        return;
+    }
+
+    newAppointmentTimeSelect.innerHTML = '<option>Cargando...</option>';
+    const bookedTimes = await getBookedTimesForDashboard(selectedDate);
+    const hours = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"];
+    
+    newAppointmentTimeSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
+    hours.forEach(hour => {
+        if (!bookedTimes.includes(hour)) {
+            const option = new Option(hour, hour + ':00');
+            newAppointmentTimeSelect.add(option);
+        }
+    });
+    newAppointmentTimeSelect.disabled = false;
+};
+
+const initializeAddAppointmentModal = async () => {
+    clientsWithPets = await getClientsWithPets();
+
+    addAppointmentBtnEmployee.addEventListener('click', openAddAppointmentModal);
+    cancelAddAppointmentBtn.addEventListener('click', closeAddAppointmentModal);
+    addAppointmentModal.addEventListener('click', (e) => {
+        if (e.target === addAppointmentModal) closeAddAppointmentModal();
+    });
+
+    clientSearchInputModal.addEventListener('input', () => {
+        const searchTerm = clientSearchInputModal.value.toLowerCase();
+        
+        petSelect.innerHTML = '<option>Selecciona un cliente primero</option>';
+        petSelect.disabled = true;
+        selectedClientIdInput.value = '';
+
+        if (searchTerm.length < 1) {
+            clientSearchResults.classList.add('hidden');
+            return;
+        }
+
+        const matchedClients = clientsWithPets.filter(client => {
+            const fullName = ((client.first_name || '') + ' ' + (client.last_name || '')).toLowerCase();
+            return fullName.includes(searchTerm);
+        });
+
+        renderClientSearchResults(matchedClients);
+    });
+
+    clientSearchResults.addEventListener('click', (e) => {
+        const clientDiv = e.target.closest('[data-client-id]');
+        if (clientDiv) {
+            const clientId = clientDiv.dataset.clientId;
+            const clientName = clientDiv.dataset.clientName;
+
+            clientSearchInputModal.value = clientName;
+            selectedClientIdInput.value = clientId;
+
+            clientSearchResults.classList.add('hidden');
+            populatePetSelect(clientId);
+        }
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!clientSearchInputModal.contains(e.target) && !clientSearchResults.contains(e.target)) {
+            clientSearchResults.classList.add('hidden');
+        }
+    });
+
+    newAppointmentDateInput.addEventListener('change', renderAvailableTimes);
+
+    addAppointmentForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitButton = addAppointmentForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+
+        const formData = new FormData(addAppointmentForm);
+        const serviceValue = formData.get('service');
+        const notesValue = formData.get('notes');
+        
+        const appointmentData = {
+            user_id: formData.get('user_id'),
+            pet_id: formData.get('pet_id'),
+            appointment_date: formData.get('appointment_date'),
+            appointment_time: formData.get('appointment_time'),
+            service: serviceValue,
+            notes: notesValue || null,
+            status: 'confirmada'
+        };
+
+        if (!appointmentData.user_id || !appointmentData.pet_id || !appointmentData.appointment_date || !appointmentData.appointment_time || !appointmentData.service) {
+            alert('Por favor, completa todos los campos obligatorios (Cliente, Mascota, Fecha, Hora y Servicio).');
+            submitButton.disabled = false;
+            return;
+        }
+
+        const { success, error } = await addAppointmentFromDashboard(appointmentData);
+
+        if (success) {
+            alert('¡Cita agendada con éxito!');
+            
+            try {
+                const client = clientsWithPets.find(c => c.id === appointmentData.user_id);
+                if (client && client.phone) {
+                    const pet = client.pets.find(p => p.id === appointmentData.pet_id);
+                    const petName = pet ? pet.name : 'su mascota';
+                    const appointmentDate = new Date(appointmentData.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    
+                    const message = `¡Hola ${client.first_name}! 👋 Te confirmamos tu cita en OhMyPet:\n\n*Mascota:* ${petName}\n*Fecha:* ${appointmentDate}\n*Hora:* ${appointmentData.appointment_time}\n*Servicio:* ${appointmentData.service}\n\n¡Te esperamos! 🐾`;
+                    
+                    const whatsappUrl = `https://wa.me/51${client.phone}?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                } else {
+                    alert('La cita fue agendada, pero no se pudo notificar por WhatsApp porque el cliente no tiene un número de teléfono registrado.');
+                }
+            } catch (e) {
+                console.error('Error al intentar enviar WhatsApp:', e);
+                alert('La cita fue agendada, pero ocurrió un error al intentar generar el mensaje de WhatsApp.');
+            }
+
+            closeAddAppointmentModal();
+            // Recargar datos y renderizar
+            const appointmentsRes = await supabase.from('appointments').select('*, pets(*), profiles(*)');
+            allAppointments = appointmentsRes.data || [];
+            renderConfirmedAppointments();
+            await renderCalendar();
+        } else {
+            addAppointmentMessage.textContent = `Error: ${error.message}`;
+            addAppointmentMessage.className = 'p-3 rounded-md bg-red-100 text-red-700 text-sm';
+            addAppointmentMessage.classList.remove('hidden');
+        }
+
+        submitButton.disabled = false;
+    });
+};
+// --- FIN: LÓGICA DEL MODAL PARA AGENDAR CITAS ---
 
 
 // --- INICIO: LÓGICA DEL MODAL PARA COMPLETAR CITAS ---
@@ -466,8 +672,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Añadir listeners para el nuevo modal
+    // Añadir listeners para los nuevos modales
     setupCompletionModalListeners();
+    initializeAddAppointmentModal(); // NUEVA FUNCIÓN LLAMADA AQUÍ
 
     showView('clients');
     loadInitialData();
