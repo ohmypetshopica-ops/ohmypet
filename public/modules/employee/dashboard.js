@@ -354,6 +354,7 @@ const openCompletionModal = (appointmentId) => {
     paymentMethodSelect.value = '';
     uploadMessage.classList.add('hidden');
     
+    // Restaurar los contenedores a su estado inicial
     arrivalPhotoContainer.innerHTML = `<p class="text-sm text-gray-500">Clic para subir foto de llegada</p>`;
     departurePhotoContainer.innerHTML = `<p class="text-sm text-gray-500">Clic para subir foto de salida</p>`;
     receiptContainer.innerHTML = `<p class="text-sm text-gray-500">Clic para subir boleta</p>`;
@@ -374,11 +375,17 @@ const setupCompletionModalListeners = () => {
         cancelCompletionBtn.addEventListener('click', closeCompletionModal);
     }
 
+    // ====== INICIO DE LA MODIFICACIÓN ======
     arrivalPhotoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
             arrivalPhotoFile = file;
+            // Mostrar la imagen seleccionada
             arrivalPhotoContainer.innerHTML = `<img src="${URL.createObjectURL(file)}" class="w-full h-full object-cover rounded-lg">`;
+        } else {
+            arrivalPhotoFile = null;
+            // Si no se selecciona archivo, restaurar el texto
+            arrivalPhotoContainer.innerHTML = `<p class="text-sm text-gray-500">Clic para subir foto de llegada</p>`;
         }
     });
 
@@ -386,15 +393,24 @@ const setupCompletionModalListeners = () => {
         const file = e.target.files[0];
         if (file) {
             departurePhotoFile = file;
+            // Mostrar la imagen seleccionada
             departurePhotoContainer.innerHTML = `<img src="${URL.createObjectURL(file)}" class="w-full h-full object-cover rounded-lg">`;
+        } else {
+            departurePhotoFile = null;
+            // Si no se selecciona archivo, restaurar el texto
+            departurePhotoContainer.innerHTML = `<p class="text-sm text-gray-500">Clic para subir foto de salida</p>`;
         }
     });
+    // ====== FIN DE LA MODIFICACIÓN ======
 
     receiptInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
             receiptFile = file;
             receiptContainer.innerHTML = `<p class="text-sm text-green-600">✓ ${file.name}</p>`;
+        } else {
+            receiptFile = null;
+            receiptContainer.innerHTML = `<p class="text-sm text-gray-500">Clic para subir boleta</p>`;
         }
     });
 
@@ -1068,7 +1084,6 @@ const setupClientAndPetModals = () => {
     closeAddPetModalButtonEmployee.addEventListener('click', closeAddPetModal);
     cancelAddPetButtonEmployee.addEventListener('click', closeAddPetModal);
 
-    // ====== INICIO DE LA MODIFICACIÓN: Lógica para el nombre del archivo ======
     petPhotoInputEmployee.addEventListener('change', (event) => {
         if (event.target.files.length > 0) {
             petPhotoFilenameEmployee.textContent = event.target.files[0].name;
@@ -1076,7 +1091,6 @@ const setupClientAndPetModals = () => {
             petPhotoFilenameEmployee.textContent = 'Ningún archivo seleccionado';
         }
     });
-    // ====== FIN DE LA MODIFICACIÓN ======
 
     addPetFormEmployee.addEventListener('submit', async (e) => {
         e.preventDefault();
