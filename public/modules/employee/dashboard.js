@@ -1009,7 +1009,6 @@ const showAppointmentDetails = async (appointmentId) => {
 };
 
 
-// ====== INICIO DE LA MODIFICACIÓN: Funciones para nuevos modales ======
 const setupClientAndPetModals = () => {
     // --- Lógica para modal de agregar cliente ---
     const openAddClientModal = () => {
@@ -1069,6 +1068,16 @@ const setupClientAndPetModals = () => {
     closeAddPetModalButtonEmployee.addEventListener('click', closeAddPetModal);
     cancelAddPetButtonEmployee.addEventListener('click', closeAddPetModal);
 
+    // ====== INICIO DE LA MODIFICACIÓN: Lógica para el nombre del archivo ======
+    petPhotoInputEmployee.addEventListener('change', (event) => {
+        if (event.target.files.length > 0) {
+            petPhotoFilenameEmployee.textContent = event.target.files[0].name;
+        } else {
+            petPhotoFilenameEmployee.textContent = 'Ningún archivo seleccionado';
+        }
+    });
+    // ====== FIN DE LA MODIFICACIÓN ======
+
     addPetFormEmployee.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(addPetFormEmployee);
@@ -1103,6 +1112,7 @@ const setupClientAndPetModals = () => {
 
         petData.image_url = imageUrl;
 
+        // No hay validación, todos los campos son opcionales
         const { success, error } = await addPetFromDashboard(petData);
         if (success) {
             alert('Mascota agregada exitosamente.');
@@ -1114,7 +1124,6 @@ const setupClientAndPetModals = () => {
         }
     });
 };
-// ====== FIN DE LA MODIFICACIÓN ======
 
 
 // --- CARGA INICIAL DE DATOS ---
