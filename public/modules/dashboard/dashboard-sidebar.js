@@ -21,16 +21,24 @@ const loadUserInfo = async () => {
                     ? `${profile.first_name} ${profile.last_name}` 
                     : profile.full_name || 'Usuario';
                 
-                const sidebarUserName = document.getElementById('sidebar-user-name');
-                const sidebarUserInitial = document.getElementById('sidebar-user-initial');
+                // --- ACTUALIZACIÓN PARA AMBAS VISTAS (DESKTOP Y MÓVIL) ---
+                const elements = [
+                    { name: 'sidebar-user-name', initial: 'sidebar-user-initial' },
+                    { name: 'mobile-user-name', initial: 'mobile-user-initial' }
+                ];
                 
-                if (sidebarUserName) {
-                    sidebarUserName.textContent = displayName;
-                }
-                
-                if (sidebarUserInitial) {
-                    sidebarUserInitial.textContent = displayName.charAt(0).toUpperCase();
-                }
+                elements.forEach(pair => {
+                    const userNameEl = document.getElementById(pair.name);
+                    const userInitialEl = document.getElementById(pair.initial);
+                    
+                    if (userNameEl) {
+                        userNameEl.textContent = displayName;
+                    }
+                    
+                    if (userInitialEl) {
+                        userInitialEl.textContent = displayName.charAt(0).toUpperCase();
+                    }
+                });
                 
                 console.log('Información del usuario cargada:', displayName);
             }
@@ -45,6 +53,7 @@ const loadUserInfo = async () => {
  */
 const setActiveMenuItem = () => {
     const currentPath = window.location.pathname;
+    // Se seleccionan los items de ambos menús (desktop y móvil)
     const sidebarItems = document.querySelectorAll('.sidebar-item');
     
     if (sidebarItems.length === 0) {
@@ -89,55 +98,46 @@ const setActiveMenuItem = () => {
  * Configura el botón de cerrar sesión del sidebar
  */
 const setupSidebarLogout = () => {
-    // Intentar encontrar el botón con reintentos
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    const trySetup = () => {
-        const logoutButton = document.querySelector('#sidebar-logout-button');
-        
-        if (logoutButton) {
-            console.log('Botón de logout encontrado, configurando...');
-            
-            // Remover listeners previos clonando el botón
-            const newButton = logoutButton.cloneNode(true);
-            logoutButton.parentNode.replaceChild(newButton, logoutButton);
-            
-            newButton.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                console.log('Cerrando sesión desde el sidebar...');
-                
-                try {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    
-                    await supabase.auth.signOut({ scope: 'local' });
-                    
-                    console.log('Sesión cerrada, redirigiendo...');
-                    window.location.href = '/public/modules/login/login.html';
-                } catch (error) {
-                    console.error('Error al cerrar sesión:', error);
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    window.location.href = '/public/modules/login/login.html';
-                }
-            });
-            
-            console.log('✓ Botón de logout configurado correctamente');
-        } else {
-            attempts++;
-            if (attempts < maxAttempts) {
-                console.log(`Intento ${attempts}/${maxAttempts}: Botón no encontrado, reintentando en 100ms...`);
-                setTimeout(trySetup, 100);
-            } else {
-                console.error('❌ No se encontró el botón de logout después de múltiples intentos');
-            }
+    // Lógica unificada para cerrar sesión
+    const handleLogout = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        console.log('Cerrando sesión...');
+
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+            await supabase.auth.signOut({ scope: 'local' });
+            console.log('Sesión cerrada, redirigiendo...');
+            window.location.href = '/public/modules/login/login.html';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/public/modules/login/login.html';
         }
     };
-    
-    trySetup();
+
+    // Función para adjuntar el listener a un botón por su ID
+    const attachListener = (buttonId) => {
+        const button = document.getElementById(buttonId);
+        if (button) {
+            // Clonar para remover listeners previos y evitar duplicados
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            newButton.addEventListener('click', handleLogout);
+            console.log(`✓ Botón de logout '${buttonId}' configurado.`);
+        } else {
+            console.warn(`- Botón de logout '${buttonId}' no encontrado en el DOM.`);
+        }
+    };
+
+    // Usamos un pequeño retraso para asegurar que el menú móvil dinámico se haya cargado
+    setTimeout(() => {
+        attachListener('sidebar-logout-button'); // Botón de escritorio
+        attachListener('mobile-logout-button'); // Botón móvil
+    }, 200);
 };
 
 /**
@@ -146,7 +146,6 @@ const setupSidebarLogout = () => {
 const initSidebar = () => {
     console.log('=== Inicializando sidebar ===');
     
-    // Verificar que el contenedor del sidebar existe
     const sidebarContainer = document.getElementById('sidebar-container');
     if (!sidebarContainer) {
         console.error('❌ Contenedor del sidebar no encontrado');
@@ -154,11 +153,11 @@ const initSidebar = () => {
     }
     
     if (sidebarContainer.children.length === 0) {
-        console.error('❌ El contenedor del sidebar está vacío');
-        return;
+        // Esto es normal si se está cargando dinámicamente, no es un error fatal.
+        console.log('⏳ El contenedor del sidebar está vacío, esperando carga dinámica.');
+    } else {
+        console.log('✓ Contenedor del sidebar encontrado con contenido');
     }
-    
-    console.log('✓ Contenedor del sidebar encontrado con contenido');
     
     setActiveMenuItem();
     setupSidebarLogout();
