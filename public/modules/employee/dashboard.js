@@ -9,7 +9,7 @@ import {
     addAppointmentFromDashboard,
     getProducts,
     addSale,
-    updateProduct // <-- CORRECCIÓN: Se cambió 'updateProductStock' por 'updateProduct'
+    updateProduct
 } from '../dashboard/dashboard.api.js';
 import { addWeightRecord } from '../dashboard/pet-weight.api.js';
 
@@ -20,7 +20,7 @@ const navButtons = document.querySelectorAll('.nav-btn');
 const views = document.querySelectorAll('.view-section');
 const logoutButton = document.getElementById('logout-button');
 
-// Vistas de Clientes, Mascotas, Citas y Calendario (sin cambios)
+// Vistas de Clientes, Mascotas, Citas y Calendario
 const clientSearch = document.getElementById('client-search');
 const clientsListView = document.getElementById('clients-list-view');
 const clientsList = document.getElementById('clients-list');
@@ -82,9 +82,8 @@ const modalTotalElementEmployee = document.getElementById('modal-total-employee'
 const cashSectionEmployee = document.getElementById('cash-section-employee');
 // --- FIN: VARIABLES Y ELEMENTOS PARA EL POS ---
 
-// ... (El resto del código se mantiene igual, ya que la lógica no cambia) ...
-
-// --- INICIO: LÓGICA DEL MODAL PARA AGENDAR CITAS (NUEVO) ---
+// ... (El resto del código de Agendar y Completar Cita se mantiene igual) ...
+// --- INICIO: LÓGICA DEL MODAL PARA AGENDAR CITAS ---
 
 const addAppointmentBtnEmployee = document.querySelector('#add-appointment-btn-employee');
 const addAppointmentModal = document.querySelector('#add-appointment-modal-employee');
@@ -520,6 +519,7 @@ const updateCartQuantityEmployee = (productId, newQuantity) => {
     renderCartEmployee();
 };
 
+// --- INICIO DE LA CORRECCIÓN: Renderizado del Carrito ---
 const renderCartEmployee = () => {
     if (cart.length === 0) {
         cartItemsEmployee.innerHTML = `<p class="text-center text-gray-400 text-sm">Carrito vacío</p>`;
@@ -530,9 +530,17 @@ const renderCartEmployee = () => {
     }
 
     cartItemsEmployee.innerHTML = cart.map(item => `
-        <div class="flex items-center justify-between text-sm">
-            <span class="truncate pr-2">${item.name} (x${item.quantity})</span>
-            <span class="font-semibold whitespace-nowrap">S/ ${(item.price * item.quantity).toFixed(2)}</span>
+        <div class="flex items-center justify-between text-sm py-2 border-b last:border-b-0">
+            <div class="flex-1 truncate pr-2">
+                <span>${item.name}</span>
+                <div class="text-xs text-gray-500">S/ ${item.price.toFixed(2)} c/u</div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button class="decrease-btn-employee bg-gray-200 h-6 w-6 rounded-md flex items-center justify-center font-bold" data-product-id="${item.id}">-</button>
+                <span class="font-semibold w-4 text-center">${item.quantity}</span>
+                <button class="increase-btn-employee bg-gray-200 h-6 w-6 rounded-md flex items-center justify-center font-bold" data-product-id="${item.id}">+</button>
+            </div>
+            <div class="w-20 text-right font-bold text-gray-800 whitespace-nowrap">S/ ${(item.price * item.quantity).toFixed(2)}</div>
         </div>
     `).join('');
     
@@ -541,6 +549,8 @@ const renderCartEmployee = () => {
     processSaleBtnEmployee.disabled = false;
     clearCartBtnEmployee.disabled = false;
 };
+// --- FIN DE LA CORRECCIÓN ---
+
 
 const clearCartEmployee = () => {
     cart = [];
@@ -567,7 +577,6 @@ const processSaleEmployee = async () => {
     confirmPaymentBtnEmployee.disabled = true;
     confirmPaymentBtnEmployee.textContent = 'Procesando...';
     
-    // Aquí usamos la función `addSale` importada
     for (const item of cart) {
         const saleData = {
             client_id: selectedCustomerIdInputEmployee.value,
@@ -577,23 +586,32 @@ const processSaleEmployee = async () => {
             total_price: item.price * item.quantity,
             payment_method: paymentMethodSelectEmployee.value
         };
-        // La función addSale ya se encarga de registrar la venta Y actualizar el stock
-        await addSale(saleData);
+        const { error } = await addSale(saleData);
+        if (error) {
+            alert('Hubo un error al registrar una de las ventas. Por favor, revisa el stock e inténtalo de nuevo.');
+            console.error(error);
+            confirmPaymentBtnEmployee.disabled = false;
+            confirmPaymentBtnEmployee.textContent = 'Confirmar Venta';
+            return;
+        }
     }
 
     alert('Venta procesada con éxito');
-    clearCartEmployee();
-    closePaymentModalEmployee();
+    
     // Actualizar la lista de productos localmente para reflejar el nuevo stock
     cart.forEach(cartItem => {
         const product = allProducts.find(p => p.id === cartItem.id);
         if (product) product.stock -= cartItem.quantity;
     });
+    
+    clearCartEmployee();
+    closePaymentModalEmployee();
     renderProductsEmployee(allProducts);
 
     confirmPaymentBtnEmployee.disabled = false;
     confirmPaymentBtnEmployee.textContent = 'Confirmar Venta';
 };
+
 
 const initializePOSEmployee = () => {
     posViewBtn.addEventListener('click', showPOSView);
@@ -605,6 +623,26 @@ const initializePOSEmployee = () => {
     processSaleBtnEmployee.addEventListener('click', openPaymentModalEmployee);
     cancelPaymentBtnEmployee.addEventListener('click', closePaymentModalEmployee);
     confirmPaymentBtnEmployee.addEventListener('click', processSaleEmployee);
+
+    // --- INICIO DE LA CORRECCIÓN: Event Delegation para el carrito ---
+    cartItemsEmployee.addEventListener('click', (e) => {
+        const decreaseBtn = e.target.closest('.decrease-btn-employee');
+        const increaseBtn = e.target.closest('.increase-btn-employee');
+
+        if (decreaseBtn) {
+            const productId = decreaseBtn.dataset.productId;
+            const item = cart.find(i => i.id == productId);
+            if (item) updateCartQuantityEmployee(productId, item.quantity - 1);
+        }
+
+        if (increaseBtn) {
+            const productId = increaseBtn.dataset.productId;
+            const item = cart.find(i => i.id == productId);
+            if (item) updateCartQuantityEmployee(productId, item.quantity + 1);
+        }
+    });
+    // --- FIN DE LA CORRECCIÓN ---
+
 
     customerSearchEmployee.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
