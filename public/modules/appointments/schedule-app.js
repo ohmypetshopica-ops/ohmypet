@@ -17,7 +17,7 @@ let selectedPet = null;
 let selectedDate = null;
 let selectedTime = null;
 let clientFullName = 'Cliente';
-let currentUser = null; 
+let currentUser = null;
 
 // --- FUNCIÓN PARA OBTENER HORARIOS OCUPADOS (citas + bloqueados) ---
 const getBookedTimes = async (date) => {
@@ -31,7 +31,15 @@ const getBookedTimes = async (date) => {
 
     if (appointmentsError) {
         console.error("Error al verificar horarios de citas:", appointmentsError);
+        return { appointmentCounts: {}, blockedTimes: [] };
     }
+
+    // Contar citas por horario
+    const appointmentCounts = (appointments || []).reduce((acc, app) => {
+        const time = app.appointment_time.slice(0, 5);
+        acc[time] = (acc[time] || 0) + 1;
+        return acc;
+    }, {});
 
     // Obtener horarios bloqueados
     const { data: blockedSlots, error: blockedError } = await supabase
@@ -43,13 +51,11 @@ const getBookedTimes = async (date) => {
         console.error("Error al verificar horarios bloqueados:", blockedError);
     }
 
-    // Combinar ambos arrays
-    const bookedFromAppointments = appointments ? appointments.map(app => app.appointment_time.slice(0, 5)) : [];
-    const bookedFromBlocked = blockedSlots ? blockedSlots.map(slot => slot.blocked_time.slice(0, 5)) : [];
-    
-    // Retornar array único combinado (sin duplicados)
-    return [...new Set([...bookedFromAppointments, ...bookedFromBlocked])];
+    const blockedTimes = blockedSlots ? blockedSlots.map(slot => slot.blocked_time.slice(0, 5)) : [];
+
+    return { appointmentCounts, blockedTimes };
 };
+
 
 // --- LÓGICA DE LA APLICACIÓN ---
 
@@ -94,19 +100,24 @@ const loadUserDataAndPets = async () => {
     }
 };
 
-const renderTimeOptions = (bookedTimes = []) => {
+const renderTimeOptions = (bookedData = { appointmentCounts: {}, blockedTimes: [] }) => {
+    const { appointmentCounts, blockedTimes } = bookedData;
     const hours = [
-        "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
-        "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", 
+        "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+        "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
         "15:00", "15:30", "16:00"
     ];
-    timeOptionsContainer.innerHTML = ''; 
+    timeOptionsContainer.innerHTML = '';
     hours.forEach(hour => {
-        const isBooked = bookedTimes.includes(hour);
+        const appointmentCount = appointmentCounts[hour] || 0;
+        const isBlocked = blockedTimes.includes(hour);
+        const isFull = appointmentCount >= 3;
+        const isBooked = isBlocked || isFull;
+
         const btn = document.createElement("button");
         btn.textContent = hour;
         btn.disabled = isBooked;
-        
+
         if (isBooked) {
             btn.className = "option-btn bg-gray-200 text-gray-400 px-4 py-2 rounded-lg cursor-not-allowed line-through";
         } else {
@@ -120,7 +131,6 @@ const renderTimeOptions = (bookedTimes = []) => {
                 selectedTime = hour;
             };
         }
-        
         timeOptionsContainer.appendChild(btn);
     });
 };
@@ -128,15 +138,15 @@ const renderTimeOptions = (bookedTimes = []) => {
 const handleDateChange = async () => {
     selectedDate = dateInput.value;
     if (!selectedDate) {
-        renderTimeOptions([]);
+        renderTimeOptions();
         return;
     }
     timeOptionsContainer.innerHTML = '<p class="text-sm text-gray-500">Cargando disponibilidad...</p>';
     
-    // Usar la función que excluye citas canceladas y rechazadas
-    const bookedTimes = await getBookedTimes(selectedDate);
-    renderTimeOptions(bookedTimes);
+    const bookedData = await getBookedTimes(selectedDate);
+    renderTimeOptions(bookedData);
 };
+
 
 const showStep = (index) => {
     steps.forEach((step, i) => step.classList.toggle("hidden", i !== index));

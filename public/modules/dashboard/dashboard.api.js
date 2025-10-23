@@ -707,7 +707,7 @@ export const getClientsWithPets = async () => {
 export const getBookedTimesForDashboard = async (date) => {
     const { data: appointments, error: appointmentsError } = await supabase
         .from('appointments')
-        .select('appointment_time')
+        .select('appointment_time, id') // Seleccionamos cualquier columna para poder contar
         .eq('appointment_date', date)
         .in('status', ['pendiente', 'confirmada', 'completada']);
 
@@ -723,11 +723,20 @@ export const getBookedTimesForDashboard = async (date) => {
     if (blockedError) {
         console.error("Error al verificar horarios bloqueados:", blockedError);
     }
-
-    const bookedFromAppointments = appointments ? appointments.map(app => app.appointment_time.slice(0, 5)) : [];
-    const bookedFromBlocked = blockedSlots ? blockedSlots.map(slot => slot.blocked_time.slice(0, 5)) : [];
     
-    return [...new Set([...bookedFromAppointments, ...bookedFromBlocked])];
+    // Contar citas por horario
+    const appointmentCounts = (appointments || []).reduce((acc, app) => {
+        const time = app.appointment_time.slice(0, 5);
+        acc[time] = (acc[time] || 0) + 1;
+        return acc;
+    }, {});
+    
+    const blockedTimes = blockedSlots ? blockedSlots.map(slot => slot.blocked_time.slice(0, 5)) : [];
+
+    // Devolver solo los horarios que están completamente llenos (3 o más citas) o bloqueados
+    const fullyBookedTimes = Object.keys(appointmentCounts).filter(time => appointmentCounts[time] >= 3);
+    
+    return [...new Set([...fullyBookedTimes, ...blockedTimes])];
 };
 
 export const addAppointmentFromDashboard = async (appointmentData) => {
