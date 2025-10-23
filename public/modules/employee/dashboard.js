@@ -519,7 +519,6 @@ const updateCartQuantityEmployee = (productId, newQuantity) => {
     renderCartEmployee();
 };
 
-// --- INICIO DE LA CORRECCIÓN: Renderizado del Carrito ---
 const renderCartEmployee = () => {
     if (cart.length === 0) {
         cartItemsEmployee.innerHTML = `<p class="text-center text-gray-400 text-sm">Carrito vacío</p>`;
@@ -549,8 +548,6 @@ const renderCartEmployee = () => {
     processSaleBtnEmployee.disabled = false;
     clearCartBtnEmployee.disabled = false;
 };
-// --- FIN DE LA CORRECCIÓN ---
-
 
 const clearCartEmployee = () => {
     cart = [];
@@ -558,6 +555,17 @@ const clearCartEmployee = () => {
 };
 
 const openPaymentModalEmployee = () => {
+    // Resetear el modal
+    paymentMethodSelectEmployee.value = 'efectivo';
+    cashReceivedInputEmployee.value = '';
+    cashSectionEmployee.classList.remove('hidden');
+    changeDisplayEmployee.classList.add('hidden');
+    selectedCustomerIdInputEmployee.value = '';
+    selectedCustomerDisplayEmployee.classList.add('hidden');
+    customerSearchEmployee.value = '';
+    customerResultsEmployee.classList.add('hidden');
+    confirmPaymentBtnEmployee.disabled = true;
+    
     modalTotalElementEmployee.textContent = totalEmployee.textContent.replace('S/ ', '');
     paymentModalEmployee.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -598,7 +606,6 @@ const processSaleEmployee = async () => {
 
     alert('Venta procesada con éxito');
     
-    // Actualizar la lista de productos localmente para reflejar el nuevo stock
     cart.forEach(cartItem => {
         const product = allProducts.find(p => p.id === cartItem.id);
         if (product) product.stock -= cartItem.quantity;
@@ -612,6 +619,26 @@ const processSaleEmployee = async () => {
     confirmPaymentBtnEmployee.textContent = 'Confirmar Venta';
 };
 
+// --- INICIO DE LA CORRECCIÓN ---
+
+// Función para actualizar el estado del botón de confirmación de pago
+const updateConfirmButtonState = () => {
+    const customerSelected = !!selectedCustomerIdInputEmployee.value;
+    
+    if (!customerSelected) {
+        confirmPaymentBtnEmployee.disabled = true;
+        return;
+    }
+
+    const isCash = paymentMethodSelectEmployee.value === 'efectivo';
+    if (isCash) {
+        const total = parseFloat(modalTotalElementEmployee.textContent) || 0;
+        const cashReceived = parseFloat(cashReceivedInputEmployee.value) || 0;
+        confirmPaymentBtnEmployee.disabled = cashReceived < total;
+    } else {
+        confirmPaymentBtnEmployee.disabled = false;
+    }
+};
 
 const initializePOSEmployee = () => {
     posViewBtn.addEventListener('click', showPOSView);
@@ -624,7 +651,6 @@ const initializePOSEmployee = () => {
     cancelPaymentBtnEmployee.addEventListener('click', closePaymentModalEmployee);
     confirmPaymentBtnEmployee.addEventListener('click', processSaleEmployee);
 
-    // --- INICIO DE LA CORRECCIÓN: Event Delegation para el carrito ---
     cartItemsEmployee.addEventListener('click', (e) => {
         const decreaseBtn = e.target.closest('.decrease-btn-employee');
         const increaseBtn = e.target.closest('.increase-btn-employee');
@@ -641,7 +667,32 @@ const initializePOSEmployee = () => {
             if (item) updateCartQuantityEmployee(productId, item.quantity + 1);
         }
     });
-    // --- FIN DE LA CORRECCIÓN ---
+    
+    // Listener para el método de pago
+    paymentMethodSelectEmployee.addEventListener('change', (e) => {
+        if (e.target.value === 'efectivo') {
+            cashSectionEmployee.classList.remove('hidden');
+        } else {
+            cashSectionEmployee.classList.add('hidden');
+            changeDisplayEmployee.classList.add('hidden');
+        }
+        updateConfirmButtonState();
+    });
+
+    // Listener para el monto recibido
+    cashReceivedInputEmployee.addEventListener('input', () => {
+        const total = parseFloat(modalTotalElementEmployee.textContent) || 0;
+        const cashReceived = parseFloat(cashReceivedInputEmployee.value) || 0;
+
+        if (cashReceived >= total) {
+            const change = cashReceived - total;
+            changeAmountElementEmployee.textContent = change.toFixed(2);
+            changeDisplayEmployee.classList.remove('hidden');
+        } else {
+            changeDisplayEmployee.classList.add('hidden');
+        }
+        updateConfirmButtonState();
+    });
 
 
     customerSearchEmployee.addEventListener('input', (e) => {
@@ -660,18 +711,18 @@ const initializePOSEmployee = () => {
             selectedCustomerDisplayEmployee.classList.remove('hidden');
             customerResultsEmployee.classList.add('hidden');
             customerSearchEmployee.value = '';
-            confirmPaymentBtnEmployee.disabled = false;
+            updateConfirmButtonState();
         }
     });
 
     clearCustomerBtnEmployee.addEventListener('click', () => {
         selectedCustomerIdInputEmployee.value = '';
         selectedCustomerDisplayEmployee.classList.add('hidden');
-        confirmPaymentBtnEmployee.disabled = true;
+        updateConfirmButtonState();
     });
 };
 
-// --- FIN: LÓGICA DEL PUNTO DE VENTA (POS) ---
+// --- FIN DE LA CORRECCIÓN ---
 
 
 // --- SECCIÓN DE CITAS ---
