@@ -9,7 +9,9 @@ import {
     addAppointmentFromDashboard,
     getProducts,
     addSale,
-    updateProduct
+    updateProduct,
+    registerClientFromDashboard,
+    addPetFromDashboard
 } from '../dashboard/dashboard.api.js';
 import { addWeightRecord } from '../dashboard/pet-weight.api.js';
 
@@ -54,6 +56,7 @@ let monthlyAppointments = [];
 let allAppointments = [];
 let currentDate = new Date();
 let clientsWithPets = [];
+let currentClientId = null;
 
 // --- INICIO: VARIABLES Y ELEMENTOS PARA EL POS ---
 let allProducts = [];
@@ -103,6 +106,22 @@ const addAppointmentMessage = document.querySelector('#add-appointment-message-e
 const clientSearchInputModal = document.querySelector('#client-search-input-modal-employee');
 const clientSearchResults = document.querySelector('#client-search-results-employee');
 const selectedClientIdInput = document.querySelector('#selected-client-id-employee');
+
+const addClientBtnEmployee = document.querySelector('#add-client-btn-employee');
+const clientModalEmployee = document.querySelector('#client-modal-employee');
+const closeClientModalButtonEmployee = document.querySelector('#close-client-modal-button-employee');
+const cancelClientButtonEmployee = document.querySelector('#cancel-client-button-employee');
+const clientFormEmployee = document.querySelector('#client-form-employee');
+const clientFormMessageEmployee = document.querySelector('#client-form-message-employee');
+
+const addPetToClientBtn = document.querySelector('#add-pet-to-client-btn');
+const addPetModalEmployee = document.querySelector('#add-pet-modal-employee');
+const closeAddPetModalButtonEmployee = document.querySelector('#close-add-pet-modal-button-employee');
+const cancelAddPetButtonEmployee = document.querySelector('#cancel-add-pet-button-employee');
+const addPetFormEmployee = document.querySelector('#add-pet-form-employee');
+const addPetFormMessageEmployee = document.querySelector('#add-pet-form-message-employee');
+const petOwnerIdInputEmployee = document.querySelector('#pet-owner-id-employee');
+
 
 const openAddAppointmentModal = () => {
     addAppointmentForm.reset();
@@ -350,7 +369,6 @@ const closeCompletionModal = () => {
 };
 
 const setupCompletionModalListeners = () => {
-    // <<<<<<<<<<<<<<<<<<<< CORRECCIÓN: La variable correcta es cancelCompletionBtn >>>>>>>>>>>>>>>>>>>>
     if (cancelCompletionBtn) {
         cancelCompletionBtn.addEventListener('click', closeCompletionModal);
     }
@@ -404,7 +422,6 @@ const setupCompletionModalListeners = () => {
             const observations = finalObservationsTextarea.value.trim();
             const appointment = allAppointments.find(app => app.id === currentAppointmentId);
 
-            // Actualizar cita principal
             const { error } = await supabase.from('appointments')
                 .update({
                     status: 'completada',
@@ -416,12 +433,10 @@ const setupCompletionModalListeners = () => {
 
             if (error) throw error;
 
-            // Actualizar fecha de último servicio en la mascota
             await supabase.from('pets')
                 .update({ last_grooming_date: appointment.appointment_date })
                 .eq('id', currentPetId);
                 
-            // Actualizar datos locales y re-renderizar
             const index = allAppointments.findIndex(app => app.id === currentAppointmentId);
             if (index > -1) allAppointments[index].status = 'completada';
             renderConfirmedAppointments();
@@ -458,7 +473,6 @@ const showView = (viewId) => {
     views.forEach(view => view.classList.add('hidden'));
     document.getElementById(`${viewId}-view`).classList.remove('hidden');
 
-    // Handle bottom nav active state
     navButtons.forEach(btn => {
         const isActive = btn.dataset.view === viewId;
         btn.classList.toggle('text-green-600', isActive);
@@ -564,8 +578,6 @@ const clearCartEmployee = () => {
     renderCartEmployee();
 };
 
-// --- INICIO: NUEVAS FUNCIONES PARA PAGO DIVIDIDO ---
-
 const updatePaymentTotalsAndButtonState = () => {
     const totalToPay = parseFloat(modalTotalElementEmployee.textContent) || 0;
     
@@ -581,7 +593,7 @@ const updatePaymentTotalsAndButtonState = () => {
 
     totalPaidDisplay.textContent = `S/ ${totalPaid.toFixed(2)}`;
 
-    if (remaining > 0.001) { // Usar una pequeña tolerancia para errores de punto flotante
+    if (remaining > 0.001) { 
         totalRemainingDisplay.textContent = `S/ ${remaining.toFixed(2)}`;
         remainingSection.classList.remove('hidden');
         changeSection.classList.add('hidden');
@@ -836,6 +848,7 @@ const renderClients = (clients) => {
     `).join('') : `<p class="text-center text-gray-500 mt-8">No se encontraron clientes.</p>`;
 };
 const showClientDetails = (clientId) => {
+    currentClientId = clientId; 
     const client = allClients.find(c => c.id === clientId);
     if (!client) return;
     const clientPets = allPets.filter(pet => pet.owner_id === clientId);
@@ -867,6 +880,7 @@ const showClientDetails = (clientId) => {
 const showClientsListView = () => {
     clientDetailsView.classList.add('hidden');
     clientsListView.classList.remove('hidden');
+    currentClientId = null; 
 };
 
 // --- SECCIÓN DE MASCOTAS ---
@@ -993,6 +1007,98 @@ const showAppointmentDetails = async (appointmentId) => {
     modalDetailsView.classList.remove('hidden');
 };
 
+
+// ====== INICIO DE LA MODIFICACIÓN: Funciones para nuevos modales ======
+const setupClientAndPetModals = () => {
+    // --- Lógica para modal de agregar cliente ---
+    const openAddClientModal = () => {
+        clientFormEmployee.reset();
+        clientFormMessageEmployee.classList.add('hidden');
+        clientModalEmployee.classList.remove('hidden');
+    };
+    const closeAddClientModal = () => clientModalEmployee.classList.add('hidden');
+
+    addClientBtnEmployee.addEventListener('click', openAddClientModal);
+    closeClientModalButtonEmployee.addEventListener('click', closeAddClientModal);
+    cancelClientButtonEmployee.addEventListener('click', closeAddClientModal);
+
+    clientFormEmployee.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(clientFormEmployee);
+        const clientData = {
+            firstName: formData.get('first_name'),
+            lastName: formData.get('last_name'),
+            phone: formData.get('phone'),
+            district: formData.get('district'),
+            // --- Nuevos campos opcionales ---
+            docType: formData.get('doc_type') || null,
+            docNum: formData.get('doc_num') || null
+        };
+
+        if (!clientData.firstName || !clientData.lastName || !clientData.phone) {
+            alert('Nombre, apellido y teléfono son obligatorios.');
+            return;
+        }
+
+        const { success, error, message } = await registerClientFromDashboard(clientData);
+
+        if (success) {
+            alert(message);
+            closeAddClientModal();
+            await loadInitialData(); // Recargar todos los datos
+        } else {
+            alert(`Error al registrar cliente: ${error.message}`);
+        }
+    });
+
+    // --- Lógica para modal de agregar mascota ---
+    const openAddPetModal = (ownerId) => {
+        addPetFormEmployee.reset();
+        addPetFormMessageEmployee.classList.add('hidden');
+        petOwnerIdInputEmployee.value = ownerId;
+        addPetModalEmployee.classList.remove('hidden');
+    };
+    const closeAddPetModal = () => addPetModalEmployee.classList.add('hidden');
+
+    addPetToClientBtn.addEventListener('click', () => {
+        if (currentClientId) {
+            openAddPetModal(currentClientId);
+        }
+    });
+    closeAddPetModalButtonEmployee.addEventListener('click', closeAddPetModal);
+    cancelAddPetButtonEmployee.addEventListener('click', closeAddPetModal);
+
+    addPetFormEmployee.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(addPetFormEmployee);
+        const petData = {
+            owner_id: formData.get('owner_id'),
+            name: formData.get('name'),
+            breed: formData.get('breed'),
+            observations: formData.get('observations'),
+            species: 'Perro' // Por defecto
+        };
+
+        if (!petData.name || !petData.breed) {
+            alert('Nombre y raza son obligatorios.');
+            return;
+        }
+
+        const { success, error } = await addPetFromDashboard(petData);
+        if (success) {
+            alert('Mascota agregada exitosamente.');
+            closeAddPetModal();
+            // Recargar datos y refrescar la vista de detalles del cliente
+            await loadInitialData();
+            showClientDetails(petData.owner_id);
+        } else {
+            alert(`Error al agregar mascota: ${error.message}`);
+        }
+    });
+};
+// ====== FIN DE LA MODIFICACIÓN ======
+
+
 // --- CARGA INICIAL DE DATOS ---
 const loadInitialData = async () => {
     const [clientsRes, petsRes, appointmentsRes, productsRes] = await Promise.all([
@@ -1049,6 +1155,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCompletionModalListeners();
     initializeAddAppointmentModal();
     initializePOSEmployee();
+    
+    setupClientAndPetModals();
 
     showView('clients');
     loadInitialData();

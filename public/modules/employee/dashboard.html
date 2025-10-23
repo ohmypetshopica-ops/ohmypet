@@ -39,12 +39,24 @@
         
         <div id="clients-view" class="view-section p-4">
             <div id="clients-list-view">
-                <input type="text" id="client-search" placeholder="Buscar cliente..." class="w-full p-3 border rounded-lg mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <input type="text" id="client-search" placeholder="Buscar cliente..." class="w-full p-3 border rounded-lg">
+                    <button id="add-client-btn-employee" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Agregar Cliente
+                    </button>
+                </div>
                 <div id="clients-list" class="space-y-3"></div>
             </div>
             <div id="client-details-view" class="hidden">
                 <button id="back-to-clients-btn" class="mb-4 flex items-center text-sm font-semibold text-green-600">&lt; Volver a la lista</button>
                 <div id="client-details-content" class="space-y-4"></div>
+                <div class="mt-6">
+                     <button id="add-pet-to-client-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Agregar Mascota a este Cliente
+                    </button>
+                    </div>
             </div>
         </div>
 
@@ -328,6 +340,117 @@
             </div>
         </div>
     </div>
+    
+    <div id="client-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Registrar Nuevo Cliente</h3>
+                <button id="close-client-modal-button-employee" class="text-white hover:text-gray-200">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <form id="client-form-employee" class="p-6">
+                <div id="client-form-message-employee" class="hidden mb-4"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="first_name_employee" class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+                        <input type="text" id="first_name_employee" name="first_name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label for="last_name_employee" class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+                        <input type="text" id="last_name_employee" name="last_name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="doc_type_employee" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
+                        <select id="doc_type_employee" name="doc_type" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <option value="">(Opcional)</option>
+                            <option value="DNI">DNI</option>
+                            <option value="Carnet de Extranjería">Carnet de Extranjería</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="doc_num_employee" class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
+                        <input type="text" id="doc_num_employee" name="doc_num" placeholder="Opcional" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="phone_employee" class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                    <input type="tel" id="phone_employee" name="phone" placeholder="987654321" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                <div class="mb-4">
+                    <label for="district_employee" class="block text-sm font-medium text-gray-700 mb-1">Distrito *</label>
+                    <input type="text" id="district_employee" name="district" placeholder="Ica" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg">Registrar Cliente</button>
+                    <button type="button" id="cancel-client-button-employee" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="add-pet-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Registrar Nueva Mascota</h3>
+                <button id="close-add-pet-modal-button-employee" class="text-white hover:text-gray-200">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <form id="add-pet-form-employee" class="p-6">
+                <div id="add-pet-form-message-employee" class="hidden mb-4"></div>
+                <input type="hidden" id="pet-owner-id-employee" name="owner_id">
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Foto de la Mascota</label>
+                    <div class="flex items-center space-x-2">
+                        <label for="pet-photo-input-employee" class="cursor-pointer bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-sm">
+                            Seleccionar archivo
+                        </label>
+                        <input type="file" id="pet-photo-input-employee" name="photo" accept="image/*" class="hidden">
+                        <span id="pet-photo-filename-employee" class="text-gray-600 text-sm">Ningún archivo seleccionado</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                        <input type="text" name="name" placeholder="Opcional" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Raza</label>
+                        <input type="text" name="breed" placeholder="Opcional" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="pet-sex-employee" class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
+                        <select id="pet-sex-employee" name="sex" class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                            <option value="">Seleccionar...</option>
+                            <option value="Macho">Macho</option>
+                            <option value="Hembra">Hembra</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="pet-dob-employee" class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+                        <input type="date" id="pet-dob-employee" name="dob" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                    <textarea name="observations" rows="3" placeholder="Alergias, condiciones especiales, etc. (Opcional)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></textarea>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg">Guardar Mascota</button>
+                    <button type="button" id="cancel-add-pet-button-employee" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <script type="module" src="../../core/auth-employee.js"></script>
     <script type="module" src="./dashboard.js"></script>
