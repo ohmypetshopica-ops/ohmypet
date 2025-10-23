@@ -328,18 +328,27 @@ const initializeAddAppointmentModal = async () => {
             alert('¡Cita agendada con éxito!');
             
             try {
-                const client = clientsWithPets.find(c => c.id === appointmentData.user_id);
-                if (client && client.phone) {
-                    const pet = client.pets.find(p => p.id === appointmentData.pet_id);
-                    const petName = pet ? pet.name : 'su mascota';
-                    const appointmentDate = new Date(appointmentData.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                    
-                    const message = `¡Hola ${client.first_name}! 👋 Te confirmamos tu cita en OhMyPet:\n\n*Mascota:* ${petName}\n*Fecha:* ${appointmentDate}\n*Hora:* ${appointmentData.appointment_time}\n*Servicio:* ${appointmentData.service}\n\n¡Te esperamos! 🐾`;
-                    
-                    const whatsappUrl = `https://wa.me/51${client.phone}?text=${encodeURIComponent(message)}`;
-                    window.open(whatsappUrl, '_blank');
+                 // Combinar fecha y hora para crear un objeto Date
+                const appointmentDateTime = new Date(`${appointmentData.appointment_date}T${appointmentData.appointment_time}`);
+                const now = new Date();
+
+                // Solo enviar WhatsApp si la cita es en el futuro
+                if (appointmentDateTime >= now) {
+                    const client = clientsWithPets.find(c => c.id === appointmentData.user_id);
+                    if (client && client.phone) {
+                        const pet = client.pets.find(p => p.id === appointmentData.pet_id);
+                        const petName = pet ? pet.name : 'su mascota';
+                        const appointmentDate = new Date(appointmentData.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        
+                        const message = `¡Hola ${client.first_name}! 👋 Te confirmamos tu cita en OhMyPet:\n\n*Mascota:* ${petName}\n*Fecha:* ${appointmentDate}\n*Hora:* ${appointmentData.appointment_time}\n*Servicio:* ${appointmentData.service}\n\n¡Te esperamos! 🐾`;
+                        
+                        const whatsappUrl = `https://wa.me/51${client.phone}?text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+                    } else {
+                        alert('La cita fue agendada, pero no se pudo notificar por WhatsApp porque el cliente no tiene un número de teléfono registrado.');
+                    }
                 } else {
-                    alert('La cita fue agendada, pero no se pudo notificar por WhatsApp porque el cliente no tiene un número de teléfono registrado.');
+                    alert('La cita fue agendada para una fecha pasada. No se envió notificación por WhatsApp.');
                 }
             } catch (e) {
                 console.error('Error al intentar enviar WhatsApp:', e);
