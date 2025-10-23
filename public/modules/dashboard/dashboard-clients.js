@@ -4,6 +4,12 @@ import { getClients, searchClients, getClientDetails, registerClientFromDashboar
 import { createClientRow } from './dashboard.utils.js';
 import { supabase } from '../../core/supabase.js'; // Necesario para subir imágenes
 
+// --- INICIO DE LA CORRECCIÓN: Bandera de inicialización ---
+// Esta bandera previene que los event listeners se registren múltiples veces si el script se carga más de una vez.
+let isInitialized = false;
+// --- FIN DE LA CORRECCIÓN ---
+
+
 // --- UTILITY: LIMPIEZA DE NÚMEROS DE TELÉFONO ---
 const cleanPhoneNumber = (rawNumber) => {
     if (!rawNumber) return null;
@@ -314,6 +320,10 @@ const setupClientModal = () => {
     const emailInput = clientForm.querySelector('input[name="email"]');
     const passwordField = document.getElementById('password-field');
     const passwordInput = clientForm.querySelector('input[name="password"]');
+
+    if (emailInput) {
+        emailInput.required = false; 
+    }
 
     if (emailInput && passwordField && passwordInput) {
         emailInput.addEventListener('input', () => {
@@ -646,6 +656,11 @@ const setupEventListeners = () => {
 
 // --- INICIALIZACIÓN DE LA SECCIÓN ---
 const initializeClientsSection = async () => {
+    // --- INICIO DE LA CORRECCIÓN: Prevenir reinicialización ---
+    if (isInitialized) return;
+    isInitialized = true;
+    // --- FIN DE LA CORRECCIÓN ---
+
     if (headerTitle) {
         headerTitle.textContent = 'Gestión de Clientes';
     }
