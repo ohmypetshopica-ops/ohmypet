@@ -65,11 +65,10 @@ const cartItemsEmployee = document.getElementById('cart-items-employee');
 const totalEmployee = document.getElementById('total-employee');
 const clearCartBtnEmployee = document.getElementById('clear-cart-btn-employee');
 const processSaleBtnEmployee = document.getElementById('process-sale-btn-employee');
+
+// Modal de pago
 const paymentModalEmployee = document.getElementById('payment-modal-employee');
-const paymentMethodSelectEmployee = document.getElementById('payment-method-employee');
-const cashReceivedInputEmployee = document.getElementById('cash-received-employee');
-const changeDisplayEmployee = document.getElementById('change-display-employee');
-const changeAmountElementEmployee = document.getElementById('change-amount-employee');
+const modalTotalElementEmployee = document.getElementById('modal-total-employee');
 const customerSearchEmployee = document.getElementById('customer-search-employee');
 const customerResultsEmployee = document.getElementById('customer-results-employee');
 const selectedCustomerIdInputEmployee = document.getElementById('selected-customer-id-employee');
@@ -78,11 +77,19 @@ const selectedCustomerNameEmployee = document.getElementById('selected-customer-
 const clearCustomerBtnEmployee = document.getElementById('clear-customer-btn-employee');
 const cancelPaymentBtnEmployee = document.getElementById('cancel-payment-btn-employee');
 const confirmPaymentBtnEmployee = document.getElementById('confirm-payment-btn-employee');
-const modalTotalElementEmployee = document.getElementById('modal-total-employee');
-const cashSectionEmployee = document.getElementById('cash-section-employee');
+
+// NUEVOS ELEMENTOS PARA PAGO DIVIDIDO
+const paymentLinesContainer = document.getElementById('payment-lines-container');
+const addPaymentLineBtn = document.getElementById('add-payment-line-btn');
+const totalPaidDisplay = document.getElementById('total-paid-display');
+const totalRemainingDisplay = document.getElementById('total-remaining-display');
+const remainingSection = document.getElementById('remaining-section');
+const changeSection = document.getElementById('change-section');
+const totalChangeDisplay = document.getElementById('total-change-display');
+
+let paymentLines = []; // Array para manejar los pagos
 // --- FIN: VARIABLES Y ELEMENTOS PARA EL POS ---
 
-// ... (El resto del código de Agendar y Completar Cita se mantiene igual) ...
 // --- INICIO: LÓGICA DEL MODAL PARA AGENDAR CITAS ---
 
 const addAppointmentBtnEmployee = document.querySelector('#add-appointment-btn-employee');
@@ -343,7 +350,10 @@ const closeCompletionModal = () => {
 };
 
 const setupCompletionModalListeners = () => {
-    cancelCompletionBtn.addEventListener('click', closeCompletionModal);
+    // <<<<<<<<<<<<<<<<<<<< CORRECCIÓN: La variable correcta es cancelCompletionBtn >>>>>>>>>>>>>>>>>>>>
+    if (cancelCompletionBtn) {
+        cancelCompletionBtn.addEventListener('click', closeCompletionModal);
+    }
 
     arrivalPhotoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -554,19 +564,110 @@ const clearCartEmployee = () => {
     renderCartEmployee();
 };
 
+// --- INICIO: NUEVAS FUNCIONES PARA PAGO DIVIDIDO ---
+
+const updatePaymentTotalsAndButtonState = () => {
+    const totalToPay = parseFloat(modalTotalElementEmployee.textContent) || 0;
+    
+    paymentLines.forEach((line, index) => {
+        const amountInput = document.getElementById(`payment-amount-${index}`);
+        if (amountInput) {
+            line.amount = parseFloat(amountInput.value) || 0;
+        }
+    });
+
+    const totalPaid = paymentLines.reduce((sum, line) => sum + line.amount, 0);
+    const remaining = totalToPay - totalPaid;
+
+    totalPaidDisplay.textContent = `S/ ${totalPaid.toFixed(2)}`;
+
+    if (remaining > 0.001) { // Usar una pequeña tolerancia para errores de punto flotante
+        totalRemainingDisplay.textContent = `S/ ${remaining.toFixed(2)}`;
+        remainingSection.classList.remove('hidden');
+        changeSection.classList.add('hidden');
+    } else {
+        totalChangeDisplay.textContent = `S/ ${Math.abs(remaining).toFixed(2)}`;
+        remainingSection.classList.add('hidden');
+        changeSection.classList.remove('hidden');
+    }
+
+    const customerSelected = !!selectedCustomerIdInputEmployee.value;
+    confirmPaymentBtnEmployee.disabled = !customerSelected || remaining > 0.001;
+};
+
+const renderPaymentLines = () => {
+    paymentLinesContainer.innerHTML = '';
+    paymentLines.forEach((line, index) => {
+        const lineEl = document.createElement('div');
+        lineEl.className = 'flex items-center gap-2';
+        lineEl.innerHTML = `
+            <select id="payment-method-${index}" class="flex-1 p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 text-sm">
+                <option value="efectivo">Efectivo</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="yape">Yape</option>
+                <option value="plin">Plin</option>
+            </select>
+            <input type="number" id="payment-amount-${index}" step="0.01" min="0" value="${line.amount.toFixed(2)}" class="w-28 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm" placeholder="0.00">
+            <button type="button" data-index="${index}" class="remove-payment-line-btn p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+        `;
+
+        const removeBtn = lineEl.querySelector('.remove-payment-line-btn');
+        if (paymentLines.length <= 1) {
+            removeBtn.classList.add('hidden');
+        }
+
+        paymentLinesContainer.appendChild(lineEl);
+        document.getElementById(`payment-method-${index}`).value = line.method;
+    });
+
+    document.querySelectorAll('.remove-payment-line-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const indexToRemove = parseInt(e.currentTarget.dataset.index);
+            paymentLines.splice(indexToRemove, 1);
+            renderPaymentLines();
+            updatePaymentTotalsAndButtonState();
+        });
+    });
+
+    document.querySelectorAll('select[id^="payment-method-"]').forEach((select, index) => {
+        select.addEventListener('change', (e) => {
+            paymentLines[index].method = e.target.value;
+        });
+    });
+
+    document.querySelectorAll('input[id^="payment-amount-"]').forEach(input => {
+        input.addEventListener('input', updatePaymentTotalsAndButtonState);
+    });
+};
+
+const addPaymentLine = () => {
+    const totalToPay = parseFloat(modalTotalElementEmployee.textContent) || 0;
+    const totalPaid = paymentLines.reduce((sum, line) => sum + line.amount, 0);
+    const remaining = Math.max(0, totalToPay - totalPaid);
+
+    paymentLines.push({ method: 'yape', amount: remaining });
+    renderPaymentLines();
+    updatePaymentTotalsAndButtonState();
+};
+// --- FIN: NUEVAS FUNCIONES PARA PAGO DIVIDIDO ---
+
 const openPaymentModalEmployee = () => {
-    // Resetear el modal
-    paymentMethodSelectEmployee.value = 'efectivo';
-    cashReceivedInputEmployee.value = '';
-    cashSectionEmployee.classList.remove('hidden');
-    changeDisplayEmployee.classList.add('hidden');
+    const totalToPay = parseFloat(totalEmployee.textContent.replace('S/ ', '')) || 0;
+    
+    paymentLines = [{ method: 'efectivo', amount: totalToPay }];
+    
     selectedCustomerIdInputEmployee.value = '';
     selectedCustomerDisplayEmployee.classList.add('hidden');
     customerSearchEmployee.value = '';
     customerResultsEmployee.classList.add('hidden');
-    confirmPaymentBtnEmployee.disabled = true;
     
-    modalTotalElementEmployee.textContent = totalEmployee.textContent.replace('S/ ', '');
+    modalTotalElementEmployee.textContent = totalToPay.toFixed(2);
+    
+    renderPaymentLines();
+    updatePaymentTotalsAndButtonState();
+
     paymentModalEmployee.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 };
@@ -582,9 +683,21 @@ const processSaleEmployee = async () => {
         return;
     }
 
+    const totalToPay = parseFloat(modalTotalElementEmployee.textContent) || 0;
+    const totalPaid = paymentLines.reduce((sum, line) => sum + line.amount, 0);
+    if (totalPaid < totalToPay - 0.001) { // Tolerancia para decimales
+        alert('El monto pagado es menor al total de la venta.');
+        return;
+    }
+
     confirmPaymentBtnEmployee.disabled = true;
     confirmPaymentBtnEmployee.textContent = 'Procesando...';
     
+    const paymentMethodString = paymentLines
+        .filter(line => line.amount > 0)
+        .map(line => `${line.method.charAt(0).toUpperCase() + line.method.slice(1)} (S/ ${line.amount.toFixed(2)})`)
+        .join(', ');
+
     for (const item of cart) {
         const saleData = {
             client_id: selectedCustomerIdInputEmployee.value,
@@ -592,7 +705,7 @@ const processSaleEmployee = async () => {
             quantity: item.quantity,
             unit_price: item.price,
             total_price: item.price * item.quantity,
-            payment_method: paymentMethodSelectEmployee.value
+            payment_method: paymentMethodString
         };
         const { error } = await addSale(saleData);
         if (error) {
@@ -617,27 +730,6 @@ const processSaleEmployee = async () => {
 
     confirmPaymentBtnEmployee.disabled = false;
     confirmPaymentBtnEmployee.textContent = 'Confirmar Venta';
-};
-
-// --- INICIO DE LA CORRECCIÓN ---
-
-// Función para actualizar el estado del botón de confirmación de pago
-const updateConfirmButtonState = () => {
-    const customerSelected = !!selectedCustomerIdInputEmployee.value;
-    
-    if (!customerSelected) {
-        confirmPaymentBtnEmployee.disabled = true;
-        return;
-    }
-
-    const isCash = paymentMethodSelectEmployee.value === 'efectivo';
-    if (isCash) {
-        const total = parseFloat(modalTotalElementEmployee.textContent) || 0;
-        const cashReceived = parseFloat(cashReceivedInputEmployee.value) || 0;
-        confirmPaymentBtnEmployee.disabled = cashReceived < total;
-    } else {
-        confirmPaymentBtnEmployee.disabled = false;
-    }
 };
 
 const initializePOSEmployee = () => {
@@ -668,33 +760,8 @@ const initializePOSEmployee = () => {
         }
     });
     
-    // Listener para el método de pago
-    paymentMethodSelectEmployee.addEventListener('change', (e) => {
-        if (e.target.value === 'efectivo') {
-            cashSectionEmployee.classList.remove('hidden');
-        } else {
-            cashSectionEmployee.classList.add('hidden');
-            changeDisplayEmployee.classList.add('hidden');
-        }
-        updateConfirmButtonState();
-    });
-
-    // Listener para el monto recibido
-    cashReceivedInputEmployee.addEventListener('input', () => {
-        const total = parseFloat(modalTotalElementEmployee.textContent) || 0;
-        const cashReceived = parseFloat(cashReceivedInputEmployee.value) || 0;
-
-        if (cashReceived >= total) {
-            const change = cashReceived - total;
-            changeAmountElementEmployee.textContent = change.toFixed(2);
-            changeDisplayEmployee.classList.remove('hidden');
-        } else {
-            changeDisplayEmployee.classList.add('hidden');
-        }
-        updateConfirmButtonState();
-    });
-
-
+    addPaymentLineBtn.addEventListener('click', addPaymentLine);
+    
     customerSearchEmployee.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         if (term.length < 2) { customerResultsEmployee.classList.add('hidden'); return; }
@@ -711,18 +778,18 @@ const initializePOSEmployee = () => {
             selectedCustomerDisplayEmployee.classList.remove('hidden');
             customerResultsEmployee.classList.add('hidden');
             customerSearchEmployee.value = '';
-            updateConfirmButtonState();
+            updatePaymentTotalsAndButtonState();
         }
     });
 
     clearCustomerBtnEmployee.addEventListener('click', () => {
         selectedCustomerIdInputEmployee.value = '';
         selectedCustomerDisplayEmployee.classList.add('hidden');
-        updateConfirmButtonState();
+        updatePaymentTotalsAndButtonState();
     });
 };
 
-// --- FIN DE LA CORRECCIÓN ---
+// --- FIN DEL PUNTO DE VENTA ---
 
 
 // --- SECCIÓN DE CITAS ---
@@ -758,7 +825,7 @@ const renderConfirmedAppointments = () => {
 };
 
 
-// --- SECCIÓN DE CLIENTES (sin cambios) ---
+// --- SECCIÓN DE CLIENTES ---
 const renderClients = (clients) => {
     clientsList.innerHTML = clients.length > 0 ? clients.map(client => `
         <button data-client-id="${client.id}" class="client-btn w-full text-left bg-white p-4 rounded-lg shadow-sm border hover:bg-gray-50">
@@ -802,7 +869,7 @@ const showClientsListView = () => {
     clientsListView.classList.remove('hidden');
 };
 
-// --- SECCIÓN DE MASCOTAS (sin cambios) ---
+// --- SECCIÓN DE MASCOTAS ---
 const renderPets = (pets) => {
     petsList.innerHTML = pets.length > 0 ? pets.map(pet => `
         <button data-pet-id="${pet.id}" class="pet-btn w-full text-left bg-white p-4 rounded-lg shadow-sm border hover:bg-gray-50 flex items-center gap-4">
@@ -870,7 +937,7 @@ const closeModal = () => {
     setTimeout(() => { calendarModal.classList.add('hidden'); }, 300); 
 };
 
-// --- SECCIÓN DE CALENDARIO (sin cambios) ---
+// --- SECCIÓN DE CALENDARIO ---
 const fetchAppointmentsForMonth = async (date) => {
     const year = date.getFullYear(); const month = date.getMonth();
     const firstDay = new Date(year, month, 1).toISOString().split('T')[0]; const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0];
@@ -928,24 +995,22 @@ const showAppointmentDetails = async (appointmentId) => {
 
 // --- CARGA INICIAL DE DATOS ---
 const loadInitialData = async () => {
-    // --- Carga de datos para POS añadida ---
     const [clientsRes, petsRes, appointmentsRes, productsRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('role', 'cliente'),
         supabase.from('pets').select('*, profiles(*)'),
         supabase.from('appointments').select('*, pets(*), profiles(*)'),
-        getProducts() // Cargar productos para el POS
+        getProducts()
     ]);
     allClients = clientsRes.data || [];
     allPets = petsRes.data || [];
     allAppointments = appointmentsRes.data || [];
-    allProducts = productsRes || []; // Almacenar productos
+    allProducts = productsRes || [];
 
     renderClients(allClients);
     renderPets(allPets);
     renderConfirmedAppointments();
     await renderCalendar();
     
-    // Renderizar productos en el grid del POS
     renderProductsEmployee(allProducts);
 };
 
@@ -981,7 +1046,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Añadir listeners para los modales
     setupCompletionModalListeners();
     initializeAddAppointmentModal();
     initializePOSEmployee();
