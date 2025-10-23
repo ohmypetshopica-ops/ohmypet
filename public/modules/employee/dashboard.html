@@ -21,9 +21,18 @@
 
     <header class="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-20">
         <h1 id="header-title" class="text-xl font-bold text-gray-800">Clientes</h1>
-        <button id="logout-button" class="text-red-500 hover:text-red-700">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-        </button>
+        <div class="flex items-center space-x-4">
+            <button id="pos-view-btn" class="text-gray-500 hover:text-green-600" title="Punto de Venta">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                </svg>
+            </button>
+            <button id="logout-button" class="text-red-500 hover:text-red-700" title="Cerrar Sesión">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            </button>
+        </div>
     </header>
 
     <main class="flex-grow overflow-y-auto no-scrollbar pb-24">
@@ -71,6 +80,33 @@
             </div>
             <p class="text-center text-gray-500 mt-4 text-sm">Toca un día con citas (resaltado en verde) para ver los detalles.</p>
         </div>
+
+        <div id="pos-view" class="view-section hidden p-0 flex flex-col" style="height: 100%;">
+            <div class="p-4 flex-shrink-0">
+                <input type="text" id="product-search-employee" placeholder="Buscar productos..." class="w-full p-3 border rounded-lg shadow-sm">
+            </div>
+
+            <div id="products-grid-employee" class="flex-1 overflow-y-auto px-4 grid grid-cols-2 gap-3 pb-4">
+                </div>
+
+            <div id="cart-section-employee" class="flex-shrink-0 bg-white border-t p-4 space-y-3 shadow-lg">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-lg">Carrito</h3>
+                    <button id="clear-cart-btn-employee" class="text-sm text-red-500 hover:underline disabled:text-gray-400" disabled>Limpiar</button>
+                </div>
+                <div id="cart-items-employee" class="max-h-24 overflow-y-auto space-y-2 border-t border-b py-2">
+                    <p class="text-center text-gray-400 text-sm">Carrito vacío</p>
+                </div>
+                <div class="flex justify-between font-bold text-xl">
+                    <span>Total:</span>
+                    <span id="total-employee">S/ 0.00</span>
+                </div>
+                <button id="process-sale-btn-employee" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg disabled:opacity-50" disabled>
+                    Procesar Venta
+                </button>
+            </div>
+        </div>
+
     </main>
 
     <nav class="bg-white shadow-t fixed bottom-0 w-full z-20 border-t">
@@ -185,7 +221,7 @@
     </div>
 
     <div id="add-appointment-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
             <form id="add-appointment-form-employee" class="w-full flex flex-col flex-1">
                 <div class="p-6 border-b flex-shrink-0">
                     <h2 class="text-2xl font-bold text-gray-800">Agendar Nueva Cita</h2>
@@ -193,20 +229,15 @@
                 </div>
                 <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                     <div id="add-appointment-message-employee" class="hidden"></div>
-
                     <div class="relative">
                         <label for="client-search-input-modal-employee" class="block text-sm font-medium text-gray-700 mb-1">1. Cliente *</label>
                         <input type="text" id="client-search-input-modal-employee" placeholder="Escribe para buscar un cliente..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" autocomplete="off">
                         <input type="hidden" id="selected-client-id-employee" name="user_id" required>
-                        <div id="client-search-results-employee" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        </div>
+                        <div id="client-search-results-employee" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto"></div>
                     </div>
-                    
                     <div>
                         <label for="pet-select-employee" class="block text-sm font-medium text-gray-700 mb-1">2. Mascota *</label>
-                        <select id="pet-select-employee" name="pet_id" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500" disabled>
-                            <option>Selecciona un cliente primero</option>
-                        </select>
+                        <select id="pet-select-employee" name="pet_id" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500" disabled><option>Selecciona un cliente primero</option></select>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -215,9 +246,7 @@
                         </div>
                         <div>
                             <label for="new-appointment-time-employee" class="block text-sm font-medium text-gray-700 mb-1">4. Hora *</label>
-                            <select id="new-appointment-time-employee" name="appointment_time" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500" disabled>
-                                <option>Selecciona una fecha</option>
-                            </select>
+                            <select id="new-appointment-time-employee" name="appointment_time" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500" disabled><option>Selecciona una fecha</option></select>
                         </div>
                     </div>
                      <div>
@@ -243,6 +272,58 @@
             </form>
         </div>
     </div>
+    
+    <div id="payment-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl">
+                <h3 class="text-xl font-bold text-white">Procesar Pago</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex justify-between text-2xl font-bold">
+                        <span>Total a Pagar:</span>
+                        <span class="text-green-600">S/ <span id="modal-total-employee">0.00</span></span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Método de Pago</label>
+                    <select id="payment-method-employee" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="yape">Yape</option>
+                        <option value="plin">Plin</option>
+                    </select>
+                </div>
+                <div id="cash-section-employee">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Monto Recibido</label>
+                    <input type="number" id="cash-received-employee" step="0.01" min="0" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="0.00">
+                    <div id="change-display-employee" class="hidden mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="flex justify-between">
+                            <span class="font-medium text-gray-700">Cambio:</span>
+                            <span class="text-xl font-bold text-green-600">S/ <span id="change-amount-employee">0.00</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Cliente <span class="text-red-500">*</span></label>
+                    <input type="text" id="customer-search-employee" placeholder="Buscar cliente..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    <div id="customer-results-employee" class="hidden mt-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg"></div>
+                    <input type="hidden" id="selected-customer-id-employee">
+                    <div id="selected-customer-display-employee" class="hidden mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center">
+                        <span id="selected-customer-name-employee" class="font-medium text-gray-700"></span>
+                        <button id="clear-customer-btn-employee" class="text-red-600 hover:text-red-800">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <button id="cancel-payment-btn-employee" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
+                <button id="confirm-payment-btn-employee" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>Confirmar Venta</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="../../core/auth-employee.js"></script>
     <script type="module" src="./dashboard.js"></script>
 </body>

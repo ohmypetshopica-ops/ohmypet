@@ -1,13 +1,15 @@
 // public/modules/employee/dashboard.js
 
 import { supabase } from '../../core/supabase.js';
-// IMPORTACIONES ADICIONALES para manejar la lógica del modal de completar cita
 import { 
     uploadAppointmentPhoto, 
     uploadReceiptFile,
     getClientsWithPets,
     getBookedTimesForDashboard,
-    addAppointmentFromDashboard 
+    addAppointmentFromDashboard,
+    getProducts,
+    addSale,
+    updateProduct // <-- CORRECCIÓN: Se cambió 'updateProductStock' por 'updateProduct'
 } from '../dashboard/dashboard.api.js';
 import { addWeightRecord } from '../dashboard/pet-weight.api.js';
 
@@ -18,26 +20,20 @@ const navButtons = document.querySelectorAll('.nav-btn');
 const views = document.querySelectorAll('.view-section');
 const logoutButton = document.getElementById('logout-button');
 
-// Vistas de Clientes
+// Vistas de Clientes, Mascotas, Citas y Calendario (sin cambios)
 const clientSearch = document.getElementById('client-search');
 const clientsListView = document.getElementById('clients-list-view');
 const clientsList = document.getElementById('clients-list');
 const clientDetailsView = document.getElementById('client-details-view');
 const clientDetailsContent = document.getElementById('client-details-content');
 const backToClientsBtn = document.getElementById('back-to-clients-btn');
-
-// Vistas de Mascotas
 const petSearch = document.getElementById('pet-search');
 const petsListView = document.getElementById('pets-list-view');
 const petsList = document.getElementById('pets-list');
 const petDetailsView = document.getElementById('pet-details-view');
 const petDetailsContent = document.getElementById('pet-details-content');
 const backToPetsBtn = document.getElementById('back-to-pets-btn');
-
-// Vista de Citas
 const appointmentsList = document.getElementById('appointments-list');
-
-// Vistas de Calendario
 const calendarGrid = document.getElementById('calendar-grid');
 const currentMonthYear = document.getElementById('current-month-year');
 const prevMonthBtn = document.getElementById('prev-month');
@@ -57,8 +53,36 @@ let allPets = [];
 let monthlyAppointments = [];
 let allAppointments = [];
 let currentDate = new Date();
-let clientsWithPets = []; // Nueva variable global
+let clientsWithPets = [];
 
+// --- INICIO: VARIABLES Y ELEMENTOS PARA EL POS ---
+let allProducts = [];
+let cart = [];
+const posViewBtn = document.getElementById('pos-view-btn');
+const productSearchEmployee = document.getElementById('product-search-employee');
+const productsGridEmployee = document.getElementById('products-grid-employee');
+const cartItemsEmployee = document.getElementById('cart-items-employee');
+const totalEmployee = document.getElementById('total-employee');
+const clearCartBtnEmployee = document.getElementById('clear-cart-btn-employee');
+const processSaleBtnEmployee = document.getElementById('process-sale-btn-employee');
+const paymentModalEmployee = document.getElementById('payment-modal-employee');
+const paymentMethodSelectEmployee = document.getElementById('payment-method-employee');
+const cashReceivedInputEmployee = document.getElementById('cash-received-employee');
+const changeDisplayEmployee = document.getElementById('change-display-employee');
+const changeAmountElementEmployee = document.getElementById('change-amount-employee');
+const customerSearchEmployee = document.getElementById('customer-search-employee');
+const customerResultsEmployee = document.getElementById('customer-results-employee');
+const selectedCustomerIdInputEmployee = document.getElementById('selected-customer-id-employee');
+const selectedCustomerDisplayEmployee = document.getElementById('selected-customer-display-employee');
+const selectedCustomerNameEmployee = document.getElementById('selected-customer-name-employee');
+const clearCustomerBtnEmployee = document.getElementById('clear-customer-btn-employee');
+const cancelPaymentBtnEmployee = document.getElementById('cancel-payment-btn-employee');
+const confirmPaymentBtnEmployee = document.getElementById('confirm-payment-btn-employee');
+const modalTotalElementEmployee = document.getElementById('modal-total-employee');
+const cashSectionEmployee = document.getElementById('cash-section-employee');
+// --- FIN: VARIABLES Y ELEMENTOS PARA EL POS ---
+
+// ... (El resto del código se mantiene igual, ya que la lógica no cambia) ...
 
 // --- INICIO: LÓGICA DEL MODAL PARA AGENDAR CITAS (NUEVO) ---
 
@@ -85,10 +109,12 @@ const openAddAppointmentModal = () => {
     addAppointmentMessage.classList.add('hidden');
     clientSearchResults.classList.add('hidden');
     addAppointmentModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
 };
 
 const closeAddAppointmentModal = () => {
     addAppointmentModal.classList.add('hidden');
+    document.body.style.overflow = '';
 };
 
 const populatePetSelect = (clientId) => {
@@ -307,10 +333,12 @@ const openCompletionModal = (appointmentId) => {
     receiptContainer.innerHTML = `<p class="text-sm text-gray-500">Clic para subir boleta</p>`;
 
     completionModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
 };
 
 const closeCompletionModal = () => {
     completionModal.classList.add('hidden');
+    document.body.style.overflow = '';
     currentAppointmentId = null;
     currentPetId = null;
 };
@@ -420,6 +448,8 @@ const calculateAge = (birthDate) => {
 const showView = (viewId) => {
     views.forEach(view => view.classList.add('hidden'));
     document.getElementById(`${viewId}-view`).classList.remove('hidden');
+
+    // Handle bottom nav active state
     navButtons.forEach(btn => {
         const isActive = btn.dataset.view === viewId;
         btn.classList.toggle('text-green-600', isActive);
@@ -428,7 +458,183 @@ const showView = (viewId) => {
         btn.classList.toggle('text-gray-500', !isActive);
         if (isActive) headerTitle.textContent = btn.querySelector('span').textContent;
     });
+    
+    posViewBtn.classList.remove('text-green-600');
+    posViewBtn.classList.add('text-gray-500');
 };
+
+// --- INICIO: LÓGICA DEL PUNTO DE VENTA (POS) ---
+
+const showPOSView = () => {
+    views.forEach(view => view.classList.add('hidden'));
+    document.getElementById('pos-view').classList.remove('hidden');
+    navButtons.forEach(btn => {
+        btn.classList.remove('text-green-600', 'border-t-2', 'border-green-600');
+        btn.classList.add('text-gray-500');
+    });
+    posViewBtn.classList.add('text-green-600');
+    headerTitle.textContent = 'Punto de Venta';
+};
+
+const renderProductsEmployee = (products) => {
+    productsGridEmployee.innerHTML = products.map(product => `
+        <div class="bg-white border rounded-lg p-2 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow cursor-pointer" data-product-id="${product.id}">
+            <img src="${product.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=D1D5DB&color=FFFFFF`}" alt="${product.name}" class="w-full h-20 object-cover rounded-md mb-2">
+            <h3 class="font-semibold text-xs leading-tight h-8 line-clamp-2">${product.name}</h3>
+            <p class="text-sm font-bold text-green-600 mt-1">S/ ${product.price.toFixed(2)}</p>
+        </div>
+    `).join('');
+    
+    productsGridEmployee.querySelectorAll('[data-product-id]').forEach(card => {
+        card.addEventListener('click', () => {
+            const productId = card.dataset.productId;
+            const product = allProducts.find(p => p.id == productId);
+            if (product) addToCartEmployee(product);
+        });
+    });
+};
+
+const addToCartEmployee = (product) => {
+    const existingItem = cart.find(item => item.id === product.id);
+    if (existingItem) {
+        if (existingItem.quantity < product.stock) existingItem.quantity++;
+        else alert('Stock máximo alcanzado');
+    } else {
+        if (product.stock > 0) cart.push({ ...product, quantity: 1 });
+        else alert('Producto agotado');
+    }
+    renderCartEmployee();
+};
+
+const updateCartQuantityEmployee = (productId, newQuantity) => {
+    const item = cart.find(item => item.id === productId);
+    if (item) {
+        if (newQuantity <= 0) {
+            cart = cart.filter(item => item.id !== productId);
+        } else if (newQuantity > item.stock) {
+            alert('Stock máximo alcanzado');
+        } else {
+            item.quantity = newQuantity;
+        }
+    }
+    renderCartEmployee();
+};
+
+const renderCartEmployee = () => {
+    if (cart.length === 0) {
+        cartItemsEmployee.innerHTML = `<p class="text-center text-gray-400 text-sm">Carrito vacío</p>`;
+        processSaleBtnEmployee.disabled = true;
+        clearCartBtnEmployee.disabled = true;
+        totalEmployee.textContent = 'S/ 0.00';
+        return;
+    }
+
+    cartItemsEmployee.innerHTML = cart.map(item => `
+        <div class="flex items-center justify-between text-sm">
+            <span class="truncate pr-2">${item.name} (x${item.quantity})</span>
+            <span class="font-semibold whitespace-nowrap">S/ ${(item.price * item.quantity).toFixed(2)}</span>
+        </div>
+    `).join('');
+    
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    totalEmployee.textContent = `S/ ${total.toFixed(2)}`;
+    processSaleBtnEmployee.disabled = false;
+    clearCartBtnEmployee.disabled = false;
+};
+
+const clearCartEmployee = () => {
+    cart = [];
+    renderCartEmployee();
+};
+
+const openPaymentModalEmployee = () => {
+    modalTotalElementEmployee.textContent = totalEmployee.textContent.replace('S/ ', '');
+    paymentModalEmployee.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+};
+
+const closePaymentModalEmployee = () => {
+    paymentModalEmployee.classList.add('hidden');
+    document.body.style.overflow = '';
+};
+
+const processSaleEmployee = async () => {
+    if (!selectedCustomerIdInputEmployee.value) {
+        alert('Por favor, selecciona un cliente.');
+        return;
+    }
+
+    confirmPaymentBtnEmployee.disabled = true;
+    confirmPaymentBtnEmployee.textContent = 'Procesando...';
+    
+    // Aquí usamos la función `addSale` importada
+    for (const item of cart) {
+        const saleData = {
+            client_id: selectedCustomerIdInputEmployee.value,
+            product_id: item.id,
+            quantity: item.quantity,
+            unit_price: item.price,
+            total_price: item.price * item.quantity,
+            payment_method: paymentMethodSelectEmployee.value
+        };
+        // La función addSale ya se encarga de registrar la venta Y actualizar el stock
+        await addSale(saleData);
+    }
+
+    alert('Venta procesada con éxito');
+    clearCartEmployee();
+    closePaymentModalEmployee();
+    // Actualizar la lista de productos localmente para reflejar el nuevo stock
+    cart.forEach(cartItem => {
+        const product = allProducts.find(p => p.id === cartItem.id);
+        if (product) product.stock -= cartItem.quantity;
+    });
+    renderProductsEmployee(allProducts);
+
+    confirmPaymentBtnEmployee.disabled = false;
+    confirmPaymentBtnEmployee.textContent = 'Confirmar Venta';
+};
+
+const initializePOSEmployee = () => {
+    posViewBtn.addEventListener('click', showPOSView);
+    productSearchEmployee.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        renderProductsEmployee(allProducts.filter(p => p.name.toLowerCase().includes(term)));
+    });
+    clearCartBtnEmployee.addEventListener('click', clearCartEmployee);
+    processSaleBtnEmployee.addEventListener('click', openPaymentModalEmployee);
+    cancelPaymentBtnEmployee.addEventListener('click', closePaymentModalEmployee);
+    confirmPaymentBtnEmployee.addEventListener('click', processSaleEmployee);
+
+    customerSearchEmployee.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        if (term.length < 2) { customerResultsEmployee.classList.add('hidden'); return; }
+        const matched = allClients.filter(c => `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase().includes(term));
+        customerResultsEmployee.innerHTML = matched.map(c => `<div class="p-2 cursor-pointer hover:bg-gray-100" data-id="${c.id}" data-name="${c.first_name || ''} ${c.last_name || ''}">${c.first_name || ''} ${c.last_name || ''}</div>`).join('');
+        customerResultsEmployee.classList.remove('hidden');
+    });
+
+    customerResultsEmployee.addEventListener('click', (e) => {
+        const target = e.target.closest('[data-id]');
+        if (target) {
+            selectedCustomerIdInputEmployee.value = target.dataset.id;
+            selectedCustomerNameEmployee.textContent = target.dataset.name;
+            selectedCustomerDisplayEmployee.classList.remove('hidden');
+            customerResultsEmployee.classList.add('hidden');
+            customerSearchEmployee.value = '';
+            confirmPaymentBtnEmployee.disabled = false;
+        }
+    });
+
+    clearCustomerBtnEmployee.addEventListener('click', () => {
+        selectedCustomerIdInputEmployee.value = '';
+        selectedCustomerDisplayEmployee.classList.add('hidden');
+        confirmPaymentBtnEmployee.disabled = true;
+    });
+};
+
+// --- FIN: LÓGICA DEL PUNTO DE VENTA (POS) ---
+
 
 // --- SECCIÓN DE CITAS ---
 const renderConfirmedAppointments = () => {
@@ -563,9 +769,17 @@ const showPetsListView = () => {
     petsListView.classList.remove('hidden');
 };
 
-// --- LÓGICA DEL MODAL DE CALENDARIO (sin cambios) ---
-const openModal = () => { calendarModal.classList.remove('hidden'); setTimeout(() => modalContent.classList.remove('translate-y-full'), 10); };
-const closeModal = () => { modalContent.classList.add('translate-y-full'); setTimeout(() => calendarModal.classList.add('hidden'), 300); };
+// --- LÓGICA DEL MODAL DE CALENDARIO ---
+const openModal = () => { 
+    calendarModal.classList.remove('hidden'); 
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => modalContent.classList.remove('translate-y-full'), 10); 
+};
+const closeModal = () => { 
+    modalContent.classList.add('translate-y-full'); 
+    document.body.style.overflow = '';
+    setTimeout(() => { calendarModal.classList.add('hidden'); }, 300); 
+};
 
 // --- SECCIÓN DE CALENDARIO (sin cambios) ---
 const fetchAppointmentsForMonth = async (date) => {
@@ -625,18 +839,25 @@ const showAppointmentDetails = async (appointmentId) => {
 
 // --- CARGA INICIAL DE DATOS ---
 const loadInitialData = async () => {
-    const [clientsRes, petsRes, appointmentsRes] = await Promise.all([
+    // --- Carga de datos para POS añadida ---
+    const [clientsRes, petsRes, appointmentsRes, productsRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('role', 'cliente'),
         supabase.from('pets').select('*, profiles(*)'),
-        supabase.from('appointments').select('*, pets(*), profiles(*)')
+        supabase.from('appointments').select('*, pets(*), profiles(*)'),
+        getProducts() // Cargar productos para el POS
     ]);
     allClients = clientsRes.data || [];
     allPets = petsRes.data || [];
     allAppointments = appointmentsRes.data || [];
+    allProducts = productsRes || []; // Almacenar productos
+
     renderClients(allClients);
     renderPets(allPets);
     renderConfirmedAppointments();
     await renderCalendar();
+    
+    // Renderizar productos en el grid del POS
+    renderProductsEmployee(allProducts);
 };
 
 // --- INICIALIZACIÓN Y EVENT LISTENERS ---
@@ -664,7 +885,6 @@ document.addEventListener('DOMContentLoaded', () => {
     modalAppointmentsList.addEventListener('click', (e) => { const btn = e.target.closest('.appointment-btn'); if (btn) showAppointmentDetails(btn.dataset.appointmentId); });
     modalBackBtn.addEventListener('click', () => { modalDetailsView.classList.add('hidden'); modalDailyView.classList.remove('hidden'); });
     
-    // MODIFICACIÓN: Cambiar el listener para abrir el modal
     appointmentsList.addEventListener('click', (e) => {
         const btn = e.target.closest('.complete-btn');
         if (btn) {
@@ -672,9 +892,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Añadir listeners para los nuevos modales
+    // Añadir listeners para los modales
     setupCompletionModalListeners();
-    initializeAddAppointmentModal(); // NUEVA FUNCIÓN LLAMADA AQUÍ
+    initializeAddAppointmentModal();
+    initializePOSEmployee();
 
     showView('clients');
     loadInitialData();
