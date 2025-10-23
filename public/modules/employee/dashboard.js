@@ -1056,6 +1056,7 @@ const setupClientAndPetModals = () => {
         addPetFormEmployee.reset();
         addPetFormMessageEmployee.classList.add('hidden');
         petOwnerIdInputEmployee.value = ownerId;
+        petPhotoFilenameEmployee.textContent = 'Ningún archivo seleccionado';
         addPetModalEmployee.classList.remove('hidden');
     };
     const closeAddPetModal = () => addPetModalEmployee.classList.add('hidden');
@@ -1072,7 +1073,6 @@ const setupClientAndPetModals = () => {
         e.preventDefault();
         const formData = new FormData(addPetFormEmployee);
         
-        // No hay validación, todos los campos son opcionales
         const petData = {
             owner_id: formData.get('owner_id'),
             name: formData.get('name') || null,

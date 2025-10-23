@@ -56,7 +56,7 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         Agregar Mascota a este Cliente
                     </button>
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -355,11 +355,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label for="first_name_employee" class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
-                        <input type="text" id="first_name_employee" name="first_name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <input type="text" id="first_name_employee" name="first_name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
                     <div>
                         <label for="last_name_employee" class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
-                        <input type="text" id="last_name_employee" name="last_name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <input type="text" id="last_name_employee" name="last_name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -378,11 +378,11 @@
                 </div>
                 <div class="mb-4">
                     <label for="phone_employee" class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
-                    <input type="tel" id="phone_employee" name="phone" placeholder="987654321" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    <input type="tel" id="phone_employee" name="phone" placeholder="987654321" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                 </div>
                 <div class="mb-4">
                     <label for="district_employee" class="block text-sm font-medium text-gray-700 mb-1">Distrito *</label>
-                    <input type="text" id="district_employee" name="district" placeholder="Ica" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    <input type="text" id="district_employee" name="district" placeholder="Ica" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                 </div>
                 <div class="flex gap-3 mt-6">
                     <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg">Registrar Cliente</button>
@@ -410,7 +410,7 @@
                         <label for="pet-photo-input-employee" class="cursor-pointer bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-sm">
                             Seleccionar archivo
                         </label>
-                        <input type="file" id="pet-photo-input-employee" name="photo" accept="image/*" class="hidden">
+                        <input type="file" id="pet-photo-input-employee" name="photo" accept="image/*" capture="environment" class="hidden">
                         <span id="pet-photo-filename-employee" class="text-gray-600 text-sm">Ningún archivo seleccionado</span>
                     </div>
                 </div>
