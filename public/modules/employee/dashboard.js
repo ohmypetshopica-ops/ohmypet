@@ -121,7 +121,8 @@ const cancelAddPetButtonEmployee = document.querySelector('#cancel-add-pet-butto
 const addPetFormEmployee = document.querySelector('#add-pet-form-employee');
 const addPetFormMessageEmployee = document.querySelector('#add-pet-form-message-employee');
 const petOwnerIdInputEmployee = document.querySelector('#pet-owner-id-employee');
-
+const petPhotoInputEmployee = document.querySelector('#pet-photo-input-employee');
+const petPhotoFilenameEmployee = document.querySelector('#pet-photo-filename-employee');
 
 const openAddAppointmentModal = () => {
     addAppointmentForm.reset();
@@ -1030,7 +1031,6 @@ const setupClientAndPetModals = () => {
             lastName: formData.get('last_name'),
             phone: formData.get('phone'),
             district: formData.get('district'),
-            // --- Nuevos campos opcionales ---
             docType: formData.get('doc_type') || null,
             docNum: formData.get('doc_num') || null
         };
@@ -1071,24 +1071,42 @@ const setupClientAndPetModals = () => {
     addPetFormEmployee.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(addPetFormEmployee);
+        
+        // No hay validación, todos los campos son opcionales
         const petData = {
             owner_id: formData.get('owner_id'),
-            name: formData.get('name'),
-            breed: formData.get('breed'),
-            observations: formData.get('observations'),
+            name: formData.get('name') || null,
+            breed: formData.get('breed') || null,
+            sex: formData.get('sex') || null,
+            birth_date: formData.get('dob') || null,
+            observations: formData.get('observations') || null,
             species: 'Perro' // Por defecto
         };
+        
+        let photoFile = petPhotoInputEmployee.files[0];
+        let imageUrl = null;
 
-        if (!petData.name || !petData.breed) {
-            alert('Nombre y raza son obligatorios.');
-            return;
+        if (photoFile) {
+            const fileName = `public/${petData.owner_id}/${Date.now()}_${photoFile.name}`;
+            const { data, error: uploadError } = await supabase.storage
+                .from('pet_galleries')
+                .upload(fileName, photoFile);
+            if (uploadError) {
+                alert('Error al subir la imagen: ' + uploadError.message);
+                return;
+            }
+            const { data: { publicUrl } } = supabase.storage
+                .from('pet_galleries')
+                .getPublicUrl(fileName);
+            imageUrl = publicUrl;
         }
+
+        petData.image_url = imageUrl;
 
         const { success, error } = await addPetFromDashboard(petData);
         if (success) {
             alert('Mascota agregada exitosamente.');
             closeAddPetModal();
-            // Recargar datos y refrescar la vista de detalles del cliente
             await loadInitialData();
             showClientDetails(petData.owner_id);
         } else {
