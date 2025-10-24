@@ -80,6 +80,7 @@ const confirmRescheduleBtn = document.querySelector('#confirm-reschedule-btn');
 let appointmentToRescheduleId = null;
 let selectedRescheduleTime = null;
 
+
 // --- PAGINACIÓN ---
 const renderPagination = (totalCount) => {
     const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -125,6 +126,7 @@ const renderPagination = (totalCount) => {
 };
 
 // --- CARGA Y RENDERIZADO PRINCIPAL ---
+
 const renderAppointmentsTable = (appointments) => {
     if (!appointmentsTableBody) return;
     appointmentsTableBody.innerHTML = appointments.length > 0
@@ -246,7 +248,6 @@ const handleUrlParams = () => {
     }
 };
 
-// --- FUNCIONES PARA EL MODAL DE REPROGRAMACIÓN ---
 const openRescheduleModal = (appointmentId, petName, clientName) => {
     appointmentToRescheduleId = appointmentId;
     selectedRescheduleTime = null;
@@ -254,13 +255,6 @@ const openRescheduleModal = (appointmentId, petName, clientName) => {
     rescheduleSubtitle.textContent = `Reprogramando para ${petName} de ${clientName}`;
     rescheduleDateInput.value = '';
     
-    // ========================================
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Se elimina la siguiente línea para permitir seleccionar fechas pasadas
-    // rescheduleDateInput.min = new Date().toISOString().split("T")[0]; 
-    // --- FIN DE LA CORRECCIÓN ---
-    // ========================================
-
     rescheduleTimeOptions.innerHTML = `<p class="col-span-full text-center text-sm text-gray-500">Selecciona una fecha para ver los horarios.</p>`;
     confirmRescheduleBtn.disabled = true;
     
@@ -445,9 +439,26 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
     paymentMethodSelect.value = '';
     uploadMessage.classList.add('hidden');
 
+    const appointment = allAppointments.find(app => app.id == appointmentId);
+    
+    // ========================================
+    // --- INICIO DE LA CORRECCIÓN ---
+    if (appointment && appointment.status === 'completada') {
+        // MODO EDICIÓN: Ocultamos el botón de completar y cambiamos el texto del otro.
+        confirmCompletionBtn.classList.add('hidden');
+        saveDuringAppointmentBtn.textContent = '💾 Guardar Cambios';
+        document.querySelector('#completion-modal h3').textContent = 'Editar Detalles de Cita';
+    } else {
+        // MODO COMPLETAR: Mostramos ambos botones con su texto original.
+        confirmCompletionBtn.classList.remove('hidden');
+        saveDuringAppointmentBtn.textContent = '💾 Guardar Información (Continuar editando)';
+        document.querySelector('#completion-modal h3').textContent = 'Completar Cita';
+    }
+    // --- FIN DE LA CORRECCIÓN ---
+    // ========================================
+
     completionModal.classList.remove('hidden');
 
-    const appointment = allAppointments.find(app => app.id == appointmentId);
     if (appointment) {
         finalObservationsTextarea.value = appointment.final_observations || '';
         petWeightInput.value = appointment.final_weight || '';
@@ -487,6 +498,14 @@ const closeCompletionModal = () => {
     arrivalPhotoFile = null;
     departurePhotoFile = null;
     receiptFile = null;
+
+    // ========================================
+    // --- INICIO: RESETEAR BOTONES ---
+    // Nos aseguramos de que los botones vuelvan a su estado original al cerrar el modal.
+    confirmCompletionBtn.classList.remove('hidden');
+    saveDuringAppointmentBtn.textContent = '💾 Guardar Información (Continuar editando)';
+    // --- FIN: RESETEAR BOTONES ---
+    // ========================================
 };
 
 
@@ -553,7 +572,9 @@ const initializePage = async () => {
                     : clientProfile?.full_name || 'Cliente';
                 openRescheduleModal(appointmentId, petName, clientName);
             }
-        } else if (action === 'completar') {
+        // ========================================
+        // --- INICIO: MANEJO DEL BOTÓN DE EDICIÓN ---
+        } else if (action === 'completar' || action === 'edit-completed') {
             const appointment = allAppointments.find(app => app.id == appointmentId);
             if (appointment) {
                 const petName = appointment.pets?.name || 'N/A';
@@ -561,6 +582,8 @@ const initializePage = async () => {
                 openCompletionModal(appointmentId, petName, petId);
             }
         }
+        // --- FIN: MANEJO DEL BOTÓN DE EDICIÓN ---
+        // ========================================
     });
 
     cancelCompletionBtn?.addEventListener('click', closeCompletionModal);
@@ -652,11 +675,15 @@ const initializePage = async () => {
             uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-green-100 text-green-700';
             uploadMessage.textContent = '✓ Información guardada correctamente';
 
-            await loadExistingPhotosAndReceipt(currentAppointmentId);
+            // ========================================
+            // --- INICIO DE LA CORRECCIÓN ---
+            setTimeout(async () => {
+                closeCompletionModal();
+                await loadAppointmentsAndRender();
+            }, 1500);
+            // --- FIN DE LA CORRECCIÓN ---
+            // ========================================
 
-            setTimeout(() => {
-                uploadMessage.classList.add('hidden');
-            }, 3000);
         } catch (error) {
             uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
             uploadMessage.textContent = `Error: ${error.message}`;
@@ -745,7 +772,7 @@ const initializePage = async () => {
         }
     });
     
-    // --- LISTENERS PARA EL NUEVO MODAL ---
+    // --- LISTENERS PARA EL MODAL DE REPROGRAMACIÓN ---
     rescheduleDateInput?.addEventListener('change', renderRescheduleTimeOptions);
     cancelRescheduleBtn?.addEventListener('click', closeRescheduleModal);
     rescheduleModal?.addEventListener('click', (e) => {
