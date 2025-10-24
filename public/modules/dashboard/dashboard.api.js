@@ -768,6 +768,28 @@ export const updateClientProfile = async (clientId, profileData) => {
 };
 // --- FIN NUEVA FUNCIÓN ---
 
+// ========================================
+// --- INICIO: NUEVA FUNCIÓN PARA REPROGRAMAR ---
+export const rescheduleAppointmentFromDashboard = async (appointmentId, newDate, newTime) => {
+    const { data, error } = await supabase
+        .from('appointments')
+        .update({ 
+            appointment_date: newDate, 
+            appointment_time: newTime,
+            status: 'pendiente' // Regresa a pendiente para requerir re-confirmación
+        })
+        .eq('id', appointmentId)
+        .select();
+
+    if (error) {
+        console.error('Error al reprogramar la cita:', error);
+        return { success: false, error };
+    }
+    return { success: true, data: data[0] };
+};
+// --- FIN: NUEVA FUNCIÓN ---
+// ========================================
+
 // =================== CÓDIGO A AGREGAR ===================
 /**
  * Obtiene un listado de ventas con datos del cliente y producto.

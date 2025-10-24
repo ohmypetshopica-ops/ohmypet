@@ -1,3 +1,5 @@
+// public/modules/dashboard/dashboard-services.js
+
 import { supabase } from '../../core/supabase.js';
 
 // --- ELEMENTOS DEL DOM ---
@@ -348,7 +350,8 @@ const switchToEditMode = () => {
 };
 
 const handleSaveChanges = async (e) => {
-    e.preventDefault();
+    // Si 'e' existe, es por el evento submit, lo prevenimos. Si no, es llamado por el click.
+    if (e) e.preventDefault();
     if (!selectedService) return;
 
     saveServiceBtn.disabled = true;
@@ -425,7 +428,12 @@ const initializeServicesPage = async () => {
     // Listeners de los botones del modal
     editServiceBtn.addEventListener('click', switchToEditMode);
     cancelEditBtn.addEventListener('click', switchToViewMode);
-    modalServiceEditForm.addEventListener('submit', handleSaveChanges);
+    
+    // ================== INICIO DE LA CORRECCIÓN ==================
+    // Se cambia el listener del 'submit' del formulario al 'click' del botón,
+    // ya que el botón no es de tipo 'submit' y está fuera del <form>.
+    saveServiceBtn.addEventListener('click', handleSaveChanges);
+    // =================== FIN DE LA CORRECCIÓN ====================
 };
 
 initializeServicesPage();
