@@ -1,8 +1,13 @@
 // public/modules/dashboard/dashboard-calendar.js
 
 import { supabase } from '../../core/supabase.js';
+import { 
+    getClientsWithPets, 
+    getBookedTimesForDashboard, 
+    addAppointmentFromDashboard 
+} from './dashboard.api.js';
 
-// --- ELEMENTOS DEL DOM ---
+// --- ELEMENTOS DEL DOM CALENDAR ---
 const calendarGrid = document.getElementById('calendar-grid');
 const currentMonthYear = document.getElementById('current-month-year');
 const prevMonthBtn = document.getElementById('prev-month');
@@ -10,17 +15,33 @@ const nextMonthBtn = document.getElementById('next-month');
 const todayBtn = document.getElementById('today-btn');
 const headerTitle = document.querySelector('#header-title');
 
-// Modal
+// Modal de detalles de día
 const dayDetailModal = document.getElementById('day-detail-modal');
 const modalDate = document.getElementById('modal-date');
 const timeSlotsContainer = document.getElementById('time-slots-container');
 const closeModalBtn = document.getElementById('close-modal');
+
+// --- ELEMENTOS DEL MODAL DE AGENDAR CITA ---
+const addAppointmentModal = document.querySelector('#add-appointment-modal-calendar');
+const addAppointmentForm = document.querySelector('#add-appointment-form-calendar');
+const cancelAddAppointmentBtn = document.querySelector('#cancel-add-appointment-btn-calendar');
+const submitAppointmentBtn = document.querySelector('#submit-appointment-btn-calendar');
+const petSelect = document.querySelector('#pet-select-calendar');
+const newAppointmentDateInput = document.querySelector('#new-appointment-date-calendar');
+const newAppointmentTimeSelect = document.querySelector('#new-appointment-time-calendar');
+const serviceSelect = document.querySelector('#service-select-calendar');
+const serviceNotes = document.querySelector('#service-notes-calendar');
+const addAppointmentMessage = document.querySelector('#add-appointment-message-calendar');
+const clientSearchInputModal = document.querySelector('#client-search-input-modal-calendar');
+const clientSearchResults = document.querySelector('#client-search-results-calendar');
+const selectedClientIdInput = document.querySelector('#selected-client-id-calendar');
 
 // --- ESTADO ---
 let currentDate = new Date();
 let appointments = [];
 let blockedSlots = [];
 let selectedDate = null;
+let clientsWithPets = [];
 
 // --- HORARIOS DISPONIBLES ---
 const AVAILABLE_HOURS = [
@@ -29,7 +50,7 @@ const AVAILABLE_HOURS = [
     "15:00", "15:30", "16:00"
 ];
 
-// --- FUNCIONES DE API ---
+// --- FUNCIONES DE API (sin cambios, solo importadas) ---
 
 /**
  * Obtiene todas las citas de un mes específico
@@ -121,7 +142,8 @@ const unblockTimeSlot = async (date, time) => {
     return { success: true };
 };
 
-// --- FUNCIONES DEL CALENDARIO ---
+
+// --- FUNCIONES DEL CALENDARIO (createDayCell y renderCalendar se mantienen igual) ---
 
 /**
  * Renderiza el calendario del mes actual
@@ -177,7 +199,8 @@ const renderCalendar = async () => {
  */
 const createDayCell = (day, isOtherMonth, year, month) => {
     const cell = document.createElement('div');
-    const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+    const dateObj = new Date(year, month, day);
+    const dateStr = dateObj.toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
     const isToday = dateStr === today;
     
@@ -243,6 +266,64 @@ const createDayCell = (day, isOtherMonth, year, month) => {
     return cell;
 };
 
+// --- LÓGICA DEL MODAL DE AGENDAR CITA ---
+
+const openAddAppointmentModal = (dateStr, timeStr) => {
+    // 1. Pre-seleccionar fecha y hora
+    newAppointmentDateInput.value = dateStr;
+    newAppointmentTimeSelect.innerHTML = `<option value="${timeStr}:00">${timeStr}</option>`;
+    newAppointmentTimeSelect.value = `${timeStr}:00`;
+    newAppointmentTimeSelect.disabled = false;
+    
+    // 2. Limpiar otros campos
+    clientSearchInputModal.value = '';
+    selectedClientIdInput.value = '';
+    petSelect.innerHTML = '<option>Selecciona un cliente primero</option>';
+    petSelect.disabled = true;
+    serviceSelect.value = '';
+    serviceNotes.value = '';
+    addAppointmentMessage.classList.add('hidden');
+
+    // 3. Ocultar modal de detalle y mostrar modal de agendar
+    dayDetailModal.classList.add('hidden');
+    addAppointmentModal.classList.remove('hidden');
+};
+
+const closeAddAppointmentModal = () => {
+    addAppointmentModal.classList.add('hidden');
+};
+
+const populatePetSelect = (clientId) => {
+    const selectedClient = clientsWithPets.find(c => c.id === clientId);
+
+    if (selectedClient && selectedClient.pets.length > 0) {
+        petSelect.innerHTML = '<option value="">Selecciona una mascota...</option>';
+        selectedClient.pets.forEach(pet => {
+            const option = new Option(pet.name, pet.id);
+            petSelect.add(option);
+        });
+        petSelect.disabled = false;
+    } else {
+        petSelect.innerHTML = '<option>Este cliente no tiene mascotas registradas</option>';
+        petSelect.disabled = true;
+    }
+};
+
+const renderClientSearchResults = (clients) => {
+    if (clients.length === 0) {
+        clientSearchResults.innerHTML = `<div class="p-3 text-sm text-gray-500">No se encontraron clientes.</div>`;
+    } else {
+        clientSearchResults.innerHTML = clients.map(client => {
+            const displayName = (client.first_name && client.last_name) ? `${client.first_name} ${client.last_name}` : client.full_name;
+            return `<div class="p-3 hover:bg-gray-100 cursor-pointer text-sm" data-client-id="${client.id}" data-client-name="${displayName}">${displayName}</div>`;
+        }).join('');
+    }
+    clientSearchResults.classList.remove('hidden');
+};
+
+
+// --- FUNCIONES DEL CALENDARIO - CONTINUACIÓN ---
+
 /**
  * Abre el modal con los detalles del día
  */
@@ -266,10 +347,10 @@ const openDayDetailModal = async (dateStr) => {
         const blocked = dayBlocked.find(slot => slot.blocked_time.startsWith(time));
         
         const slot = document.createElement('div');
-        slot.className = 'p-3 rounded-lg border-2 transition-all cursor-pointer';
+        slot.className = 'p-3 rounded-lg border-2 transition-all';
         
         if (appointment) {
-            // Hay una cita
+            // Hay una cita - Mostrar detalles
             const ownerName = appointment.profiles?.first_name 
                 ? `${appointment.profiles.first_name} ${appointment.profiles.last_name}`
                 : appointment.profiles?.full_name || 'Cliente';
@@ -291,15 +372,18 @@ const openDayDetailModal = async (dateStr) => {
             `;
             slot.style.cursor = 'default';
         } else if (blocked) {
-            // Está bloqueado
+            // Está bloqueado - Opción para desbloquear
             slot.className += ' blocked-slot border-red-500';
             slot.innerHTML = `
                 <div class="font-bold text-sm">${time}</div>
                 <div class="text-xs text-red-700 mt-1">🚫 Bloqueado</div>
                 <div class="text-xs text-gray-600">${blocked.reason || 'Sin motivo'}</div>
+                <div class="mt-2">
+                    <button class="unblock-btn w-full bg-red-500 text-white text-xs font-semibold py-1 rounded hover:bg-red-600">Desbloquear</button>
+                </div>
             `;
             
-            slot.addEventListener('click', async () => {
+            slot.querySelector('.unblock-btn').addEventListener('click', async () => {
                 if (confirm(`¿Desbloquear el horario ${time}?`)) {
                     const result = await unblockTimeSlot(dateStr, time + ':00');
                     if (result.success) {
@@ -312,15 +396,23 @@ const openDayDetailModal = async (dateStr) => {
                 }
             });
         } else {
-            // Está disponible
-            slot.className += ' border-green-300 bg-green-50 hover:bg-green-100 hover:border-green-500';
+            // Está disponible - Opciones de agendar/bloquear
+            slot.className += ' border-green-300 bg-green-50 hover:bg-green-100 cursor-pointer';
             slot.innerHTML = `
                 <div class="font-bold text-sm">${time}</div>
                 <div class="text-xs text-green-700 mt-1">✓ Disponible</div>
-                <div class="text-xs text-gray-600">Click para bloquear</div>
+                <div class="mt-2 flex gap-2 justify-center">
+                    <button class="schedule-btn bg-green-600 text-white text-xs font-semibold py-1 px-2 rounded hover:bg-green-700">Agendar Cita</button>
+                    <button class="block-btn bg-gray-600 text-white text-xs font-semibold py-1 px-2 rounded hover:bg-gray-700">Bloquear</button>
+                </div>
             `;
             
-            slot.addEventListener('click', async () => {
+            slot.querySelector('.schedule-btn').addEventListener('click', () => {
+                // Abrir el modal de agendar cita con la fecha y hora seleccionadas
+                openAddAppointmentModal(dateStr, time);
+            });
+
+            slot.querySelector('.block-btn').addEventListener('click', async () => {
                 const reason = prompt(`Bloquear horario ${time}. Motivo (opcional):`, 'Bloqueado por administrador');
                 if (reason !== null) {
                     const result = await blockTimeSlot(dateStr, time + ':00', reason || 'Bloqueado por administrador');
@@ -342,11 +434,152 @@ const openDayDetailModal = async (dateStr) => {
 };
 
 /**
- * Cierra el modal
+ * Cierra el modal de detalles de día
  */
 const closeDayDetailModal = () => {
     dayDetailModal.classList.add('hidden');
 };
+
+// --- FUNCIÓN DE INICIALIZACIÓN DE LISTENERS (para corregir el error) ---
+
+const setupAppointmentModalListeners = () => {
+    // Escucha de eventos para el modal de agendar cita
+    cancelAddAppointmentBtn?.addEventListener('click', closeAddAppointmentModal);
+
+    addAppointmentModal?.addEventListener('click', (e) => {
+        if (e.target === addAppointmentModal) closeAddAppointmentModal();
+    });
+
+    clientSearchInputModal?.addEventListener('input', () => {
+        const searchTerm = clientSearchInputModal.value.toLowerCase();
+        
+        petSelect.innerHTML = '<option>Selecciona un cliente primero</option>';
+        petSelect.disabled = true;
+        selectedClientIdInput.value = '';
+
+        if (searchTerm.length < 1) {
+            clientSearchResults.classList.add('hidden');
+            return;
+        }
+
+        const matchedClients = clientsWithPets.filter(client => {
+            const fullName = ((client.first_name || '') + ' ' + (client.last_name || '')).toLowerCase();
+            return fullName.includes(searchTerm);
+        });
+
+        renderClientSearchResults(matchedClients);
+    });
+
+    clientSearchResults?.addEventListener('click', (e) => {
+        const clientDiv = e.target.closest('[data-client-id]');
+        if (clientDiv) {
+            const clientId = clientDiv.dataset.clientId;
+            const clientName = clientDiv.dataset.clientName;
+
+            clientSearchInputModal.value = clientName;
+            selectedClientIdInput.value = clientId;
+
+            clientSearchResults.classList.add('hidden');
+            populatePetSelect(clientId);
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!clientSearchInputModal?.contains(e.target) && !clientSearchResults?.contains(e.target)) {
+            clientSearchResults.classList.add('hidden');
+        }
+    });
+
+    newAppointmentDateInput?.addEventListener('change', async () => {
+        const selectedDate = newAppointmentDateInput.value;
+        if (!selectedDate) return;
+        
+        newAppointmentTimeSelect.innerHTML = '<option>Cargando...</option>';
+        const bookedTimes = await getBookedTimesForDashboard(selectedDate);
+        
+        newAppointmentTimeSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
+        AVAILABLE_HOURS.forEach(hour => {
+            if (!bookedTimes.includes(hour)) {
+                const option = new Option(hour, hour + ':00');
+                newAppointmentTimeSelect.add(option);
+            }
+        });
+        newAppointmentTimeSelect.disabled = false;
+    });
+
+
+    addAppointmentForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        submitAppointmentBtn.disabled = true;
+        submitAppointmentBtn.textContent = 'Agendando...';
+
+        const formData = new FormData(addAppointmentForm);
+        const serviceValue = formData.get('service');
+        const notesValue = formData.get('notes');
+        
+        const appointmentData = {
+            user_id: formData.get('user_id'),
+            pet_id: formData.get('pet_id'),
+            appointment_date: formData.get('appointment_date'),
+            appointment_time: formData.get('appointment_time'),
+            service: serviceValue,
+            notes: notesValue || null,
+            status: 'confirmada' // Asumimos que el administrador lo confirma inmediatamente
+        };
+
+        if (!appointmentData.user_id || !appointmentData.pet_id || !appointmentData.appointment_date || !appointmentData.appointment_time || !appointmentData.service) {
+            alert('Por favor, completa todos los campos obligatorios.');
+            submitAppointmentBtn.disabled = false;
+            submitAppointmentBtn.textContent = 'Agendar Cita';
+            return;
+        }
+
+        const { success, error } = await addAppointmentFromDashboard(appointmentData);
+
+        if (success) {
+            alert('¡Cita agendada con éxito!');
+            
+            try {
+                // 1. Verificar si la cita es para el futuro
+                const appointmentDateTime = new Date(`${appointmentData.appointment_date}T${appointmentData.appointment_time}`);
+                const now = new Date();
+
+                if (appointmentDateTime >= now) {
+                    const client = clientsWithPets.find(c => c.id === appointmentData.user_id);
+                    if (client && client.phone) {
+                        const pet = client.pets.find(p => p.id === appointmentData.pet_id);
+                        const petName = pet ? pet.name : 'su mascota';
+                        const appointmentDate = new Date(appointmentData.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        
+                        const message = `¡Hola ${client.first_name}! 👋 Te confirmamos tu cita en OhMyPet:\n\n*Mascota:* ${petName}\n*Fecha:* ${appointmentDate}\n*Hora:* ${appointmentData.appointment_time}\n*Servicio:* ${appointmentData.service}\n\n¡Te esperamos! 🐾`;
+                        
+                        const whatsappUrl = `https://wa.me/51${client.phone}?text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+                    } else {
+                        alert('La cita fue agendada, pero no se pudo notificar por WhatsApp porque el cliente no tiene un número de teléfono registrado.');
+                    }
+                } else {
+                    // 2. Mensaje si la fecha es pasada
+                    alert('Cita agendada para una fecha/hora pasada. No se envió notificación por WhatsApp.');
+                }
+            } catch (e) {
+                console.error('Error al intentar enviar WhatsApp:', e);
+                alert('La cita fue agendada, pero ocurrió un error al intentar generar el mensaje de WhatsApp.');
+            }
+
+            closeAddAppointmentModal();
+            await renderCalendar(); // Recargar el calendario para mostrar la nueva cita
+        } else {
+            addAppointmentMessage.textContent = `Error: ${error.message}`;
+            addAppointmentMessage.className = 'p-3 rounded-md bg-red-100 text-red-700 text-sm';
+            addAppointmentMessage.classList.remove('hidden');
+        }
+
+        submitAppointmentBtn.disabled = false;
+        submitAppointmentBtn.textContent = 'Agendar Cita';
+    });
+}
+
 
 // --- EVENT LISTENERS ---
 prevMonthBtn.addEventListener('click', async () => {
@@ -377,6 +610,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (headerTitle) {
         headerTitle.textContent = 'Calendario de Citas';
     }
+    
+    // Cargar datos de clientes y mascotas al inicio
+    clientsWithPets = await getClientsWithPets();
+    
+    // Configurar listeners del modal de agendamiento después de que el DOM esté cargado.
+    setupAppointmentModalListeners();
     
     await renderCalendar();
 });
