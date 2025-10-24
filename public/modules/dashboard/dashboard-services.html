@@ -232,8 +232,8 @@
     </div>
 
     <div id="service-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl max-h-[95vh] overflow-y-auto">
-            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 md:p-6 flex justify-between items-center z-10">
+        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl max-h-[95vh] flex flex-col">
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 md:p-6 flex justify-between items-center z-10 flex-shrink-0">
                 <h3 class="text-xl md:text-2xl font-bold text-gray-800">Detalles del Servicio</h3>
                 <button id="close-service-modal" class="text-gray-400 hover:text-gray-600">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -241,7 +241,51 @@
                     </svg>
                 </button>
             </div>
-            <div id="modal-service-details" class="p-4 md:p-6 space-y-4 md:space-y-6">
+            
+            <div class="overflow-y-auto custom-scrollbar flex-1">
+                <div id="modal-service-details-view" class="p-4 md:p-6 space-y-4 md:space-y-6">
+                    </div>
+
+                <form id="modal-service-edit-form" class="hidden p-4 md:p-6 space-y-4">
+                    <input type="hidden" id="edit-service-id">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Costo del Servicio (S/)</label>
+                            <input type="number" id="edit-service-price" step="0.01" class="w-full p-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+                            <select id="edit-payment-method" class="w-full p-2 border border-gray-300 rounded-lg bg-white">
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Yape">Yape</option>
+                                <option value="Plin">Plin</option>
+                                <option value="Tarjeta">Tarjeta</option>
+                                <option value="Transferencia">Transferencia</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Peso Final (kg)</label>
+                        <input type="number" id="edit-final-weight" step="0.1" placeholder="Opcional" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones Finales</label>
+                        <textarea id="edit-final-observations" rows="4" class="w-full p-2 border border-gray-300 rounded-lg"></textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="bg-gray-50 p-4 flex justify-end gap-3 rounded-b-2xl border-t flex-shrink-0">
+                <button id="edit-service-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
+                    Editar
+                </button>
+                <button id="save-service-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">
+                    Guardar Cambios
+                </button>
+                <button id="cancel-edit-btn" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg">
+                    Cancelar
+                </button>
             </div>
         </div>
     </div>

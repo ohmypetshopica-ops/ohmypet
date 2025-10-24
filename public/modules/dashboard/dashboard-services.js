@@ -11,19 +11,24 @@ const monthServicesCount = document.querySelector('#month-services-count');
 const paginationContainer = document.querySelector('#pagination-container');
 const headerTitle = document.querySelector('#header-title');
 
-// Modal
+// --- INICIO: NUEVOS ELEMENTOS DEL MODAL Y EDICIÓN ---
 const serviceDetailsModal = document.querySelector('#service-details-modal');
-const modalServiceDetails = document.querySelector('#modal-service-details');
+const modalServiceDetailsView = document.querySelector('#modal-service-details-view');
+const modalServiceEditForm = document.querySelector('#modal-service-edit-form');
 const closeServiceModal = document.querySelector('#close-service-modal');
+const editServiceBtn = document.querySelector('#edit-service-btn');
+const saveServiceBtn = document.querySelector('#save-service-btn');
+const cancelEditBtn = document.querySelector('#cancel-edit-btn');
+// --- FIN: NUEVOS ELEMENTOS ---
 
-// --- VARIABLES DE PAGINACIÓN ---
+// --- VARIABLES DE PAGINACIÓN Y ESTADO ---
 let currentPage = 1;
 const itemsPerPage = 10;
 let totalServices = 0;
 let currentFilters = { search: '', date: '', petId: '', petName: '' };
 let allCompletedServices = [];
+let selectedService = null; // Para guardar el servicio actual en el modal
 
-// Al inicio del archivo, después de las variables
 const urlParams = new URLSearchParams(window.location.search);
 const petIdFromUrl = urlParams.get('pet');
 const petNameFromUrl = urlParams.get('name');
@@ -33,32 +38,13 @@ const getCompletedServices = async () => {
     const { data, error } = await supabase
         .from('appointments')
         .select(`
-            id,
-            appointment_date,
-            appointment_time,
-            service,
-            service_price,
-            payment_method,
-            final_observations,
-            final_weight,
-            pets (
-                id,
-                name
-            ),
-            profiles (
-                id,
-                full_name,
-                first_name,
-                last_name
-            ),
-            appointment_photos (
-                id,
-                photo_type,
-                image_url
-            )
+            id, appointment_date, appointment_time, service, service_price, payment_method,
+            final_observations, final_weight, pet_id,
+            pets (id, name),
+            profiles (id, full_name, first_name, last_name),
+            appointment_photos (id, photo_type, image_url)
         `)
         .eq('status', 'completada')
-        // CAMBIO: Asegurar el orden por fecha y hora descendente
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 
@@ -133,7 +119,7 @@ const renderServicesTable = (services) => {
     if (!servicesTableBody) return;
     
     if (services.length > 0) {
-        servicesTableBody.innerHTML = services.map(service => createServiceRow(service)).join('');
+        servicesTableBody.innerHTML = services.map(createServiceRow).join('');
         attachServiceRowListeners();
     } else {
         servicesTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">No se encontraron servicios completados.</td></tr>';
@@ -188,7 +174,6 @@ const applyFiltersAndRender = () => {
 
     let filtered = [...allCompletedServices];
 
-    // Filtrar por mascota si viene desde URL
     if (currentFilters.petId) {
         filtered = filtered.filter(service => service.pets?.id === currentFilters.petId);
     }
@@ -207,10 +192,6 @@ const applyFiltersAndRender = () => {
     if (selectedDate) {
         filtered = filtered.filter(service => service.appointment_date === selectedDate);
     }
-    
-    // El filtrado por estado en la página de servicios no tiene sentido ya que solo se obtienen 'completada'.
-    // Si se añade un filtro para otras citas, se debe modificar getCompletedServices.
-    // Por ahora, ignoramos el filtro de estado en esta página.
 
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -227,17 +208,16 @@ const clearFilters = () => {
     currentFilters.petName = '';
     currentPage = 1;
     
-    // Limpiar URL
     window.history.replaceState({}, '', '/public/modules/dashboard/dashboard-services.html');
     
-    // Actualizar título
     if (headerTitle) headerTitle.textContent = 'Historial de Servicios';
     
     applyFiltersAndRender();
 };
 
-// --- MODAL ---
+// --- MODAL Y LÓGICA DE EDICIÓN ---
 const openServiceDetailsModal = (service) => {
+    selectedService = service;
     if (!service) return;
 
     const ownerProfile = service.profiles;
@@ -263,7 +243,7 @@ const openServiceDetailsModal = (service) => {
         ? `<img src="${departurePhoto.image_url}" alt="Foto de salida" class="rounded-lg object-cover w-full h-full">`
         : `<div class="text-gray-400 text-sm">Sin foto</div>`;
 
-    modalServiceDetails.innerHTML = `
+    modalServiceDetailsView.innerHTML = `
         <div class="space-y-6">
             <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -277,7 +257,6 @@ const openServiceDetailsModal = (service) => {
                     </div>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h4 class="text-sm font-semibold text-gray-500 mb-2">Fecha del Servicio</h4>
@@ -288,12 +267,10 @@ const openServiceDetailsModal = (service) => {
                     <p class="text-base text-gray-900">${service.appointment_time}</p>
                 </div>
             </div>
-
             <div class="bg-gray-50 p-4 rounded-lg">
                 <h4 class="text-sm font-semibold text-gray-500 mb-2">Servicio Realizado</h4>
                 <p class="text-base text-gray-900">${service.service || 'Servicio general'}</p>
             </div>
-
             <div>
                 <h4 class="text-lg font-bold text-gray-800 mb-4">Fotos del Servicio</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -311,7 +288,6 @@ const openServiceDetailsModal = (service) => {
                     </div>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
                 <div class="text-center">
                     <h4 class="text-sm font-semibold text-gray-600 mb-2">Método de Pago</h4>
@@ -326,12 +302,9 @@ const openServiceDetailsModal = (service) => {
                     <p class="text-lg font-bold text-gray-900">${finalWeight}</p>
                 </div>
             </div>
-
             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
                 <h4 class="text-sm font-bold text-yellow-800 mb-3 flex items-center gap-2">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     Observaciones Finales
                 </h4>
                 <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">${observations}</p>
@@ -339,11 +312,74 @@ const openServiceDetailsModal = (service) => {
         </div>
     `;
 
+    switchToViewMode();
     serviceDetailsModal.classList.remove('hidden');
 };
 
 const closeModal = () => {
     serviceDetailsModal.classList.add('hidden');
+    selectedService = null;
+};
+
+const switchToViewMode = () => {
+    modalServiceDetailsView.classList.remove('hidden');
+    modalServiceEditForm.classList.add('hidden');
+    editServiceBtn.classList.remove('hidden');
+    saveServiceBtn.classList.add('hidden');
+    cancelEditBtn.classList.add('hidden');
+};
+
+const switchToEditMode = () => {
+    if (!selectedService) return;
+
+    // Poblar el formulario
+    document.getElementById('edit-service-id').value = selectedService.id;
+    document.getElementById('edit-service-price').value = selectedService.service_price || '';
+    document.getElementById('edit-payment-method').value = selectedService.payment_method || 'Efectivo';
+    document.getElementById('edit-final-weight').value = selectedService.final_weight || '';
+    document.getElementById('edit-final-observations').value = selectedService.final_observations || '';
+
+    // Cambiar vistas
+    modalServiceDetailsView.classList.add('hidden');
+    modalServiceEditForm.classList.remove('hidden');
+    editServiceBtn.classList.add('hidden');
+    saveServiceBtn.classList.remove('hidden');
+    cancelEditBtn.classList.remove('hidden');
+};
+
+const handleSaveChanges = async (e) => {
+    e.preventDefault();
+    if (!selectedService) return;
+
+    saveServiceBtn.disabled = true;
+    saveServiceBtn.textContent = 'Guardando...';
+
+    const updatedData = {
+        service_price: parseFloat(document.getElementById('edit-service-price').value) || 0,
+        payment_method: document.getElementById('edit-payment-method').value,
+        final_weight: parseFloat(document.getElementById('edit-final-weight').value) || null,
+        final_observations: document.getElementById('edit-final-observations').value.trim()
+    };
+
+    const { error } = await supabase
+        .from('appointments')
+        .update(updatedData)
+        .eq('id', selectedService.id);
+    
+    if (error) {
+        alert('Error al guardar los cambios: ' + error.message);
+    } else {
+        // Actualizar datos locales y volver a renderizar
+        const index = allCompletedServices.findIndex(s => s.id === selectedService.id);
+        if (index !== -1) {
+            allCompletedServices[index] = { ...allCompletedServices[index], ...updatedData };
+        }
+        openServiceDetailsModal(allCompletedServices[index]); // Recargar modal con datos frescos
+        applyFiltersAndRender(); // Recargar tabla principal
+    }
+
+    saveServiceBtn.disabled = false;
+    saveServiceBtn.textContent = 'Guardar Cambios';
 };
 
 // --- LISTENERS ---
@@ -352,7 +388,7 @@ const attachServiceRowListeners = () => {
         btn.addEventListener('click', (e) => {
             const row = e.target.closest('tr');
             const serviceId = row.dataset.serviceId;
-            const service = allCompletedServices.find(s => s.id === serviceId);
+            const service = allCompletedServices.find(s => s.id == serviceId);
             if (service) openServiceDetailsModal(service);
         });
     });
@@ -360,11 +396,9 @@ const attachServiceRowListeners = () => {
 
 // --- INICIALIZACIÓN ---
 const initializeServicesPage = async () => {
-    // Si viene un filtro por mascota desde URL
     if (petIdFromUrl) {
         currentFilters.petId = petIdFromUrl;
         currentFilters.petName = petNameFromUrl ? decodeURIComponent(petNameFromUrl) : '';
-        
         if (headerTitle && currentFilters.petName) {
             headerTitle.textContent = `Historial de Servicios - ${currentFilters.petName}`;
         }
@@ -383,18 +417,15 @@ const initializeServicesPage = async () => {
 
     applyFiltersAndRender();
 
-    serviceSearchInput?.addEventListener('input', () => {
-        currentPage = 1;
-        applyFiltersAndRender();
-    });
-    
-    serviceDateFilter?.addEventListener('change', () => {
-        currentPage = 1;
-        applyFiltersAndRender();
-    });
-
+    serviceSearchInput?.addEventListener('input', () => { currentPage = 1; applyFiltersAndRender(); });
+    serviceDateFilter?.addEventListener('change', () => { currentPage = 1; applyFiltersAndRender(); });
     clearFiltersBtn?.addEventListener('click', clearFilters);
     closeServiceModal?.addEventListener('click', closeModal);
+
+    // Listeners de los botones del modal
+    editServiceBtn.addEventListener('click', switchToEditMode);
+    cancelEditBtn.addEventListener('click', switchToViewMode);
+    modalServiceEditForm.addEventListener('submit', handleSaveChanges);
 };
 
 initializeServicesPage();
