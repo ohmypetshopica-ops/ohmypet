@@ -18,9 +18,22 @@ let receiptInput, receiptContainer, finalObservationsTextarea, uploadMessage;
 let cancelCompletionBtn, confirmCompletionBtn;
 let currentAppointmentToComplete = null;
 
+// NUEVOS ELEMENTOS PARA LA VISTA DE DETALLES
+let appointmentsListView; // Contenedor de la lista principal
+let appointmentDetailsView; // Contenedor de la vista de detalle
+let backToAppointmentsListBtn; // Botón para volver
+let appointmentDetailsContent; // Contenedor del contenido del detalle
+
 export const initAppointmentElements = () => {
     appointmentsList = document.getElementById('appointments-list');
     
+    // Inicialización de Vistas
+    appointmentsListView = document.getElementById('appointments-list-view'); 
+    appointmentDetailsView = document.getElementById('appointment-details-view');
+    appointmentDetailsContent = document.getElementById('appointment-details-content');
+    backToAppointmentsListBtn = document.getElementById('back-to-appointments-list-btn');
+
+
     addAppointmentBtnEmployee = document.querySelector('#add-appointment-btn-employee');
     addAppointmentModal = document.querySelector('#add-appointment-modal-employee');
     addAppointmentForm = document.querySelector('#add-appointment-form-employee');
@@ -47,6 +60,129 @@ export const initAppointmentElements = () => {
     confirmCompletionBtn = document.querySelector('#confirm-completion-btn');
 };
 
+const showAppointmentsList = () => {
+    appointmentsListView?.classList.remove('hidden');
+    appointmentDetailsView?.classList.add('hidden');
+};
+
+// Se mantiene esta función, pero se llama de forma más óptima en openAppointmentDetails
+const fetchLastCompletedAppointment = async (petId) => {
+    const { data, error } = await supabase
+        .from('appointments')
+        .select(`appointment_date, final_observations, final_weight, service`)
+        .eq('pet_id', petId)
+        .eq('status', 'completada')
+        .order('appointment_date', { ascending: false })
+        .order('appointment_time', { ascending: false })
+        .limit(1)
+        .single();
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 is no rows found
+        return null;
+    }
+    return data;
+};
+
+// Se mantiene esta función, pero se llama de forma más óptima en openAppointmentDetails
+const fetchPetDetails = async (petId) => {
+    const { data, error } = await supabase
+        .from('pets')
+        .select(`observations`)
+        .eq('id', petId)
+        .single();
+        
+    if (error && error.code !== 'PGRST116') {
+        return null;
+    }
+    return data;
+};
+
+const openAppointmentDetails = async (appointmentId) => {
+    const currentAppointment = state.allAppointments.find(app => app.id === appointmentId);
+    if (!currentAppointment) return;
+    
+    const petId = currentAppointment.pet_id;
+    
+    // 1. Mostrar vista de detalle e indicador de carga inmediatamente
+    appointmentsListView?.classList.add('hidden');
+    appointmentDetailsView?.classList.remove('hidden');
+    appointmentDetailsContent.innerHTML = '<p class="text-center text-gray-500 py-8">Cargando detalles de historial...</p>';
+
+    // 2. Fetch de datos en paralelo
+    const [lastCompleted, petDetails] = await Promise.all([
+        fetchLastCompletedAppointment(petId),
+        fetchPetDetails(petId)
+    ]);
+    
+    const ownerName = currentAppointment.profiles?.first_name 
+        ? `${currentAppointment.profiles.first_name} ${currentAppointment.profiles.last_name || ''}`
+        : currentAppointment.profiles?.full_name || 'N/A';
+        
+    const petName = currentAppointment.pets?.name || 'N/A';
+    
+    // Obtenemos el perfil completo del dueño (que ya está en la caché de clientes)
+    const clientProfile = state.allClients.find(c => c.id === currentAppointment.user_id);
+    
+    const petImage = currentAppointment.pets?.image_url 
+        ? currentAppointment.pets.image_url 
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(petName || 'M')}&background=10B981&color=FFFFFF`;
+    
+    const statusClass = currentAppointment.status === 'confirmada' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+    const statusText = currentAppointment.status.charAt(0).toUpperCase() + currentAppointment.status.slice(1);
+    
+    appointmentDetailsContent.innerHTML = `
+        <div class="bg-white p-4 rounded-lg border border-gray-200">
+            <h4 class="text-2xl font-bold text-gray-800 mb-4">Detalles de Cita</h4>
+            <div class="flex items-center space-x-4 mb-4">
+                <img src="${petImage}" alt="${petName}" class="w-16 h-16 rounded-full object-cover flex-shrink-0">
+                <div>
+                    <p class="font-bold text-xl text-gray-800">${petName}</p>
+                    <p class="text-sm text-gray-600">Cliente: ${ownerName}</p>
+                    <p class="text-sm text-gray-600">Teléfono: <a href="tel:${clientProfile?.phone || ''}" class="text-blue-600">${clientProfile?.phone || 'N/A'}</a></p>
+                </div>
+            </div>
+            
+            <div class="mb-6 p-4 rounded-xl border border-gray-200 bg-gray-50">
+                <h5 class="text-md font-semibold text-gray-800 mb-2">Cita Programada</h5>
+                <div class="grid grid-cols-2 gap-y-2 text-sm">
+                    <p class="col-span-2"><strong>Servicio:</strong> ${currentAppointment.service || 'N/A'}</p>
+                    <p><strong>Fecha:</strong> ${currentAppointment.appointment_date}</p>
+                    <p><strong>Hora:</strong> ${currentAppointment.appointment_time.slice(0, 5)}</p>
+                    <p class="col-span-2"><strong>Estado:</strong> <span class="font-semibold ${statusClass} px-2 py-0.5 rounded">${statusText}</span></p>
+                    <p class="col-span-2 mt-2"><strong>Instrucciones:</strong> ${currentAppointment.notes || 'Ninguna instrucción inicial.'}</p>
+                </div>
+            </div>
+
+            <div class="mb-6 p-4 rounded-xl border border-yellow-200 bg-yellow-50">
+                <h5 class="text-sm font-semibold text-yellow-700 mb-1">Observaciones Permanentes (Mascota)</h5>
+                <p class="text-sm text-gray-800">${petDetails?.observations || 'No hay observaciones permanentes registradas.'}</p>
+            </div>
+            
+            <div class="mb-6 p-4 rounded-xl border border-gray-200 bg-gray-50">
+                <h5 class="text-sm font-semibold text-gray-700 mb-2">Historial - Último Servicio Completo</h5>
+                ${lastCompleted ? `
+                    <div class="space-y-1 text-sm">
+                        <p><strong>Fecha:</strong> ${lastCompleted.appointment_date} (${lastCompleted.service})</p>
+                        <p><strong>Peso Final:</strong> ${lastCompleted.final_weight ? `${lastCompleted.final_weight} kg` : 'N/A'}</p>
+                        <p><strong>Observaciones:</strong> ${lastCompleted.final_observations || 'Sin observaciones finales.'}</p>
+                    </div>
+                ` : '<p class="text-sm text-gray-600">No se encontró historial de citas completadas.</p>'}
+            </div>
+
+            <button id="detail-complete-btn" data-appointment-id="${appointmentId}"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition-colors mt-6">
+                ✓ Completar Cita
+            </button>
+        </div>
+    `;
+    
+    // Wire up the new button to the existing modal logic
+    document.getElementById('detail-complete-btn')?.addEventListener('click', (e) => {
+        openCompletionModal(e.target.dataset.appointmentId);
+    });
+};
+
+
 export const setupAppointmentListeners = () => {
     addAppointmentBtnEmployee?.addEventListener('click', openAddAppointmentModal);
     cancelAddAppointmentBtn?.addEventListener('click', closeAddAppointmentModal);
@@ -55,14 +191,17 @@ export const setupAppointmentListeners = () => {
     clientSearchInputModal?.addEventListener('input', handleClientSearchInModal);
     newAppointmentDateInput?.addEventListener('change', handleDateChange);
     
-    // Listener de citas (eliminamos el botón de completar cita de la lista)
-    // appointmentsList?.addEventListener('click', (e) => {
-    //     const btn = e.target.closest('.complete-btn');
-    //     if (btn) {
-    //         const appointmentId = btn.dataset.appointmentId;
-    //         openCompletionModal(appointmentId);
-    //     }
-    // });
+    // Listener para volver a la lista
+    backToAppointmentsListBtn?.addEventListener('click', showAppointmentsList);
+    
+    // Modified: Clicking anywhere on the list item triggers the detail view
+    appointmentsList?.addEventListener('click', (e) => {
+        const item = e.target.closest('.appointment-list-item');
+        if (item) {
+            // Permitir clic en toda el área
+            openAppointmentDetails(item.dataset.appointmentId);
+        }
+    });
     
     // Listeners del modal de completar cita
     cancelCompletionBtn?.addEventListener('click', closeCompletionModal);
@@ -116,7 +255,7 @@ export const renderConfirmedAppointments = () => {
         const statusText = app.status === 'confirmada' ? 'Confirmada' : 'Pendiente';
 
         return `
-            <div class="bg-white p-4 rounded-lg border hover:bg-gray-50 transition-colors duration-200">
+            <div class="appointment-list-item bg-white p-4 rounded-lg border hover:bg-gray-50 transition-colors duration-200 cursor-pointer" data-appointment-id="${app.id}">
                 <div class="flex justify-between items-start mb-2">
                     <div class="flex items-center space-x-3">
                         <img src="${petImage}" alt="${app.pets.name}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
@@ -137,7 +276,7 @@ export const renderConfirmedAppointments = () => {
                         ${statusText}
                     </span>
                     
-                    <button data-appointment-id="${app.id}" class="text-blue-600 hover:text-blue-700 font-semibold text-sm">
+                    <button class="text-blue-600 hover:text-blue-700 font-semibold text-sm">
                         Ver Detalles
                     </button>
                 </div>
