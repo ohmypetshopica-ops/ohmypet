@@ -34,7 +34,6 @@ const createClientRow = (client) => {
     const phone = client.phone || 'Sin teléfono';
     const petsCount = client.pets_count || 0;
     
-    // Formatear última cita
     let lastAppointmentText = 'Sin citas';
     if (client.last_appointment_date) {
         const date = new Date(client.last_appointment_date);
@@ -125,16 +124,15 @@ const createAppointmentRow = (appointment) => {
     if (status === 'pendiente') {
         actionButtons = `
             <button data-action="confirmar" class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition-colors">Confirmar</button>
-            <button data-action="reprogramar" class="text-xs bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition-colors">Reprogramar</button>
+            <button data-action="reprogramar" class="text-xs bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition-colors">Editar</button>
             <button data-action="rechazar" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors">Rechazar</button>
         `;
     } else if (status === 'confirmada') {
         actionButtons = `
             <button data-action="completar" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors">Completar</button>
-            <button data-action="reprogramar" class="text-xs bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition-colors">Reprogramar</button>
+            <button data-action="reprogramar" class="text-xs bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition-colors">Editar</button>
         `;
     } else if (status === 'completada') {
-        // Se elimina el botón "Editar" y se reemplaza por texto
         actionButtons = `<span class="text-xs text-gray-500 font-medium">Finalizada</span>`;
     } else {
         actionButtons = `<span class="text-xs text-gray-400">Sin acciones</span>`;
@@ -170,35 +168,43 @@ const createAppointmentRow = (appointment) => {
 };
 
 const createServiceHistoryRow = (service) => {
-    const petName = service.pets?.name || 'N/A';
     const ownerProfile = service.profiles;
-    const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name)
-        ? `${ownerProfile.first_name} ${ownerProfile.last_name}`
-        : ownerProfile?.full_name || 'N/A';
+    const ownerName = (ownerProfile?.first_name && ownerProfile?.last_name) 
+        ? `${ownerProfile.first_name} ${ownerProfile.last_name}` 
+        : ownerProfile?.full_name || 'Sin cliente';
+
+    const petName = service.pets?.name || 'Sin mascota';
+    const paymentMethod = service.payment_method || 'N/A';
+    const cost = service.service_price ? `S/ ${service.service_price.toFixed(2)}` : 'N/A';
 
     return `
-        <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap">
+        <tr class="hover:bg-gray-50" data-appointment-id="${service.id}">
+            <td class="px-6 py-4">
                 <div class="text-sm font-medium text-gray-900">${ownerName}</div>
                 <div class="text-sm text-gray-500">${petName}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                ${service.appointment_date}
+            <td class="px-6 py-4">
+                <div class="text-sm text-gray-900">${new Date(service.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                <div class="text-sm text-gray-500">${service.appointment_time}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">
-                S/ ${(service.service_price || 0).toFixed(2)}
+            <td class="px-6 py-4">
+                <div class="text-sm text-gray-700">${service.service || 'Servicio general'}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                    ${service.payment_method || 'N/A'}
-                </span>
+            <td class="px-6 py-4">
+                <div class="text-sm text-gray-700">${paymentMethod}</div>
             </td>
-            <td class="px-6 py-4 text-sm text-gray-600 max-w-sm truncate" title="${service.final_observations || ''}">
-                ${service.final_observations || 'Sin observaciones.'}
+            <td class="px-6 py-4">
+                <div class="text-sm font-semibold text-gray-900">${cost}</div>
+            </td>
+            <td class="px-6 py-4 text-right">
+                <button data-action="edit-service" class="text-blue-600 hover:text-blue-900 font-semibold view-service-btn">
+                    Ver Detalles
+                </button>
             </td>
         </tr>
     `;
 };
+
 
 export { 
     createUpcomingAppointmentItem, 
