@@ -692,7 +692,19 @@ export const getClientsWithPets = async () => {
             first_name,
             last_name,
             phone,
-            pets ( id, name )
+            pets ( 
+                id, 
+                name,
+                breed, 
+                size,
+                weight,
+                sex,
+                observations,
+                image_url,
+                birth_date,
+                reminder_frequency_days,
+                last_grooming_date
+            )
         `)
         .eq('role', 'cliente')
         .order('first_name', { ascending: true });
@@ -819,38 +831,49 @@ export const addSale = async (saleData) => {
     if (!user) return { success: false, error: { message: 'Usuario no autenticado' } };
 
     // 1. Registrar la venta
-    const { error: saleError } = await supabase.from('sales').insert([{
-        ...saleData,
-        recorded_by: user.id
-    }]);
-
+    const salesRecords = saleData.items.map(item => ({
+        client_id: saleData.client_id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.subtotal,
+        payment_method: saleData.payment_method,
+        recorded_by: user?.id || null
+    }));
+    
+    const { data, error: saleError } = await supabase
+        .from('sales')
+        .insert(salesRecords)
+        .select();
+    
     if (saleError) {
-        console.error('Error al registrar la venta:', saleError);
+        console.error('Error al guardar venta:', saleError);
         return { success: false, error: saleError };
     }
 
     // 2. Obtener el stock actual del producto
-    const { data: product, error: productError } = await supabase
-        .from('products')
-        .select('stock')
-        .eq('id', saleData.product_id)
-        .single();
+    for (const item of saleData.items) {
+        const { data: product, error: productError } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.product_id)
+            .single();
 
-    if (productError) {
-        console.error('Error al obtener stock para actualizar:', productError);
-        return { success: true, warning: 'Venta registrada, pero no se pudo actualizar el stock.' };
-    }
+        if (productError) {
+            console.error('Error al obtener stock para actualizar:', productError);
+            continue; // Continuar con otros productos si este falla
+        }
 
-    // 3. Calcular y actualizar el nuevo stock
-    const newStock = product.stock - saleData.quantity;
-    const { error: updateStockError } = await supabase
-        .from('products')
-        .update({ stock: newStock })
-        .eq('id', saleData.product_id);
+        // 3. Calcular y actualizar el nuevo stock
+        const newStock = product.stock - item.quantity;
+        const { error: updateStockError } = await supabase
+            .from('products')
+            .update({ stock: newStock })
+            .eq('id', item.product_id);
 
-    if (updateStockError) {
-        console.error('Error al actualizar el stock:', updateStockError);
-        return { success: true, warning: 'Venta registrada, pero no se pudo actualizar el stock.' };
+        if (updateStockError) {
+            console.error('Error al actualizar el stock:', updateStockError);
+        }
     }
 
     return { success: true };

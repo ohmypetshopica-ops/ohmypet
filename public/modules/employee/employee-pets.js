@@ -7,7 +7,10 @@ import { supabase } from '../../core/supabase.js';
 
 // Elementos del DOM
 let petSearch, petsList, petsListView, petDetailsView, petDetailsContent, backToPetsBtn;
-let addPetToClientBtn, addPetModalEmployee, closeAddPetModalButtonEmployee, cancelAddPetButtonEmployee, petFormEmployee, petFormMessageEmployee;
+let addPetModalEmployee, closeAddPetModalButtonEmployee, cancelAddPetButtonEmployee, petFormEmployee, petFormMessageEmployee;
+// ELEMENTOS MODIFICADOS/NUEVOS
+let clearPetSearchBtn;
+let addPetToClientBtn; 
 
 export const initPetElements = () => {
     petSearch = document.getElementById('pet-search');
@@ -17,16 +20,32 @@ export const initPetElements = () => {
     petDetailsContent = document.getElementById('pet-details-content');
     backToPetsBtn = document.getElementById('back-to-pets-btn');
     
-    addPetToClientBtn = document.querySelector('#add-pet-to-client-btn');
+    // Este botón se usa en employee-clients.js para el modal de añadir mascota
+    addPetToClientBtn = document.querySelector('#add-pet-to-client-btn'); 
+    
     addPetModalEmployee = document.querySelector('#add-pet-modal-employee');
     closeAddPetModalButtonEmployee = document.querySelector('#close-add-pet-modal-button-employee');
     cancelAddPetButtonEmployee = document.querySelector('#cancel-add-pet-button-employee');
     petFormEmployee = document.querySelector('#pet-form-employee');
     petFormMessageEmployee = document.querySelector('#pet-form-message-employee');
+
+    // NUEVO
+    clearPetSearchBtn = document.getElementById('clear-pet-search-btn');
 };
 
 export const setupPetListeners = () => {
-    petSearch?.addEventListener('input', handlePetSearch);
+    if (petSearch) {
+        petSearch.addEventListener('input', handlePetSearch);
+    }
+    // Listener para el botón de limpiar búsqueda
+    if (clearPetSearchBtn) {
+        clearPetSearchBtn.addEventListener('click', () => {
+            petSearch.value = '';
+            clearPetSearchBtn.classList.add('hidden');
+            handlePetSearch({ target: petSearch });
+        });
+    }
+
     backToPetsBtn?.addEventListener('click', showPetsList);
     
     petsList?.addEventListener('click', (e) => {
@@ -34,15 +53,7 @@ export const setupPetListeners = () => {
         if (btn) showPetDetails(btn.dataset.petId);
     });
     
-    // Modal de agregar mascota
-    addPetToClientBtn?.addEventListener('click', () => {
-        if (!state.currentClientId) {
-            alert('Por favor, selecciona un cliente primero');
-            return;
-        }
-        addPetModalEmployee?.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    });
+    // Los listeners para el modal de agregar mascota se mantienen, asumiendo que se abrirá desde la vista de Clientes
     
     closeAddPetModalButtonEmployee?.addEventListener('click', closePetModal);
     cancelAddPetButtonEmployee?.addEventListener('click', closePetModal);
@@ -51,10 +62,18 @@ export const setupPetListeners = () => {
 
 const handlePetSearch = (e) => {
     const term = e.target.value.toLowerCase();
+    
+    // Muestra/Oculta el botón "X"
+    if (term.length > 0) {
+        clearPetSearchBtn?.classList.remove('hidden');
+    } else {
+        clearPetSearchBtn?.classList.add('hidden');
+    }
+
     const filtered = term ? state.allPets.filter(pet => {
         const owner = state.allClients.find(c => c.id === pet.owner_id);
-        const ownerName = `${owner?.first_name || ''} ${owner?.last_name || ''}`.toLowerCase();
-        return pet.name.toLowerCase().includes(term) || ownerName.includes(term);
+        const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}`.toLowerCase() : 'dueño desconocido';
+        return pet.name.toLowerCase().includes(term) || ownerName.includes(term) || (pet.breed || '').toLowerCase().includes(term);
     }) : state.allPets;
     renderPets(filtered);
 };
@@ -68,14 +87,19 @@ export const renderPets = (pets) => {
         const owner = state.allClients.find(c => c.id === pet.owner_id);
         const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}` : 'Dueño desconocido';
         
+        // Lógica para la imagen real o placeholder con color verde
+        const petImage = pet.image_url 
+            ? pet.image_url 
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name || 'M')}&background=10B981&color=FFFFFF`;
+        
         return `
             <button data-pet-id="${pet.id}" class="pet-btn w-full text-left bg-white p-4 rounded-lg shadow-sm border hover:bg-gray-50 flex items-center space-x-3">
-                <img src="${pet.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name)}&background=10B981&color=FFFFFF`}" 
+                <img src="${petImage}" 
                      alt="${pet.name}" 
-                     class="w-12 h-12 rounded-full object-cover">
+                     class="w-12 h-12 rounded-full object-cover border border-gray-200 flex-shrink-0">
                 <div class="flex-1">
                     <h3 class="font-bold text-gray-800">${pet.name}</h3>
-                    <p class="text-sm text-gray-600">${pet.breed || 'Raza no especificada'}</p>
+                    <p class="text-sm text-gray-600">${pet.breed || 'Raza no especificada'} | ${pet.sex || 'N/A'}</p>
                     <p class="text-xs text-gray-500">Dueño: ${ownerName}</p>
                 </div>
             </button>
@@ -100,10 +124,15 @@ const showPetDetails = (petId) => {
         ageDisplay = `${ageInYears} años`;
     }
     
+    // Lógica para la imagen real o placeholder con color verde
+    const petImage = pet.image_url 
+        ? pet.image_url 
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name || 'M')}&background=10B981&color=FFFFFF`;
+    
     petDetailsContent.innerHTML = `
         <div class="bg-white p-4 rounded-lg shadow-sm">
             <div class="flex items-center space-x-4 mb-4">
-                <img src="${pet.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name)}&background=10B981&color=FFFFFF`}" 
+                <img src="${petImage}" 
                      alt="${pet.name}" 
                      class="w-20 h-20 rounded-full object-cover">
                 <div>
