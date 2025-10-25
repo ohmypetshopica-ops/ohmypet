@@ -28,37 +28,73 @@
             #completed-services-table-body td { display: block; text-align: left !important; padding: 0.5rem 0 !important; border: none; }
             #completed-services-table-body td:before { content: attr(data-label); font-weight: 600; display: block; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem; }
         }
-        /* ---- CSS CORREGIDO PARA LAYOUT FLEX ---- */
+
+        /* ---- NUEVO CSS para Position Fixed ---- */
         html, body {
-           height: 100%;
-           overflow: hidden; /* Evita scroll en body */
+            height: 100%;
+            overflow: hidden; /* Evita scroll en body */
         }
         .main-container {
-           height: 100vh; /* Ocupa toda la altura de la ventana */
-           display: flex;
-           flex-direction: column;
-           /* max-w-md ha sido removido de aquí */
-           margin-left: auto;
-           margin-right: auto;
-           background-color: white; /* Fondo blanco para el contenedor principal */
-           box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
-           width: 100%; /* Asegura que ocupe todo el ancho disponible */
+            height: 100vh; /* Ocupa toda la altura de la ventana */
+            display: flex;
+            flex-direction: column;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 100%; /* Ocupa todo el ancho disponible */
+            position: relative; /* Necesario para que el footer fijo se posicione correctamente dentro */
+            padding-bottom: 64px; /* Añade espacio en la parte inferior igual a la altura del nav */
         }
         .content-area {
             flex-grow: 1; /* Ocupa el espacio restante */
             overflow-y: auto; /* Permite scroll interno */
-            background-color: #F9FAFB; /* bg-gray-100 para el área de contenido */
+            background-color: #F9FAFB; /* bg-gray-100 */
+             /* Se quita padding-bottom de aquí */
         }
         .bottom-nav-container {
-            flex-shrink: 0; /* Evita que se encoja */
-            background-color: white; /* Asegura fondo blanco para la barra */
+            position: fixed; /* Fija la barra de navegación */
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50; /* Asegura que esté por encima del contenido */
+            max-width: 28rem; /* Aplica el max-w-md aquí */
+            margin-left: auto; /* Centra el contenedor fijo */
+            margin-right: auto; /* Centra el contenedor fijo */
+            background-color: white; /* Fondo blanco */
+            border-top: 1px solid #E5E7EB; /* Borde superior */
         }
-         /* ---- NUEVO: Limitar ancho solo en pantallas grandes ---- */
-        @media (min-width: 768px) { /* md breakpoint de Tailwind */
+         /* Limitar ancho solo en pantallas grandes */
+        @media (min-width: 768px) {
+             /* En pantallas grandes, el contenedor principal sí tendrá ancho máximo */
              .main-container {
-                max-width: 28rem; /* Re-aplica max-w-md solo en desktop o tablets grandes */
+                max-width: 28rem;
+                padding-bottom: 0; /* Quita el padding inferior en desktop */
+             }
+             /* Y la barra de navegación ya no necesita ser fija */
+             .bottom-nav-container {
+                 position: static;
+                 max-width: none; /* Ancho completo dentro del contenedor principal */
+                 margin-left: 0;
+                 margin-right: 0;
+                 border-top: 1px solid #E5E7EB;
+             }
+             .content-area {
+                  padding-bottom: 0; /* Asegura que no haya padding extra en desktop */
              }
         }
+        /* Ajuste específico para iOS Safari donde la barra inferior puede interferir */
+        @supports (-webkit-touch-callout: none) { /* Target Safari iOS */
+          .main-container {
+             /* Intenta usar altura dinámica si vh no funciona bien */
+             height: -webkit-fill-available;
+          }
+           .bottom-nav-container {
+               /* Podría necesitar padding extra para la barra de inicio de iOS */
+               padding-bottom: env(safe-area-inset-bottom, 0px);
+           }
+        }
+
     </style>
 </head>
 
@@ -98,7 +134,7 @@
         </main>
 
         <div class="bottom-nav-container">
-            <nav class="bottom-nav flex justify-around items-center flex-shrink-0">
+            <nav class="bottom-nav flex justify-around items-center">
                  <button data-view="clients" class="nav-btn active" aria-label="Clientes"> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg> </button>
                  <button data-view="pets" class="nav-btn" aria-label="Mascotas"> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> </button>
                  <button data-view="appointments" class="nav-btn" aria-label="Citas"> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> </button>
