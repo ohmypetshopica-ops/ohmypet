@@ -1,6 +1,7 @@
 // public/modules/dashboard/dashboard-services.js
 
 import { supabase } from '../../core/supabase.js';
+import { uploadAppointmentPhoto, uploadReceiptFile } from './dashboard.api.js';
 
 // --- ELEMENTOS DEL DOM ---
 const servicesTableBody = document.querySelector('#services-table-body');
@@ -13,7 +14,7 @@ const monthServicesCount = document.querySelector('#month-services-count');
 const paginationContainer = document.querySelector('#pagination-container');
 const headerTitle = document.querySelector('#header-title');
 
-// --- INICIO: NUEVOS ELEMENTOS DEL MODAL Y EDICIÓN ---
+// --- ELEMENTOS DEL MODAL ---
 const serviceDetailsModal = document.querySelector('#service-details-modal');
 const modalServiceDetailsView = document.querySelector('#modal-service-details-view');
 const modalServiceEditForm = document.querySelector('#modal-service-edit-form');
@@ -21,15 +22,44 @@ const closeServiceModal = document.querySelector('#close-service-modal');
 const editServiceBtn = document.querySelector('#edit-service-btn');
 const saveServiceBtn = document.querySelector('#save-service-btn');
 const cancelEditBtn = document.querySelector('#cancel-edit-btn');
-// --- FIN: NUEVOS ELEMENTOS ---
 
-// --- VARIABLES DE PAGINACIÓN Y ESTADO ---
+// --- ELEMENTOS DE EDICIÓN ---
+const editServicePriceInput = document.querySelector('#edit-service-price');
+const editPaymentMethodSelect = document.querySelector('#edit-payment-method');
+const editFinalWeightInput = document.querySelector('#edit-final-weight');
+const editFinalObservationsTextarea = document.querySelector('#edit-final-observations');
+const editMessage = document.querySelector('#edit-message');
+
+// Fotos
+const editArrivalPhotoInput = document.querySelector('#edit-arrival-photo-input');
+const editArrivalPhotoPreview = document.querySelector('#edit-arrival-photo-preview');
+const editArrivalPhotoBtn = document.querySelector('#edit-arrival-photo-btn');
+const removeArrivalPhotoBtn = document.querySelector('#remove-arrival-photo-btn');
+
+const editDeparturePhotoInput = document.querySelector('#edit-departure-photo-input');
+const editDeparturePhotoPreview = document.querySelector('#edit-departure-photo-preview');
+const editDeparturePhotoBtn = document.querySelector('#edit-departure-photo-btn');
+const removeDeparturePhotoBtn = document.querySelector('#remove-departure-photo-btn');
+
+// Boleta
+const editReceiptInput = document.querySelector('#edit-receipt-input');
+const editReceiptPreview = document.querySelector('#edit-receipt-preview');
+const editReceiptBtn = document.querySelector('#edit-receipt-btn');
+const removeReceiptBtn = document.querySelector('#remove-receipt-btn');
+
+// --- VARIABLES DE ESTADO ---
 let currentPage = 1;
 const itemsPerPage = 10;
 let totalServices = 0;
 let currentFilters = { search: '', date: '', petId: '', petName: '' };
 let allCompletedServices = [];
-let selectedService = null; // Para guardar el servicio actual en el modal
+let selectedService = null;
+let newArrivalFile = null;
+let newDepartureFile = null;
+let newReceiptFile = null;
+let deleteArrivalPhoto = false;
+let deleteDeparturePhoto = false;
+let deleteReceipt = false;
 
 const urlParams = new URLSearchParams(window.location.search);
 const petIdFromUrl = urlParams.get('pet');
@@ -41,7 +71,7 @@ const getCompletedServices = async () => {
         .from('appointments')
         .select(`
             id, appointment_date, appointment_time, service, service_price, payment_method,
-            final_observations, final_weight, pet_id,
+            final_observations, final_weight, pet_id, invoice_pdf_url,
             pets (id, name),
             profiles (id, full_name, first_name, last_name),
             appointment_photos (id, photo_type, image_url)
@@ -217,7 +247,7 @@ const clearFilters = () => {
     applyFiltersAndRender();
 };
 
-// --- MODAL Y LÓGICA DE EDICIÓN ---
+// --- MODAL DE DETALLES ---
 const openServiceDetailsModal = (service) => {
     selectedService = service;
     if (!service) return;
@@ -244,6 +274,10 @@ const openServiceDetailsModal = (service) => {
     const departurePhotoHTML = departurePhoto 
         ? `<img src="${departurePhoto.image_url}" alt="Foto de salida" class="rounded-lg object-cover w-full h-full">`
         : `<div class="text-gray-400 text-sm">Sin foto</div>`;
+
+    const receiptHTML = service.invoice_pdf_url
+        ? `<a href="${service.invoice_pdf_url}" target="_blank" class="text-blue-600 hover:underline text-sm">📄 Ver boleta cargada</a>`
+        : `<p class="text-gray-400 text-sm">Sin boleta cargada</p>`;
 
     modalServiceDetailsView.innerHTML = `
         <div class="space-y-6">
@@ -277,13 +311,13 @@ const openServiceDetailsModal = (service) => {
                 <h4 class="text-lg font-bold text-gray-800 mb-4">Fotos del Servicio</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <p class="text-sm font-semibold text-gray-600 mb-3 text-center">Foto de Llegada</p>
+                        <p class="text-sm font-semibold text-gray-600 mb-3 text-center">📸 Foto de Llegada</p>
                         <div class="bg-gray-100 rounded-xl aspect-square flex items-center justify-center overflow-hidden border-2 border-gray-200">
                             ${arrivalPhotoHTML}
                         </div>
                     </div>
                     <div>
-                        <p class="text-sm font-semibold text-gray-600 mb-3 text-center">Foto de Salida</p>
+                        <p class="text-sm font-semibold text-gray-600 mb-3 text-center">📸 Foto de Salida</p>
                         <div class="bg-gray-100 rounded-xl aspect-square flex items-center justify-center overflow-hidden border-2 border-gray-200">
                             ${departurePhotoHTML}
                         </div>
@@ -292,17 +326,21 @@ const openServiceDetailsModal = (service) => {
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
                 <div class="text-center">
-                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Método de Pago</h4>
-                    <p class="text-lg font-bold text-gray-900">${paymentMethod}</p>
-                </div>
-                <div class="text-center">
-                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Costo Total</h4>
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">💰 Costo</h4>
                     <p class="text-2xl font-bold text-green-700">${cost}</p>
                 </div>
                 <div class="text-center">
-                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Peso Final</h4>
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">💳 Método de Pago</h4>
+                    <p class="text-base text-gray-900">${paymentMethod}</p>
+                </div>
+                <div class="text-center">
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">⚖️ Peso Final</h4>
                     <p class="text-lg font-bold text-gray-900">${finalWeight}</p>
                 </div>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h4 class="text-sm font-semibold text-gray-500 mb-2">🧾 Boleta / Comprobante</h4>
+                ${receiptHTML}
             </div>
             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
                 <h4 class="text-sm font-bold text-yellow-800 mb-3 flex items-center gap-2">
@@ -321,6 +359,7 @@ const openServiceDetailsModal = (service) => {
 const closeModal = () => {
     serviceDetailsModal.classList.add('hidden');
     selectedService = null;
+    resetEditForm();
 };
 
 const switchToViewMode = () => {
@@ -329,19 +368,50 @@ const switchToViewMode = () => {
     editServiceBtn.classList.remove('hidden');
     saveServiceBtn.classList.add('hidden');
     cancelEditBtn.classList.add('hidden');
+    resetEditForm();
 };
 
 const switchToEditMode = () => {
     if (!selectedService) return;
 
-    // Poblar el formulario
-    document.getElementById('edit-service-id').value = selectedService.id;
-    document.getElementById('edit-service-price').value = selectedService.service_price || '';
-    document.getElementById('edit-payment-method').value = selectedService.payment_method || 'Efectivo';
-    document.getElementById('edit-final-weight').value = selectedService.final_weight || '';
-    document.getElementById('edit-final-observations').value = selectedService.final_observations || '';
+    // Resetear archivos
+    newArrivalFile = null;
+    newDepartureFile = null;
+    newReceiptFile = null;
+    deleteArrivalPhoto = false;
+    deleteDeparturePhoto = false;
+    deleteReceipt = false;
 
-    // Cambiar vistas
+    // Poblar campos
+    editServicePriceInput.value = selectedService.service_price || '';
+    editPaymentMethodSelect.value = selectedService.payment_method || '';
+    editFinalWeightInput.value = selectedService.final_weight || '';
+    editFinalObservationsTextarea.value = selectedService.final_observations || '';
+
+    // Fotos
+    const photos = selectedService.appointment_photos || [];
+    const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
+    const departurePhoto = photos.find(p => p.photo_type === 'departure');
+
+    if (arrivalPhoto) {
+        editArrivalPhotoPreview.innerHTML = `<img src="${arrivalPhoto.image_url}" alt="Foto de llegada" class="w-full h-full object-cover rounded-lg">`;
+    } else {
+        editArrivalPhotoPreview.innerHTML = '<p class="text-sm text-gray-400">Sin foto de llegada</p>';
+    }
+
+    if (departurePhoto) {
+        editDeparturePhotoPreview.innerHTML = `<img src="${departurePhoto.image_url}" alt="Foto de salida" class="w-full h-full object-cover rounded-lg">`;
+    } else {
+        editDeparturePhotoPreview.innerHTML = '<p class="text-sm text-gray-400">Sin foto de salida</p>';
+    }
+
+    // Boleta
+    if (selectedService.invoice_pdf_url) {
+        editReceiptPreview.innerHTML = `<a href="${selectedService.invoice_pdf_url}" target="_blank" class="text-blue-600 hover:underline text-sm">📄 Ver boleta actual</a>`;
+    } else {
+        editReceiptPreview.innerHTML = '<p class="text-sm text-gray-400 text-center">Sin boleta cargada</p>';
+    }
+
     modalServiceDetailsView.classList.add('hidden');
     modalServiceEditForm.classList.remove('hidden');
     editServiceBtn.classList.add('hidden');
@@ -349,40 +419,194 @@ const switchToEditMode = () => {
     cancelEditBtn.classList.remove('hidden');
 };
 
-const handleSaveChanges = async (e) => {
-    // Si 'e' existe, es por el evento submit, lo prevenimos. Si no, es llamado por el click.
-    if (e) e.preventDefault();
+const resetEditForm = () => {
+    editServicePriceInput.value = '';
+    editPaymentMethodSelect.value = '';
+    editFinalWeightInput.value = '';
+    editFinalObservationsTextarea.value = '';
+    editArrivalPhotoInput.value = '';
+    editDeparturePhotoInput.value = '';
+    editReceiptInput.value = '';
+    editArrivalPhotoPreview.innerHTML = '<p class="text-sm text-gray-400">Sin foto de llegada</p>';
+    editDeparturePhotoPreview.innerHTML = '<p class="text-sm text-gray-400">Sin foto de salida</p>';
+    editReceiptPreview.innerHTML = '<p class="text-sm text-gray-400 text-center">Sin boleta cargada</p>';
+    editMessage.classList.add('hidden');
+    newArrivalFile = null;
+    newDepartureFile = null;
+    newReceiptFile = null;
+    deleteArrivalPhoto = false;
+    deleteDeparturePhoto = false;
+    deleteReceipt = false;
+};
+
+const handleSaveChanges = async () => {
     if (!selectedService) return;
+
+    const price = parseFloat(editServicePriceInput.value);
+    const paymentMethod = editPaymentMethodSelect.value;
+
+    if (!price || price <= 0) {
+        editMessage.textContent = '❌ El precio del servicio debe ser mayor a 0';
+        editMessage.className = 'block text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
+        editMessage.classList.remove('hidden');
+        return;
+    }
+
+    if (!paymentMethod) {
+        editMessage.textContent = '❌ Debe seleccionar un método de pago';
+        editMessage.className = 'block text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
+        editMessage.classList.remove('hidden');
+        return;
+    }
 
     saveServiceBtn.disabled = true;
     saveServiceBtn.textContent = 'Guardando...';
+    editMessage.textContent = '⏳ Guardando cambios...';
+    editMessage.className = 'block text-center text-sm font-medium p-3 rounded-lg bg-blue-100 text-blue-700';
+    editMessage.classList.remove('hidden');
 
-    const updatedData = {
-        service_price: parseFloat(document.getElementById('edit-service-price').value) || 0,
-        payment_method: document.getElementById('edit-payment-method').value,
-        final_weight: parseFloat(document.getElementById('edit-final-weight').value) || null,
-        final_observations: document.getElementById('edit-final-observations').value.trim()
-    };
-
-    const { error } = await supabase
-        .from('appointments')
-        .update(updatedData)
-        .eq('id', selectedService.id);
-    
-    if (error) {
-        alert('Error al guardar los cambios: ' + error.message);
-    } else {
-        // Actualizar datos locales y volver a renderizar
-        const index = allCompletedServices.findIndex(s => s.id === selectedService.id);
-        if (index !== -1) {
-            allCompletedServices[index] = { ...allCompletedServices[index], ...updatedData };
+    try {
+        // 1. Eliminar fotos si se solicitó
+        if (deleteArrivalPhoto) {
+            const { error } = await supabase
+                .from('appointment_photos')
+                .delete()
+                .eq('appointment_id', selectedService.id)
+                .eq('photo_type', 'arrival');
+            if (error) console.error('Error al eliminar foto de llegada:', error);
         }
-        openServiceDetailsModal(allCompletedServices[index]); // Recargar modal con datos frescos
-        applyFiltersAndRender(); // Recargar tabla principal
-    }
 
-    saveServiceBtn.disabled = false;
-    saveServiceBtn.textContent = 'Guardar Cambios';
+        if (deleteDeparturePhoto) {
+            const { error } = await supabase
+                .from('appointment_photos')
+                .delete()
+                .eq('appointment_id', selectedService.id)
+                .eq('photo_type', 'departure');
+            if (error) console.error('Error al eliminar foto de salida:', error);
+        }
+
+        // 2. Subir nuevas fotos
+        if (newArrivalFile) {
+            await uploadAppointmentPhoto(selectedService.id, newArrivalFile, 'arrival');
+        }
+
+        if (newDepartureFile) {
+            await uploadAppointmentPhoto(selectedService.id, newDepartureFile, 'departure');
+        }
+
+        // 3. Eliminar o subir boleta
+        if (deleteReceipt && selectedService.invoice_pdf_url) {
+            await supabase
+                .from('appointments')
+                .update({ invoice_pdf_url: null })
+                .eq('id', selectedService.id);
+        }
+
+        if (newReceiptFile) {
+            await uploadReceiptFile(selectedService.id, newReceiptFile);
+        }
+
+        // 4. Actualizar datos del servicio
+        const updatedData = {
+            service_price: price,
+            payment_method: paymentMethod,
+            final_weight: parseFloat(editFinalWeightInput.value) || null,
+            final_observations: editFinalObservationsTextarea.value.trim()
+        };
+
+        const { error } = await supabase
+            .from('appointments')
+            .update(updatedData)
+            .eq('id', selectedService.id);
+        
+        if (error) throw error;
+
+        editMessage.textContent = '✅ Cambios guardados exitosamente';
+        editMessage.className = 'block text-center text-sm font-medium p-3 rounded-lg bg-green-100 text-green-700';
+
+        // Recargar datos
+        allCompletedServices = await getCompletedServices();
+        const updatedService = allCompletedServices.find(s => s.id === selectedService.id);
+        if (updatedService) {
+            selectedService = updatedService;
+            openServiceDetailsModal(updatedService);
+        }
+        applyFiltersAndRender();
+
+        setTimeout(() => {
+            editMessage.classList.add('hidden');
+        }, 3000);
+
+    } catch (error) {
+        console.error('Error al guardar cambios:', error);
+        editMessage.textContent = '❌ Error al guardar los cambios';
+        editMessage.className = 'block text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
+    } finally {
+        saveServiceBtn.disabled = false;
+        saveServiceBtn.textContent = '💾 Guardar Cambios';
+    }
+};
+
+// --- LISTENERS DE FOTOS Y BOLETA ---
+const setupPhotoListeners = () => {
+    // Foto de llegada
+    editArrivalPhotoBtn.addEventListener('click', () => editArrivalPhotoInput.click());
+    editArrivalPhotoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            newArrivalFile = file;
+            deleteArrivalPhoto = false;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                editArrivalPhotoPreview.innerHTML = `<img src="${event.target.result}" alt="Preview" class="w-full h-full object-cover rounded-lg">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    removeArrivalPhotoBtn.addEventListener('click', () => {
+        deleteArrivalPhoto = true;
+        newArrivalFile = null;
+        editArrivalPhotoInput.value = '';
+        editArrivalPhotoPreview.innerHTML = '<p class="text-sm text-gray-400">Sin foto de llegada</p>';
+    });
+
+    // Foto de salida
+    editDeparturePhotoBtn.addEventListener('click', () => editDeparturePhotoInput.click());
+    editDeparturePhotoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            newDepartureFile = file;
+            deleteDeparturePhoto = false;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                editDeparturePhotoPreview.innerHTML = `<img src="${event.target.result}" alt="Preview" class="w-full h-full object-cover rounded-lg">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    removeDeparturePhotoBtn.addEventListener('click', () => {
+        deleteDeparturePhoto = true;
+        newDepartureFile = null;
+        editDeparturePhotoInput.value = '';
+        editDeparturePhotoPreview.innerHTML = '<p class="text-sm text-gray-400">Sin foto de salida</p>';
+    });
+
+    // Boleta
+    editReceiptBtn.addEventListener('click', () => editReceiptInput.click());
+    editReceiptInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            newReceiptFile = file;
+            deleteReceipt = false;
+            editReceiptPreview.innerHTML = `<p class="text-sm text-green-600 text-center">✅ Nuevo archivo seleccionado: ${file.name}</p>`;
+        }
+    });
+    removeReceiptBtn.addEventListener('click', () => {
+        deleteReceipt = true;
+        newReceiptFile = null;
+        editReceiptInput.value = '';
+        editReceiptPreview.innerHTML = '<p class="text-sm text-gray-400 text-center">Sin boleta cargada</p>';
+    });
 };
 
 // --- LISTENERS ---
@@ -428,12 +652,10 @@ const initializeServicesPage = async () => {
     // Listeners de los botones del modal
     editServiceBtn.addEventListener('click', switchToEditMode);
     cancelEditBtn.addEventListener('click', switchToViewMode);
-    
-    // ================== INICIO DE LA CORRECCIÓN ==================
-    // Se cambia el listener del 'submit' del formulario al 'click' del botón,
-    // ya que el botón no es de tipo 'submit' y está fuera del <form>.
     saveServiceBtn.addEventListener('click', handleSaveChanges);
-    // =================== FIN DE LA CORRECCIÓN ====================
+
+    // Listeners de fotos y boleta
+    setupPhotoListeners();
 };
 
 initializeServicesPage();
