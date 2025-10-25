@@ -1,6 +1,10 @@
 // public/modules/employee/dashboard.js
 // Archivo principal coordinador del dashboard del empleado
 
+// --- IMPORTANTE: Añadir verificación de autenticación PRIMERO ---
+import '../../core/auth-employee.js';
+// ---------------------------------------------------------
+
 import { supabase } from '../../core/supabase.js';
 import { state, updateState } from './employee-state.js';
 import { getClientsWithPets } from '../dashboard/dashboard.api.js';
@@ -13,6 +17,7 @@ import { initCalendarElements, setupCalendarListeners, renderCalendar } from './
 import { initPOSElements, setupPOSListeners, loadProducts } from './employee-pos.js';
 // ---- NUEVA IMPORTACIÓN ----
 import { initServiceElements, setupServiceListeners, loadCompletedServicesData, renderCompletedServices } from './employee-services.js';
+
 
 // Elementos del DOM comunes
 const headerTitle = document.getElementById('header-title');
@@ -33,7 +38,8 @@ async function loadHTMLModule(viewId, htmlFile) {
     }
 
     try {
-        const response = await fetch(htmlFile);
+        // Añadimos un timestamp para evitar caché en los HTML también
+        const response = await fetch(`${htmlFile}?v=${Date.now()}`);
         if (!response.ok) throw new Error(`Error al cargar ${htmlFile}`);
         const html = await response.text();
         viewContainer.innerHTML = html;
@@ -49,6 +55,9 @@ async function loadHTMLModule(viewId, htmlFile) {
 // ===========================================
 
 const initializeDashboard = async () => {
+    // La verificación de auth-employee.js ya se ejecutó al inicio del script.
+    // Si el usuario no es empleado, ya habrá sido redirigido.
+
     console.log('🚀 Inicializando dashboard del empleado...');
 
     await Promise.all([
@@ -60,27 +69,37 @@ const initializeDashboard = async () => {
         loadHTMLModule('services', 'employee-services.html') // ---- CARGAR NUEVO HTML ----
     ]);
 
-    initClientElements();
-    initPetElements();
-    initAppointmentElements();
-    initCalendarElements();
-    initPOSElements();
-    initServiceElements(); // ---- INICIALIZAR NUEVOS ELEMENTOS ----
+    // Esperar un breve momento para asegurar que el DOM se actualice tras cargar los HTML
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-    setupClientListeners();
-    setupPetListeners();
-    setupAppointmentListeners();
-    setupCalendarListeners();
-    setupPOSListeners();
-    setupServiceListeners(); // ---- CONFIGURAR NUEVOS LISTENERS ----
+    // Inicializar elementos después de cargar HTML
+    try {
+        initClientElements();
+        initPetElements();
+        initAppointmentElements();
+        initCalendarElements();
+        initPOSElements();
+        initServiceElements(); // ---- INICIALIZAR NUEVOS ELEMENTOS ----
 
-    setupNavigation();
+        setupClientListeners();
+        setupPetListeners();
+        setupAppointmentListeners();
+        setupCalendarListeners();
+        setupPOSListeners();
+        setupServiceListeners(); // ---- CONFIGURAR NUEVOS LISTENERS ----
 
-    await loadInitialData();
+        setupNavigation(); // Configurar navegación después de asegurar que los botones existen
 
-    switchView('clients');
+        await loadInitialData(); // Cargar datos después de configurar listeners
 
-    console.log('✅ Dashboard del empleado inicializado');
+        switchView('clients'); // Mostrar vista inicial
+
+        console.log('✅ Dashboard del empleado inicializado');
+
+    } catch(err) {
+        console.error("Error durante la inicialización de elementos o listeners:", err);
+        // Mostrar un mensaje de error al usuario podría ser útil aquí
+    }
 };
 
 // ===========================================
@@ -135,7 +154,11 @@ const setupNavigation = () => {
     navButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const view = btn.dataset.view;
-            switchView(view);
+            if (view) { // Asegurarse de que el botón tiene data-view
+               switchView(view);
+            } else {
+                console.warn("Botón de navegación sin atributo data-view:", btn);
+            }
         });
     });
 
@@ -156,6 +179,7 @@ const setupNavigation = () => {
     });
 };
 
+
 const switchView = (viewName) => {
     // Ocultar todas las vistas
     views.forEach(view => view.classList.add('hidden'));
@@ -164,7 +188,10 @@ const switchView = (viewName) => {
     const targetView = document.getElementById(`${viewName}-view`);
     if (targetView) {
         targetView.classList.remove('hidden');
+    } else {
+        console.warn(`Vista con ID '${viewName}-view' no encontrada.`);
     }
+
 
     // Actualizar botones de navegación inferior
     navButtons.forEach(btn => {
@@ -181,21 +208,33 @@ const switchView = (viewName) => {
     const viewTitles = {
         'clients': 'Clientes',
         'pets': 'Mascotas',
-        'appointments': 'Citas Pendientes', // Cambiado
+        'appointments': 'Citas Pendientes',
         'calendar': 'Calendario',
-        'services': 'Servicios Completados', // ---- NUEVO TÍTULO ----
+        'services': 'Servicios Completados',
         'pos': 'Punto de Venta'
     };
 
-    headerTitle.textContent = viewTitles[viewName] || 'Dashboard';
+    if (headerTitle) {
+      headerTitle.textContent = viewTitles[viewName] || 'Dashboard';
+    }
+
 
     // Renderizar calendario si es necesario
     if (viewName === 'calendar') {
-        renderCalendar();
+        // Asegurarse de que la función exista antes de llamarla
+        if (typeof renderCalendar === 'function') {
+            renderCalendar();
+        } else {
+            console.warn("Función renderCalendar no encontrada.");
+        }
     }
-    // ---- Renderizar servicios si es necesario (por si hubo cambios) ----
+    // Renderizar servicios si es necesario
     if (viewName === 'services') {
-        renderCompletedServices(state.completedServices || []);
+        if (typeof renderCompletedServices === 'function') {
+           renderCompletedServices(state.completedServices || []);
+        } else {
+            console.warn("Función renderCompletedServices no encontrada.");
+        }
     }
 };
 
@@ -203,4 +242,10 @@ const switchView = (viewName) => {
 // PUNTO DE ENTRADA
 // ===========================================
 
-document.addEventListener('DOMContentLoaded', initializeDashboard);
+// Se ejecuta después de que el HTML base (dashboard.html) esté listo,
+// pero ANTES de cargar los módulos HTML dinámicos.
+document.addEventListener('DOMContentLoaded', () => {
+    // La verificación de auth-employee.js ya se ejecutó.
+    // Ahora llamamos a initializeDashboard que cargará el resto.
+    initializeDashboard();
+});
