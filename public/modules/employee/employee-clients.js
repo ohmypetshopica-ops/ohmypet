@@ -2,11 +2,12 @@
 // Módulo de gestión de clientes
 
 import { state, updateState } from './employee-state.js';
-import { registerClientFromDashboard, getClientsWithPets, getClientDetails, updateClientProfile } from '../dashboard/dashboard.api.js'; // Importar updateClientProfile
+import { registerClientFromDashboard, getClientsWithPets, getClientDetails, updateClientProfile, addPetFromDashboard } from '../dashboard/dashboard.api.js'; // Importar addPetFromDashboard
 import { supabase } from '../../core/supabase.js';
 
 // --- UTILITY: LIMPIEZA DE NÚMEROS DE TELÉFONO ---
 const cleanPhoneNumber = (rawNumber) => {
+    // ... (código sin cambios)
     if (!rawNumber) return null;
     let cleaned = rawNumber.replace(/[^\d+]/g, '');
     if (cleaned.length < 9 || (cleaned.length > 9 && !cleaned.startsWith('+'))) {
@@ -23,23 +24,30 @@ let clientSearch;
 let clientsList;
 let clientsListView;
 let clientDetailsView;
-let clientDetailsContentView; // Cambiado para la vista
-let clientDetailsContentEdit; // Nuevo para el form de edición
+let clientDetailsContentView;
+let clientDetailsContentEdit;
 let backToClientsBtn;
 let addClientBtnEmployee;
 let clientModalEmployee;
-let closeClientModalButtonEmployee;
+let submitAddClientButtonEmployee; // Renombrado para claridad
 let cancelClientButtonEmployee;
 let clientFormEmployee;
 let clientFormMessageEmployee;
 let clearSearchBtn;
-let addPetBtn; // Cambiado de addPetToClientBtn
-let editClientBtn; // Nuevo
-let saveClientBtn; // Nuevo
-let cancelEditClientBtn; // Nuevo
-let clientEditForm; // Nuevo
-let editFormMessage; // Nuevo
-let clientDetailsActions; // Nuevo contenedor de botones principales
+let addPetBtn;
+let editClientBtn;
+let saveClientBtn;
+let cancelEditClientBtn;
+let clientEditForm;
+let editFormMessage;
+let clientDetailsActions;
+
+// Elementos del Modal Agregar Mascota
+let addPetModalEmployee;
+let petFormEmployee;
+let petFormMessageEmployee;
+let cancelAddPetButtonEmployee;
+let submitAddPetButtonEmployee; // Nuevo selector para el botón submit del modal mascota
 
 // Variable para guardar el perfil actual en modo edición/vista
 let currentClientProfile = null;
@@ -49,29 +57,37 @@ export function initClientElements() {
     clientsList = document.getElementById('clients-list');
     clientsListView = document.getElementById('clients-list-view');
     clientDetailsView = document.getElementById('client-details-view');
-    clientDetailsContentView = document.getElementById('client-details-content-view'); // Vista
-    clientDetailsContentEdit = document.getElementById('client-details-content-edit'); // Edición
+    clientDetailsContentView = document.getElementById('client-details-content-view');
+    clientDetailsContentEdit = document.getElementById('client-details-content-edit');
     backToClientsBtn = document.getElementById('back-to-clients-btn');
 
     addClientBtnEmployee = document.querySelector('#add-client-btn-employee');
     clientModalEmployee = document.querySelector('#client-modal-employee');
-    closeClientModalButtonEmployee = document.querySelector('#close-client-modal-button-employee');
+    submitAddClientButtonEmployee = document.querySelector('#submit-add-client-button-employee'); // ID correcto
     cancelClientButtonEmployee = document.querySelector('#cancel-client-button-employee');
     clientFormEmployee = document.querySelector('#client-form-employee');
     clientFormMessageEmployee = document.querySelector('#client-form-message-employee');
 
     clearSearchBtn = document.getElementById('clear-search-btn');
-    addPetBtn = document.getElementById('add-pet-to-client-btn'); // Botón "+ Agregar Mascota"
-    editClientBtn = document.getElementById('edit-client-btn'); // Botón "Editar Cliente"
-    saveClientBtn = document.getElementById('save-client-btn'); // Botón "Guardar Cambios"
-    cancelEditClientBtn = document.getElementById('cancel-edit-client-btn'); // Botón "Cancelar" edición
-    clientEditForm = document.getElementById('client-edit-form'); // Formulario de edición
-    editFormMessage = document.getElementById('edit-form-message'); // Mensajes en form de edición
-    clientDetailsActions = document.getElementById('client-details-actions'); // Contenedor botones principales
+    addPetBtn = document.getElementById('add-pet-to-client-btn');
+    editClientBtn = document.getElementById('edit-client-btn');
+    saveClientBtn = document.getElementById('save-client-btn');
+    cancelEditClientBtn = document.getElementById('cancel-edit-client-btn');
+    clientEditForm = document.getElementById('client-edit-form');
+    editFormMessage = document.getElementById('edit-form-message');
+    clientDetailsActions = document.getElementById('client-details-actions');
+
+    // Inicializar elementos del modal de mascota
+    addPetModalEmployee = document.querySelector('#add-pet-modal-employee');
+    petFormEmployee = document.querySelector('#pet-form-employee');
+    petFormMessageEmployee = document.querySelector('#pet-form-message-employee');
+    cancelAddPetButtonEmployee = document.querySelector('#cancel-add-pet-button-employee');
+    submitAddPetButtonEmployee = document.querySelector('#submit-add-pet-button-employee'); // Selector para botón submit mascota
 }
 
 export function setupClientListeners() {
     if (clientSearch) {
+        // ... (listener de búsqueda sin cambios)
         clientSearch.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             clearSearchBtn?.classList.toggle('hidden', term.length === 0);
@@ -84,6 +100,7 @@ export function setupClientListeners() {
     }
 
     if (clearSearchBtn) {
+       // ... (listener de limpiar búsqueda sin cambios)
         clearSearchBtn.addEventListener('click', () => {
             clientSearch.value = '';
             clearSearchBtn.classList.add('hidden');
@@ -92,77 +109,100 @@ export function setupClientListeners() {
     }
 
     if (backToClientsBtn) {
+        // ... (listener de volver a lista sin cambios)
         backToClientsBtn.addEventListener('click', () => {
-            switchToListView(); // Función para cambiar a vista de lista
+            switchToListView();
         });
     }
 
     if (clientsList) {
+       // ... (listener de click en lista sin cambios)
         clientsList.addEventListener('click', (e) => {
             const btn = e.target.closest('.client-btn');
             if (btn) showClientDetails(btn.dataset.clientId);
         });
     }
 
-    if (addClientBtnEmployee) {
-        addClientBtnEmployee.addEventListener('click', () => {
-            clientModalEmployee?.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        });
-    }
-
-    if (closeClientModalButtonEmployee) closeClientModalButtonEmployee.addEventListener('click', closeClientModal);
+    // Modal Agregar Cliente
+    if (addClientBtnEmployee) addClientBtnEmployee.addEventListener('click', openClientModal);
     if (cancelClientButtonEmployee) cancelClientButtonEmployee.addEventListener('click', closeClientModal);
     if (clientFormEmployee) clientFormEmployee.addEventListener('submit', handleAddClient);
 
-    // Listeners para edición
+    // Listeners para Edición de Cliente
     if (editClientBtn) editClientBtn.addEventListener('click', switchToEditMode);
-    if (saveClientBtn) saveClientBtn.addEventListener('click', handleSaveClient); // Usamos click en lugar de submit
+    if (saveClientBtn) saveClientBtn.addEventListener('click', handleSaveClient);
     if (cancelEditClientBtn) cancelEditClientBtn.addEventListener('click', switchToViewMode);
-    if (addPetBtn) { // Listener para el botón de agregar mascota
-        addPetBtn.addEventListener('click', () => {
-            // Asumiendo que existe un modal `add-pet-modal-employee` en employee-pets.html
-            const addPetModal = document.getElementById('add-pet-modal-employee');
-            const ownerIdInput = addPetModal?.querySelector('input[name="owner_id"]'); // Buscar input por nombre
-            if (addPetModal && ownerIdInput && state.currentClientId) {
-                 ownerIdInput.value = state.currentClientId; // Asigna el ID del cliente actual
-                 addPetModal.classList.remove('hidden');
-                 document.body.style.overflow = 'hidden';
-            } else {
-                console.error("No se pudo abrir el modal de mascota o falta el ID del cliente.");
-            }
-        });
-    }
+
+    // --- Listener para abrir Modal Agregar Mascota ---
+    if (addPetBtn) addPetBtn.addEventListener('click', openAddPetModal);
+
+    // --- Listeners para Modal Agregar Mascota ---
+    if (cancelAddPetButtonEmployee) cancelAddPetButtonEmployee.addEventListener('click', closeAddPetModal);
+    if (petFormEmployee) petFormEmployee.addEventListener('submit', handleAddPet); // Reutiliza handleAddPet para el submit
+     // Cerrar modal si se hace click fuera (para ambos modales)
+     if (clientModalEmployee) clientModalEmployee.addEventListener('click', (e) => { if (e.target === clientModalEmployee) closeClientModal(); });
+     if (addPetModalEmployee) addPetModalEmployee.addEventListener('click', (e) => { if (e.target === addPetModalEmployee) closeAddPetModal(); });
 }
 
-// --- Funciones de cambio de vista ---
+// --- Funciones de Modales ---
+const openClientModal = () => {
+    clientModalEmployee?.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+};
+const closeClientModal = () => {
+    clientModalEmployee?.classList.add('hidden');
+    document.body.style.overflow = '';
+    clientFormEmployee?.reset();
+    clientFormMessageEmployee?.classList.add('hidden');
+};
+
+const openAddPetModal = () => {
+    if (addPetModalEmployee && state.currentClientId) {
+        const ownerIdInput = document.getElementById('pet-owner-id-employee');
+        ownerIdInput.value = state.currentClientId; // Asignar ID
+        petFormEmployee?.reset(); // Limpiar formulario
+        petFormMessageEmployee?.classList.add('hidden'); // Ocultar mensajes
+        addPetModalEmployee.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    } else {
+        console.error("Error al abrir modal mascota: Modal no encontrado o ID de cliente no definido.");
+        alert("No se puede agregar mascota en este momento.");
+    }
+};
+const closeAddPetModal = () => {
+    addPetModalEmployee?.classList.add('hidden');
+    document.body.style.overflow = '';
+    // No reseteamos el form aquí para que los datos persistan si se cierra por error
+};
+// --- Fin Funciones de Modales ---
+
+// --- Funciones de cambio de vista (sin cambios) ---
 const switchToListView = () => {
     clientsListView?.classList.remove('hidden');
     clientDetailsView?.classList.add('hidden');
-    clientDetailsContentEdit?.classList.add('hidden'); // Ocultar form edición al volver
+    clientDetailsContentEdit?.classList.add('hidden');
     updateState('currentClientId', null);
-    currentClientProfile = null; // Limpiar perfil cacheado
+    currentClientProfile = null;
 };
-
 const switchToViewMode = () => {
     clientDetailsContentView?.classList.remove('hidden');
     clientDetailsContentEdit?.classList.add('hidden');
-    clientDetailsActions?.classList.remove('hidden'); // Mostrar botones principales
-    editFormMessage?.classList.add('hidden'); // Ocultar mensajes de error/éxito
-    // Recargar vista por si hubo cambios
+    clientDetailsActions?.classList.remove('hidden');
+    editFormMessage?.classList.add('hidden');
     if (currentClientProfile) renderClientDetailsView(currentClientProfile);
 };
-
 const switchToEditMode = () => {
     if (!currentClientProfile) return;
     clientDetailsContentView?.classList.add('hidden');
     clientDetailsContentEdit?.classList.remove('hidden');
-    clientDetailsActions?.classList.add('hidden'); // Ocultar botones principales
-    renderEditForm(currentClientProfile.profile); // Poblar el form con datos actuales
+    clientDetailsActions?.classList.add('hidden');
+    renderEditForm(currentClientProfile.profile);
 };
 // --- Fin funciones de cambio de vista ---
 
+// --- Renderizado y Lógica de Datos (con modificaciones para agregar mascota) ---
 const renderEditForm = (profile) => {
+    // ... (código sin cambios)
     if (!clientEditForm) return;
     clientEditForm.querySelector('#edit-client-id').value = profile.id;
     clientEditForm.querySelector('#edit-first-name').value = profile.first_name || '';
@@ -177,6 +217,7 @@ const renderEditForm = (profile) => {
 };
 
 const handleSaveClient = async () => {
+    // ... (código sin cambios)
     if (!clientEditForm) return;
 
     const formData = new FormData(clientEditForm);
@@ -256,9 +297,9 @@ const handleSaveClient = async () => {
     saveClientBtn.textContent = 'Guardar Cambios';
 };
 
-
 export function renderClients(clients) {
-    if (!clientsList) return;
+    // ... (código sin cambios)
+     if (!clientsList) return;
     clientsList.innerHTML = clients.length > 0 ? clients.map(client => `
         <button data-client-id="${client.id}" class="client-btn w-full text-left bg-white p-4 rounded-lg shadow-sm border hover:bg-gray-50">
             <h3 class="font-bold text-gray-800">${client.first_name || ''} ${client.last_name || ''}</h3>
@@ -269,6 +310,7 @@ export function renderClients(clients) {
 }
 
 async function showClientDetails(clientId) {
+    // ... (código sin cambios)
     updateState('currentClientId', clientId);
     clientDetailsContentView.innerHTML = '<p class="text-center text-gray-500 mt-8">Cargando detalles...</p>';
     clientsListView?.classList.add('hidden');
@@ -288,6 +330,7 @@ async function showClientDetails(clientId) {
 
 // Función separada para renderizar la vista de detalles
 const renderClientDetailsView = (details) => {
+     // ... (código sin cambios)
      const clientData = details.profile;
      const appointments = details.appointments || [];
      const clientPets = details.pets || [];
@@ -312,8 +355,7 @@ const renderClientDetailsView = (details) => {
          </div>
          <div class="bg-white rounded-lg shadow-sm p-6 mb-4">
              <h4 class="text-lg font-semibold text-gray-700 mb-3">Mascotas (${clientPets.length})</h4>
-             <div class="space-y-3">
-                 ${clientPets.length > 0 ? clientPets.map(pet => {
+             <div class="space-y-3" id="client-pet-list"> ${clientPets.length > 0 ? clientPets.map(pet => {
                      const petImage = pet.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name)}&background=A4D0A4&color=FFFFFF`;
                      return `<div class="bg-gray-50 p-4 rounded-lg flex items-center space-x-4"><img src="${petImage}" alt="${pet.name}" class="w-12 h-12 rounded-full object-cover border"><p class="font-bold">${pet.name}</p><p class="text-sm text-gray-600">${pet.breed || 'N/A'} | ${pet.sex || 'N/A'}</p></div>`;
                  }).join('') : '<p class="text-gray-500 text-sm">No tiene mascotas</p>'}
@@ -331,14 +373,9 @@ const renderClientDetailsView = (details) => {
      `;
 };
 
-function closeClientModal() {
-    clientModalEmployee?.classList.add('hidden');
-    document.body.style.overflow = '';
-    clientFormEmployee?.reset();
-    clientFormMessageEmployee?.classList.add('hidden');
-}
 
 async function handleAddClient(e) {
+    // ... (código sin cambios)
     e.preventDefault();
 
     const formData = new FormData(clientFormEmployee);
@@ -388,3 +425,69 @@ async function handleAddClient(e) {
         clientFormMessageEmployee.classList.remove('hidden');
     }
 }
+
+// --- Nueva función para manejar el submit del modal de mascota ---
+async function handleAddPet(e) {
+    e.preventDefault();
+
+    if (!state.currentClientId) {
+        petFormMessageEmployee.textContent = '❌ Error: No se ha identificado al dueño.';
+        petFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
+        petFormMessageEmployee.classList.remove('hidden');
+        return;
+    }
+
+    const formData = new FormData(petFormEmployee);
+    const petData = {
+        owner_id: state.currentClientId, // Usar el ID del estado
+        name: formData.get('name').trim(),
+        breed: formData.get('breed').trim(),
+        size: formData.get('size'),
+        weight: parseFloat(formData.get('weight')) || null,
+        sex: formData.get('sex'),
+        observations: formData.get('observations').trim() || null
+    };
+
+    // Validación básica
+    if (!petData.name) {
+         petFormMessageEmployee.textContent = '❌ El nombre de la mascota es obligatorio.';
+         petFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
+         petFormMessageEmployee.classList.remove('hidden');
+         return;
+     }
+
+    submitAddPetButtonEmployee.disabled = true;
+    submitAddPetButtonEmployee.textContent = 'Guardando...';
+    petFormMessageEmployee.classList.add('hidden');
+
+    const result = await addPetFromDashboard(petData);
+
+    if (result.success) {
+        petFormMessageEmployee.textContent = '✅ Mascota registrada con éxito.';
+        petFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
+        petFormMessageEmployee.classList.remove('hidden');
+
+        // Recargar detalles del cliente para mostrar la nueva mascota
+        const updatedDetails = await getClientDetails(state.currentClientId);
+        if (updatedDetails) {
+            currentClientProfile = updatedDetails; // Actualizar caché
+            renderClientDetailsView(updatedDetails); // Actualizar la vista de detalles
+        }
+        // También actualizar el estado global de mascotas
+        const { data: pets } = await supabase.from('pets').select('*').order('created_at', { ascending: false });
+        if (pets) updateState('allPets', pets);
+
+
+        setTimeout(() => {
+            closeAddPetModal();
+        }, 1500);
+    } else {
+        petFormMessageEmployee.textContent = `❌ ${result.error?.message || 'Error al registrar mascota'}`;
+        petFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
+        petFormMessageEmployee.classList.remove('hidden');
+    }
+
+    submitAddPetButtonEmployee.disabled = false;
+    submitAddPetButtonEmployee.textContent = 'Guardar Mascota';
+}
+// --- Fin nueva función ---
