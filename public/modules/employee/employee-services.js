@@ -6,10 +6,17 @@ import { supabase } from '../../core/supabase.js';
 
 // Elementos del DOM
 let serviceSearch, completedServicesList;
+let paginationContainerServices; // ====== ELEMENTO AGREGADO ======
+
+// ====== VARIABLES AGREGADAS PARA PAGINACIÓN ======
+let currentPageServices = 1;
+const itemsPerPageServices = 10; // Puedes ajustar este número
+// ====== FIN VARIABLES AGREGADAS ======
 
 export function initServiceElements() {
     serviceSearch = document.getElementById('service-search');
     completedServicesList = document.getElementById('completed-services-list');
+    paginationContainerServices = document.getElementById('pagination-container-services'); // ====== INICIALIZACIÓN AGREGADA ======
 }
 
 export function setupServiceListeners() {
@@ -18,7 +25,7 @@ export function setupServiceListeners() {
     }
 }
 
-// Función para obtener servicios completados (similar a la del dashboard admin)
+// Función para obtener servicios completados (sin cambios)
 const getCompletedServices = async () => {
     const { data, error } = await supabase
         .from('appointments')
@@ -39,16 +46,70 @@ const getCompletedServices = async () => {
     return data || [];
 };
 
-// Función para renderizar la lista de servicios
-export const renderCompletedServices = (services) => {
-    if (!completedServicesList) return;
+// ====== FUNCIÓN DE RENDERIZADO DE PAGINACIÓN AGREGADA ======
+const renderPaginationServices = (totalItems) => {
+    if (!paginationContainerServices) return;
 
-    if (services.length === 0) {
-        completedServicesList.innerHTML = `<p class="text-center text-gray-500 mt-8">No se encontraron servicios completados.</p>`;
+    const totalPages = Math.ceil(totalItems / itemsPerPageServices);
+    if (totalPages <= 1) {
+        paginationContainerServices.innerHTML = '';
         return;
     }
 
-    completedServicesList.innerHTML = services.map(service => {
+    let paginationHTML = '<div class="flex items-center space-x-2">';
+
+    paginationHTML += `
+        <button data-page="${currentPageServices - 1}" class="px-3 py-1 border rounded-lg ${currentPageServices === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}" ${currentPageServices === 1 ? 'disabled' : ''}>
+            Anterior
+        </button>
+    `;
+
+    for (let i = 1; i <= totalPages; i++) {
+        const activeClass = i === currentPageServices ? 'bg-green-600 text-white' : 'bg-white hover:bg-gray-50';
+        paginationHTML += `<button data-page="${i}" class="px-3 py-1 border rounded-lg ${activeClass}">${i}</button>`;
+    }
+
+    paginationHTML += `
+        <button data-page="${currentPageServices + 1}" class="px-3 py-1 border rounded-lg ${currentPageServices === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}" ${currentPageServices === totalPages ? 'disabled' : ''}>
+            Siguiente
+        </button>
+    `;
+
+    paginationHTML += '</div>';
+    paginationContainerServices.innerHTML = paginationHTML;
+
+    paginationContainerServices.querySelectorAll('button[data-page]').forEach(button => {
+        button.addEventListener('click', () => {
+            currentPageServices = parseInt(button.dataset.page);
+            const searchTerm = serviceSearch.value.toLowerCase();
+            const filtered = searchTerm ? state.completedServices.filter(service => {
+                const ownerName = (service.profiles?.first_name ? `${service.profiles.first_name} ${service.profiles.last_name || ''}` : service.profiles?.full_name || '').toLowerCase();
+                const petName = (service.pets?.name || '').toLowerCase();
+                return petName.includes(searchTerm) || ownerName.includes(searchTerm);
+            }) : state.completedServices;
+            renderCompletedServices(filtered);
+        });
+    });
+};
+
+
+// ====== FUNCIÓN `renderCompletedServices` MODIFICADA ======
+export const renderCompletedServices = (services) => {
+    if (!completedServicesList) return;
+
+    // Lógica de paginación
+    const startIndex = (currentPageServices - 1) * itemsPerPageServices;
+    const endIndex = startIndex + itemsPerPageServices;
+    const paginatedServices = services.slice(startIndex, endIndex);
+
+
+    if (paginatedServices.length === 0) {
+        completedServicesList.innerHTML = `<p class="text-center text-gray-500 mt-8">No se encontraron servicios completados.</p>`;
+        renderPaginationServices(0); // Limpiar paginación si no hay resultados
+        return;
+    }
+
+    completedServicesList.innerHTML = paginatedServices.map(service => {
         const ownerName = service.profiles?.first_name ? `${service.profiles.first_name} ${service.profiles.last_name || ''}` : service.profiles?.full_name || 'Cliente';
         const petName = service.pets?.name || 'Mascota';
         const petImage = service.pets?.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(petName)}&background=10B981&color=FFFFFF`;
@@ -75,10 +136,14 @@ export const renderCompletedServices = (services) => {
             </div>
         `;
     }).join('');
+
+    // Renderizar la paginación
+    renderPaginationServices(services.length);
 };
 
 // Función de búsqueda
 const handleServiceSearch = (e) => {
+    currentPageServices = 1; // ====== LÍNEA AGREGADA ======
     const term = e.target.value.toLowerCase();
     const filtered = term ? state.completedServices.filter(service => {
         const ownerName = service.profiles?.first_name ? `${service.profiles.first_name} ${service.profiles.last_name || ''}`.toLowerCase() : (service.profiles?.full_name || '').toLowerCase();
