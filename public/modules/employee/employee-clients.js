@@ -2,7 +2,7 @@
 // Módulo de gestión de clientes
 
 import { state, updateState } from './employee-state.js';
-import { registerClientFromDashboard, getClientsWithPets } from '../dashboard/dashboard.api.js';
+import { registerClientFromDashboard, getClientsWithPets, getClientDetails } from '../dashboard/dashboard.api.js';
 import { supabase } from '../../core/supabase.js';
 
 // Elementos del DOM
@@ -18,6 +18,8 @@ let closeClientModalButtonEmployee;
 let cancelClientButtonEmployee;
 let clientFormEmployee;
 let clientFormMessageEmployee;
+// NUEVO
+let clearSearchBtn; 
 
 export function initClientElements() {
     clientSearch = document.getElementById('client-search');
@@ -33,17 +35,36 @@ export function initClientElements() {
     cancelClientButtonEmployee = document.querySelector('#cancel-client-button-employee');
     clientFormEmployee = document.querySelector('#client-form-employee');
     clientFormMessageEmployee = document.querySelector('#client-form-message-employee');
+    
+    // NUEVO
+    clearSearchBtn = document.getElementById('clear-search-btn');
 }
 
 export function setupClientListeners() {
     if (clientSearch) {
+        // Muestra/Oculta el botón "X" y filtra
         clientSearch.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
+            if (term.length > 0) {
+                clearSearchBtn?.classList.remove('hidden');
+            } else {
+                clearSearchBtn?.classList.add('hidden');
+            }
+
             const filtered = term ? state.allClients.filter(c =>
                 `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase().includes(term) ||
                 (c.phone || '').includes(term)
             ) : state.allClients;
             renderClients(filtered);
+        });
+    }
+
+    // NUEVO: Limpia la búsqueda
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', () => {
+            clientSearch.value = '';
+            clearSearchBtn.classList.add('hidden');
+            renderClients(state.allClients); // Vuelve a renderizar la lista completa
         });
     }
     
@@ -99,25 +120,29 @@ export function renderClients(clients) {
 
 async function showClientDetails(clientId) {
     updateState('currentClientId', clientId);
-    const clientData = state.clientsWithPets.find(c => c.id === clientId);
+    clientDetailsContent.innerHTML = '<p class="text-center text-gray-500 mt-8">Cargando detalles...</p>'; // Loading
     
-    if (!clientData) {
-        console.error('Cliente no encontrado:', clientId);
+    // 1. Obtener detalles completos usando la función del dashboard.api
+    const details = await getClientDetails(clientId);
+
+    if (!details || !details.profile) {
+        clientDetailsContent.innerHTML = '<p class="text-center text-red-500 mt-8">Error al cargar detalles del cliente.</p>';
         return;
     }
     
-    // Obtener citas del cliente
-    const { data: appointments } = await supabase
-        .from('appointments')
-        .select('*, pets(name)')
-        .eq('user_id', clientId)
-        .order('appointment_date', { ascending: false });
+    const clientData = details.profile;
+    const appointments = details.appointments || [];
+    const clientPets = details.pets || [];
     
-    const clientPets = clientData.pets || [];
+    // 2. Usar los datos completos del perfil
+    const fullName = clientData.first_name || clientData.last_name 
+        ? `${clientData.first_name || ''} ${clientData.last_name || ''}`.trim() 
+        : clientData.full_name;
+
     
     clientDetailsContent.innerHTML = `
         <div class="bg-white rounded-lg shadow-sm p-6 mb-4">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">${clientData.first_name || ''} ${clientData.last_name || ''}</h3>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">${fullName}</h3>
             
             <div class="mb-6">
                 <h4 class="text-lg font-semibold text-gray-700 mb-3">Información de Contacto</h4>
@@ -128,7 +153,7 @@ async function showClientDetails(clientId) {
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-gray-600">Teléfono:</p>
-                        <p class="text-blue-600"><a href="tel:${clientData.phone}">${clientData.phone || 'N/A'}</a></p>
+                        <p class="text-blue-600"><a href="tel:${clientData.phone || ''}">${clientData.phone || 'N/A'}</a></p>
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-gray-600">Tipo de Doc.:</p>
@@ -153,12 +178,18 @@ async function showClientDetails(clientId) {
         <div class="bg-white rounded-lg shadow-sm p-6 mb-4">
             <h4 class="text-lg font-semibold text-gray-700 mb-3">Mascotas Registradas (${clientPets.length})</h4>
             <div class="space-y-3">
-                ${clientPets.length > 0 ? clientPets.map(pet => `
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="font-bold text-gray-800">${pet.name}</p>
-                        <p class="text-sm text-gray-600">${pet.breed || 'N/A'} | ${pet.sex || 'N/A'}</p>
-                    </div>
-                `).join('') : '<p class="text-gray-500 text-sm">No tiene mascotas registradas</p>'}
+                ${clientPets.length > 0 ? clientPets.map(pet => {
+                    const petImage = pet.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name)}&background=A4D0A4&color=FFFFFF`;
+                    return `
+                        <div class="bg-gray-50 p-4 rounded-lg flex items-center space-x-4">
+                            <img src="${petImage}" alt="${pet.name}" class="w-12 h-12 rounded-full object-cover border border-gray-300 flex-shrink-0">
+                            <div>
+                                <p class="font-bold text-gray-800">${pet.name}</p>
+                                <p class="text-sm text-gray-600">${pet.breed || 'N/A'} | ${pet.sex || 'N/A'}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('') : '<p class="text-gray-500 text-sm">No tiene mascotas registradas</p>'}
             </div>
         </div>
         
@@ -192,9 +223,16 @@ async function showClientDetails(clientId) {
         </div>
     `;
     
-    // Ocultar lista y mostrar detalles
+    // 3. Ocultar lista y mostrar detalles
     clientsListView?.classList.add('hidden');
     clientDetailsView?.classList.remove('hidden');
+
+    // 4. Configurar listener para el botón de "Agregar Mascota" en esta vista
+    const addPetBtn = document.getElementById('add-pet-to-client-btn');
+    addPetBtn?.addEventListener('click', () => {
+        // Esto activará la lógica para abrir el modal de agregar mascota en employee-pets.js
+        document.querySelector('#pets-view #add-pet-to-client-btn')?.click();
+    });
 }
 
 function closeClientModal() {
