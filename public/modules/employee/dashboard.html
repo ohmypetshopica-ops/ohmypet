@@ -33,28 +33,29 @@
            height: 100%;
            overflow: hidden; /* Evita el scroll en toda la página */
            margin: 0;
+           background-color: #F3F4F6; /* bg-gray-100 */
         }
         .main-container {
-           height: 100vh; /* Ocupa el 100% de la altura de la pantalla */
+           height: 100vh; /* Altura completa */
            display: flex;
            flex-direction: column; /* Apila los elementos verticalmente: header, main, nav */
            width: 100%;
            max-width: 28rem; /* max-w-md para simular móvil en escritorio */
            margin-left: auto;
            margin-right: auto;
-           background-color: #F9FAFB; /* bg-gray-50 */
+           background-color: white;
            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         header {
-            flex-shrink: 0; /* Evita que el header se encoja */
+            flex-shrink: 0; /* El header no se encoge */
         }
         .content-area {
-            flex-grow: 1; /* Hace que esta área ocupe todo el espacio vertical sobrante */
+            flex-grow: 1; /* Ocupa todo el espacio vertical sobrante */
             overflow-y: auto; /* Permite el scroll SÓLO en esta área de contenido */
-            /* Ya no necesita padding-bottom, el layout se encarga del espacio */
+            background-color: #F9FAFB; /* bg-gray-50 */
         }
         .bottom-nav-container {
-            flex-shrink: 0; /* Evita que la barra de navegación se encoja */
+            flex-shrink: 0; /* El footer (nav) no se encoje */
             width: 100%;
             background-color: white;
             border-top: 1px solid #E5E7EB;
