@@ -1,0 +1,127 @@
+<!-- public/modules/employee/employee-pos.html -->
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Sección de productos (2/3) -->
+    <div class="lg:col-span-2">
+        <div class="mb-4">
+            <input 
+                type="text" 
+                id="product-search-employee" 
+                placeholder="Buscar producto..." 
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+        </div>
+        
+        <div id="products-grid-employee" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <!-- Los productos se renderizan aquí dinámicamente -->
+        </div>
+    </div>
+    
+    <!-- Sección del carrito (1/3) -->
+    <div class="lg:col-span-1">
+        <div class="bg-white rounded-lg shadow-lg p-4 sticky top-4">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Carrito</h3>
+            
+            <div id="cart-items-employee" class="space-y-2 mb-4 max-h-96 overflow-y-auto">
+                <p class="text-center text-gray-400 text-sm">Carrito vacío</p>
+            </div>
+            
+            <div class="border-t pt-4">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-lg font-bold text-gray-800">Total:</span>
+                    <span id="total-employee" class="text-2xl font-bold text-green-600">S/ 0.00</span>
+                </div>
+                
+                <button 
+                    id="clear-cart-btn-employee" 
+                    disabled
+                    class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg mb-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                    Limpiar Carrito
+                </button>
+                
+                <button 
+                    id="process-sale-btn-employee" 
+                    disabled
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                    Procesar Venta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de pago -->
+<div id="payment-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
+        <div class="p-6 border-b flex-shrink-0">
+            <h2 class="text-2xl font-bold text-gray-800">Procesar Venta</h2>
+            <p class="text-sm text-gray-500 mt-1">Total a pagar: <span id="modal-total-employee" class="font-bold text-green-600">S/ 0.00</span></p>
+        </div>
+        
+        <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            <!-- Seleccionar cliente -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">1. Seleccionar Cliente *</h3>
+                <input 
+                    type="text" 
+                    id="customer-search-employee" 
+                    placeholder="Buscar cliente por nombre..." 
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                >
+                <div id="customer-results-employee" class="hidden mt-2 border border-gray-300 rounded-lg max-h-40 overflow-y-auto bg-white"></div>
+                <input type="hidden" id="selected-customer-id-employee">
+                
+                <div id="selected-customer-display-employee" class="hidden mt-3 p-3 bg-green-50 rounded-lg flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-600">Cliente seleccionado:</p>
+                        <p id="selected-customer-name-employee" class="font-bold text-gray-800"></p>
+                    </div>
+                    <button id="clear-customer-btn-employee" class="text-red-600 hover:text-red-700 font-semibold">
+                        ✕ Cambiar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Método de pago -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">2. Método(s) de Pago</h3>
+                
+                <div id="payment-lines-container" class="space-y-3 mb-3">
+                    <!-- Las líneas de pago se renderizan aquí dinámicamente -->
+                </div>
+                
+                <button id="add-payment-line-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                    + Agregar otro método de pago
+                </button>
+                
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-semibold text-gray-700">Total pagado:</span>
+                        <span id="total-paid-display" class="text-xl font-bold text-blue-600">S/ 0.00</span>
+                    </div>
+                    
+                    <div id="remaining-section" class="flex justify-between items-center text-red-600">
+                        <span class="font-semibold">Falta por pagar:</span>
+                        <span id="total-remaining-display" class="text-xl font-bold">S/ 0.00</span>
+                    </div>
+                    
+                    <div id="change-section" class="hidden flex justify-between items-center text-green-600">
+                        <span class="font-semibold">Cambio:</span>
+                        <span id="total-change-display" class="text-xl font-bold">S/ 0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t flex-shrink-0">
+            <button type="button" id="cancel-payment-btn-employee" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors">
+                Cancelar
+            </button>
+            <button type="button" id="confirm-payment-btn-employee" disabled class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                Confirmar Venta
+            </button>
+        </div>
+    </div>
+</div>

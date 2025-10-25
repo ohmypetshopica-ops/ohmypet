@@ -1,0 +1,97 @@
+<!-- public/modules/employee/employee-pets.html -->
+
+<!-- Vista de lista de mascotas -->
+<div id="pets-list-view">
+    <div class="mb-4">
+        <input 
+            type="text" 
+            id="pet-search" 
+            placeholder="Buscar mascota o dueño..." 
+            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        >
+    </div>
+    
+    <div id="pets-list" class="space-y-3">
+        <!-- Las mascotas se renderizan aquí dinámicamente -->
+    </div>
+</div>
+
+<!-- Vista de detalles de la mascota -->
+<div id="pet-details-view" class="hidden">
+    <button 
+        id="back-to-pets-btn" 
+        class="mb-4 text-green-600 hover:text-green-700 font-semibold flex items-center"
+    >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Volver a la lista
+    </button>
+    
+    <div id="pet-details-content">
+        <!-- Los detalles se renderizan aquí dinámicamente -->
+    </div>
+</div>
+
+<!-- Modal para agregar mascota -->
+<div id="add-pet-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
+        <div class="p-6 border-b flex-shrink-0">
+            <h2 class="text-2xl font-bold text-gray-800">Agregar Nueva Mascota</h2>
+            <p class="text-sm text-gray-500 mt-1">Completa los datos de la mascota</p>
+        </div>
+        
+        <form id="pet-form-employee" class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+            <div id="pet-form-message-employee" class="hidden"></div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                <input type="text" name="name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Raza</label>
+                <input type="text" name="breed" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tamaño</label>
+                    <select name="size" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <option value="">Seleccionar</option>
+                        <option value="Pequeño">Pequeño</option>
+                        <option value="Mediano">Mediano</option>
+                        <option value="Grande">Grande</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
+                    <input type="number" step="0.1" name="weight" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
+                <select name="sex" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    <option value="">Seleccionar</option>
+                    <option value="Macho">Macho</option>
+                    <option value="Hembra">Hembra</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                <textarea name="observations" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></textarea>
+            </div>
+        </form>
+        
+        <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t flex-shrink-0">
+            <button type="button" id="cancel-add-pet-button-employee" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors">
+                Cancelar
+            </button>
+            <button type="submit" form="pet-form-employee" id="close-add-pet-modal-button-employee" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                Guardar Mascota
+            </button>
+        </div>
+    </div>
+</div>
