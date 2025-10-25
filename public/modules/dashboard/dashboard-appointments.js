@@ -71,14 +71,18 @@ const selectedClientIdInput = document.querySelector('#selected-client-id');
 
 // --- ELEMENTOS DEL MODAL DE REPROGRAMACIÓN ---
 const rescheduleModal = document.querySelector('#reschedule-modal');
+const rescheduleForm = document.querySelector('#reschedule-form');
 const rescheduleSubtitle = document.querySelector('#reschedule-subtitle');
+const rescheduleClientNameInput = document.querySelector('#reschedule-client-name');
+const reschedulePetNameInput = document.querySelector('#reschedule-pet-name');
 const rescheduleDateInput = document.querySelector('#reschedule-date');
-const rescheduleTimeOptions = document.querySelector('#reschedule-time-options');
+const rescheduleTimeSelect = document.querySelector('#reschedule-time');
+const rescheduleServiceSelect = document.querySelector('#reschedule-service');
+const rescheduleNotesTextarea = document.querySelector('#reschedule-notes');
 const cancelRescheduleBtn = document.querySelector('#cancel-reschedule-btn');
 const confirmRescheduleBtn = document.querySelector('#confirm-reschedule-btn');
 
 let appointmentToRescheduleId = null;
-let selectedRescheduleTime = null;
 
 
 // --- PAGINACIÓN ---
@@ -207,29 +211,28 @@ const renderClientSearchResults = (clients) => {
 };
 
 
-const renderAvailableTimes = async () => {
-    const selectedDate = newAppointmentDateInput.value;
+const renderAvailableTimes = async (dateInput, timeSelect) => {
+    const selectedDate = dateInput.value;
     if (!selectedDate) {
-        newAppointmentTimeSelect.innerHTML = '<option>Selecciona una fecha</option>';
-        newAppointmentTimeSelect.disabled = true;
+        timeSelect.innerHTML = '<option>Selecciona una fecha</option>';
+        timeSelect.disabled = true;
         return;
     }
 
-    newAppointmentTimeSelect.innerHTML = '<option>Cargando...</option>';
+    timeSelect.innerHTML = '<option>Cargando...</option>';
     const bookedTimes = await getBookedTimesForDashboard(selectedDate);
     const hours = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"];
     
-    newAppointmentTimeSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
+    timeSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
     hours.forEach(hour => {
         if (!bookedTimes.includes(hour)) {
             const option = new Option(hour, hour + ':00');
-            newAppointmentTimeSelect.add(option);
+            timeSelect.add(option);
         }
     });
-    newAppointmentTimeSelect.disabled = false;
+    timeSelect.disabled = false;
 };
 
-// <<< INICIO: CÓDIGO ACTUALIZADO >>>
 const handleUrlParams = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const clientId = urlParams.get('clientId');
@@ -245,65 +248,37 @@ const handleUrlParams = () => {
             populatePetSelect(clientId);
             petSelect.value = petId;
         }
-        // Limpiar los parámetros de la URL para evitar que el modal se abra al recargar
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 };
-// <<< FIN: CÓDIGO ACTUALIZADO >>>
 
-const openRescheduleModal = (appointmentId, petName, clientName) => {
+const openRescheduleModal = async (appointmentId) => {
+    const appointment = allAppointments.find(app => app.id === appointmentId);
+    if (!appointment) return;
+
     appointmentToRescheduleId = appointmentId;
-    selectedRescheduleTime = null;
 
-    rescheduleSubtitle.textContent = `Reprogramando para ${petName} de ${clientName}`;
-    rescheduleDateInput.value = '';
-    
-    rescheduleTimeOptions.innerHTML = `<p class="col-span-full text-center text-sm text-gray-500">Selecciona una fecha para ver los horarios.</p>`;
-    confirmRescheduleBtn.disabled = true;
-    
+    const clientName = (appointment.profiles?.first_name && appointment.profiles?.last_name) 
+        ? `${appointment.profiles.first_name} ${appointment.profiles.last_name}` 
+        : appointment.profiles?.full_name || 'N/A';
+    const petName = appointment.pets?.name || 'N/A';
+
+    rescheduleClientNameInput.value = clientName;
+    reschedulePetNameInput.value = petName;
+    rescheduleDateInput.value = appointment.appointment_date;
+    rescheduleServiceSelect.value = appointment.service;
+    rescheduleNotesTextarea.value = appointment.notes || '';
+
+    // Cargar horarios para la fecha actual
+    await renderAvailableTimes(rescheduleDateInput, rescheduleTimeSelect);
+    rescheduleTimeSelect.value = appointment.appointment_time;
+
     rescheduleModal.classList.remove('hidden');
 };
 
 const closeRescheduleModal = () => {
     rescheduleModal.classList.add('hidden');
     appointmentToRescheduleId = null;
-    selectedRescheduleTime = null;
-};
-
-const renderRescheduleTimeOptions = async () => {
-    const selectedDate = rescheduleDateInput.value;
-    if (!selectedDate) {
-        rescheduleTimeOptions.innerHTML = `<p class="col-span-full text-center text-sm text-gray-500">Selecciona una fecha para ver los horarios.</p>`;
-        return;
-    }
-    
-    rescheduleTimeOptions.innerHTML = `<p class="col-span-full text-center text-sm text-gray-500">Cargando disponibilidad...</p>`;
-    const bookedTimes = await getBookedTimesForDashboard(selectedDate);
-    const hours = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"];
-
-    rescheduleTimeOptions.innerHTML = '';
-    selectedRescheduleTime = null;
-    confirmRescheduleBtn.disabled = true;
-
-    hours.forEach(hour => {
-        const isBooked = bookedTimes.includes(hour);
-        const btn = document.createElement("button");
-        btn.textContent = hour;
-        btn.disabled = isBooked;
-        btn.className = isBooked
-            ? "py-2 px-3 rounded-lg text-sm bg-gray-200 text-gray-400 cursor-not-allowed line-through"
-            : "py-2 px-3 rounded-lg text-sm bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-medium transition-colors";
-
-        if (!isBooked) {
-            btn.addEventListener('click', () => {
-                rescheduleTimeOptions.querySelectorAll('button').forEach(b => b.classList.remove("bg-green-700", "text-white"));
-                btn.classList.add("bg-green-700", "text-white");
-                selectedRescheduleTime = hour + ':00';
-                confirmRescheduleBtn.disabled = false;
-            });
-        }
-        rescheduleTimeOptions.appendChild(btn);
-    });
 };
 
 const initializeAddAppointmentModal = async () => {
@@ -355,7 +330,7 @@ const initializeAddAppointmentModal = async () => {
         }
     });
 
-    newAppointmentDateInput.addEventListener('change', renderAvailableTimes);
+    newAppointmentDateInput.addEventListener('change', () => renderAvailableTimes(newAppointmentDateInput, newAppointmentTimeSelect));
 
     addAppointmentForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -566,15 +541,7 @@ const initializePage = async () => {
                 }
             }
         } else if (action === 'reprogramar') {
-            const appointment = allAppointments.find(app => app.id == appointmentId);
-            if (appointment) {
-                const petName = appointment.pets?.name || 'N/A';
-                const clientProfile = appointment.profiles;
-                const clientName = (clientProfile?.first_name && clientProfile?.last_name) 
-                    ? `${clientProfile.first_name} ${clientProfile.last_name}` 
-                    : clientProfile?.full_name || 'Cliente';
-                openRescheduleModal(appointmentId, petName, clientName);
-            }
+            openRescheduleModal(appointmentId);
         // ========================================
         // --- INICIO: MANEJO DEL BOTÓN DE EDICIÓN ---
         } else if (action === 'completar' || action === 'edit-completed') {
@@ -776,14 +743,14 @@ const initializePage = async () => {
     });
     
     // --- LISTENERS PARA EL MODAL DE REPROGRAMACIÓN ---
-    rescheduleDateInput?.addEventListener('change', renderRescheduleTimeOptions);
+    rescheduleDateInput?.addEventListener('change', () => renderAvailableTimes(rescheduleDateInput, rescheduleTimeSelect));
     cancelRescheduleBtn?.addEventListener('click', closeRescheduleModal);
     rescheduleModal?.addEventListener('click', (e) => {
         if (e.target === rescheduleModal) closeRescheduleModal();
     });
 
     confirmRescheduleBtn?.addEventListener('click', async () => {
-        if (!appointmentToRescheduleId || !rescheduleDateInput.value || !selectedRescheduleTime) {
+        if (!appointmentToRescheduleId || !rescheduleDateInput.value || !rescheduleTimeSelect.value) {
             alert('Por favor, selecciona una nueva fecha y hora.');
             return;
         }
@@ -791,22 +758,28 @@ const initializePage = async () => {
         confirmRescheduleBtn.disabled = true;
         confirmRescheduleBtn.textContent = 'Guardando...';
 
+        const updatedData = {
+            appointment_date: rescheduleDateInput.value,
+            appointment_time: rescheduleTimeSelect.value,
+            service: rescheduleServiceSelect.value,
+            notes: rescheduleNotesTextarea.value
+        };
+
         const { success, error } = await rescheduleAppointmentFromDashboard(
             appointmentToRescheduleId,
-            rescheduleDateInput.value,
-            selectedRescheduleTime
+            updatedData
         );
 
         if (success) {
             alert('¡Cita reprogramada con éxito! La cita ha vuelto al estado "Pendiente" y necesita ser re-confirmada.');
             closeRescheduleModal();
-            await loadAppointmentsAndRender(); // Recargar la tabla
+            await loadAppointmentsAndRender();
         } else {
             alert(`Error al reprogramar: ${error.message}`);
         }
 
         confirmRescheduleBtn.disabled = false;
-        confirmRescheduleBtn.textContent = 'Confirmar';
+        confirmRescheduleBtn.textContent = 'Confirmar Cambios';
     });
     
     initializeAddAppointmentModal();

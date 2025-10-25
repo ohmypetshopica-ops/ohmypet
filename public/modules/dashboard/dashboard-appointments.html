@@ -458,31 +458,56 @@
     </div>
 
     <div id="reschedule-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[70] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl">
-            <div class="p-6 border-b">
-                <h2 class="text-2xl font-bold text-gray-800">Reprogramar Cita</h2>
-                <p id="reschedule-subtitle" class="text-sm text-gray-500 mt-1">Selecciona una nueva fecha y hora.</p>
-            </div>
-            <div class="p-6 space-y-6">
-                <div>
-                    <label for="reschedule-date" class="block text-sm font-medium text-gray-700 mb-2">1. Nueva Fecha</label>
-                    <input type="date" id="reschedule-date" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
+            <form id="reschedule-form" class="w-full flex flex-col flex-1">
+                <div class="p-6 border-b flex-shrink-0">
+                    <h2 class="text-2xl font-bold text-gray-800">Reprogramar Cita</h2>
+                    <p id="reschedule-subtitle" class="text-sm text-gray-500 mt-1">Modifica los detalles de la cita.</p>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">2. Nueva Hora</label>
-                    <div id="reschedule-time-options" class="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                        <p class="col-span-full text-center text-sm text-gray-500">Selecciona una fecha para ver los horarios.</p>
+                <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                        <input type="text" id="reschedule-client-name" readonly class="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mascota</label>
+                        <input type="text" id="reschedule-pet-name" readonly class="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="reschedule-date" class="block text-sm font-medium text-gray-700 mb-1">Nueva Fecha *</label>
+                            <input type="date" id="reschedule-date" name="appointment_date" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                        <div>
+                            <label for="reschedule-time" class="block text-sm font-medium text-gray-700 mb-1">Nueva Hora *</label>
+                            <select id="reschedule-time" name="appointment_time" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                                <option>Selecciona una fecha</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="reschedule-service" class="block text-sm font-medium text-gray-700 mb-1">Servicio *</label>
+                        <select id="reschedule-service" name="service" required class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                            <option value="BAÑO">BAÑO</option>
+                            <option value="BAÑO Y CORTE">BAÑO Y CORTE</option>
+                            <option value="SERVICIO DE COLORIMETRÍA">SERVICIO DE COLORIMETRÍA</option>
+                            <option value="CORTE DE UÑAS">CORTE DE UÑAS</option>
+                            <option value="DESPARASITACIÓN">DESPARASITACIÓN</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="reschedule-notes" class="block text-sm font-medium text-gray-700 mb-1">Notas Adicionales</label>
+                        <textarea id="reschedule-notes" name="notes" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"></textarea>
                     </div>
                 </div>
-            </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-4 rounded-b-2xl">
-                <button type="button" id="cancel-reschedule-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
-                <button type="button" id="confirm-reschedule-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50" disabled>Confirmar</button>
-            </div>
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-4 rounded-b-2xl flex-shrink-0">
+                    <button type="button" id="cancel-reschedule-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
+                    <button type="button" id="confirm-reschedule-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Confirmar Cambios</button>
+                </div>
+            </form>
         </div>
     </div>
-
-
     <script type="module">
         const CACHE_VERSION = Date.now();
 

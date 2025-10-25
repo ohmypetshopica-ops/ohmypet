@@ -781,15 +781,16 @@ export const updateClientProfile = async (clientId, profileData) => {
 // --- FIN NUEVA FUNCIÓN ---
 
 // ========================================
-// --- INICIO: NUEVA FUNCIÓN PARA REPROGRAMAR ---
-export const rescheduleAppointmentFromDashboard = async (appointmentId, newDate, newTime) => {
+// --- INICIO: FUNCIÓN PARA REPROGRAMAR ACTUALIZADA ---
+export const rescheduleAppointmentFromDashboard = async (appointmentId, updatedData) => {
+    const dataToUpdate = {
+        ...updatedData,
+        status: 'pendiente' // Regresa a pendiente para requerir re-confirmación
+    };
+
     const { data, error } = await supabase
         .from('appointments')
-        .update({ 
-            appointment_date: newDate, 
-            appointment_time: newTime,
-            status: 'pendiente' // Regresa a pendiente para requerir re-confirmación
-        })
+        .update(dataToUpdate)
         .eq('id', appointmentId)
         .select();
 
@@ -799,7 +800,7 @@ export const rescheduleAppointmentFromDashboard = async (appointmentId, newDate,
     }
     return { success: true, data: data[0] };
 };
-// --- FIN: NUEVA FUNCIÓN ---
+// --- FIN: FUNCIÓN ACTUALIZADA ---
 // ========================================
 
 // =================== CÓDIGO A AGREGAR ===================
