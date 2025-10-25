@@ -276,77 +276,85 @@ const openServiceDetailsModal = (service) => {
         : `<div class="text-gray-400 text-sm">Sin foto</div>`;
 
     const receiptHTML = service.invoice_pdf_url
-        ? `<a href="${service.invoice_pdf_url}" target="_blank" class="text-blue-600 hover:underline text-sm">📄 Ver boleta cargada</a>`
-        : `<p class="text-gray-400 text-sm">Sin boleta cargada</p>`;
+        ? `<a href="${service.invoice_pdf_url}" target="_blank" class="inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium">
+            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Ver boleta cargada
+        </a>`
+        : `<p class="text-gray-500 text-sm">No se cargó boleta</p>`;
 
     modalServiceDetailsView.innerHTML = `
         <div class="space-y-6">
-            <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl">
+            <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-100">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <h4 class="text-sm font-semibold text-gray-500 mb-2">Cliente</h4>
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cliente</h4>
                         <p class="text-lg font-bold text-gray-900">${ownerName}</p>
                     </div>
                     <div>
-                        <h4 class="text-sm font-semibold text-gray-500 mb-2">Mascota</h4>
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Mascota</h4>
                         <p class="text-lg font-bold text-gray-900">${petName}</p>
                     </div>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h4 class="text-sm font-semibold text-gray-500 mb-2">Fecha del Servicio</h4>
-                    <p class="text-base text-gray-900">${new Date(service.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Fecha del Servicio</h4>
+                    <p class="text-base text-gray-900 font-medium">${new Date(service.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</p>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h4 class="text-sm font-semibold text-gray-500 mb-2">Hora</h4>
-                    <p class="text-base text-gray-900">${service.appointment_time}</p>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Hora</h4>
+                    <p class="text-base text-gray-900 font-medium">${service.appointment_time}</p>
                 </div>
             </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="text-sm font-semibold text-gray-500 mb-2">Servicio Realizado</h4>
+            
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Servicio Realizado</h4>
                 <p class="text-base text-gray-900">${service.service || 'Servicio general'}</p>
             </div>
+            
             <div>
-                <h4 class="text-lg font-bold text-gray-800 mb-4">Fotos del Servicio</h4>
+                <h4 class="text-base font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">Fotos del Servicio</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <p class="text-sm font-semibold text-gray-600 mb-3 text-center">📸 Foto de Llegada</p>
+                        <p class="text-sm font-semibold text-gray-600 mb-3">Foto de Llegada</p>
                         <div class="bg-gray-100 rounded-xl aspect-square flex items-center justify-center overflow-hidden border-2 border-gray-200">
                             ${arrivalPhotoHTML}
                         </div>
                     </div>
                     <div>
-                        <p class="text-sm font-semibold text-gray-600 mb-3 text-center">📸 Foto de Salida</p>
+                        <p class="text-sm font-semibold text-gray-600 mb-3">Foto de Salida</p>
                         <div class="bg-gray-100 rounded-xl aspect-square flex items-center justify-center overflow-hidden border-2 border-gray-200">
                             ${departurePhotoHTML}
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                <div class="text-center">
-                    <h4 class="text-sm font-semibold text-gray-600 mb-2">💰 Costo</h4>
-                    <p class="text-2xl font-bold text-green-700">${cost}</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Costo Total</h4>
+                    <p class="text-2xl font-bold text-green-600">${cost}</p>
                 </div>
-                <div class="text-center">
-                    <h4 class="text-sm font-semibold text-gray-600 mb-2">💳 Método de Pago</h4>
-                    <p class="text-base text-gray-900">${paymentMethod}</p>
+                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Método de Pago</h4>
+                    <p class="text-base font-medium text-gray-900">${paymentMethod}</p>
                 </div>
-                <div class="text-center">
-                    <h4 class="text-sm font-semibold text-gray-600 mb-2">⚖️ Peso Final</h4>
+                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Peso Final</h4>
                     <p class="text-lg font-bold text-gray-900">${finalWeight}</p>
                 </div>
             </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="text-sm font-semibold text-gray-500 mb-2">🧾 Boleta / Comprobante</h4>
+            
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Boleta / Comprobante</h4>
                 ${receiptHTML}
             </div>
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
-                <h4 class="text-sm font-bold text-yellow-800 mb-3 flex items-center gap-2">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                    Observaciones Finales
-                </h4>
+            
+            <div class="bg-blue-50 p-5 rounded-lg border-l-4 border-blue-500">
+                <h4 class="text-sm font-bold text-gray-800 mb-3">Observaciones Finales</h4>
                 <p class="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">${observations}</p>
             </div>
         </div>
