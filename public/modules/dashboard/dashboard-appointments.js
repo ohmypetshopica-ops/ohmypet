@@ -229,6 +229,7 @@ const renderAvailableTimes = async () => {
     newAppointmentTimeSelect.disabled = false;
 };
 
+// <<< INICIO: CÓDIGO ACTUALIZADO >>>
 const handleUrlParams = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const clientId = urlParams.get('clientId');
@@ -244,9 +245,11 @@ const handleUrlParams = () => {
             populatePetSelect(clientId);
             petSelect.value = petId;
         }
+        // Limpiar los parámetros de la URL para evitar que el modal se abra al recargar
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 };
+// <<< FIN: CÓDIGO ACTUALIZADO >>>
 
 const openRescheduleModal = (appointmentId, petName, clientName) => {
     appointmentToRescheduleId = appointmentId;

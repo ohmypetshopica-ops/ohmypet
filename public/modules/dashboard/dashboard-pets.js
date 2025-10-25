@@ -32,6 +32,7 @@ const editSetLastServiceDateBtn = document.querySelector('#edit-set-last-service
 const reminderFieldsContainer = document.querySelector('#reminder-fields-container');
 const toggleReminderInput = document.querySelector('#toggle-reminder-input');
 const toggleReminderLabel = document.querySelector('#toggle-reminder-label');
+const addAppointmentFromPetBtn = document.querySelector('#add-appointment-from-pet-btn'); // <<< NUEVO BOTÓN
 
 let currentPage = 1;
 const itemsPerPage = 10;
@@ -561,6 +562,21 @@ const initializePetsSection = async () => {
     if (editPetBtn) editPetBtn.addEventListener('click', switchToEditMode);
     if (savePetBtn) savePetBtn.addEventListener('click', savePetChanges);
     if (cancelEditBtn) cancelEditBtn.addEventListener('click', switchToViewMode);
+    
+    // <<< INICIO: CÓDIGO AÑADIDO >>>
+    if (addAppointmentFromPetBtn) {
+        addAppointmentFromPetBtn.addEventListener('click', () => {
+            if (currentPetData && currentPetData.profiles) {
+                const petId = currentPetData.id;
+                const clientId = currentPetData.profiles.id;
+                // Redirigir a la página de citas con los parámetros
+                window.location.href = `/public/modules/dashboard/dashboard-appointments.html?clientId=${clientId}&petId=${petId}`;
+            } else {
+                alert('No se pueden cargar los datos del cliente para agendar la cita.');
+            }
+        });
+    }
+    // <<< FIN: CÓDIGO AÑADIDO >>>
 
     if (petsTableBody) {
         petsTableBody.addEventListener('click', async (e) => {
