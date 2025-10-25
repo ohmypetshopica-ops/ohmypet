@@ -29,69 +29,69 @@
             #completed-services-table-body td:before { content: attr(data-label); font-weight: 600; display: block; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem; }
         }
 
-        /* ---- NUEVO CSS para Position Fixed ---- */
+        /* ---- CSS CORREGIDO ---- */
         html, body {
-            height: 100%;
-            overflow: hidden; /* Evita scroll en body */
+           height: 100%;
+           overflow: hidden; /* Evita scroll en body */
         }
         .main-container {
-            height: 100vh; /* Ocupa toda la altura de la ventana */
-            display: flex;
-            flex-direction: column;
-            margin-left: auto;
-            margin-right: auto;
-            background-color: white;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            width: 100%; /* Ocupa todo el ancho disponible */
-            position: relative; /* Necesario para que el footer fijo se posicione correctamente dentro */
-            padding-bottom: 64px; /* Añade espacio en la parte inferior igual a la altura del nav */
+           height: 100vh; /* Ocupa toda la altura de la ventana */
+           display: flex;
+           flex-direction: column;
+           margin-left: auto;
+           margin-right: auto;
+           background-color: white;
+           box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+           width: 100%;
+           position: relative;
+           /* Se quita padding-bottom de aquí */
         }
         .content-area {
             flex-grow: 1; /* Ocupa el espacio restante */
             overflow-y: auto; /* Permite scroll interno */
             background-color: #F9FAFB; /* bg-gray-100 */
-             /* Se quita padding-bottom de aquí */
+            padding-bottom: 64px; /* Añade espacio ABAJO para la barra fija */
         }
         .bottom-nav-container {
             position: fixed; /* Fija la barra de navegación */
             bottom: 0;
             left: 0;
             right: 0;
-            z-index: 50; /* Asegura que esté por encima del contenido */
+            z-index: 50;
             max-width: 28rem; /* Aplica el max-w-md aquí */
-            margin-left: auto; /* Centra el contenedor fijo */
-            margin-right: auto; /* Centra el contenedor fijo */
-            background-color: white; /* Fondo blanco */
-            border-top: 1px solid #E5E7EB; /* Borde superior */
+            margin-left: auto;
+            margin-right: auto;
+            background-color: white;
+            border-top: 1px solid #E5E7EB;
         }
          /* Limitar ancho solo en pantallas grandes */
         @media (min-width: 768px) {
-             /* En pantallas grandes, el contenedor principal sí tendrá ancho máximo */
              .main-container {
                 max-width: 28rem;
-                padding-bottom: 0; /* Quita el padding inferior en desktop */
+                /* No necesita padding-bottom en desktop */
              }
-             /* Y la barra de navegación ya no necesita ser fija */
              .bottom-nav-container {
-                 position: static;
-                 max-width: none; /* Ancho completo dentro del contenedor principal */
+                 position: static; /* Vuelve a ser estático */
+                 max-width: none;
                  margin-left: 0;
                  margin-right: 0;
                  border-top: 1px solid #E5E7EB;
              }
              .content-area {
-                  padding-bottom: 0; /* Asegura que no haya padding extra en desktop */
+                  padding-bottom: 0; /* Quita el padding extra en desktop */
              }
         }
-        /* Ajuste específico para iOS Safari donde la barra inferior puede interferir */
-        @supports (-webkit-touch-callout: none) { /* Target Safari iOS */
+        /* Ajuste específico para iOS Safari */
+        @supports (-webkit-touch-callout: none) {
           .main-container {
-             /* Intenta usar altura dinámica si vh no funciona bien */
              height: -webkit-fill-available;
           }
            .bottom-nav-container {
-               /* Podría necesitar padding extra para la barra de inicio de iOS */
                padding-bottom: env(safe-area-inset-bottom, 0px);
+           }
+            /* Puede que necesites ajustar también el padding del content-area */
+           .content-area {
+                padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
            }
         }
 
