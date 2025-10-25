@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <title>Dashboard Empleado - OhMyPet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard Empleado - OhMyPet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Estilos existentes */
@@ -36,11 +37,12 @@
            height: 100vh; /* Ocupa toda la altura de la ventana */
            display: flex;
            flex-direction: column;
-           max-width: 28rem; /* Equivalente a max-w-md */
+           /* max-w-md ha sido removido de aquí */
            margin-left: auto;
            margin-right: auto;
            background-color: white; /* Fondo blanco para el contenedor principal */
            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+           width: 100%; /* Asegura que ocupe todo el ancho disponible */
         }
         .content-area {
             flex-grow: 1; /* Ocupa el espacio restante */
@@ -51,10 +53,17 @@
             flex-shrink: 0; /* Evita que se encoja */
             background-color: white; /* Asegura fondo blanco para la barra */
         }
+         /* ---- NUEVO: Limitar ancho solo en pantallas grandes ---- */
+        @media (min-width: 768px) { /* md breakpoint de Tailwind */
+             .main-container {
+                max-width: 28rem; /* Re-aplica max-w-md solo en desktop o tablets grandes */
+             }
+        }
     </style>
 </head>
 
-<body class="bg-gray-100"> <div class="main-container">
+<body class="bg-gray-100">
+    <div class="main-container">
 
         <header class="bg-white border-b border-gray-200 p-4 flex justify-between items-center flex-shrink-0">
              <h1 id="header-title" class="text-2xl font-bold text-gray-800">Clientes</h1>
