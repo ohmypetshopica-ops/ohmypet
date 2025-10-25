@@ -41,16 +41,23 @@ let cancelEditClientBtn;
 let clientEditForm;
 let editFormMessage;
 let clientDetailsActions;
+let paginationContainer; // ====== ELEMENTO AGREGADO ======
 
 // Elementos del Modal Agregar Mascota
 let addPetModalEmployee;
 let petFormEmployee;
 let petFormMessageEmployee;
 let cancelAddPetButtonEmployee;
-let submitAddPetButtonEmployee; // Nuevo selector para el botón submit del modal mascota
+let submitAddPetButtonEmployee; 
 
 // Variable para guardar el perfil actual en modo edición/vista
 let currentClientProfile = null;
+
+// ====== VARIABLES AGREGADAS PARA PAGINACIÓN ======
+let currentPage = 1;
+const itemsPerPage = 8; // Puedes ajustar este número
+// ====== FIN VARIABLES AGREGADAS ======
+
 
 export function initClientElements() {
     clientSearch = document.getElementById('client-search');
@@ -63,7 +70,7 @@ export function initClientElements() {
 
     addClientBtnEmployee = document.querySelector('#add-client-btn-employee');
     clientModalEmployee = document.querySelector('#client-modal-employee');
-    submitAddClientButtonEmployee = document.querySelector('#submit-add-client-button-employee'); // ID correcto
+    submitAddClientButtonEmployee = document.querySelector('#submit-add-client-button-employee'); 
     cancelClientButtonEmployee = document.querySelector('#cancel-client-button-employee');
     clientFormEmployee = document.querySelector('#client-form-employee');
     clientFormMessageEmployee = document.querySelector('#client-form-message-employee');
@@ -76,19 +83,20 @@ export function initClientElements() {
     clientEditForm = document.getElementById('client-edit-form');
     editFormMessage = document.getElementById('edit-form-message');
     clientDetailsActions = document.getElementById('client-details-actions');
+    paginationContainer = document.getElementById('pagination-container'); // ====== INICIALIZACIÓN AGREGADA ======
 
     // Inicializar elementos del modal de mascota
     addPetModalEmployee = document.querySelector('#add-pet-modal-employee');
     petFormEmployee = document.querySelector('#pet-form-employee');
     petFormMessageEmployee = document.querySelector('#pet-form-message-employee');
     cancelAddPetButtonEmployee = document.querySelector('#cancel-add-pet-button-employee');
-    submitAddPetButtonEmployee = document.querySelector('#submit-add-pet-button-employee'); // Selector para botón submit mascota
+    submitAddPetButtonEmployee = document.querySelector('#submit-add-pet-button-employee');
 }
 
 export function setupClientListeners() {
     if (clientSearch) {
-        // ... (listener de búsqueda sin cambios)
         clientSearch.addEventListener('input', (e) => {
+            currentPage = 1; // ====== LÍNEA AGREGADA: Reiniciar a la primera página al buscar ======
             const term = e.target.value.toLowerCase();
             clearSearchBtn?.classList.toggle('hidden', term.length === 0);
             const filtered = term ? state.allClients.filter(c =>
@@ -100,8 +108,8 @@ export function setupClientListeners() {
     }
 
     if (clearSearchBtn) {
-       // ... (listener de limpiar búsqueda sin cambios)
         clearSearchBtn.addEventListener('click', () => {
+            currentPage = 1; // ====== LÍNEA AGREGADA: Reiniciar a la primera página ======
             clientSearch.value = '';
             clearSearchBtn.classList.add('hidden');
             renderClients(state.allClients);
@@ -109,14 +117,12 @@ export function setupClientListeners() {
     }
 
     if (backToClientsBtn) {
-        // ... (listener de volver a lista sin cambios)
         backToClientsBtn.addEventListener('click', () => {
             switchToListView();
         });
     }
 
     if (clientsList) {
-       // ... (listener de click en lista sin cambios)
         clientsList.addEventListener('click', (e) => {
             const btn = e.target.closest('.client-btn');
             if (btn) showClientDetails(btn.dataset.clientId);
@@ -138,13 +144,12 @@ export function setupClientListeners() {
 
     // --- Listeners para Modal Agregar Mascota ---
     if (cancelAddPetButtonEmployee) cancelAddPetButtonEmployee.addEventListener('click', closeAddPetModal);
-    if (petFormEmployee) petFormEmployee.addEventListener('submit', handleAddPet); // Reutiliza handleAddPet para el submit
-     // Cerrar modal si se hace click fuera (para ambos modales)
+    if (petFormEmployee) petFormEmployee.addEventListener('submit', handleAddPet); 
      if (clientModalEmployee) clientModalEmployee.addEventListener('click', (e) => { if (e.target === clientModalEmployee) closeClientModal(); });
      if (addPetModalEmployee) addPetModalEmployee.addEventListener('click', (e) => { if (e.target === addPetModalEmployee) closeAddPetModal(); });
 }
 
-// --- Funciones de Modales ---
+// --- Funciones de Modales (sin cambios) ---
 const openClientModal = () => {
     clientModalEmployee?.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -159,9 +164,9 @@ const closeClientModal = () => {
 const openAddPetModal = () => {
     if (addPetModalEmployee && state.currentClientId) {
         const ownerIdInput = document.getElementById('pet-owner-id-employee');
-        ownerIdInput.value = state.currentClientId; // Asignar ID
-        petFormEmployee?.reset(); // Limpiar formulario
-        petFormMessageEmployee?.classList.add('hidden'); // Ocultar mensajes
+        ownerIdInput.value = state.currentClientId; 
+        petFormEmployee?.reset(); 
+        petFormMessageEmployee?.classList.add('hidden');
         addPetModalEmployee.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     } else {
@@ -172,7 +177,6 @@ const openAddPetModal = () => {
 const closeAddPetModal = () => {
     addPetModalEmployee?.classList.add('hidden');
     document.body.style.overflow = '';
-    // No reseteamos el form aquí para que los datos persistan si se cierra por error
 };
 // --- Fin Funciones de Modales ---
 
@@ -207,7 +211,7 @@ const renderEditForm = (profile) => {
     clientEditForm.querySelector('#edit-client-id').value = profile.id;
     clientEditForm.querySelector('#edit-first-name').value = profile.first_name || '';
     clientEditForm.querySelector('#edit-last-name').value = profile.last_name || '';
-    clientEditForm.querySelector('#edit-email').value = profile.email || 'N/A'; // Email no editable
+    clientEditForm.querySelector('#edit-email').value = profile.email || 'N/A'; 
     clientEditForm.querySelector('#edit-phone').value = profile.phone || '';
     clientEditForm.querySelector('#edit-district').value = profile.district || '';
     clientEditForm.querySelector('#edit-doc-type').value = profile.doc_type || '';
@@ -223,7 +227,6 @@ const handleSaveClient = async () => {
     const formData = new FormData(clientEditForm);
     const clientId = formData.get('id');
 
-    // Limpiar números de teléfono
     const phoneRaw = formData.get('phone');
     const emergencyPhoneRaw = formData.get('emergency_contact_phone');
     const phoneCleaned = cleanPhoneNumber(phoneRaw);
@@ -233,15 +236,14 @@ const handleSaveClient = async () => {
         first_name: formData.get('first_name').trim(),
         last_name: formData.get('last_name').trim(),
         full_name: `${formData.get('first_name').trim()} ${formData.get('last_name').trim()}`,
-        phone: phoneCleaned, // Guardar limpio
+        phone: phoneCleaned,
         doc_type: formData.get('doc_type') || null,
         doc_num: formData.get('doc_num').trim() || null,
         district: formData.get('district').trim() || null,
         emergency_contact_name: formData.get('emergency_contact_name').trim() || null,
-        emergency_contact_phone: emergencyPhoneCleaned, // Guardar limpio
+        emergency_contact_phone: emergencyPhoneCleaned, 
     };
 
-    // Validaciones básicas
     if (!updatedData.first_name || !updatedData.last_name) {
         editFormMessage.textContent = '⚠️ Nombre y Apellido son obligatorios.';
         editFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
@@ -268,10 +270,8 @@ const handleSaveClient = async () => {
     const result = await updateClientProfile(clientId, updatedData);
 
     if (result.success) {
-        // Actualizar caché local y estado
         const updatedProfileData = result.data;
-        currentClientProfile.profile = { ...currentClientProfile.profile, ...updatedProfileData }; // Actualiza caché
-        // Actualizar también en la lista general del estado
+        currentClientProfile.profile = { ...currentClientProfile.profile, ...updatedProfileData }; 
         const clientIndex = state.allClients.findIndex(c => c.id === clientId);
         if (clientIndex !== -1) {
             state.allClients[clientIndex] = { ...state.allClients[clientIndex], ...updatedProfileData };
@@ -281,10 +281,9 @@ const handleSaveClient = async () => {
         editFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
         editFormMessage.classList.remove('hidden');
 
-        // Volver a la vista después de 1 segundo
         setTimeout(() => {
             switchToViewMode();
-            renderClients(state.allClients); // Re-renderizar lista principal por si cambió el nombre
+            renderClients(state.allClients); 
         }, 1000);
 
     } else {
@@ -297,17 +296,78 @@ const handleSaveClient = async () => {
     saveClientBtn.textContent = 'Guardar Cambios';
 };
 
+// ====== FUNCIÓN DE RENDERIZADO DE PAGINACIÓN AGREGADA ======
+const renderPagination = (totalItems) => {
+    if (!paginationContainer) return;
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+
+    let paginationHTML = '<div class="flex items-center space-x-2">';
+
+    // Botón Anterior
+    paginationHTML += `
+        <button data-page="${currentPage - 1}" class="px-3 py-1 border rounded-lg ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}" ${currentPage === 1 ? 'disabled' : ''}>
+            Anterior
+        </button>
+    `;
+
+    // Números de página
+    for (let i = 1; i <= totalPages; i++) {
+        const activeClass = i === currentPage ? 'bg-green-600 text-white' : 'bg-white hover:bg-gray-50';
+        paginationHTML += `<button data-page="${i}" class="px-3 py-1 border rounded-lg ${activeClass}">${i}</button>`;
+    }
+
+    // Botón Siguiente
+    paginationHTML += `
+        <button data-page="${currentPage + 1}" class="px-3 py-1 border rounded-lg ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}" ${currentPage === totalPages ? 'disabled' : ''}>
+            Siguiente
+        </button>
+    `;
+
+    paginationHTML += '</div>';
+    paginationContainer.innerHTML = paginationHTML;
+
+    // Agregar listeners a los botones de paginación
+    paginationContainer.querySelectorAll('button[data-page]').forEach(button => {
+        button.addEventListener('click', () => {
+            currentPage = parseInt(button.dataset.page);
+            // Volver a renderizar la lista con la nueva página
+            const searchTerm = clientSearch.value.toLowerCase();
+            const filtered = searchTerm ? state.allClients.filter(c =>
+                `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase().includes(searchTerm) ||
+                (c.phone || '').includes(searchTerm)
+            ) : state.allClients;
+            renderClients(filtered);
+        });
+    });
+};
+
+
+// ====== FUNCIÓN `renderClients` MODIFICADA ======
 export function renderClients(clients) {
-    // ... (código sin cambios)
-     if (!clientsList) return;
-    clientsList.innerHTML = clients.length > 0 ? clients.map(client => `
+    if (!clientsList) return;
+
+    // Lógica de paginación
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedClients = clients.slice(startIndex, endIndex);
+
+    clientsList.innerHTML = paginatedClients.length > 0 ? paginatedClients.map(client => `
         <button data-client-id="${client.id}" class="client-btn w-full text-left bg-white p-4 rounded-lg shadow-sm border hover:bg-gray-50">
             <h3 class="font-bold text-gray-800">${client.first_name || ''} ${client.last_name || ''}</h3>
             <p class="text-sm text-gray-600">${client.phone || 'Sin teléfono'}</p>
             <p class="text-sm text-gray-500">${client.email || 'Sin email'}</p>
         </button>
     `).join('') : `<p class="text-center text-gray-500 mt-8">No se encontraron clientes.</p>`;
+
+    // Renderizar los controles de paginación
+    renderPagination(clients.length);
 }
+
 
 async function showClientDetails(clientId) {
     // ... (código sin cambios)
@@ -315,22 +375,21 @@ async function showClientDetails(clientId) {
     clientDetailsContentView.innerHTML = '<p class="text-center text-gray-500 mt-8">Cargando detalles...</p>';
     clientsListView?.classList.add('hidden');
     clientDetailsView?.classList.remove('hidden');
-    clientDetailsContentEdit?.classList.add('hidden'); // Asegurar que el form esté oculto
+    clientDetailsContentEdit?.classList.add('hidden'); 
 
     const details = await getClientDetails(clientId);
-    currentClientProfile = details; // Guardar en caché
+    currentClientProfile = details; 
 
     if (!details || !details.profile) {
         clientDetailsContentView.innerHTML = '<p class="text-center text-red-500 mt-8">Error al cargar detalles.</p>';
         return;
     }
-    renderClientDetailsView(details); // Renderizar la vista
-    switchToViewMode(); // Asegurar que estamos en modo vista
+    renderClientDetailsView(details); 
+    switchToViewMode();
 }
 
-// Función separada para renderizar la vista de detalles
+// Función separada para renderizar la vista de detalles (sin cambios)
 const renderClientDetailsView = (details) => {
-     // ... (código sin cambios)
      const clientData = details.profile;
      const appointments = details.appointments || [];
      const clientPets = details.pets || [];
@@ -379,20 +438,18 @@ async function handleAddClient(e) {
     e.preventDefault();
 
     const formData = new FormData(clientFormEmployee);
-    // Limpiar teléfonos ANTES de enviarlos
     const phoneCleaned = cleanPhoneNumber(formData.get('phone'));
 
     const clientData = {
         email: formData.get('email'),
         first_name: formData.get('first_name'),
         last_name: formData.get('last_name'),
-        phone: phoneCleaned, // Usar limpio
+        phone: phoneCleaned, 
         district: formData.get('district'),
         doc_type: formData.get('doc_type') || null,
         doc_num: formData.get('doc_num') || null
     };
 
-    // Validar teléfono limpio
      if (!clientData.phone) {
          clientFormMessageEmployee.textContent = '❌ Teléfono inválido (9 dígitos o formato internacional).';
          clientFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
@@ -407,7 +464,6 @@ async function handleAddClient(e) {
         clientFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
         clientFormMessageEmployee.classList.remove('hidden');
 
-        // Recargar datos actualizados
         const clientsData = await getClientsWithPets();
         if (clientsData) {
             const allClients = clientsData.map(c => ({
@@ -415,7 +471,7 @@ async function handleAddClient(e) {
             }));
             updateState('allClients', allClients);
             updateState('clientsWithPets', clientsData);
-            renderClients(allClients); // Re-renderizar lista
+            renderClients(allClients);
         }
 
         setTimeout(closeClientModal, 1500);
@@ -426,7 +482,7 @@ async function handleAddClient(e) {
     }
 }
 
-// --- Nueva función para manejar el submit del modal de mascota ---
+// --- Nueva función para manejar el submit del modal de mascota (sin cambios) ---
 async function handleAddPet(e) {
     e.preventDefault();
 
@@ -439,7 +495,7 @@ async function handleAddPet(e) {
 
     const formData = new FormData(petFormEmployee);
     const petData = {
-        owner_id: state.currentClientId, // Usar el ID del estado
+        owner_id: state.currentClientId,
         name: formData.get('name').trim(),
         breed: formData.get('breed').trim(),
         size: formData.get('size'),
@@ -448,7 +504,6 @@ async function handleAddPet(e) {
         observations: formData.get('observations').trim() || null
     };
 
-    // Validación básica
     if (!petData.name) {
          petFormMessageEmployee.textContent = '❌ El nombre de la mascota es obligatorio.';
          petFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
@@ -467,13 +522,11 @@ async function handleAddPet(e) {
         petFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
         petFormMessageEmployee.classList.remove('hidden');
 
-        // Recargar detalles del cliente para mostrar la nueva mascota
         const updatedDetails = await getClientDetails(state.currentClientId);
         if (updatedDetails) {
-            currentClientProfile = updatedDetails; // Actualizar caché
-            renderClientDetailsView(updatedDetails); // Actualizar la vista de detalles
+            currentClientProfile = updatedDetails;
+            renderClientDetailsView(updatedDetails);
         }
-        // También actualizar el estado global de mascotas
         const { data: pets } = await supabase.from('pets').select('*').order('created_at', { ascending: false });
         if (pets) updateState('allPets', pets);
 
