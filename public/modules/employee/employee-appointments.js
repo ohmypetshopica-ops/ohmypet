@@ -12,7 +12,7 @@ let addAppointmentBtnEmployee, addAppointmentModal, addAppointmentForm, cancelAd
 let petSelect, newAppointmentDateInput, newAppointmentTimeSelect, addAppointmentMessage;
 let clientSearchInputModal, clientSearchResults, selectedClientIdInput;
 
-// Modal de completar cita
+// Modal de completar cita (Se mantienen las referencias, pero no se usarán en esta vista)
 let completionModal, beforeImageInput, beforeImagePreview, afterImageInput, afterImagePreview;
 let receiptInput, receiptContainer, finalObservationsTextarea, uploadMessage;
 let cancelCompletionBtn, confirmCompletionBtn;
@@ -33,7 +33,7 @@ export const initAppointmentElements = () => {
     clientSearchResults = document.querySelector('#client-search-results-employee');
     selectedClientIdInput = document.querySelector('#selected-client-id-employee');
     
-    // Modal de completar cita
+    // Modal de completar cita (mantener por si se usa en otra función en el futuro)
     completionModal = document.querySelector('#completion-modal-employee');
     beforeImageInput = document.querySelector('#before-image-input');
     beforeImagePreview = document.querySelector('#before-image-preview');
@@ -55,15 +55,16 @@ export const setupAppointmentListeners = () => {
     clientSearchInputModal?.addEventListener('input', handleClientSearchInModal);
     newAppointmentDateInput?.addEventListener('change', handleDateChange);
     
-    appointmentsList?.addEventListener('click', (e) => {
-        const btn = e.target.closest('.complete-btn');
-        if (btn) {
-            const appointmentId = btn.dataset.appointmentId;
-            openCompletionModal(appointmentId);
-        }
-    });
+    // Listener de citas (eliminamos el botón de completar cita de la lista)
+    // appointmentsList?.addEventListener('click', (e) => {
+    //     const btn = e.target.closest('.complete-btn');
+    //     if (btn) {
+    //         const appointmentId = btn.dataset.appointmentId;
+    //         openCompletionModal(appointmentId);
+    //     }
+    // });
     
-    // Listeners para el modal de completar cita
+    // Listeners del modal de completar cita
     cancelCompletionBtn?.addEventListener('click', closeCompletionModal);
     confirmCompletionBtn?.addEventListener('click', handleCompleteAppointment);
     
@@ -89,41 +90,57 @@ const extractNotes = (app) => {
 export const renderConfirmedAppointments = () => {
     if (!appointmentsList) return;
     
-    const confirmed = state.allAppointments
-        .filter(app => app.status === 'confirmada')
+    // Filtrar para mostrar SOLO confirmadas y pendientes
+    const workingAppointments = state.allAppointments
+        .filter(app => app.status === 'confirmada' || app.status === 'pendiente') 
         .sort((a, b) => new Date(`${a.appointment_date}T${a.appointment_time}`) - new Date(`${b.appointment_date}T${b.appointment_time}`));
 
-    if (confirmed.length === 0) {
-        appointmentsList.innerHTML = `<p class="text-center text-gray-500 mt-8">No hay citas confirmadas pendientes.</p>`;
+    if (workingAppointments.length === 0) {
+        appointmentsList.innerHTML = `<p class="text-center text-gray-500 mt-8">No hay citas pendientes o confirmadas.</p>`;
         return;
     }
     
-    appointmentsList.innerHTML = confirmed.map(app => {
+    appointmentsList.innerHTML = workingAppointments.map(app => {
         const { serviceDisplay, notesDisplay } = extractNotes(app);
 
-        const notesHTML = notesDisplay 
-            ? `<p class="text-xs text-red-500 mt-1"><strong>Instrucciones:</strong> ${notesDisplay}</p>`
-            : '';
+        // Lógica de Avatar/Imagen
+        const petImage = app.pets?.image_url 
+            ? app.pets.image_url 
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(app.pets?.name || 'M')}&background=10B981&color=FFFFFF`;
+        
+        // Información del dueño
+        const ownerFirstName = app.profiles?.first_name || app.profiles?.full_name || 'Dueño';
+
+        // Estilos para el estado
+        const statusClass = app.status === 'confirmada' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+        const statusText = app.status === 'confirmada' ? 'Confirmada' : 'Pendiente';
 
         return `
-            <div class="bg-white p-4 rounded-lg shadow-sm border space-y-3">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="font-bold text-lg">${app.pets.name}</p>
-                        <p class="text-sm text-gray-600">${app.profiles.first_name || ''} ${app.profiles.last_name || ''}</p>
+            <div class="bg-white p-4 rounded-lg border hover:bg-gray-50 transition-colors duration-200">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center space-x-3">
+                        <img src="${petImage}" alt="${app.pets.name}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+                        <div class="min-w-0">
+                            <p class="font-bold text-lg text-gray-800 truncate">${app.pets.name} <span class="text-sm text-gray-500 font-normal">(${ownerFirstName})</span></p>
+                            <p class="text-sm text-gray-600">${serviceDisplay}</p>
+                            ${notesDisplay ? `<p class="text-xs text-red-500 mt-1"><strong>Instrucciones:</strong> ${notesDisplay}</p>` : ''}
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <p class="font-semibold text-green-700">${app.appointment_date}</p>
-                        <p class="text-gray-500">${app.appointment_time.slice(0, 5)}</p>
+                    <div class="text-right flex-shrink-0">
+                        <p class="font-bold text-base text-gray-800">${app.appointment_date}</p>
+                        <p class="text-sm text-gray-600">${app.appointment_time.slice(0, 5)}</p>
                     </div>
                 </div>
-                <div class="text-sm bg-gray-50 p-2 rounded-md">
-                    <p><strong>Servicio:</strong> ${serviceDisplay}</p>
-                    ${notesHTML}
+                
+                <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+                    <span class="text-xs font-semibold ${statusClass} px-3 py-1 rounded-full">
+                        ${statusText}
+                    </span>
+                    
+                    <button data-appointment-id="${app.id}" class="text-blue-600 hover:text-blue-700 font-semibold text-sm">
+                        Ver Detalles
+                    </button>
                 </div>
-                <button data-appointment-id="${app.id}" class="complete-btn w-full bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 transition-colors">
-                    Completar Cita
-                </button>
             </div>
         `;
     }).join('');
@@ -234,7 +251,7 @@ const handleAddAppointment = async (e) => {
     }
 };
 
-// Funciones para completar cita
+// Funciones para completar cita (Se mantienen por si la lógica de detalle las necesita)
 const openCompletionModal = (appointmentId) => {
     currentAppointmentToComplete = appointmentId;
     completionModal?.classList.remove('hidden');
