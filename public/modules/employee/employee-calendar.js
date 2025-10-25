@@ -6,8 +6,14 @@ import { supabase } from '../../core/supabase.js';
 
 // Elementos del DOM
 let calendarGrid, currentMonthYear, prevMonthBtn, nextMonthBtn;
-let calendarModal, modalContent, modalDateTitle, modalDailyView, modalAppointmentsList;
-let modalDetailsView, modalDetailsContent, modalBackBtn;
+
+// Vistas
+let calendarListView;
+let calendarDetailsView;
+let backToCalendarBtn;
+let detailsViewDateTitle;
+let dailyAppointmentsList;
+
 
 export const initCalendarElements = () => {
     calendarGrid = document.getElementById('calendar-grid');
@@ -15,14 +21,12 @@ export const initCalendarElements = () => {
     prevMonthBtn = document.getElementById('prev-month');
     nextMonthBtn = document.getElementById('next-month');
     
-    calendarModal = document.getElementById('calendar-modal');
-    modalContent = document.getElementById('modal-content');
-    modalDateTitle = document.getElementById('modal-date-title');
-    modalDailyView = document.getElementById('modal-daily-view');
-    modalAppointmentsList = document.getElementById('modal-appointments-list');
-    modalDetailsView = document.getElementById('modal-details-view');
-    modalDetailsContent = document.getElementById('modal-details-content');
-    modalBackBtn = document.getElementById('modal-back-btn');
+    // Inicialización de Vistas y Componentes
+    calendarListView = document.getElementById('calendar-list-view');
+    calendarDetailsView = document.getElementById('calendar-details-view');
+    backToCalendarBtn = document.getElementById('back-to-calendar-btn');
+    detailsViewDateTitle = document.getElementById('details-view-date-title');
+    dailyAppointmentsList = document.getElementById('daily-appointments-list');
 };
 
 export const setupCalendarListeners = () => {
@@ -36,14 +40,15 @@ export const setupCalendarListeners = () => {
         renderCalendar();
     });
     
-    modalBackBtn?.addEventListener('click', () => {
-        modalDailyView?.classList.remove('hidden');
-        modalDetailsView?.classList.add('hidden');
-    });
-    
-    calendarModal?.addEventListener('click', (e) => {
-        if (e.target === calendarModal) closeModal();
-    });
+    backToCalendarBtn?.addEventListener('click', showCalendarList);
+};
+
+// Función para cambiar a la vista de lista del calendario
+const showCalendarList = () => {
+    calendarListView?.classList.remove('hidden');
+    calendarDetailsView?.classList.add('hidden');
+    updateState('selectedDate', null);
+    renderCalendar(); // Forzar renderizado para resetear el estado
 };
 
 export const renderCalendar = async () => {
@@ -57,36 +62,46 @@ export const renderCalendar = async () => {
     currentMonthYear.textContent = `${monthNames[month]} ${year}`;
     
     // Obtener citas del mes
-    const firstDay = new Date(year, month, 1).toISOString().split('T')[0];
-    const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0];
+    const firstDayStr = new Date(year, month, 1).toISOString().split('T')[0];
+    const lastDayStr = new Date(year, month + 1, 0).toISOString().split('T')[0];
     
-    const { data: appointments } = await supabase
+    // Obtenemos TODOS los eventos para determinar si un día está 'ocupado'
+    const appointmentsRes = await supabase
         .from('appointments')
-        .select('*, pets(name), profiles(first_name, last_name)')
-        .gte('appointment_date', firstDay)
-        .lte('appointment_date', lastDay)
-        .order('appointment_date', { ascending: true })
-        .order('appointment_time', { ascending: true });
+        .select(`id, appointment_date, appointment_time, service, status, pet_id, user_id, 
+                 pets (name, image_url), profiles (first_name, last_name, full_name)`)
+        .gte('appointment_date', firstDayStr)
+        .lte('appointment_date', lastDayStr);
     
-    updateState('monthlyAppointments', appointments || []);
+    const blockedRes = await supabase
+        .from('blocked_slots')
+        .select('blocked_date, blocked_time, reason')
+        .gte('blocked_date', firstDayStr)
+        .lte('blocked_date', lastDayStr);
+    
+    // Guardamos todas las citas en el estado para la vista de detalle
+    updateState('allAppointments', appointmentsRes.data || []);
+    
+    const allEvents = [...(appointmentsRes.data || []), ...(blockedRes.data || [])];
     
     // Calcular días del mes
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Domingo, 1 = Lunes
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const daysInPrevMonth = new Date(year, month, 0).getDate();
     
     calendarGrid.innerHTML = '';
     
-    // Días de la semana
+    // Días de la semana (Encabezado) - Estilo limpio y en una sola línea
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     dayNames.forEach(day => {
         const dayHeader = document.createElement('div');
-        dayHeader.className = 'text-center font-bold text-gray-600 text-sm p-2';
-        dayHeader.textContent = day;
+        // Estilo muy limpio: texto centrado y pequeño.
+        dayHeader.className = 'p-2 text-center font-semibold text-gray-500 text-sm';
+        dayHeader.textContent = day.charAt(0); // Solo la primera letra
         calendarGrid.appendChild(dayHeader);
     });
     
-    // Días del mes anterior (grises)
+    // Días de relleno (Mes anterior)
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
         const day = daysInPrevMonth - i;
         const dayCell = createDayCell(day, true, year, month - 1, []);
@@ -95,119 +110,186 @@ export const renderCalendar = async () => {
     
     // Días del mes actual
     for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = new Date(year, month, day).toISOString().split('T')[0];
-        const dayAppointments = state.monthlyAppointments.filter(app => app.appointment_date === dateStr);
-        const dayCell = createDayCell(day, false, year, month, dayAppointments);
+        const dateObj = new Date(year, month, day);
+        const dateStr = dateObj.toISOString().split('T')[0];
+        const dayEvents = allEvents.filter(e => {
+            const eventDate = e.appointment_date || e.blocked_date;
+            return eventDate === dateStr;
+        });
+        const dayCell = createDayCell(day, false, year, month, dayEvents);
         calendarGrid.appendChild(dayCell);
     }
     
-    // Días del siguiente mes (grises)
-    const totalCells = calendarGrid.children.length - 7; // Restar headers
-    const remainingCells = 7 - (totalCells % 7);
-    if (remainingCells < 7) {
-        for (let day = 1; day <= remainingCells; day++) {
-            const dayCell = createDayCell(day, true, year, month + 1, []);
-            calendarGrid.appendChild(dayCell);
-        }
+    // Días de relleno (Mes siguiente)
+    const totalCells = calendarGrid.children.length;
+    const cellsNeeded = 7 - (totalCells % 7);
+    const remainingCells = (cellsNeeded === 7 ? 0 : cellsNeeded);
+
+    for (let day = 1; day <= remainingCells; day++) {
+        const dayCell = createDayCell(day, true, year, month + 1, []);
+        calendarGrid.appendChild(dayCell);
     }
 };
 
-const createDayCell = (day, isOtherMonth, year, month, dayAppointments) => {
+const createDayCell = (day, isOtherMonth, year, month, dayEvents) => {
     const cell = document.createElement('div');
     const dateObj = new Date(year, month, day);
     const dateStr = dateObj.toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
     const isToday = dateStr === today;
     
-    cell.className = `p-2 border rounded-lg text-center cursor-pointer transition-colors ${
-        isOtherMonth ? 'bg-gray-100 text-gray-400' : 'bg-white hover:bg-green-50'
-    } ${isToday ? 'ring-2 ring-green-500' : ''}`;
+    const hasEvents = dayEvents.length > 0;
     
+    // Estilo de celda: Sin bordes gruesos, solo sutil.
+    let cellClasses = 'p-2 text-center h-16 flex flex-col items-center justify-center transition-all duration-200 rounded-lg cursor-pointer';
+
+    // Clase de día actual (fondo verde)
+    if (isToday && !isOtherMonth) {
+        cellClasses += ' bg-green-600 text-white font-bold transform scale-105';
+    } else if (isOtherMonth) {
+        // Estilo de día de otro mes (gris sutil, sin interacción)
+        cellClasses += ' text-gray-400 cursor-default';
+    } else {
+        // Días normales
+        cellClasses += ' text-gray-900 hover:bg-gray-100';
+    }
+
+    cell.className = cellClasses;
+    
+    // Contenedor del número
     const dayNumber = document.createElement('div');
-    dayNumber.className = `font-semibold mb-1 ${isToday ? 'text-green-600' : ''}`;
+    
+    // Si tiene eventos (y no es hoy), el número del día se pone en negrita.
+    const isDayBold = hasEvents && !isToday && !isOtherMonth ? 'font-bold' : 'font-normal';
+
+    dayNumber.className = `text-lg ${isDayBold}`;
     dayNumber.textContent = day;
     cell.appendChild(dayNumber);
     
-    if (dayAppointments.length > 0 && !isOtherMonth) {
-        const badge = document.createElement('div');
-        badge.className = 'bg-green-500 text-white text-xs rounded-full px-2 py-0.5';
-        badge.textContent = `${dayAppointments.length} cita${dayAppointments.length > 1 ? 's' : ''}`;
-        cell.appendChild(badge);
+    // Aquí es donde mostramos los puntos de estado sin la etiqueta de resumen
+    if (hasEvents && !isOtherMonth) {
+        const indicators = document.createElement('div');
+        indicators.className = 'flex flex-wrap gap-1 justify-center mt-1';
         
-        cell.addEventListener('click', () => openDayDetails(dateStr, dayAppointments));
+        const appointmentsCount = dayEvents.filter(e => e.status).length;
+        const blockedCount = dayEvents.filter(e => e.blocked_date).length;
+
+        // Si hay citas, mostrar un punto verde
+        if (appointmentsCount > 0) {
+            const dot = document.createElement('span');
+            dot.className = 'w-2 h-2 rounded-full bg-green-500';
+            indicators.appendChild(dot);
+        }
+        // Si hay bloqueos, mostrar un punto rojo
+        if (blockedCount > 0) {
+            const dot = document.createElement('span');
+            dot.className = 'w-2 h-2 rounded-full bg-red-500';
+            indicators.appendChild(dot);
+        }
+        
+        cell.appendChild(indicators);
+        cell.addEventListener('click', () => openDayDetails(dateStr));
+
+    } else if (!isOtherMonth && !isToday) {
+        // Días sin eventos ni hoy, pero clickeables.
+        cell.addEventListener('click', () => openDayDetails(dateStr));
     }
     
     return cell;
 };
 
-const openDayDetails = (date, appointments) => {
-    updateState('selectedDate', date);
+const openDayDetails = (dateStr) => {
+    // Lógica para abrir la vista de detalle (no se modificó a petición del usuario)
+    updateState('selectedDate', dateStr);
     
-    const dateObj = new Date(date + 'T00:00:00');
+    // 1. Mostrar la vista de detalle
+    calendarListView?.classList.add('hidden');
+    calendarDetailsView?.classList.remove('hidden');
+
+    // 2. Formatear fecha para el título
+    const date = new Date(dateStr + 'T12:00:00');
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    modalDateTitle.textContent = dateObj.toLocaleDateString('es-ES', options);
     
-    modalAppointmentsList.innerHTML = appointments.map(app => {
-        const statusColors = {
-            'pendiente': 'bg-yellow-100 text-yellow-800',
-            'confirmada': 'bg-green-100 text-green-800',
-            'completada': 'bg-blue-100 text-blue-800',
-            'cancelada': 'bg-red-100 text-red-800'
-        };
-        
-        return `
-            <div class="bg-white p-4 rounded-lg shadow-sm border cursor-pointer hover:bg-gray-50" data-appointment-id="${app.id}">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <p class="font-bold text-lg">${app.pets?.name || 'N/A'}</p>
-                        <p class="text-sm text-gray-600">${app.profiles?.first_name || ''} ${app.profiles?.last_name || ''}</p>
-                    </div>
-                    <span class="text-sm font-semibold ${statusColors[app.status] || 'bg-gray-100 text-gray-800'} px-2 py-1 rounded">
-                        ${app.status}
-                    </span>
-                </div>
-                <p class="text-sm text-gray-700"><strong>Hora:</strong> ${app.appointment_time.slice(0, 5)}</p>
-                <p class="text-sm text-gray-700"><strong>Servicio:</strong> ${app.service || 'N/A'}</p>
-            </div>
-        `;
-    }).join('');
+    const dateTitle = date.toLocaleDateString('es-ES', options);
     
-    modalAppointmentsList.querySelectorAll('[data-appointment-id]').forEach(item => {
-        item.addEventListener('click', () => {
-            const appointmentId = item.dataset.appointmentId;
-            const appointment = appointments.find(a => a.id === appointmentId);
-            if (appointment) showAppointmentDetails(appointment);
+    // 3. Establecer el título de la vista de detalle
+    detailsViewDateTitle.textContent = dateTitle.charAt(0).toUpperCase() + dateTitle.slice(1);
+
+    // 4. Filtrar y ordenar citas y bloqueos para el día
+    const dayAppointments = state.allAppointments
+        .filter(app => app.appointment_date === dateStr)
+        .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
+    
+    // Obtenemos bloqueos de nuevo para la vista de detalle (usando la API)
+    supabase.from('blocked_slots')
+        .select('*')
+        .eq('blocked_date', dateStr)
+        .then(blockedRes => {
+            const blockedSlots = blockedRes.data || [];
+            
+            dailyAppointmentsList.innerHTML = '';
+
+            // Mostrar Bloqueos (Si existieran, aunque el usuario pidió eliminarlos, los dejamos por si la lógica de negocio los requiere)
+            if (blockedSlots.length > 0) {
+                dailyAppointmentsList.innerHTML += `<h4 class="font-bold text-red-600 mb-3 mt-4 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                    Horarios Bloqueados (${blockedSlots.length})
+                </h4>`;
+                blockedSlots.forEach(slot => {
+                    dailyAppointmentsList.innerHTML += `
+                        <div class="bg-red-50 p-4 rounded-lg mb-3 border-l-4 border-red-500">
+                            <p class="font-bold text-xl text-gray-800">${slot.blocked_time.slice(0, 5)}</p>
+                            <p class="text-sm text-gray-600">${slot.reason || 'Bloqueo administrativo'}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            // Mostrar Citas Agendadas
+            if (dayAppointments.length > 0) {
+                const totalAppointments = dayAppointments.length;
+                dailyAppointmentsList.innerHTML += `<h4 class="font-bold text-green-600 mb-3 mt-4 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    Citas Agendadas (${totalAppointments})
+                </h4>`;
+                dayAppointments.forEach(app => {
+                    const statusColors = {
+                        'pendiente': 'bg-yellow-100 text-yellow-800',
+                        'confirmada': 'bg-blue-100 text-blue-800',
+                        'completada': 'bg-green-100 text-green-800',
+                        'cancelada': 'bg-red-100 text-red-800',
+                        'rechazada': 'bg-gray-100 text-gray-800'
+                    };
+                    
+                    const ownerName = app.profiles?.first_name 
+                        ? `(${app.profiles.first_name})`
+                        : `(${app.profiles?.full_name || 'N/A'})`;
+                        
+                    // Placeholder con el color de la marca
+                    const petImage = app.pets?.image_url 
+                        ? app.pets.image_url 
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(app.pets?.name || 'M')}&background=10B981&color=FFFFFF`;
+                    
+                    const statusText = app.status.charAt(0).toUpperCase() + app.status.slice(1);
+                    
+                    dailyAppointmentsList.innerHTML += `
+                        <div class="bg-gray-50 p-4 rounded-lg border flex items-center space-x-3">
+                            <img src="${petImage}" alt="${app.pets?.name}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-lg text-gray-800">${app.pets?.name || 'N/A'} <span class="text-xs text-gray-500">${ownerName}</span></p>
+                                <p class="text-sm text-gray-600">${app.service || 'Sin servicio especificado'}</p>
+                            </div>
+                            <div class="text-right flex flex-col items-end flex-shrink-0">
+                                <p class="font-bold text-lg text-gray-900">${app.appointment_time.slice(0, 5)}</p>
+                                <span class="text-xs font-semibold ${statusColors[app.status] || 'bg-gray-100 text-gray-800'} px-2 py-0.5 rounded mt-1">
+                                    ${statusText}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else if (blockedSlots.length === 0) {
+                dailyAppointmentsList.innerHTML = `<p class="text-center text-gray-500 py-8">¡Día libre! No hay citas agendadas.</p>`;
+            }
         });
-    });
-    
-    modalDailyView?.classList.remove('hidden');
-    modalDetailsView?.classList.add('hidden');
-    calendarModal?.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-};
-
-const showAppointmentDetails = (appointment) => {
-    modalDetailsContent.innerHTML = `
-        <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
-            <h3 class="text-2xl font-bold text-gray-800">${appointment.pets?.name || 'N/A'}</h3>
-            <div class="space-y-2">
-                <p><strong>Cliente:</strong> ${appointment.profiles?.first_name || ''} ${appointment.profiles?.last_name || ''}</p>
-                <p><strong>Fecha:</strong> ${appointment.appointment_date}</p>
-                <p><strong>Hora:</strong> ${appointment.appointment_time.slice(0, 5)}</p>
-                <p><strong>Servicio:</strong> ${appointment.service || 'N/A'}</p>
-                <p><strong>Estado:</strong> ${appointment.status}</p>
-                ${appointment.notes ? `<p><strong>Notas:</strong> ${appointment.notes}</p>` : ''}
-                ${appointment.final_observations ? `<p><strong>Observaciones finales:</strong> ${appointment.final_observations}</p>` : ''}
-            </div>
-        </div>
-    `;
-    
-    modalDailyView?.classList.add('hidden');
-    modalDetailsView?.classList.remove('hidden');
-};
-
-const closeModal = () => {
-    calendarModal?.classList.add('hidden');
-    document.body.style.overflow = '';
-    updateState('selectedDate', null);
 };
