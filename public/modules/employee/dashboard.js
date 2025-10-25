@@ -822,6 +822,29 @@ const initializePOSEmployee = () => {
 
 
 // --- SECCIÓN DE CITAS ---
+
+/**
+ * Función para determinar las notas iniciales (del cliente o del empleado) y el servicio.
+ * @param {Object} app - Objeto de cita.
+ * @returns {Object} { serviceDisplay, notesDisplay }
+ */
+const extractNotes = (app) => {
+    let serviceDisplay = app.service || 'Servicio general';
+    let notesDisplay = '';
+
+    if (app.notes) {
+        // Notas del empleado (al agendar desde dashboard)
+        notesDisplay = app.notes;
+    } else if (app.service?.includes('. Notas:')) {
+        // Notas del cliente (al agendar desde web/app)
+        const parts = app.service.split('. Notas:');
+        serviceDisplay = parts[0].trim();
+        notesDisplay = parts.length > 1 ? parts[1].trim() : '';
+    }
+
+    return { serviceDisplay, notesDisplay };
+};
+
 const renderConfirmedAppointments = () => {
     const confirmed = allAppointments
         .filter(app => app.status === 'confirmada')
@@ -831,26 +854,35 @@ const renderConfirmedAppointments = () => {
         appointmentsList.innerHTML = `<p class="text-center text-gray-500 mt-8">No hay citas confirmadas pendientes.</p>`;
         return;
     }
-    appointmentsList.innerHTML = confirmed.map(app => `
-        <div class="bg-white p-4 rounded-lg shadow-sm border space-y-3">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="font-bold text-lg">${app.pets.name}</p>
-                    <p class="text-sm text-gray-600">${app.profiles.first_name || ''} ${app.profiles.last_name || ''}</p>
+    appointmentsList.innerHTML = confirmed.map(app => {
+        const { serviceDisplay, notesDisplay } = extractNotes(app);
+
+        const notesHTML = notesDisplay 
+            ? `<p class="text-xs text-red-500 mt-1"><strong>Instrucciones:</strong> ${notesDisplay}</p>`
+            : '';
+
+        return `
+            <div class="bg-white p-4 rounded-lg shadow-sm border space-y-3">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-bold text-lg">${app.pets.name}</p>
+                        <p class="text-sm text-gray-600">${app.profiles.first_name || ''} ${app.profiles.last_name || ''}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-semibold text-green-700">${app.appointment_date}</p>
+                        <p class="text-gray-500">${app.appointment_time.slice(0, 5)}</p>
+                    </div>
                 </div>
-                <div class="text-right">
-                    <p class="font-semibold text-green-700">${app.appointment_date}</p>
-                    <p class="text-gray-500">${app.appointment_time.slice(0, 5)}</p>
+                <div class="text-sm bg-gray-50 p-2 rounded-md">
+                    <p><strong>Servicio:</strong> ${serviceDisplay}</p>
+                    ${notesHTML}
                 </div>
+                <button data-appointment-id="${app.id}" class="complete-btn w-full bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 transition-colors">
+                    Completar Cita
+                </button>
             </div>
-            <div class="text-sm bg-gray-50 p-2 rounded-md">
-                <p><strong>Servicio:</strong> ${app.service}</p>
-            </div>
-            <button data-appointment-id="${app.id}" class="complete-btn w-full bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 transition-colors">
-                Completar Cita
-            </button>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 };
 
 
@@ -972,7 +1004,7 @@ const closeModal = () => {
 const fetchAppointmentsForMonth = async (date) => {
     const year = date.getFullYear(); const month = date.getMonth();
     const firstDay = new Date(year, month, 1).toISOString().split('T')[0]; const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0];
-    const { data, error } = await supabase.from('appointments').select('*, pets(*), profiles(first_name, last_name)').gte('appointment_date', firstDay).lte('appointment_date', lastDay);
+    const { data, error } = await supabase.from('appointments').select('*, pets(*), profiles(first_name, last_name, full_name)').gte('appointment_date', firstDay).lte('appointment_date', lastDay);
     if (error) { console.error("Error cargando citas del mes:", error); monthlyAppointments = []; } else { monthlyAppointments = data || []; }
 };
 const renderCalendar = async () => {
@@ -1005,24 +1037,81 @@ const renderAppointmentsInModal = (date) => {
         </button>
     `).join('') : `<p class="text-center text-gray-500">No hay citas para este día.</p>`;
 };
+
+// --- INICIO DE LA CORRECCIÓN: Función para mostrar detalles de la cita en el modal de calendario ---
 const showAppointmentDetails = async (appointmentId) => {
     const appointment = monthlyAppointments.find(app => app.id === appointmentId);
     if (!appointment) return;
     const pet = appointment.pets;
-    const { data: petHistory, error } = await supabase.from('appointments').select('appointment_date, service, status, final_observations').eq('pet_id', pet.id).neq('id', appointment.id).order('appointment_date', { ascending: false });
+    
+    // Obtener historial completo de citas completadas para notas anteriores
+    const { data: petHistory, error } = await supabase.from('appointments')
+        .select('appointment_date, service, status, final_observations')
+        .eq('pet_id', pet.id)
+        .eq('status', 'completada') // Solo citas completadas
+        .neq('id', appointment.id)
+        .order('appointment_date', { ascending: false });
+        
     if (error) console.error("Error cargando historial completo de la mascota:", error);
+    
     let lastAppointmentNotes = 'No hay observaciones de citas anteriores.';
     if (petHistory && petHistory.length > 0) {
         lastAppointmentNotes = petHistory[0].final_observations || 'La cita anterior no tuvo observaciones.';
     }
+
+    // Extraer notas iniciales de la cita actual
+    const { serviceDisplay, notesDisplay } = extractNotes(appointment);
+    
+    const initialNotesHTML = notesDisplay 
+        ? `<div class="bg-red-50 border-l-4 border-red-400 p-3 rounded-lg shadow-sm"><h4 class="font-semibold text-sm text-red-800 mb-1">Instrucciones Iniciales</h4><p class="text-sm text-gray-700">${notesDisplay}</p></div>`
+        : `<div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-lg shadow-sm"><h4 class="font-semibold text-sm text-blue-800 mb-1">Instrucciones Iniciales</h4><p class="text-sm text-gray-700">Sin notas iniciales registradas.</p></div>`;
+
+
     modalDetailsContent.innerHTML = `
-        <div class="bg-white p-4 rounded-lg shadow-sm"><h4 class="font-bold text-lg mb-2">Cita Actual</h4><div class="flex items-center gap-4"><img src="${pet.image_url || `https://ui-avatars.com/api/?name=${pet.name.charAt(0)}&background=A4D0A4&color=FFFFFF`}" class="h-16 w-16 rounded-full object-cover"><div><p><strong>Hora:</strong> ${appointment.appointment_time.slice(0, 5)}</p><p><strong>Mascota:</strong> ${pet.name}</p><p><strong>Servicio:</strong> ${appointment.service}</p></div></div></div>
-        <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-lg shadow-sm"><h4 class="font-semibold text-sm text-blue-800 mb-1">Observaciones de la Última Cita</h4><p class="text-sm text-gray-700">${lastAppointmentNotes}</p></div>
-        <div class="bg-white p-4 rounded-lg shadow-sm"><h4 class="font-bold text-lg mb-2">Información de la Mascota</h4><div class="grid grid-cols-2 gap-2 text-sm"><p><strong>Raza:</strong> ${pet.breed}</p><p><strong>Sexo:</strong> ${pet.sex || 'N/A'}</p><p><strong>Edad:</strong> ${calculateAge(pet.birth_date)}</p><p><strong>Peso:</strong> ${pet.weight ? pet.weight + ' kg' : 'N/A'}</p></div><div class="bg-yellow-50 p-2 rounded-md mt-2"><p class="text-xs font-semibold">Observaciones Generales:</p><p class="text-xs">${pet.observations || 'Sin observaciones.'}</p></div></div>
-        <div class="bg-white p-4 rounded-lg shadow-sm"><h4 class="font-bold text-lg mb-2">Historial Completo</h4><div class="space-y-2 max-h-40 overflow-y-auto">${petHistory && petHistory.length > 0 ? petHistory.map(hist => `<div class="bg-gray-50 p-2 rounded-md text-sm flex justify-between items-center"><p><strong>${hist.appointment_date}:</strong> ${hist.service}</p><span class="text-xs font-semibold px-2 py-0.5 rounded-full ${hist.status === 'completada' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${hist.status}</span></div>`).join('') : '<p class="text-sm text-gray-500">No hay historial de citas anteriores.</p>'}</div></div>`;
+        <div class="bg-white p-4 rounded-lg shadow-sm">
+            <h4 class="font-bold text-lg mb-2">Cita Actual</h4>
+            <div class="flex items-center gap-4">
+                <img src="${pet.image_url || `https://ui-avatars.com/api/?name=${pet.name.charAt(0)}&background=A4D0A4&color=FFFFFF`}" class="h-16 w-16 rounded-full object-cover">
+                <div>
+                    <p><strong>Hora:</strong> ${appointment.appointment_time.slice(0, 5)}</p>
+                    <p><strong>Mascota:</strong> ${pet.name}</p>
+                    <p><strong>Servicio:</strong> ${serviceDisplay}</p>
+                </div>
+            </div>
+        </div>
+        
+        ${initialNotesHTML}
+        
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-lg shadow-sm">
+            <h4 class="font-semibold text-sm text-yellow-800 mb-1">Observaciones de la Última Cita Completada</h4>
+            <p class="text-sm text-gray-700">${lastAppointmentNotes}</p>
+        </div>
+        
+        <div class="bg-white p-4 rounded-lg shadow-sm">
+            <h4 class="font-bold text-lg mb-2">Información de la Mascota</h4>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+                <p><strong>Raza:</strong> ${pet.breed}</p>
+                <p><strong>Sexo:</strong> ${pet.sex || 'N/A'}</p>
+                <p><strong>Edad:</strong> ${calculateAge(pet.birth_date)}</p>
+                <p><strong>Peso:</strong> ${pet.weight ? pet.weight + ' kg' : 'N/A'}</p>
+            </div>
+            <div class="bg-gray-50 p-2 rounded-md mt-2">
+                <p class="text-xs font-semibold">Observaciones Generales:</p>
+                <p class="text-xs">${pet.observations || 'Sin observaciones.'}</p>
+            </div>
+        </div>
+        
+        <div class="bg-white p-4 rounded-lg shadow-sm">
+            <h4 class="font-bold text-lg mb-2">Historial Completo (${(petHistory ? petHistory.length : 0) + 1} citas)</h4>
+            <div class="space-y-2 max-h-40 overflow-y-auto">
+                ${petHistory && petHistory.length > 0 ? petHistory.map(hist => `<div class="bg-gray-50 p-2 rounded-md text-sm flex justify-between items-center"><p><strong>${hist.appointment_date}:</strong> ${hist.service}</p><span class="text-xs font-semibold px-2 py-0.5 rounded-full ${hist.status === 'completada' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${hist.status}</span></div>`).join('') : '<p class="text-sm text-gray-500">No hay historial de citas anteriores.</p>'}
+            </div>
+        </div>
+    `;
     modalDailyView.classList.add('hidden');
     modalDetailsView.classList.remove('hidden');
 };
+// --- FIN DE LA CORRECCIÓN: Función para mostrar detalles de la cita en el modal de calendario ---
 
 
 const setupClientAndPetModals = () => {
@@ -1173,6 +1262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     backToPetsBtn.addEventListener('click', showPetsListView);
     prevMonthBtn.addEventListener('click', async () => { currentDate.setMonth(currentDate.getMonth() - 1); await renderCalendar(); });
     nextMonthBtn.addEventListener('click', async () => { currentDate.setMonth(currentDate.getMonth() + 1); await renderCalendar(); });
+    
     calendarGrid.addEventListener('click', (e) => {
         const dayCell = e.target.closest('.day-cell');
         if (dayCell && dayCell.dataset.hasAppointments === 'true') {
@@ -1183,7 +1273,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     calendarModal.addEventListener('click', (e) => { if (e.target === calendarModal) closeModal(); });
-    modalAppointmentsList.addEventListener('click', (e) => { const btn = e.target.closest('.appointment-btn'); if (btn) showAppointmentDetails(btn.dataset.appointmentId); });
+    
+    // Usar la nueva función showAppointmentDetails
+    modalAppointmentsList.addEventListener('click', (e) => { 
+        const btn = e.target.closest('.appointment-btn'); 
+        if (btn) showAppointmentDetails(btn.dataset.appointmentId); 
+    });
+    
     modalBackBtn.addEventListener('click', () => { modalDetailsView.classList.add('hidden'); modalDailyView.classList.remove('hidden'); });
     
     appointmentsList.addEventListener('click', (e) => {
