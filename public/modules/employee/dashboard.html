@@ -10,7 +10,6 @@
         /* Estilos existentes */
         .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .bottom-nav { background: white; border-top: 1px solid #E5E7EB; padding: 8px 12px; height: 64px; }
         .nav-btn { width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; background-color: transparent; position: relative; }
         .nav-btn.active { background-color: #16A34A; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25); }
         .nav-btn.active svg { color: white; stroke-width: 2.5; }
@@ -29,10 +28,10 @@
             #completed-services-table-body td:before { content: attr(data-label); font-weight: 600; display: block; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem; }
         }
 
-        /* ---- CSS CORREGIDO ---- */
+        /* ---- CSS CORREGIDO Y FINAL ---- */
         html, body {
            height: 100%;
-           overflow: hidden; /* Evita scroll en body */
+           overflow: hidden; /* Evita el scroll en el body */
         }
         .main-container {
            height: 100vh; /* Ocupa toda la altura de la ventana */
@@ -43,55 +42,36 @@
            background-color: white;
            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
            width: 100%;
-           position: relative;
-           /* Se quita padding-bottom de aquí */
         }
         .content-area {
-            flex-grow: 1; /* Ocupa el espacio restante */
-            overflow-y: auto; /* Permite scroll interno */
+            flex-grow: 1; /* Hace que esta área ocupe todo el espacio disponible */
+            overflow-y: auto; /* Permite el scroll solo en esta área */
             background-color: #F9FAFB; /* bg-gray-100 */
-            padding-bottom: 64px; /* Añade espacio ABAJO para la barra fija */
         }
         .bottom-nav-container {
-            position: fixed; /* Fija la barra de navegación */
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 50;
-            max-width: 28rem; /* Aplica el max-w-md aquí */
-            margin-left: auto;
-            margin-right: auto;
-            background-color: white;
+            flex-shrink: 0; /* Evita que la barra de navegación se encoja */
             border-top: 1px solid #E5E7EB;
+            background-color: white;
         }
-         /* Limitar ancho solo en pantallas grandes */
+        .bottom-nav { 
+            height: 64px; 
+            padding: 8px 12px;
+        }
+        
+        /* Limitar ancho solo en pantallas grandes */
         @media (min-width: 768px) {
              .main-container {
-                max-width: 28rem;
-                /* No necesita padding-bottom en desktop */
-             }
-             .bottom-nav-container {
-                 position: static; /* Vuelve a ser estático */
-                 max-width: none;
-                 margin-left: 0;
-                 margin-right: 0;
-                 border-top: 1px solid #E5E7EB;
-             }
-             .content-area {
-                  padding-bottom: 0; /* Quita el padding extra en desktop */
+                max-width: 28rem; /* max-w-md */
              }
         }
-        /* Ajuste específico para iOS Safari */
+        
+        /* Ajuste específico para la barra inferior en iOS Safari */
         @supports (-webkit-touch-callout: none) {
           .main-container {
              height: -webkit-fill-available;
           }
            .bottom-nav-container {
                padding-bottom: env(safe-area-inset-bottom, 0px);
-           }
-            /* Puede que necesites ajustar también el padding del content-area */
-           .content-area {
-                padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
            }
         }
 
