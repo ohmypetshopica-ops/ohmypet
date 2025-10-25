@@ -7,7 +7,7 @@
     <title>Dashboard Empleado - OhMyPet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos básicos y de botones (sin cambios) */
+        /* Estilos de botones y otros elementos (sin cambios) */
         .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .nav-btn { width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; background-color: transparent; position: relative; }
@@ -28,35 +28,33 @@
             #completed-services-table-body td:before { content: attr(data-label); font-weight: 600; display: block; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem; }
         }
 
-        /* ---- CSS CORREGIDO PARA LAYOUT FLEXBOX ---- */
+        /* ---- CSS CORREGIDO PARA LAYOUT FLEXBOX DEFINITIVO ---- */
         html, body {
            height: 100%;
-           overflow: hidden; /* Evita el scroll en el body */
+           overflow: hidden; /* Evita el scroll en toda la página */
            margin: 0;
         }
         .main-container {
-           height: 100vh; /* Altura completa */
+           height: 100vh; /* Ocupa el 100% de la altura de la pantalla */
            display: flex;
-           flex-direction: column; /* Apila header, main, footer */
+           flex-direction: column; /* Apila los elementos verticalmente: header, main, nav */
            width: 100%;
            max-width: 28rem; /* max-w-md para simular móvil en escritorio */
            margin-left: auto;
            margin-right: auto;
-           background-color: white;
+           background-color: #F9FAFB; /* bg-gray-50 */
            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         header {
-            flex-shrink: 0; /* El header no se encoge */
-            /* Estilos del header ya definidos por Tailwind */
+            flex-shrink: 0; /* Evita que el header se encoja */
         }
         .content-area {
-            flex-grow: 1; /* Ocupa todo el espacio vertical restante */
-            overflow-y: auto; /* Permite el scroll SÓLO en esta área */
-            background-color: #F9FAFB; /* bg-gray-100 */
-            /* Ya no necesita padding-bottom */
+            flex-grow: 1; /* Hace que esta área ocupe todo el espacio vertical sobrante */
+            overflow-y: auto; /* Permite el scroll SÓLO en esta área de contenido */
+            /* Ya no necesita padding-bottom, el layout se encarga del espacio */
         }
         .bottom-nav-container {
-            flex-shrink: 0; /* El footer (nav) no se encoge */
+            flex-shrink: 0; /* Evita que la barra de navegación se encoja */
             width: 100%;
             background-color: white;
             border-top: 1px solid #E5E7EB;
@@ -69,7 +67,7 @@
             padding: 8px 12px;
         }
 
-        /* Ajuste específico para iOS Safari (notch, etc.) */
+        /* Ajuste específico para la barra inferior en iOS Safari (notch, etc.) */
         @supports (-webkit-touch-callout: none) {
           .main-container {
              height: -webkit-fill-available;
@@ -78,7 +76,6 @@
                padding-bottom: env(safe-area-inset-bottom, 0px);
            }
         }
-
     </style>
 </head>
 
@@ -118,7 +115,7 @@
         </main>
 
         <div class="bottom-nav-container">
-            <nav class="bottom-nav flex justify-around items-center">
+            <nav class="bottom-nav">
                  <button data-view="clients" class="nav-btn active" aria-label="Clientes"> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg> </button>
                  <button data-view="pets" class="nav-btn" aria-label="Mascotas"> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> </button>
                  <button data-view="appointments" class="nav-btn" aria-label="Citas"> <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> </button>
