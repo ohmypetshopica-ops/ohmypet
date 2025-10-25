@@ -65,7 +65,7 @@ export const renderCalendar = async () => {
     const firstDayStr = new Date(year, month, 1).toISOString().split('T')[0];
     const lastDayStr = new Date(year, month + 1, 0).toISOString().split('T')[0];
     
-    // Obtenemos solo citas (eliminamos la llamada a blocked_slots)
+    // Obtenemos solo citas (ELIMINANDO LOGICA DE BLOCKED_SLOTS)
     const appointmentsRes = await supabase
         .from('appointments')
         .select(`id, appointment_date, appointment_time, service, status, pet_id, user_id, 
@@ -90,7 +90,7 @@ export const renderCalendar = async () => {
     dayNames.forEach(day => {
         const dayHeader = document.createElement('div');
         // Estilo fijo para encabezado
-        dayHeader.className = 'p-2 text-center font-semibold text-gray-700 text-sm border-b border-r border-gray-200 bg-gray-100';
+        dayHeader.className = 'p-2 text-center font-semibold text-gray-500 text-sm border-b border-r border-gray-200 bg-gray-100';
         dayHeader.textContent = day.charAt(0); // Solo la primera letra
         calendarGrid.appendChild(dayHeader);
     });
@@ -136,9 +136,9 @@ const createDayCell = (day, isOtherMonth, year, month, dayEvents) => {
     const hasEvents = dayEvents.length > 0;
     
     // Determinar clase de fondo: Si tiene eventos (y no es otro mes), usar verde claro.
-    const eventClass = hasEvents && !isOtherMonth ? 'bg-green-100' : 'bg-white';
+    const eventClass = hasEvents && !isOtherMonth ? 'bg-green-100 font-bold' : 'bg-white';
     
-    // Eliminamos el borde de cuadrícula y usamos el estilo limpio
+    // Estilo de celda (limpio)
     let cellClasses = 'p-2 text-center flex flex-col items-center justify-center transition-all duration-200 rounded-lg cursor-pointer h-16';
 
     if (isToday && !isOtherMonth) {
@@ -154,7 +154,6 @@ const createDayCell = (day, isOtherMonth, year, month, dayEvents) => {
     // Contenedor del número
     const dayNumber = document.createElement('div');
     
-    // Si tiene eventos (y no es hoy), el número del día se pone en negrita.
     const isDayBold = hasEvents && !isToday && !isOtherMonth ? 'font-bold' : 'font-normal';
     dayNumber.className = `text-lg ${isDayBold}`;
     dayNumber.textContent = day;
@@ -162,11 +161,11 @@ const createDayCell = (day, isOtherMonth, year, month, dayEvents) => {
     
     if (!isOtherMonth) {
         
-        // ********************************************
-        // ELIMINADO: El resumen de citas ha sido removido
-        // ********************************************
-
-        cell.addEventListener('click', () => openDayDetails(dateStr));
+        // Muestra el resumen (solo citas) - solo se hace el clic si hay eventos
+        
+        if (hasEvents) {
+            cell.addEventListener('click', () => openDayDetails(dateStr));
+        }
     }
     
     return cell;
@@ -193,81 +192,60 @@ const openDayDetails = (dateStr) => {
         .filter(app => app.appointment_date === dateStr)
         .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
     
-    // Obtenemos bloqueos de nuevo para la vista de detalle (usando la API)
-    // Se mantiene la llamada a blocked_slots aquí para la vista de detalle, aunque no se usen en el calendario principal.
-    supabase.from('blocked_slots')
-        .select('*')
-        .eq('blocked_date', dateStr)
-        .then(blockedRes => {
-            const blockedSlots = blockedRes.data || [];
+    dailyAppointmentsList.innerHTML = '';
             
-            dailyAppointmentsList.innerHTML = '';
-
-            // Mostrar Bloqueos (Si existieran, aunque no se marquen en el calendario)
-            if (blockedSlots.length > 0) {
-                dailyAppointmentsList.innerHTML += `<h4 class="font-bold text-red-600 mb-3 mt-4 flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-                    Horarios Bloqueados (${blockedSlots.length})
-                </h4>`;
-                blockedSlots.forEach(slot => {
-                    dailyAppointmentsList.innerHTML += `
-                        <div class="bg-red-50 p-4 rounded-lg mb-3 border-l-4 border-red-500">
-                            <p class="font-bold text-xl text-gray-800">${slot.blocked_time.slice(0, 5)}</p>
-                            <p class="text-sm text-gray-600">${slot.reason || 'Bloqueo administrativo'}</p>
-                        </div>
-                    `;
-                });
+    // Mostrar Citas Agendadas
+    if (dayAppointments.length > 0) {
+        const totalAppointments = dayAppointments.length;
+        
+        // Título de Citas Agendadas
+        dailyAppointmentsList.innerHTML += `<h4 class="font-bold text-green-600 mb-3 mt-4 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            Citas Agendadas (${totalAppointments})
+        </h4>`;
+        
+        dayAppointments.forEach(app => {
+            const statusColors = {
+                'pendiente': 'bg-yellow-100 text-yellow-800',
+                'confirmada': 'bg-blue-100 text-blue-800',
+                'completada': 'bg-green-100 text-green-800',
+                'cancelada': 'bg-red-100 text-red-800',
+                'rechazada': 'bg-gray-100 text-gray-800'
+            };
+            
+            // Determinar nombre del dueño
+            let ownerName = 'sin datos';
+            if (app.profiles?.first_name) {
+                 ownerName = app.profiles.first_name;
+            } else if (app.profiles?.full_name) {
+                 ownerName = app.profiles.full_name.split(' ')[0]; // Usar solo el primer nombre
             }
-
-            // Mostrar Citas Agendadas
-            if (dayAppointments.length > 0) {
-                const totalAppointments = dayAppointments.length;
                 
-                // Título de Citas Agendadas
-                dailyAppointmentsList.innerHTML += `<h4 class="font-bold text-green-600 mb-3 mt-4 flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    Citas Agendadas (${totalAppointments})
-                </h4>`;
-                
-                dayAppointments.forEach(app => {
-                    const statusColors = {
-                        'pendiente': 'bg-yellow-100 text-yellow-800',
-                        'confirmada': 'bg-blue-100 text-blue-800',
-                        'completada': 'bg-green-100 text-green-800',
-                        'cancelada': 'bg-red-100 text-red-800',
-                        'rechazada': 'bg-gray-100 text-gray-800'
-                    };
-                    
-                    const ownerName = app.profiles?.first_name 
-                        ? `(${app.profiles.first_name})`
-                        : `(${app.profiles?.full_name || 'N/A'})`;
-                        
-                    // Placeholder con el color de la marca
-                    const petImage = app.pets?.image_url 
-                        ? app.pets.image_url 
-                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(app.pets?.name || 'M')}&background=10B981&color=FFFFFF`;
-                    
-                    const statusText = app.status.charAt(0).toUpperCase() + app.status.slice(1);
-                    
-                    // Se mantiene el diseño plano para la tarjeta de cita (sin sombra)
-                    dailyAppointmentsList.innerHTML += `
-                        <div class="bg-white p-4 rounded-lg border hover:bg-gray-50 transition-colors duration-200 flex items-center space-x-3">
-                            <img src="${petImage}" alt="${app.pets?.name}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
-                            <div class="flex-1 min-w-0">
-                                <p class="font-bold text-lg text-gray-800">${app.pets?.name || 'N/A'} <span class="text-sm text-gray-500">${ownerName}</span></p>
-                                <p class="text-sm text-gray-600">${app.service || 'Sin servicio especificado'}</p>
-                            </div>
-                            <div class="text-right flex flex-col items-end flex-shrink-0">
-                                <p class="font-bold text-xl text-gray-900">${app.appointment_time.slice(0, 5)}</p>
-                                <span class="text-xs font-semibold ${statusColors[app.status] || 'bg-gray-100 text-gray-800'} px-2 py-0.5 rounded mt-1">
-                                    ${statusText}
-                                </span>
-                            </div>
-                        </div>
-                    `;
-                });
-            } else if (blockedSlots.length === 0) {
-                dailyAppointmentsList.innerHTML = `<p class="text-center text-gray-500 py-8">¡Día libre! No hay citas agendadas.</p>`;
-            }
+            // Placeholder con el color de la marca
+            const petImage = app.pets?.image_url 
+                ? app.pets.image_url 
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(app.pets?.name || 'M')}&background=10B981&color=FFFFFF`;
+            
+            const statusText = app.status.charAt(0).toUpperCase() + app.status.slice(1);
+            
+            // Se mantiene el diseño plano para la tarjeta de cita (sin sombra)
+            dailyAppointmentsList.innerHTML += `
+                <div class="bg-white p-4 rounded-lg border hover:bg-gray-50 transition-colors duration-200 flex items-center space-x-3">
+                    <img src="${petImage}" alt="${app.pets?.name}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-lg text-gray-800">${app.pets?.name || 'N/A'} <span class="text-sm text-gray-500">(${ownerName})</span></p>
+                        <p class="text-sm text-gray-600">${app.service || 'Sin servicio especificado'}</p>
+                    </div>
+                    <div class="text-right flex flex-col items-end flex-shrink-0">
+                        <p class="font-bold text-xl text-gray-900">${app.appointment_time.slice(0, 5)}</p>
+                        <span class="text-xs font-semibold ${statusColors[app.status] || 'bg-gray-100 text-gray-800'} px-2 py-0.5 rounded mt-1">
+                            ${statusText}
+                        </span>
+                    </div>
+                </div>
+            `;
         });
+    } else {
+        dailyAppointmentsList.innerHTML = `<p class="text-center text-gray-500 py-8">¡Día libre! No hay citas agendadas.</p>`;
+    }
 };
