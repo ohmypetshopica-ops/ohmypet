@@ -2,7 +2,7 @@
 // Módulo de gestión de citas
 
 import { state, updateState } from './employee-state.js';
-import { getClientsWithPets, getBookedTimesForDashboard, addAppointmentFromDashboard, uploadAppointmentPhoto, uploadReceiptFile } from '../dashboard/dashboard.api.js';
+import { getClientsWithPets, getBookedTimesForDashboard, addAppointmentFromDashboard, uploadAppointmentPhoto, uploadReceiptFile, updateAppointmentStatus } from '../dashboard/dashboard.api.js';
 import { supabase } from '../../core/supabase.js';
 import { addWeightRecord } from '../dashboard/pet-weight.api.js';
 
@@ -23,6 +23,11 @@ let appointmentsListView; // Contenedor de la lista principal
 let appointmentDetailsView; // Contenedor de la vista de detalle
 let backToAppointmentsListBtn; // Botón para volver
 let appointmentDetailsContent; // Contenedor del contenido del detalle
+
+// NUEVOS INPUTS DEL MODAL DE COMPLETAR CITA
+let servicePriceInput;
+let petWeightInput;
+let paymentMethodSelect;
 
 export const initAppointmentElements = () => {
     appointmentsList = document.getElementById('appointments-list');
@@ -58,6 +63,11 @@ export const initAppointmentElements = () => {
     uploadMessage = document.querySelector('#upload-message');
     cancelCompletionBtn = document.querySelector('#cancel-completion-btn');
     confirmCompletionBtn = document.querySelector('#confirm-completion-btn');
+
+    // Inicializar nuevos inputs
+    servicePriceInput = document.getElementById('service-price-input');
+    petWeightInput = document.getElementById('pet-weight-input');
+    paymentMethodSelect = document.getElementById('payment-method-select');
 };
 
 const showAppointmentsList = () => {
@@ -65,7 +75,6 @@ const showAppointmentsList = () => {
     appointmentDetailsView?.classList.add('hidden');
 };
 
-// Se mantiene esta función, pero se llama de forma más óptima en openAppointmentDetails
 const fetchLastCompletedAppointment = async (petId) => {
     const { data, error } = await supabase
         .from('appointments')
@@ -83,7 +92,6 @@ const fetchLastCompletedAppointment = async (petId) => {
     return data;
 };
 
-// Se mantiene esta función, pero se llama de forma más óptima en openAppointmentDetails
 const fetchPetDetails = async (petId) => {
     const { data, error } = await supabase
         .from('pets')
@@ -178,6 +186,8 @@ const openAppointmentDetails = async (appointmentId) => {
     
     // Wire up the new button to the existing modal logic
     document.getElementById('detail-complete-btn')?.addEventListener('click', (e) => {
+        // Establecer el ID de la cita actual
+        currentAppointmentToComplete = e.target.dataset.appointmentId; 
         openCompletionModal(e.target.dataset.appointmentId);
     });
 };
@@ -198,13 +208,15 @@ export const setupAppointmentListeners = () => {
     appointmentsList?.addEventListener('click', (e) => {
         const item = e.target.closest('.appointment-list-item');
         if (item) {
-            // Permitir clic en toda el área
+            // Abrir la vista de detalle
             openAppointmentDetails(item.dataset.appointmentId);
         }
     });
     
     // Listeners del modal de completar cita
     cancelCompletionBtn?.addEventListener('click', closeCompletionModal);
+    // Se añade un listener para los nuevos campos si fuera necesario validación en tiempo real
+    
     confirmCompletionBtn?.addEventListener('click', handleCompleteAppointment);
     
     beforeImageInput?.addEventListener('change', (e) => handleImagePreview(e, beforeImagePreview));
@@ -390,9 +402,24 @@ const handleAddAppointment = async (e) => {
     }
 };
 
-// Funciones para completar cita (Se mantienen por si la lógica de detalle las necesita)
+// Funciones para completar cita
 const openCompletionModal = (appointmentId) => {
     currentAppointmentToComplete = appointmentId;
+
+    // Obtener cita para prellenar precio y peso si existen
+    const appointment = state.allAppointments.find(app => app.id === appointmentId);
+    if (appointment) {
+        servicePriceInput.value = appointment.service_price || '';
+        petWeightInput.value = appointment.final_weight || '';
+        paymentMethodSelect.value = appointment.payment_method || '';
+        finalObservationsTextarea.value = appointment.final_observations || '';
+    } else {
+         servicePriceInput.value = '';
+         petWeightInput.value = '';
+         paymentMethodSelect.value = '';
+         finalObservationsTextarea.value = '';
+    }
+
     completionModal?.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 };
@@ -423,11 +450,24 @@ const handleImagePreview = (e, previewContainer) => {
 
 const handleCompleteAppointment = async () => {
     if (!currentAppointmentToComplete) return;
+
+    // 1. Validar campos obligatorios
+    const price = parseFloat(servicePriceInput.value);
+    const paymentMethod = paymentMethodSelect.value;
+    
+    if (isNaN(price) || price <= 0) {
+        alert('Por favor, ingresa un precio de servicio válido (> 0).');
+        return;
+    }
+    if (!paymentMethod) {
+        alert('Por favor, selecciona un método de pago.');
+        return;
+    }
     
     confirmCompletionBtn.disabled = true;
     confirmCompletionBtn.textContent = 'Procesando...';
     
-    // Subir imágenes si existen
+    // 2. Subir archivos
     if (beforeImageInput.files[0]) {
         await uploadAppointmentPhoto(currentAppointmentToComplete, beforeImageInput.files[0], 'before');
     }
@@ -436,18 +476,32 @@ const handleCompleteAppointment = async () => {
         await uploadAppointmentPhoto(currentAppointmentToComplete, afterImageInput.files[0], 'after');
     }
     
-    // Subir boleta si existe
     if (receiptInput.files[0]) {
         await uploadReceiptFile(currentAppointmentToComplete, receiptInput.files[0]);
     }
+
+    // 3. Obtener Pet ID y registrar peso
+    const appointment = state.allAppointments.find(app => app.id === currentAppointmentToComplete);
+    const petId = appointment?.pet_id;
+    const weight = parseFloat(petWeightInput.value);
+
+    if (petId && !isNaN(weight) && weight > 0) {
+        // Se registra el peso solo si es válido y hay Pet ID
+        await addWeightRecord(petId, weight, currentAppointmentToComplete);
+    }
     
-    // Actualizar estado de la cita
+    // 4. Actualizar estado y datos finales de la cita
+    const updateData = {
+        status: 'completada',
+        final_observations: finalObservationsTextarea.value || null,
+        service_price: price,
+        payment_method: paymentMethod,
+        final_weight: isNaN(weight) ? null : weight,
+    };
+    
     const { error } = await supabase
         .from('appointments')
-        .update({
-            status: 'completada',
-            final_observations: finalObservationsTextarea.value || null
-        })
+        .update(updateData)
         .eq('id', currentAppointmentToComplete);
     
     if (error) {
@@ -463,7 +517,7 @@ const handleCompleteAppointment = async () => {
     uploadMessage.className = 'block text-center text-sm font-medium p-3 rounded-lg bg-green-100 text-green-700';
     uploadMessage.classList.remove('hidden');
     
-    // Recargar citas
+    // 5. Recargar citas
     const { data: appointments } = await supabase
         .from('appointments')
         .select('*, pets(name), profiles(first_name, last_name)')
