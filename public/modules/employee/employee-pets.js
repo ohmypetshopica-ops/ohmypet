@@ -8,9 +8,15 @@ import { supabase } from '../../core/supabase.js';
 // Elementos del DOM
 let petSearch, petsList, petsListView, petDetailsView, petDetailsContent, backToPetsBtn;
 let addPetModalEmployee, closeAddPetModalButtonEmployee, cancelAddPetButtonEmployee, petFormEmployee, petFormMessageEmployee;
-// ELEMENTOS MODIFICADOS/NUEVOS
 let clearPetSearchBtn;
 let addPetToClientBtn; 
+let paginationContainerPets; // ====== ELEMENTO AGREGADO ======
+
+// ====== VARIABLES AGREGADAS PARA PAGINACIÓN ======
+let currentPagePets = 1;
+const itemsPerPagePets = 8; // Número de mascotas por página
+// ====== FIN VARIABLES AGREGADAS ======
+
 
 export const initPetElements = () => {
     petSearch = document.getElementById('pet-search');
@@ -20,7 +26,6 @@ export const initPetElements = () => {
     petDetailsContent = document.getElementById('pet-details-content');
     backToPetsBtn = document.getElementById('back-to-pets-btn');
     
-    // Este botón se usa en employee-clients.js para el modal de añadir mascota
     addPetToClientBtn = document.querySelector('#add-pet-to-client-btn'); 
     
     addPetModalEmployee = document.querySelector('#add-pet-modal-employee');
@@ -29,17 +34,17 @@ export const initPetElements = () => {
     petFormEmployee = document.querySelector('#pet-form-employee');
     petFormMessageEmployee = document.querySelector('#pet-form-message-employee');
 
-    // NUEVO
     clearPetSearchBtn = document.getElementById('clear-pet-search-btn');
+    paginationContainerPets = document.getElementById('pagination-container-pets'); // ====== INICIALIZACIÓN AGREGADA ======
 };
 
 export const setupPetListeners = () => {
     if (petSearch) {
         petSearch.addEventListener('input', handlePetSearch);
     }
-    // Listener para el botón de limpiar búsqueda
     if (clearPetSearchBtn) {
         clearPetSearchBtn.addEventListener('click', () => {
+            currentPagePets = 1; // ====== LÍNEA AGREGADA ======
             petSearch.value = '';
             clearPetSearchBtn.classList.add('hidden');
             handlePetSearch({ target: petSearch });
@@ -53,17 +58,15 @@ export const setupPetListeners = () => {
         if (btn) showPetDetails(btn.dataset.petId);
     });
     
-    // Los listeners para el modal de agregar mascota se mantienen, asumiendo que se abrirá desde la vista de Clientes
-    
     closeAddPetModalButtonEmployee?.addEventListener('click', closePetModal);
     cancelAddPetButtonEmployee?.addEventListener('click', cancelAddPetButtonEmployee);
     petFormEmployee?.addEventListener('submit', handleAddPet);
 };
 
 const handlePetSearch = (e) => {
+    currentPagePets = 1; // ====== LÍNEA AGREGADA: Reiniciar página al buscar ======
     const term = e.target.value.toLowerCase();
     
-    // Muestra/Oculta el botón "X"
     if (term.length > 0) {
         clearPetSearchBtn?.classList.remove('hidden');
     } else {
@@ -78,16 +81,65 @@ const handlePetSearch = (e) => {
     renderPets(filtered);
 };
 
+// ====== FUNCIÓN DE RENDERIZADO DE PAGINACIÓN AGREGADA ======
+const renderPaginationPets = (totalItems) => {
+    if (!paginationContainerPets) return;
+
+    const totalPages = Math.ceil(totalItems / itemsPerPagePets);
+    if (totalPages <= 1) {
+        paginationContainerPets.innerHTML = '';
+        return;
+    }
+
+    let paginationHTML = '<div class="flex items-center space-x-2">';
+
+    paginationHTML += `
+        <button data-page="${currentPagePets - 1}" class="px-3 py-1 border rounded-lg ${currentPagePets === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}" ${currentPagePets === 1 ? 'disabled' : ''}>
+            Anterior
+        </button>
+    `;
+
+    for (let i = 1; i <= totalPages; i++) {
+        const activeClass = i === currentPagePets ? 'bg-green-600 text-white' : 'bg-white hover:bg-gray-50';
+        paginationHTML += `<button data-page="${i}" class="px-3 py-1 border rounded-lg ${activeClass}">${i}</button>`;
+    }
+
+    paginationHTML += `
+        <button data-page="${currentPagePets + 1}" class="px-3 py-1 border rounded-lg ${currentPagePets === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}" ${currentPagePets === totalPages ? 'disabled' : ''}>
+            Siguiente
+        </button>
+    `;
+
+    paginationHTML += '</div>';
+    paginationContainerPets.innerHTML = paginationHTML;
+
+    paginationContainerPets.querySelectorAll('button[data-page]').forEach(button => {
+        button.addEventListener('click', () => {
+            currentPagePets = parseInt(button.dataset.page);
+            const searchTerm = petSearch.value.toLowerCase();
+            const filtered = searchTerm ? state.allPets.filter(pet => {
+                const owner = state.allClients.find(c => c.id === pet.owner_id);
+                const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}`.toLowerCase() : 'dueño desconocido';
+                return pet.name.toLowerCase().includes(searchTerm) || ownerName.includes(searchTerm) || (pet.breed || '').toLowerCase().includes(searchTerm);
+            }) : state.allPets;
+            renderPets(filtered);
+        });
+    });
+};
+
+// ====== FUNCIÓN `renderPets` MODIFICADA ======
 export const renderPets = (pets) => {
     if (!petsList) return;
     
-    console.log('Renderizando mascotas:', pets.length); // DEBUG
+    // Lógica de paginación
+    const startIndex = (currentPagePets - 1) * itemsPerPagePets;
+    const endIndex = startIndex + itemsPerPagePets;
+    const paginatedPets = pets.slice(startIndex, endIndex);
     
-    petsList.innerHTML = pets.length > 0 ? pets.map(pet => {
+    petsList.innerHTML = paginatedPets.length > 0 ? paginatedPets.map(pet => {
         const owner = state.allClients.find(c => c.id === pet.owner_id);
         const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}` : 'Dueño desconocido';
         
-        // Lógica para la imagen real o placeholder con el color verde (#10B981)
         const petImage = pet.image_url 
             ? pet.image_url 
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name || 'M')}&background=10B981&color=FFFFFF`;
@@ -105,9 +157,14 @@ export const renderPets = (pets) => {
             </button>
         `;
     }).join('') : `<p class="text-center text-gray-500 mt-8">No se encontraron mascotas.</p>`;
+
+    // Renderizar la paginación
+    renderPaginationPets(pets.length);
 };
 
+
 const showPetDetails = (petId) => {
+    // ... (código sin cambios)
     updateState('currentPetId', petId);
     const pet = state.allPets.find(p => p.id === petId);
     if (!pet) return;
@@ -115,19 +172,16 @@ const showPetDetails = (petId) => {
     const owner = state.allClients.find(c => c.id === pet.owner_id);
     const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}` : 'Dueño desconocido';
     
-    // Filtrar y ordenar citas para obtener el historial (más reciente primero)
     const petAppointments = state.allAppointments
         .filter(app => app.pet_id === petId && app.status === 'completada')
         .sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
         
-    const lastAppointment = petAppointments[0]; // La cita más reciente y completada
+    const lastAppointment = petAppointments[0];
 
-    // Calcular edad desde birth_date si existe
     let ageDisplay = 'N/A';
     if (pet.birth_date) {
         const birthDate = new Date(pet.birth_date);
         const today = new Date();
-        // Cálculo de edad más simple (años) para el display principal
         let years = today.getFullYear() - birthDate.getFullYear();
         if (today.getMonth() < birthDate.getMonth() || 
             (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
@@ -136,12 +190,10 @@ const showPetDetails = (petId) => {
         ageDisplay = `${years} año${years !== 1 ? 's' : ''}`;
     }
     
-    // Lógica para la imagen real o placeholder con color verde
     const petImage = pet.image_url 
         ? pet.image_url 
         : `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name || 'M')}&background=10B981&color=FFFFFF`;
         
-    // Generar el HTML del historial
     const historyHTML = petAppointments.length > 0 
         ? petAppointments.map(app => `
             <div class="bg-gray-50 p-3 rounded-lg border-l-4 border-green-400">
@@ -233,12 +285,14 @@ const showPetDetails = (petId) => {
 };
 
 const showPetsList = () => {
+    // ... (código sin cambios)
     petsListView?.classList.remove('hidden');
     petDetailsView?.classList.add('hidden');
     updateState('currentPetId', null);
 };
 
 const closePetModal = () => {
+    // ... (código sin cambios)
     addPetModalEmployee?.classList.add('hidden');
     document.body.style.overflow = '';
     petFormEmployee?.reset();
@@ -246,6 +300,7 @@ const closePetModal = () => {
 };
 
 const handleAddPet = async (e) => {
+    // ... (código sin cambios)
     e.preventDefault();
     
     if (!state.currentClientId) {
@@ -271,7 +326,6 @@ const handleAddPet = async (e) => {
         petFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
         petFormMessageEmployee.classList.remove('hidden');
         
-        // Recargar mascotas
         const { data: pets } = await supabase.from('pets').select('*').order('created_at', { ascending: false });
         if (pets) {
             updateState('allPets', pets);
