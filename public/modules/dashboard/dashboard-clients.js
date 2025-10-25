@@ -1,7 +1,6 @@
 // public/modules/dashboard/dashboard-clients.js
 
 import { getClients, searchClients, getClientDetails, registerClientFromDashboard, addPetFromDashboard, updateClientProfile } from './dashboard.api.js';
-import { createClientRow } from './dashboard.utils.js';
 import { supabase } from '../../core/supabase.js'; // Necesario para subir imágenes
 
 // --- INICIO DE LA CORRECCIÓN: Bandera de inicialización ---
@@ -9,6 +8,49 @@ import { supabase } from '../../core/supabase.js'; // Necesario para subir imág
 let isInitialized = false;
 // --- FIN DE LA CORRECCIÓN ---
 
+// ====== VARIABLES DE PAGINACIÓN AGREGADAS ======
+let currentPage = 1;
+const itemsPerPage = 8; // Número de clientes por página
+let allClientsData = []; // Almacena todos los clientes
+// ====== FIN VARIABLES DE PAGINACIÓN ======
+
+// ====== FUNCIÓN createClientRow DEFINIDA LOCALMENTE ======
+const createClientRow = (client) => {
+    const displayName = (client.first_name && client.last_name) 
+        ? `${client.first_name} ${client.last_name}` 
+        : client.full_name || 'Sin nombre';
+    const avatarUrl = client.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=A4D0A4&color=FFFFFF`;
+    const phone = client.phone || 'Sin teléfono';
+    const petsCount = client.pets_count || 0;
+    
+    let lastAppointmentText = 'Sin citas';
+    if (client.last_appointment_date) {
+        const date = new Date(client.last_appointment_date);
+        lastAppointmentText = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    return `
+        <tr class="hover:bg-gray-50 cursor-pointer" data-client-id="${client.id}">
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                    <img src="${avatarUrl}" alt="Avatar" class="h-10 w-10 rounded-full object-cover">
+                    <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900">${displayName}</div>
+                        <div class="text-sm text-gray-500">${phone}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                ${petsCount} ${petsCount === 1 ? 'mascota' : 'mascotas'}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${lastAppointmentText}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                <button class="text-indigo-600 hover:text-indigo-900 view-details-btn" data-client-id="${client.id}">Ver Detalles</button>
+            </td>
+        </tr>
+    `;
+};
+// ====== FIN FUNCIÓN createClientRow ======
 
 // --- UTILITY: LIMPIEZA DE NÚMEROS DE TELÉFONO ---
 const cleanPhoneNumber = (rawNumber) => {
@@ -42,6 +84,7 @@ const cleanPhoneNumber = (rawNumber) => {
 const clientsTableBody = document.querySelector('#clients-table-body');
 const clientSearchInput = document.querySelector('#client-search-input');
 const headerTitle = document.querySelector('#header-title');
+const paginationContainer = document.querySelector('#pagination-container'); // ====== ELEMENTO AGREGADO ======
 
 // --- ELEMENTOS DEL MODAL DE DETALLES ---
 const clientDetailsModal = document.querySelector('#client-details-modal');
@@ -81,14 +124,92 @@ const petPhotoInput = document.querySelector('#pet-photo');
 const petImagePreview = document.querySelector('#pet-image-preview');
 let photoFile = null; // Variable para almacenar el archivo de la foto
 
+// ====== FUNCIÓN DE RENDERIZADO DE PAGINACIÓN AGREGADA ======
+const renderPagination = (totalItems) => {
+    if (!paginationContainer) return;
 
-// --- RENDERIZADO DE DATOS ---
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+
+    let paginationHTML = '<div class="flex justify-center items-center gap-2 mt-6">';
+    
+    // Botón Anterior (solo si no estamos en la primera página)
+    if (currentPage > 1) {
+        paginationHTML += `
+            <button data-page="${currentPage - 1}" 
+                    class="px-4 py-2 rounded-lg bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 font-medium text-sm">
+                Anterior
+            </button>
+        `;
+    }
+
+    // Números de página (mostrar máximo 3 números)
+    const maxVisible = 3;
+    let startPage = Math.max(1, currentPage - 1);
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    
+    if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <button data-page="${i}" 
+                    class="w-10 h-10 rounded-lg font-medium text-sm ${i === currentPage ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}">
+                ${i}
+            </button>
+        `;
+    }
+
+    // Botón Siguiente (solo si no estamos en la última página)
+    if (currentPage < totalPages) {
+        paginationHTML += `
+            <button data-page="${currentPage + 1}" 
+                    class="px-4 py-2 rounded-lg bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 font-medium text-sm">
+                Siguiente
+            </button>
+        `;
+    }
+
+    paginationHTML += '</div>';
+    paginationContainer.innerHTML = paginationHTML;
+
+    // Agregar listeners a los botones de paginación
+    paginationContainer.querySelectorAll('button[data-page]').forEach(button => {
+        button.addEventListener('click', () => {
+            const newPage = parseInt(button.dataset.page);
+            if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+                currentPage = newPage;
+                renderClientsTable(allClientsData);
+            }
+        });
+    });
+};
+// ====== FIN FUNCIÓN DE PAGINACIÓN ======
+
+// ====== RENDERIZADO DE DATOS MODIFICADO PARA PAGINACIÓN ======
 const renderClientsTable = (clients) => {
     if (!clientsTableBody) return;
-    clientsTableBody.innerHTML = clients.length > 0 
-        ? clients.map(createClientRow).join('') 
+    
+    allClientsData = clients; // Guardar todos los clientes
+    
+    // Calcular índices para la paginación
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedClients = clients.slice(startIndex, endIndex);
+    
+    clientsTableBody.innerHTML = paginatedClients.length > 0 
+        ? paginatedClients.map(createClientRow).join('') 
         : `<tr><td colspan="3" class="text-center py-4 text-gray-500">No hay clientes registrados.</td></tr>`;
+    
+    // Renderizar controles de paginación
+    renderPagination(clients.length);
 };
+// ====== FIN RENDERIZADO MODIFICADO ======
 
 // --- LÓGICA DEL MODAL DE DETALLES Y EDICIÓN ---
 const openModal = () => clientDetailsModal.classList.remove('hidden');
@@ -186,17 +307,9 @@ const handleSaveClient = async () => {
         editFormMessage.classList.remove('hidden');
         return;
     }
-    
-    // Validación de teléfonos
-    if (phoneRaw && phoneCleaned === null) {
-        editFormMessage.textContent = '⚠️ El teléfono principal debe tener 9 dígitos o un formato con código de país.';
-        editFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
-        editFormMessage.classList.remove('hidden');
-        return;
-    }
-    
-    if (emergencyPhoneRaw && emergencyPhoneCleaned === null) {
-        editFormMessage.textContent = '⚠️ El teléfono de emergencia debe tener 9 dígitos o un formato con código de país.';
+
+    if (!updatedData.phone || updatedData.phone.length < 9) {
+        editFormMessage.textContent = '⚠️ El número de teléfono debe tener al menos 9 dígitos.';
         editFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         editFormMessage.classList.remove('hidden');
         return;
@@ -204,18 +317,22 @@ const handleSaveClient = async () => {
 
     saveClientBtn.disabled = true;
     saveClientBtn.textContent = 'Guardando...';
-    
-    // Ocultar mensaje de error anterior
-    editFormMessage.classList.add('hidden');
-    
+    editFormMessage.textContent = '⏳ Guardando cambios...';
+    editFormMessage.className = 'block p-3 rounded-md bg-blue-100 text-blue-700 text-sm mb-4';
+    editFormMessage.classList.remove('hidden');
+
     const result = await updateClientProfile(clientId, updatedData);
-    
+
     if (result.success) {
-        // Recargar los detalles actualizados
+        editFormMessage.textContent = '✅ Cliente actualizado exitosamente.';
+        editFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
+        editFormMessage.classList.remove('hidden');
+        
+        // Recargar los detalles del cliente
         const updatedDetails = await getClientDetails(clientId);
         if (updatedDetails) {
             currentClientProfile = updatedDetails;
-            editFormMessage.textContent = '✅ ¡Cliente actualizado con éxito!';
+            editFormMessage.textContent = '✅ Cliente actualizado exitosamente.';
             editFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
             editFormMessage.classList.remove('hidden');
             
@@ -268,228 +385,179 @@ const populateModal = (details) => {
                     <p><strong>Tipo de Doc.:</strong> ${profile.doc_type || 'N/A'}</p>
                     <p><strong>Nro. Doc.:</strong> ${profile.doc_num || 'N/A'}</p>
                     <p><strong>Distrito:</strong> ${profile.district || 'N/A'}</p>
-                    <p><strong>Contacto Emergencia:</strong> ${profile.emergency_contact_name || 'N/A'} (${profile.emergency_contact_phone || 'N/A'})</p>
+                    <p><strong>Contacto de Emergencia:</strong> ${profile.emergency_contact_name || 'N/A'} - ${profile.emergency_contact_phone || 'N/A'}</p>
                 </div>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-3 border-b pb-2">
-                    <h3 class="text-lg font-semibold text-gray-800">Mascotas Registradas (${uniquePets.length})</h3>
-                </div>
-                <div class="space-y-3">
-                    ${uniquePets.length > 0 ? uniquePets.map(pet => `
-                        <div class="bg-gray-50 p-3 rounded-lg flex items-center gap-4 border border-gray-200">
-                            <img src="${pet.image_url || 'https://via.placeholder.com/40'}" alt="${pet.name}" class="h-12 w-12 rounded-full object-cover">
-                            <div>
-                                <p class="font-semibold text-gray-900">${pet.name}</p>
-                                <p class="text-xs text-gray-600">${pet.breed || 'Raza no especificada'} | ${pet.sex || 'N/A'}</p>
+                <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Mascotas (${uniquePets.length})</h3>
+                ${uniquePets.length > 0 ? `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${uniquePets.map(pet => `
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-start space-x-4">
+                                ${pet.image_url 
+                                    ? `<img src="${pet.image_url}" alt="${pet.name}" class="h-16 w-16 rounded-full object-cover flex-shrink-0">` 
+                                    : `<div class="h-16 w-16 bg-gradient-to-br from-green-300 to-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                         <span class="text-white font-bold text-xl">${pet.name.charAt(0).toUpperCase()}</span>
+                                       </div>`
+                                }
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-semibold text-gray-800 truncate">${pet.name}</h4>
+                                    <p class="text-sm text-gray-600">${pet.breed || 'Raza no especificada'} - ${pet.sex || 'N/A'}</p>
+                                    <p class="text-sm text-gray-500">${pet.birth_date ? new Date(pet.birth_date + 'T00:00:00').toLocaleDateString('es-ES') : 'Edad no especificada'}</p>
+                                </div>
                             </div>
-                        </div>
-                    `).join('') : '<p class="text-sm text-gray-500">No tiene mascotas registradas.</p>'}
-                </div>
+                        `).join('')}
+                    </div>
+                ` : '<p class="text-sm text-gray-500">No tiene mascotas registradas.</p>'}
             </div>
 
             <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Historial de Citas (${appointments.length})</h3>
-                <div class="space-y-2 max-h-48 overflow-y-auto">
-                    ${appointments.length > 0 ? appointments.map(app => `
-                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                            <div class="flex justify-between items-center">
-                                <p class="font-semibold text-sm">${app.appointment_date} - ${app.pets?.name || 'Mascota eliminada'}</p>
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${
-                                    app.status === 'completada' ? 'bg-green-100 text-green-800' :
-                                    app.status === 'cancelada' || app.status === 'rechazada' ? 'bg-red-100 text-red-800' :
-                                    app.status === 'confirmada' ? 'bg-blue-100 text-blue-800' :
-                                    'bg-yellow-100 text-yellow-800'
-                                }">${app.status}</span>
+                <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Citas Registradas</h3>
+                ${appointments.length > 0 ? `
+                    <div class="space-y-3">
+                        ${appointments.slice(0, 5).map(apt => `
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-semibold text-gray-800">${new Date(apt.appointment_date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                        <p class="text-sm text-gray-600">${apt.service || 'Servicio no especificado'} - ${apt.appointment_time}</p>
+                                    </div>
+                                    <span class="text-xs px-2 py-1 rounded-full ${
+                                        apt.status === 'completada' ? 'bg-green-100 text-green-800' : 
+                                        apt.status === 'confirmada' ? 'bg-blue-100 text-blue-800' : 
+                                        'bg-yellow-100 text-yellow-800'
+                                    }">${apt.status}</span>
+                                </div>
                             </div>
-                        </div>
-                    `).join('') : '<p class="text-sm text-gray-500">No tiene citas registradas.</p>'}
-                </div>
+                        `).join('')}
+                    </div>
+                ` : '<p class="text-sm text-gray-500">No tiene citas registradas.</p>'}
             </div>
         </div>
     `;
+};
 
-    // Asegurar el modo de vista al cargar
-    switchToViewMode();
+// --- LÓGICA DEL MODAL DE REGISTRO DE CLIENTE ---
+const openClientModal = () => clientModal.classList.remove('hidden');
+const closeClientModal = () => {
+    clientModal.classList.add('hidden');
+    clientForm.reset();
 };
 
 const setupClientModal = () => {
-    if (!addClientButton || !clientModal || !clientForm) return;
+    if (!clientDetailsModal) return;
 
-    const emailInput = clientForm.querySelector('input[name="email"]');
-    const passwordField = document.getElementById('password-field');
-    const passwordInput = clientForm.querySelector('input[name="password"]');
-
-    if (emailInput) {
-        emailInput.required = false; 
-    }
-
-    if (emailInput && passwordField && passwordInput) {
-        emailInput.addEventListener('input', () => {
-            if (emailInput.value.trim()) {
-                passwordField.classList.remove('hidden');
-                passwordInput.required = true;
-            } else {
-                passwordField.classList.add('hidden');
-                passwordInput.required = false;
-                passwordInput.value = '';
-            }
-        });
-    }
-
-    const closeRegisterModal = () => {
-        clientModal.classList.add('hidden');
-        clientForm.reset();
-        passwordField?.classList.add('hidden');
-        if (passwordInput) passwordInput.required = false;
-        clientFormMessage?.classList.add('hidden');
-    };
-
-    addClientButton.addEventListener('click', () => {
-        clientModal.classList.remove('hidden');
-        clientForm.reset();
-        passwordField?.classList.add('hidden');
-        if (passwordInput) passwordInput.required = false;
-        clientFormMessage?.classList.add('hidden');
+    modalCloseBtn.addEventListener('click', closeModal);
+    clientDetailsModal.addEventListener('click', (e) => {
+        if (e.target === clientDetailsModal) closeModal();
+    });
+    
+    // Listener para el botón de editar
+    editClientBtn.addEventListener('click', switchToEditMode);
+    
+    // Listener para el botón de guardar cambios
+    saveClientBtn.addEventListener('click', handleSaveClient);
+    
+    // Listener para el botón de cancelar edición
+    cancelEditClientBtn.addEventListener('click', switchToViewMode);
+    
+    // Listener para abrir el modal de agregar mascota desde el modal de detalles
+    modalAddPetBtnFooter.addEventListener('click', () => {
+        if (currentClientId) openAddPetModal(currentClientId);
     });
 
-    closeClientModalButton?.addEventListener('click', closeRegisterModal);
-    cancelClientButton?.addEventListener('click', closeRegisterModal);
-    
+    addClientButton.addEventListener('click', openClientModal);
+    closeClientModalButton.addEventListener('click', closeClientModal);
+    cancelClientButton.addEventListener('click', closeClientModal);
     clientModal.addEventListener('click', (e) => {
-        if (e.target === clientModal) closeRegisterModal();
+        if (e.target === clientModal) closeClientModal();
     });
 
     clientForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        if (clientFormMessage) clientFormMessage.classList.add('hidden');
+        const submitButton = clientForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Guardando...';
 
         const formData = new FormData(clientForm);
-        const email = formData.get('email')?.trim() || null;
-        const password = formData.get('password')?.trim() || null;
         
-        // Limpiar números de teléfono antes de usar
-        const phoneCleaned = cleanPhoneNumber(formData.get('phone'));
-        const emergencyPhoneCleaned = cleanPhoneNumber(formData.get('emergency_contact_phone'));
+        const phoneRaw = formData.get('phone');
+        const emergencyPhoneRaw = formData.get('emergency_contact_phone');
+        
+        // Limpiar números de teléfono
+        const phoneCleaned = cleanPhoneNumber(phoneRaw);
+        const emergencyPhoneCleaned = cleanPhoneNumber(emergencyPhoneRaw);
 
         const clientData = {
             firstName: formData.get('first_name').trim(),
             lastName: formData.get('last_name').trim(),
+            email: formData.get('email').trim() || null,
+            password: formData.get('password') || null,
             phone: phoneCleaned,
-            district: formData.get('district').trim(),
-            docType: formData.get('doc_type') || null,
-            docNum: formData.get('doc_num')?.trim() || null,
-            email: email,
-            password: password,
-            emergencyContactName: formData.get('emergency_contact_name')?.trim() || null,
-            emergencyContactPhone: emergencyPhoneCleaned
+            district: formData.get('district').trim() || null,
+            docType: formData.get('doc_type'),
+            docNum: formData.get('doc_num').trim() || null,
+            emergencyContactName: formData.get('emergency_contact_name').trim() || null,
+            emergencyContactPhone: emergencyPhoneCleaned,
         };
 
-        if (!clientData.firstName || !clientData.lastName || !clientData.phone || !clientData.district) {
-            if (clientFormMessage) {
-                clientFormMessage.textContent = '⚠️ Por favor completa todos los campos obligatorios (marcados con *).';
+        if (!clientData.firstName || !clientData.lastName || !clientData.phone) {
+            if(clientFormMessage) {
+                clientFormMessage.textContent = 'Los campos Nombre, Apellido y Teléfono son obligatorios.';
                 clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }
+            submitButton.disabled = false;
+            submitButton.textContent = 'Guardar Cliente';
             return;
         }
 
-        if (clientData.phone === null) {
-            if (clientFormMessage) {
-                clientFormMessage.textContent = '⚠️ El teléfono principal debe tener 9 dígitos o incluir un código de país válido.';
+        if (clientData.email && !clientData.password) {
+            if(clientFormMessage) {
+                clientFormMessage.textContent = 'Si proporcionas un email, la contraseña es obligatoria.';
                 clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }
+            submitButton.disabled = false;
+            submitButton.textContent = 'Guardar Cliente';
             return;
         }
 
-        if (clientData.email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(clientData.email)) {
-                if (clientFormMessage) {
-                    clientFormMessage.textContent = '⚠️ Por favor ingresa un email válido.';
-                    clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
-                    clientFormMessage.classList.remove('hidden');
-                }
-                return;
-            }
+        const { success, error } = await registerClientFromDashboard(clientData);
 
-            if (!clientData.password || clientData.password.length < 6) {
-                if (clientFormMessage) {
-                    clientFormMessage.textContent = '⚠️ Si proporcionas email, la contraseña es obligatoria y debe tener mínimo 6 caracteres.';
-                    clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
-                    clientFormMessage.classList.remove('hidden');
-                }
-                return;
-            }
-        }
-
-        if (clientData.emergencyContactPhone !== null && clientData.emergencyContactPhone.length < 9) {
-            if (clientFormMessage) {
-                clientFormMessage.textContent = '⚠️ El teléfono de emergencia debe tener 9 dígitos o incluir un código de país válido.';
-                clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
-                clientFormMessage.classList.remove('hidden');
-            }
-            return;
-        }
-
-        if (clientFormMessage) {
-            clientFormMessage.textContent = '⏳ Registrando cliente...';
-            clientFormMessage.className = 'block p-3 rounded-md bg-blue-100 text-blue-700 text-sm mb-4';
-            clientFormMessage.classList.remove('hidden');
-        }
-
-        const submitBtn = clientForm.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.textContent;
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Registrando...';
-
-        const result = await registerClientFromDashboard(clientData);
-
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalBtnText;
-
-        if (result.success) {
-            if (clientFormMessage) {
-                const msg = clientData.email 
-                    ? '✅ Cliente registrado con acceso a la plataforma.'
-                    : '✅ Cliente registrado exitosamente (solo datos físicos).';
-                clientFormMessage.textContent = msg;
+        if (success) {
+            if(clientFormMessage) {
+                clientFormMessage.textContent = '¡Cliente registrado con éxito!';
                 clientFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }
-            
-            setTimeout(() => {
-                closeRegisterModal();
-                initializeClientsSection();
+            setTimeout(async () => {
+                closeClientModal();
+                const updatedClients = await getClients();
+                currentPage = 1; // ====== RESETEAR PÁGINA AL REGISTRAR ======
+                renderClientsTable(updatedClients);
             }, 1500);
         } else {
-            if (clientFormMessage) {
-                let errorMsg = 'No se pudo registrar el cliente.';
-                
-                if (result.error?.message?.includes('already registered')) {
-                    errorMsg = 'Ya existe un cliente con este correo electrónico.';
-                } else if (result.error?.message?.includes('duplicate')) {
-                    errorMsg = 'Ya existe un cliente con este documento.';
-                } else if (result.error?.message) {
-                    errorMsg = result.error.message;
-                }
-                
-                clientFormMessage.textContent = `❌ Error: ${errorMsg}`;
+            if(clientFormMessage) {
+                clientFormMessage.textContent = `Error: ${error.message}`;
                 clientFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }
         }
+
+        submitButton.disabled = false;
+        submitButton.textContent = 'Guardar Cliente';
     });
 };
 
 // --- LÓGICA DEL MODAL DE AGREGAR MASCOTA ---
-const openAddPetModal = (ownerId) => {
-    addPetForm.reset();
-    if (addPetFormMessage) addPetFormMessage.classList.add('hidden');
-    petOwnerIdInput.value = ownerId;
+const openAddPetModal = (clientId) => {
+    currentClientId = clientId;
+    petOwnerIdInput.value = clientId; // Rellenar el campo oculto con el ID del dueño
+    addPetFormMessage.classList.add('hidden'); // Limpiar mensajes previos
+    addPetForm.reset(); // Resetea el formulario
+    petImagePreview.classList.add('hidden'); // Oculta la imagen de vista previa
     petImagePreview.src = 'https://via.placeholder.com/100'; // Resetea la imagen
     photoFile = null; // Limpia el archivo
     addPetModal.classList.remove('hidden');
@@ -527,6 +595,7 @@ const setupAddPetModal = () => {
         const file = event.target.files[0];
         if (file) {
             photoFile = file;
+            petImagePreview.classList.remove('hidden');
             const reader = new FileReader();
             reader.onload = (e) => {
                 petImagePreview.src = e.target.result;
@@ -611,6 +680,7 @@ const setupEventListeners = () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(async () => {
             const searchTerm = event.target.value.trim();
+            currentPage = 1; // ====== RESETEAR PÁGINA AL BUSCAR ======
             clientsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-500">Buscando...</td></tr>`;
             const clients = searchTerm ? await searchClients(searchTerm) : await getClients();
             renderClientsTable(clients);
@@ -665,6 +735,7 @@ const initializeClientsSection = async () => {
         headerTitle.textContent = 'Gestión de Clientes';
     }
     
+    currentPage = 1; // ====== RESETEAR PÁGINA AL INICIALIZAR ======
     const initialClients = await getClients();
     renderClientsTable(initialClients);
     setupEventListeners();

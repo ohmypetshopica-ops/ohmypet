@@ -216,11 +216,16 @@
                             <tbody id="clients-table-body" class="divide-y divide-gray-200 md:table-row-group"></tbody>
                         </table>
                     </div>
+                    
+                    <!-- ====== CONTENEDOR DE PAGINACIÓN AGREGADO ====== -->
+                    <div id="pagination-container"></div>
+                    <!-- ====== FIN CONTENEDOR DE PAGINACIÓN ====== -->
                 </section>
             </div>
         </main>
     </div>
 
+    <!-- Modal de Registro de Cliente -->
     <div id="client-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center">
@@ -315,6 +320,7 @@
         </div>
     </div>
     
+    <!-- Modal de Detalles del Cliente -->
     <div id="client-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
             <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center flex-shrink-0">
@@ -415,6 +421,7 @@
         </div>
     </div>
 
+    <!-- Modal de Agregar Mascota -->
     <div id="add-pet-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center">
