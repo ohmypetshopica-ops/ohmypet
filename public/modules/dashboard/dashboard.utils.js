@@ -120,8 +120,7 @@ const createAppointmentRow = (appointment) => {
     const status = (appointment.status || 'pendiente').toLowerCase().trim();
     const currentStyle = statusStyles[status] || statusStyles.pendiente;
     
-    // ========================================
-    // --- INICIO DE LA CORRECCIÓN ---
+    // --- INICIO: CÓDIGO ACTUALIZADO ---
     let actionButtons = '';
     if (status === 'pendiente') {
         actionButtons = `
@@ -134,13 +133,13 @@ const createAppointmentRow = (appointment) => {
             <button data-action="completar" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors">Completar</button>
             <button data-action="reprogramar" class="text-xs bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition-colors">Reprogramar</button>
         `;
-    } else if (status === 'completada') { // <-- NUEVA CONDICIÓN
-        actionButtons = `<button data-action="edit-completed" class="text-xs bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600 transition-colors">Editar</button>`;
+    } else if (status === 'completada') {
+        // Se elimina el botón "Editar" y se reemplaza por texto
+        actionButtons = `<span class="text-xs text-gray-500 font-medium">Finalizada</span>`;
     } else {
         actionButtons = `<span class="text-xs text-gray-400">Sin acciones</span>`;
     }
-    // --- FIN DE LA CORRECCIÓN ---
-    // ========================================
+    // --- FIN: CÓDIGO ACTUALIZADO ---
 
     return `
         <tr data-appointment-id="${appointment.id}">
