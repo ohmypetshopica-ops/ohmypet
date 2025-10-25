@@ -1,10 +1,10 @@
 <div id="clients-list-view">
     <div class="mb-4 flex gap-2">
         <div class="relative flex-1">
-            <input 
-                type="text" 
-                id="client-search" 
-                placeholder="Buscar cliente..." 
+            <input
+                type="text"
+                id="client-search"
+                placeholder="Buscar cliente..."
                 class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent pr-10"
             >
             <button
@@ -18,8 +18,8 @@
                 </svg>
             </button>
         </div>
-        <button 
-            id="add-client-btn-employee" 
+        <button
+            id="add-client-btn-employee"
             class="bg-green-600 hover:bg-green-700 text-white font-bold w-12 h-12 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
             aria-label="Agregar Cliente"
         >
@@ -28,14 +28,14 @@
             </svg>
         </button>
     </div>
-    
+
     <div id="clients-list" class="space-y-3">
         </div>
 </div>
 
 <div id="client-details-view" class="hidden">
-    <button 
-        id="back-to-clients-btn" 
+    <button
+        id="back-to-clients-btn"
         class="mb-4 text-green-600 hover:text-green-700 font-semibold flex items-center"
     >
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,9 +43,85 @@
         </svg>
         Volver a la lista
     </button>
-    
-    <div id="client-details-content">
+
+    <div id="client-details-content-view">
         </div>
+
+    <div id="client-details-content-edit" class="hidden mt-4">
+        <form id="client-edit-form" class="bg-white p-6 rounded-lg shadow-sm border space-y-4">
+             <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Editar Cliente</h3>
+             <div id="edit-form-message" class="hidden"></div>
+             <input type="hidden" name="id" id="edit-client-id">
+
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                     <label class="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+                     <input type="text" name="first_name" id="edit-first-name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                 </div>
+                 <div>
+                     <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+                     <input type="text" name="last_name" id="edit-last-name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                 </div>
+             </div>
+
+             <div>
+                 <label class="block text-sm font-medium text-gray-700 mb-1">Email (No editable)</label>
+                 <input type="email" name="email" id="edit-email" readonly class="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed">
+             </div>
+
+             <div>
+                 <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
+                 <input type="tel" name="phone" id="edit-phone" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+             </div>
+
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
+                     <select name="doc_type" id="edit-doc-type" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                         <option value="">Seleccionar</option>
+                         <option value="DNI">DNI</option>
+                         <option value="Carnet de Extranjería">Carnet de Extranjería</option>
+                         <option value="Pasaporte">Pasaporte</option>
+                     </select>
+                 </div>
+                 <div>
+                     <label class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
+                     <input type="text" name="doc_num" id="edit-doc-num" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                 </div>
+             </div>
+
+             <div>
+                 <label class="block text-sm font-medium text-gray-700 mb-1">Distrito</label>
+                 <input type="text" name="district" id="edit-district" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+             </div>
+
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                     <label class="block text-sm font-medium text-gray-700 mb-1">Contacto de Emergencia</label>
+                     <input type="text" name="emergency_contact_name" id="edit-emergency-name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                 </div>
+                 <div>
+                     <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono de Emergencia</label>
+                     <input type="tel" name="emergency_contact_phone" id="edit-emergency-phone" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                 </div>
+             </div>
+
+             <div class="flex justify-end gap-3 pt-4">
+                 <button type="button" id="cancel-edit-client-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">Cancelar</button>
+                 <button type="button" id="save-client-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Guardar Cambios</button>
+             </div>
+        </form>
+    </div>
+
+    <div id="client-details-actions" class="mt-6 flex gap-3">
+         <button id="edit-client-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+             Editar Cliente
+         </button>
+         <button id="add-pet-to-client-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+             + Agregar Mascota
+         </button>
+     </div>
+
 </div>
 
 <div id="client-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
@@ -54,10 +130,10 @@
             <h2 class="text-2xl font-bold text-gray-800">Agregar Nuevo Cliente</h2>
             <p class="text-sm text-gray-500 mt-1">Completa los datos del cliente</p>
         </div>
-        
+
         <form id="client-form-employee" class="p-6 space-y-4 overflow-y-auto hide-scrollbar flex-1">
             <div id="client-form-message-employee" class="hidden"></div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nombres <span class="text-red-500">*</span></label>
@@ -68,22 +144,22 @@
                     <input type="text" name="last_name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                 </div>
             </div>
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Email (Opcional)</label>
                 <input type="email" name="email" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
             </div>
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono <span class="text-red-500">*</span></label>
                 <input type="tel" name="phone" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
             </div>
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Distrito</label>
                 <input type="text" name="district" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
@@ -100,7 +176,7 @@
                 </div>
             </div>
         </form>
-        
+
         <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t flex-shrink-0">
             <button type="button" id="cancel-client-button-employee" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors">
                 Cancelar
