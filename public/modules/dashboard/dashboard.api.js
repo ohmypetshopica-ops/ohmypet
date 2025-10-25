@@ -780,8 +780,7 @@ export const updateClientProfile = async (clientId, profileData) => {
 };
 // --- FIN NUEVA FUNCIÓN ---
 
-// ========================================
-// --- INICIO: FUNCIÓN PARA REPROGRAMAR ACTUALIZADA ---
+// --- INICIO: CÓDIGO ACTUALIZADO ---
 export const rescheduleAppointmentFromDashboard = async (appointmentId, updatedData) => {
     const dataToUpdate = {
         ...updatedData,
@@ -800,8 +799,7 @@ export const rescheduleAppointmentFromDashboard = async (appointmentId, updatedD
     }
     return { success: true, data: data[0] };
 };
-// --- FIN: FUNCIÓN ACTUALIZADA ---
-// ========================================
+// --- FIN: CÓDIGO ACTUALIZADO ---
 
 // =================== CÓDIGO A AGREGAR ===================
 /**

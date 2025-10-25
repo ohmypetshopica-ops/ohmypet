@@ -419,21 +419,12 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
 
     const appointment = allAppointments.find(app => app.id == appointmentId);
     
-    // ========================================
-    // --- INICIO DE LA CORRECCIÓN ---
-    if (appointment && appointment.status === 'completada') {
-        // MODO EDICIÓN: Ocultamos el botón de completar y cambiamos el texto del otro.
-        confirmCompletionBtn.classList.add('hidden');
-        saveDuringAppointmentBtn.textContent = '💾 Guardar Cambios';
-        document.querySelector('#completion-modal h3').textContent = 'Editar Detalles de Cita';
-    } else {
-        // MODO COMPLETAR: Mostramos ambos botones con su texto original.
-        confirmCompletionBtn.classList.remove('hidden');
-        saveDuringAppointmentBtn.textContent = '💾 Guardar Información (Continuar editando)';
-        document.querySelector('#completion-modal h3').textContent = 'Completar Cita';
-    }
-    // --- FIN DE LA CORRECCIÓN ---
-    // ========================================
+    // --- INICIO: CÓDIGO ACTUALIZADO (Lógica de edición eliminada) ---
+    // MODO COMPLETAR (única opción ahora)
+    confirmCompletionBtn.classList.remove('hidden');
+    saveDuringAppointmentBtn.textContent = '💾 Guardar Información (Continuar editando)';
+    document.querySelector('#completion-modal h3').textContent = 'Completar Cita';
+    // --- FIN: CÓDIGO ACTUALIZADO ---
 
     completionModal.classList.remove('hidden');
 
@@ -477,13 +468,8 @@ const closeCompletionModal = () => {
     departurePhotoFile = null;
     receiptFile = null;
 
-    // ========================================
-    // --- INICIO: RESETEAR BOTONES ---
-    // Nos aseguramos de que los botones vuelvan a su estado original al cerrar el modal.
     confirmCompletionBtn.classList.remove('hidden');
     saveDuringAppointmentBtn.textContent = '💾 Guardar Información (Continuar editando)';
-    // --- FIN: RESETEAR BOTONES ---
-    // ========================================
 };
 
 
@@ -542,9 +528,8 @@ const initializePage = async () => {
             }
         } else if (action === 'reprogramar') {
             openRescheduleModal(appointmentId);
-        // ========================================
-        // --- INICIO: MANEJO DEL BOTÓN DE EDICIÓN ---
-        } else if (action === 'completar' || action === 'edit-completed') {
+        // --- INICIO: CÓDIGO ACTUALIZADO ---
+        } else if (action === 'completar') { // Se elimina la condición 'edit-completed'
             const appointment = allAppointments.find(app => app.id == appointmentId);
             if (appointment) {
                 const petName = appointment.pets?.name || 'N/A';
@@ -552,8 +537,7 @@ const initializePage = async () => {
                 openCompletionModal(appointmentId, petName, petId);
             }
         }
-        // --- FIN: MANEJO DEL BOTÓN DE EDICIÓN ---
-        // ========================================
+        // --- FIN: CÓDIGO ACTUALIZADO ---
     });
 
     cancelCompletionBtn?.addEventListener('click', closeCompletionModal);
@@ -645,14 +629,10 @@ const initializePage = async () => {
             uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-green-100 text-green-700';
             uploadMessage.textContent = '✓ Información guardada correctamente';
 
-            // ========================================
-            // --- INICIO DE LA CORRECCIÓN ---
             setTimeout(async () => {
                 closeCompletionModal();
                 await loadAppointmentsAndRender();
             }, 1500);
-            // --- FIN DE LA CORRECCIÓN ---
-            // ========================================
 
         } catch (error) {
             uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
