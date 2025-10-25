@@ -65,7 +65,7 @@ export const renderCalendar = async () => {
     const firstDayStr = new Date(year, month, 1).toISOString().split('T')[0];
     const lastDayStr = new Date(year, month + 1, 0).toISOString().split('T')[0];
     
-    // Obtenemos TODOS los eventos para determinar si un día está 'ocupado'
+    // Obtenemos solo citas (eliminamos la llamada a blocked_slots)
     const appointmentsRes = await supabase
         .from('appointments')
         .select(`id, appointment_date, appointment_time, service, status, pet_id, user_id, 
@@ -73,16 +73,11 @@ export const renderCalendar = async () => {
         .gte('appointment_date', firstDayStr)
         .lte('appointment_date', lastDayStr);
     
-    const blockedRes = await supabase
-        .from('blocked_slots')
-        .select('blocked_date, blocked_time, reason')
-        .gte('blocked_date', firstDayStr)
-        .lte('blocked_date', lastDayStr);
     
     // Guardamos todas las citas en el estado para la vista de detalle
     updateState('allAppointments', appointmentsRes.data || []);
     
-    const allEvents = [...(appointmentsRes.data || []), ...(blockedRes.data || [])];
+    const allEvents = appointmentsRes.data || []; // Solo citas
     
     // Calcular días del mes
     const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Domingo, 1 = Lunes
@@ -94,8 +89,8 @@ export const renderCalendar = async () => {
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     dayNames.forEach(day => {
         const dayHeader = document.createElement('div');
-        // Estilo muy limpio: texto centrado y pequeño.
-        dayHeader.className = 'p-2 text-center font-semibold text-gray-500 text-sm';
+        // Estilo fijo para encabezado
+        dayHeader.className = 'p-2 text-center font-semibold text-gray-700 text-sm border-b border-r border-gray-200 bg-gray-100';
         dayHeader.textContent = day.charAt(0); // Solo la primera letra
         calendarGrid.appendChild(dayHeader);
     });
@@ -113,7 +108,7 @@ export const renderCalendar = async () => {
         const dateObj = new Date(year, month, day);
         const dateStr = dateObj.toISOString().split('T')[0];
         const dayEvents = allEvents.filter(e => {
-            const eventDate = e.appointment_date || e.blocked_date;
+            const eventDate = e.appointment_date;
             return eventDate === dateStr;
         });
         const dayCell = createDayCell(day, false, year, month, dayEvents);
@@ -140,18 +135,18 @@ const createDayCell = (day, isOtherMonth, year, month, dayEvents) => {
     
     const hasEvents = dayEvents.length > 0;
     
-    // Estilo de celda: Sin bordes gruesos, solo sutil.
-    let cellClasses = 'p-2 text-center h-16 flex flex-col items-center justify-center transition-all duration-200 rounded-lg cursor-pointer';
+    // Determinar clase de fondo: Si tiene eventos (y no es otro mes), usar verde claro.
+    const eventClass = hasEvents && !isOtherMonth ? 'bg-green-100' : 'bg-white';
+    
+    // Eliminamos el borde de cuadrícula y usamos el estilo limpio
+    let cellClasses = 'p-2 text-center flex flex-col items-center justify-center transition-all duration-200 rounded-lg cursor-pointer h-16';
 
-    // Clase de día actual (fondo verde)
     if (isToday && !isOtherMonth) {
-        cellClasses += ' bg-green-600 text-white font-bold transform scale-105';
+        cellClasses += ' bg-green-600 text-white font-bold transform scale-105 shadow-md';
     } else if (isOtherMonth) {
-        // Estilo de día de otro mes (gris sutil, sin interacción)
         cellClasses += ' text-gray-400 cursor-default';
     } else {
-        // Días normales
-        cellClasses += ' text-gray-900 hover:bg-gray-100';
+        cellClasses += ` ${eventClass} text-gray-900 hover:bg-gray-200`;
     }
 
     cell.className = cellClasses;
@@ -161,37 +156,16 @@ const createDayCell = (day, isOtherMonth, year, month, dayEvents) => {
     
     // Si tiene eventos (y no es hoy), el número del día se pone en negrita.
     const isDayBold = hasEvents && !isToday && !isOtherMonth ? 'font-bold' : 'font-normal';
-
     dayNumber.className = `text-lg ${isDayBold}`;
     dayNumber.textContent = day;
     cell.appendChild(dayNumber);
     
-    // Aquí es donde mostramos los puntos de estado sin la etiqueta de resumen
-    if (hasEvents && !isOtherMonth) {
-        const indicators = document.createElement('div');
-        indicators.className = 'flex flex-wrap gap-1 justify-center mt-1';
+    if (!isOtherMonth) {
         
-        const appointmentsCount = dayEvents.filter(e => e.status).length;
-        const blockedCount = dayEvents.filter(e => e.blocked_date).length;
+        // ********************************************
+        // ELIMINADO: El resumen de citas ha sido removido
+        // ********************************************
 
-        // Si hay citas, mostrar un punto verde
-        if (appointmentsCount > 0) {
-            const dot = document.createElement('span');
-            dot.className = 'w-2 h-2 rounded-full bg-green-500';
-            indicators.appendChild(dot);
-        }
-        // Si hay bloqueos, mostrar un punto rojo
-        if (blockedCount > 0) {
-            const dot = document.createElement('span');
-            dot.className = 'w-2 h-2 rounded-full bg-red-500';
-            indicators.appendChild(dot);
-        }
-        
-        cell.appendChild(indicators);
-        cell.addEventListener('click', () => openDayDetails(dateStr));
-
-    } else if (!isOtherMonth && !isToday) {
-        // Días sin eventos ni hoy, pero clickeables.
         cell.addEventListener('click', () => openDayDetails(dateStr));
     }
     
@@ -199,7 +173,6 @@ const createDayCell = (day, isOtherMonth, year, month, dayEvents) => {
 };
 
 const openDayDetails = (dateStr) => {
-    // Lógica para abrir la vista de detalle (no se modificó a petición del usuario)
     updateState('selectedDate', dateStr);
     
     // 1. Mostrar la vista de detalle
@@ -215,12 +188,13 @@ const openDayDetails = (dateStr) => {
     // 3. Establecer el título de la vista de detalle
     detailsViewDateTitle.textContent = dateTitle.charAt(0).toUpperCase() + dateTitle.slice(1);
 
-    // 4. Filtrar y ordenar citas y bloqueos para el día
+    // 4. Filtrar y ordenar solo citas para el día
     const dayAppointments = state.allAppointments
         .filter(app => app.appointment_date === dateStr)
         .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
     
     // Obtenemos bloqueos de nuevo para la vista de detalle (usando la API)
+    // Se mantiene la llamada a blocked_slots aquí para la vista de detalle, aunque no se usen en el calendario principal.
     supabase.from('blocked_slots')
         .select('*')
         .eq('blocked_date', dateStr)
@@ -229,7 +203,7 @@ const openDayDetails = (dateStr) => {
             
             dailyAppointmentsList.innerHTML = '';
 
-            // Mostrar Bloqueos (Si existieran, aunque el usuario pidió eliminarlos, los dejamos por si la lógica de negocio los requiere)
+            // Mostrar Bloqueos (Si existieran, aunque no se marquen en el calendario)
             if (blockedSlots.length > 0) {
                 dailyAppointmentsList.innerHTML += `<h4 class="font-bold text-red-600 mb-3 mt-4 flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
@@ -248,10 +222,13 @@ const openDayDetails = (dateStr) => {
             // Mostrar Citas Agendadas
             if (dayAppointments.length > 0) {
                 const totalAppointments = dayAppointments.length;
+                
+                // Título de Citas Agendadas
                 dailyAppointmentsList.innerHTML += `<h4 class="font-bold text-green-600 mb-3 mt-4 flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                     Citas Agendadas (${totalAppointments})
                 </h4>`;
+                
                 dayAppointments.forEach(app => {
                     const statusColors = {
                         'pendiente': 'bg-yellow-100 text-yellow-800',
@@ -272,15 +249,16 @@ const openDayDetails = (dateStr) => {
                     
                     const statusText = app.status.charAt(0).toUpperCase() + app.status.slice(1);
                     
+                    // Se mantiene el diseño plano para la tarjeta de cita (sin sombra)
                     dailyAppointmentsList.innerHTML += `
-                        <div class="bg-gray-50 p-4 rounded-lg border flex items-center space-x-3">
+                        <div class="bg-white p-4 rounded-lg border hover:bg-gray-50 transition-colors duration-200 flex items-center space-x-3">
                             <img src="${petImage}" alt="${app.pets?.name}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
                             <div class="flex-1 min-w-0">
-                                <p class="font-bold text-lg text-gray-800">${app.pets?.name || 'N/A'} <span class="text-xs text-gray-500">${ownerName}</span></p>
+                                <p class="font-bold text-lg text-gray-800">${app.pets?.name || 'N/A'} <span class="text-sm text-gray-500">${ownerName}</span></p>
                                 <p class="text-sm text-gray-600">${app.service || 'Sin servicio especificado'}</p>
                             </div>
                             <div class="text-right flex flex-col items-end flex-shrink-0">
-                                <p class="font-bold text-lg text-gray-900">${app.appointment_time.slice(0, 5)}</p>
+                                <p class="font-bold text-xl text-gray-900">${app.appointment_time.slice(0, 5)}</p>
                                 <span class="text-xs font-semibold ${statusColors[app.status] || 'bg-gray-100 text-gray-800'} px-2 py-0.5 rounded mt-1">
                                     ${statusText}
                                 </span>
