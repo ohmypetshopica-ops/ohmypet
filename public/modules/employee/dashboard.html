@@ -7,7 +7,7 @@
     <title>Dashboard Empleado - OhMyPet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos existentes */
+        /* Estilos básicos y de botones (sin cambios) */
         .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .nav-btn { width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; background-color: transparent; position: relative; }
@@ -28,44 +28,48 @@
             #completed-services-table-body td:before { content: attr(data-label); font-weight: 600; display: block; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.25rem; }
         }
 
-        /* ---- CSS CORREGIDO Y FINAL ---- */
+        /* ---- CSS CORREGIDO PARA LAYOUT FLEXBOX ---- */
         html, body {
            height: 100%;
            overflow: hidden; /* Evita el scroll en el body */
+           margin: 0;
         }
         .main-container {
-           height: 100vh; /* Ocupa toda la altura de la ventana */
+           height: 100vh; /* Altura completa */
            display: flex;
-           flex-direction: column;
+           flex-direction: column; /* Apila header, main, footer */
+           width: 100%;
+           max-width: 28rem; /* max-w-md para simular móvil en escritorio */
            margin-left: auto;
            margin-right: auto;
            background-color: white;
            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-           width: 100%;
+        }
+        header {
+            flex-shrink: 0; /* El header no se encoge */
+            /* Estilos del header ya definidos por Tailwind */
         }
         .content-area {
-            flex-grow: 1; /* Hace que esta área ocupe todo el espacio disponible */
-            overflow-y: auto; /* Permite el scroll solo en esta área */
+            flex-grow: 1; /* Ocupa todo el espacio vertical restante */
+            overflow-y: auto; /* Permite el scroll SÓLO en esta área */
             background-color: #F9FAFB; /* bg-gray-100 */
+            /* Ya no necesita padding-bottom */
         }
         .bottom-nav-container {
-            flex-shrink: 0; /* Evita que la barra de navegación se encoja */
-            border-top: 1px solid #E5E7EB;
+            flex-shrink: 0; /* El footer (nav) no se encoge */
+            width: 100%;
             background-color: white;
+            border-top: 1px solid #E5E7EB;
         }
-        .bottom-nav { 
-            height: 64px; 
+        .bottom-nav {
+            height: 64px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
             padding: 8px 12px;
         }
-        
-        /* Limitar ancho solo en pantallas grandes */
-        @media (min-width: 768px) {
-             .main-container {
-                max-width: 28rem; /* max-w-md */
-             }
-        }
-        
-        /* Ajuste específico para la barra inferior en iOS Safari */
+
+        /* Ajuste específico para iOS Safari (notch, etc.) */
         @supports (-webkit-touch-callout: none) {
           .main-container {
              height: -webkit-fill-available;
@@ -81,7 +85,7 @@
 <body class="bg-gray-100">
     <div class="main-container">
 
-        <header class="bg-white border-b border-gray-200 p-4 flex justify-between items-center flex-shrink-0">
+        <header class="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
              <h1 id="header-title" class="text-2xl font-bold text-gray-800">Clientes</h1>
              <div class="flex items-center gap-2">
                  <button data-view="pos" id="pos-view-btn" class="header-btn header-btn-cart" aria-label="Punto de Venta">
