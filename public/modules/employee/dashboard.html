@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Empleado - Veterinaria Huellitas Felices</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Dashboard Empleado - OhMyPet</title> <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Ocultar scrollbar pero mantener funcionalidad */
         .hide-scrollbar {
@@ -24,14 +23,14 @@
         .bottom-nav {
             background: white;
             border-top: 1px solid #E5E7EB;
-            padding: 8px 20px;
+            padding: 8px 12px; /* Reducido padding horizontal */
             height: 64px;
         }
 
         .nav-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 24px;
+            width: 44px; /* Reducido tamaño */
+            height: 44px; /* Reducido tamaño */
+            border-radius: 22px; /* Ajustado */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -97,32 +96,45 @@
         .header-btn-logout:hover {
             background-color: #FEE2E2;
         }
-
-        /* Agregar al final de la sección <style> en dashboard.html */
-        .hide-scrollbar {
-            scrollbar-width: none;
-            /* Firefox */
-            -ms-overflow-style: none;
-            /* IE and Edge */
-        }
-
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-            /* Chrome, Safari, Opera */
+        /* Estilos responsivos para la tabla de servicios completados */
+        @media (max-width: 767px) {
+            #completed-services-table-body thead {
+                display: none;
+            }
+            #completed-services-table-body tr {
+                display: block;
+                margin-bottom: 1rem;
+                border: 1px solid #e5e7eb;
+                border-radius: 0.5rem;
+                padding: 1rem;
+                background: white;
+            }
+            #completed-services-table-body td {
+                display: block;
+                text-align: left !important;
+                padding: 0.5rem 0 !important;
+                border: none;
+            }
+            #completed-services-table-body td:before {
+                content: attr(data-label);
+                font-weight: 600;
+                display: block;
+                color: #6b7280;
+                font-size: 0.75rem; /* text-xs */
+                text-transform: uppercase;
+                margin-bottom: 0.25rem;
+            }
         }
     </style>
 </head>
 
 <body class="bg-gray-100">
-    <!-- Contenedor principal con estructura móvil -->
     <div class="flex flex-col h-screen max-w-md mx-auto bg-white shadow-xl">
 
-        <!-- Header -->
         <header class="bg-white border-b border-gray-200 p-4 flex justify-between items-center flex-shrink-0">
             <h1 id="header-title" class="text-2xl font-bold text-gray-800">Clientes</h1>
 
             <div class="flex items-center gap-2">
-                <!-- Botón de carrito (POS) -->
                 <button data-view="pos" id="pos-view-btn" class="header-btn header-btn-cart"
                     aria-label="Punto de Venta">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -131,77 +143,54 @@
                     </svg>
                 </button>
 
-                <!-- Botón de logout -->
                 <button id="logout-button" class="header-btn header-btn-logout">
                     Salir
                 </button>
             </div>
         </header>
 
-        <!-- Contenedor de vistas - SIN SCROLLBAR VISIBLE -->
         <main class="flex-1 overflow-y-auto p-4 hide-scrollbar">
 
-            <!-- Vista de Clientes -->
             <div id="clients-view" class="view-section">
-                <!-- El contenido se carga dinámicamente desde employee-clients.html -->
-            </div>
+                </div>
 
-            <!-- Vista de Mascotas -->
             <div id="pets-view" class="view-section hidden">
-                <!-- El contenido se carga dinámicamente desde employee-pets.html -->
-            </div>
+                </div>
 
-            <!-- Vista de Citas -->
             <div id="appointments-view" class="view-section hidden">
-                <!-- El contenido se carga dinámicamente desde employee-appointments.html -->
-            </div>
+                </div>
 
-            <!-- Vista de Calendario -->
             <div id="calendar-view" class="view-section hidden">
-                <!-- El contenido se carga dinámicamente desde employee-calendar.html -->
-            </div>
+                </div>
 
-            <!-- Vista de POS (Punto de Venta) -->
+             <div id="services-view" class="view-section hidden">
+                 </div>
+
             <div id="pos-view" class="view-section hidden">
-                <!-- El contenido se carga dinámicamente desde employee-pos.html -->
-            </div>
+                </div>
 
         </main>
 
-        <!-- Navegación inferior con fondo blanco -->
         <nav class="bottom-nav flex justify-around items-center flex-shrink-0">
             <button data-view="clients" class="nav-btn active" aria-label="Clientes">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             </button>
-
             <button data-view="pets" class="nav-btn" aria-label="Mascotas">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </button>
-
             <button data-view="appointments" class="nav-btn" aria-label="Citas">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
             </button>
-
+             <button data-view="services" class="nav-btn" aria-label="Servicios Completados">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </button>
             <button data-view="calendar" class="nav-btn" aria-label="Calendario">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             </button>
         </nav>
 
     </div>
 
-    <!-- Scripts -->
     <script type="module" src="dashboard.js"></script>
 </body>
 
