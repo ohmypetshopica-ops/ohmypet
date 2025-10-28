@@ -128,7 +128,7 @@
                 </div>
                 <button id="close-mobile-menu" class="p-2 hover:bg-green-100 rounded-lg transition-colors">
                     <svg class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
@@ -217,15 +217,12 @@
                         </table>
                     </div>
                     
-                    <!-- ====== CONTENEDOR DE PAGINACIÓN AGREGADO ====== -->
                     <div id="pagination-container"></div>
-                    <!-- ====== FIN CONTENEDOR DE PAGINACIÓN ====== -->
-                </section>
+                    </section>
             </div>
         </main>
     </div>
 
-    <!-- Modal de Registro de Cliente -->
     <div id="client-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center">
@@ -320,7 +317,6 @@
         </div>
     </div>
     
-    <!-- Modal de Detalles del Cliente -->
     <div id="client-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
             <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center flex-shrink-0">
@@ -421,7 +417,6 @@
         </div>
     </div>
 
-    <!-- Modal de Agregar Mascota -->
     <div id="add-pet-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl flex justify-between items-center">
@@ -497,6 +492,88 @@
         </div>
     </div>
 
+    <div id="multi-appointment-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[70] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
+            <div class="p-6 border-b flex-shrink-0">
+                <h2 class="text-2xl font-bold text-gray-800">Agendar Cita para Múltiples Mascotas</h2>
+                <p class="text-sm text-gray-500 mt-1">Cliente: <span id="multi-apt-client-name" class="font-semibold text-green-600"></span></p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                    <div id="multi-apt-progress-bar" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%; transition: width 0.3s ease-in-out;"></div>
+                </div>
+            </div>
+
+            <form id="multi-appointment-form" class="w-full flex flex-col flex-1">
+                <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                    <div id="multi-apt-step-1-date" class="multi-apt-step space-y-4">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Paso 1: Seleccionar Fecha</h3>
+                        <div class="mb-4">
+                            <label for="multi-apt-date" class="block text-sm font-medium text-gray-700 mb-1">Fecha de la Cita *</label>
+                            <input type="date" id="multi-apt-date" required
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                        <div id="multi-apt-date-message" class="hidden p-3 rounded-lg text-sm"></div>
+                    </div>
+
+                    <div id="multi-apt-step-2-pets" class="multi-apt-step hidden space-y-4">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Paso 2: Seleccionar Mascotas</h3>
+                        <p class="text-sm text-gray-600">Marca las mascotas que asistirán a la cita este día:</p>
+                        <div id="multi-apt-pet-checklist" class="space-y-2 max-h-40 overflow-y-auto p-2 border rounded-lg">
+                            <p class="text-center text-gray-400">Cargando mascotas...</p>
+                        </div>
+                        <div id="multi-apt-pet-message" class="hidden p-3 rounded-lg text-sm"></div>
+                    </div>
+
+                    <div id="multi-apt-step-3-details" class="multi-apt-step hidden space-y-4">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Paso 3: Detalles (Mascota <span id="multi-apt-pet-counter">1</span> de <span id="multi-apt-pet-total">X</span>: <span id="multi-apt-current-pet-name" class="text-green-600"></span>)</h3>
+                        
+                        <div>
+                            <label for="multi-apt-service" class="block text-sm font-medium text-gray-700 mb-1">Servicio *</label>
+                            <select id="multi-apt-service" required
+                                class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500">
+                                <option value="">Selecciona un servicio...</option>
+                                <option value="BAÑO">BAÑO</option>
+                                <option value="BAÑO Y CORTE">BAÑO Y CORTE</option>
+                                <option value="SERVICIO DE COLORIMETRÍA">SERVICIO DE COLORIMETRÍA</option>
+                                <option value="CORTE DE UÑAS">CORTE DE UÑAS</option>
+                                <option value="DESPARASITACIÓN">DESPARASITACIÓN</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="multi-apt-time" class="block text-sm font-medium text-gray-700 mb-1">Hora *</label>
+                            <select id="multi-apt-time" required
+                                class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500"
+                                disabled>
+                                <option value="">Cargando horas disponibles...</option>
+                            </select>
+                            <p id="multi-apt-time-message" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                        
+                        <div>
+                            <label for="multi-apt-notes" class="block text-sm font-medium text-gray-700 mb-1">Notas Adicionales (Opcional)</label>
+                            <textarea id="multi-apt-notes" rows="3"
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                placeholder="Ej: Corte cachorro, usar champú especial, etc."></textarea>
+                        </div>
+                        
+                        <div id="multi-apt-individual-message" class="hidden p-3 rounded-lg text-sm"></div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t flex-shrink-0">
+                    <button type="button" id="multi-apt-back-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors">
+                        ⬅️ Atrás
+                    </button>
+                    <button type="button" id="multi-apt-next-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                        Siguiente
+                    </button>
+                    <button type="button" id="multi-apt-finish-btn" class="hidden bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                        Finalizar Cita
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
     <script type="module">
         const CACHE_VERSION = Date.now();
 

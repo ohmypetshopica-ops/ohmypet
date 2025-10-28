@@ -1,10 +1,19 @@
 // public/modules/dashboard/dashboard-clients.js
 
-import { getClients, searchClients, getClientDetails, registerClientFromDashboard, addPetFromDashboard, updateClientProfile } from './dashboard.api.js';
-import { supabase } from '../../core/supabase.js'; // Necesario para subir imágenes
+import { 
+    getClients, 
+    searchClients, 
+    getClientDetails, 
+    registerClientFromDashboard, 
+    addPetFromDashboard, 
+    updateClientProfile,
+    getClientsWithPets,
+    getBookedTimesForDashboard,
+    addAppointmentFromDashboard
+} from './dashboard.api.js';
+import { supabase } from '../../core/supabase.js'; 
 
 // --- INICIO DE LA CORRECCIÓN: Bandera de inicialización ---
-// Esta bandera previene que los event listeners se registren múltiples veces si el script se carga más de una vez.
 let isInitialized = false;
 // --- FIN DE LA CORRECCIÓN ---
 
@@ -12,7 +21,16 @@ let isInitialized = false;
 let currentPage = 1;
 const itemsPerPage = 8; // Número de clientes por página
 let allClientsData = []; // Almacena todos los clientes
+let allClientsWithPets = []; // <<-- NUEVO: Almacena clientes con info de mascotas
 // ====== FIN VARIABLES DE PAGINACIÓN ======
+
+// ====== ESTADO PARA AGENDAMIENTO MÚLTIPLE ======
+let currentMultiAptClient = null;
+let currentSchedulingStep = 1; // 1: Date, 2: Pets, 3: Details Loop
+let petsToSchedule = []; // Array de IDs de las mascotas seleccionadas
+let scheduledAppointments = 0; // Contador de citas ya agendadas
+let currentPetIndex = 0; // Índice de la mascota actual en el paso 3
+// ====== FIN ESTADO MÚLTIPLE ======
 
 // ====== FUNCIÓN createClientRow DEFINIDA LOCALMENTE ======
 const createClientRow = (client) => {
@@ -28,6 +46,11 @@ const createClientRow = (client) => {
         const date = new Date(client.last_appointment_date);
         lastAppointmentText = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
+    
+    // --- LÓGICA DEL BOTÓN DE AGENDAMIENTO ---
+    const scheduleButton = `
+        <button class="text-green-600 hover:text-green-900 font-medium ml-4 agendar-cita-btn" data-client-id="${client.id}" data-client-name="${displayName}">Agendar Cita</button>
+    `;
 
     return `
         <tr class="hover:bg-gray-50 cursor-pointer" data-client-id="${client.id}">
@@ -44,8 +67,9 @@ const createClientRow = (client) => {
                 ${petsCount} ${petsCount === 1 ? 'mascota' : 'mascotas'}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${lastAppointmentText}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium flex items-center justify-end">
                 <button class="text-indigo-600 hover:text-indigo-900 view-details-btn" data-client-id="${client.id}">Ver Detalles</button>
+                ${petsCount > 0 ? scheduleButton : ''} 
             </td>
         </tr>
     `;
@@ -55,26 +79,17 @@ const createClientRow = (client) => {
 // --- UTILITY: LIMPIEZA DE NÚMEROS DE TELÉFONO ---
 const cleanPhoneNumber = (rawNumber) => {
     if (!rawNumber) return null;
-    
-    // 1. Eliminar todos los caracteres que no son dígitos, excepto el signo '+'
     let cleaned = rawNumber.replace(/[^\d+]/g, '');
-    
-    // 2. Si el número no tiene 9 dígitos exactos y no comienza con '+', se considera inválido por ahora.
-    //    Si comienza con '+', se almacena el número completo (código de país).
     if (cleaned.length < 9 || (cleaned.length > 9 && !cleaned.startsWith('+'))) {
-        // En este caso, si no tiene 9 dígitos exactos, y no tiene un '+' inicial (que indica código de país),
-        // lo forzamos a ser 9 dígitos si es posible, si no, se devuelve como inválido.
         let digitsOnly = cleaned.replace(/\D/g, '');
         if (digitsOnly.length === 9) {
-            return digitsOnly; // 9 dígitos locales
+            return digitsOnly;
         }
         if (digitsOnly.length > 9) {
-            return digitsOnly.slice(-9); // Forzar 9 dígitos locales si es más largo
+            return digitsOnly.slice(-9);
         }
-        return null; // Inválido
+        return null;
     }
-    
-    // 3. Si tiene un '+' o tiene 9 dígitos exactos, se devuelve limpio (ej: +51987654321 o 987654321)
     return cleaned;
 };
 // --- FIN UTILITY ---
@@ -84,26 +99,25 @@ const cleanPhoneNumber = (rawNumber) => {
 const clientsTableBody = document.querySelector('#clients-table-body');
 const clientSearchInput = document.querySelector('#client-search-input');
 const headerTitle = document.querySelector('#header-title');
-const paginationContainer = document.querySelector('#pagination-container'); // ====== ELEMENTO AGREGADO ======
+const paginationContainer = document.querySelector('#pagination-container');
 
 // --- ELEMENTOS DEL MODAL DE DETALLES ---
 const clientDetailsModal = document.querySelector('#client-details-modal');
 const modalCloseBtn = document.querySelector('#modal-close-btn');
 const modalClientName = document.querySelector('#modal-client-name');
-const modalContentView = document.querySelector('#modal-content-body-view'); // Contenedor de la vista
-const modalContentEdit = document.querySelector('#client-edit-mode'); // Contenedor del modo edición
-const clientEditForm = document.querySelector('#client-edit-form'); // Formulario de edición
-const editFormMessage = document.querySelector('#edit-form-message'); // Mensaje de error/éxito en edición
+const modalContentView = document.querySelector('#modal-content-body-view');
+const modalContentEdit = document.querySelector('#client-edit-mode');
+const clientEditForm = document.querySelector('#client-edit-form');
+const editFormMessage = document.querySelector('#edit-form-message');
 
-let currentClientId = null; // Variable para guardar el ID del cliente que se está viendo
-let currentClientProfile = null; // Variable para guardar los datos originales del cliente
+let currentClientId = null;
+let currentClientProfile = null;
 
 // --- ELEMENTOS DE EDICIÓN Y FOOTER ---
 const editClientBtn = document.querySelector('#edit-client-btn');
 const saveClientBtn = document.querySelector('#save-client-btn');
 const cancelEditClientBtn = document.querySelector('#cancel-edit-client-btn');
-const modalAddPetBtnFooter = document.querySelector('#modal-add-pet-btn-footer'); // Botón de agregar mascota en el footer
-
+const modalAddPetBtnFooter = document.querySelector('#modal-add-pet-btn-footer');
 
 // --- ELEMENTOS DEL MODAL DE REGISTRO DE CLIENTE---
 const addClientButton = document.querySelector('#add-client-button');
@@ -122,7 +136,29 @@ const addPetFormMessage = document.querySelector('#add-pet-form-message');
 const petOwnerIdInput = document.querySelector('#pet-owner-id');
 const petPhotoInput = document.querySelector('#pet-photo');
 const petImagePreview = document.querySelector('#pet-image-preview');
-let photoFile = null; // Variable para almacenar el archivo de la foto
+let photoFile = null;
+
+// --- ELEMENTOS DEL MODAL DE AGENDAMIENTO MÚLTIPLE (NUEVOS) ---
+const multiAppointmentModal = document.querySelector('#multi-appointment-modal');
+const multiAptClientName = document.querySelector('#multi-apt-client-name');
+const multiAptProgressBar = document.querySelector('#multi-apt-progress-bar');
+const multiAptDateInput = document.querySelector('#multi-apt-date');
+const multiAptDateMessage = document.querySelector('#multi-apt-date-message');
+const multiAptPetChecklist = document.querySelector('#multi-apt-pet-checklist');
+const multiAptPetMessage = document.querySelector('#multi-apt-pet-message');
+const multiAptPetCounter = document.querySelector('#multi-apt-pet-counter');
+const multiAptPetTotal = document.querySelector('#multi-apt-pet-total');
+const multiAptCurrentPetName = document.querySelector('#multi-apt-current-pet-name');
+const multiAptServiceSelect = document.querySelector('#multi-apt-service');
+const multiAptTimeSelect = document.querySelector('#multi-apt-time');
+const multiAptTimeMessage = document.querySelector('#multi-apt-time-message');
+const multiAptNotesTextarea = document.querySelector('#multi-apt-notes');
+const multiAptIndividualMessage = document.querySelector('#multi-apt-individual-message');
+const multiAptBackBtn = document.querySelector('#multi-apt-back-btn');
+const multiAptNextBtn = document.querySelector('#multi-apt-next-btn');
+const multiAptFinishBtn = document.querySelector('#multi-apt-finish-btn');
+const multiAptSteps = document.querySelectorAll('.multi-apt-step');
+const closeMultiAptModalBtn = multiAppointmentModal?.querySelector('.p-6 button');
 
 // ====== FUNCIÓN DE RENDERIZADO DE PAGINACIÓN AGREGADA ======
 const renderPagination = (totalItems) => {
@@ -137,7 +173,6 @@ const renderPagination = (totalItems) => {
 
     let paginationHTML = '<div class="flex justify-center items-center gap-2 mt-6">';
     
-    // Botón Anterior (solo si no estamos en la primera página)
     if (currentPage > 1) {
         paginationHTML += `
             <button data-page="${currentPage - 1}" 
@@ -147,7 +182,6 @@ const renderPagination = (totalItems) => {
         `;
     }
 
-    // Números de página (mostrar máximo 3 números)
     const maxVisible = 3;
     let startPage = Math.max(1, currentPage - 1);
     let endPage = Math.min(totalPages, startPage + maxVisible - 1);
@@ -165,7 +199,6 @@ const renderPagination = (totalItems) => {
         `;
     }
 
-    // Botón Siguiente (solo si no estamos en la última página)
     if (currentPage < totalPages) {
         paginationHTML += `
             <button data-page="${currentPage + 1}" 
@@ -178,7 +211,6 @@ const renderPagination = (totalItems) => {
     paginationHTML += '</div>';
     paginationContainer.innerHTML = paginationHTML;
 
-    // Agregar listeners a los botones de paginación
     paginationContainer.querySelectorAll('button[data-page]').forEach(button => {
         button.addEventListener('click', () => {
             const newPage = parseInt(button.dataset.page);
@@ -195,9 +227,8 @@ const renderPagination = (totalItems) => {
 const renderClientsTable = (clients) => {
     if (!clientsTableBody) return;
     
-    allClientsData = clients; // Guardar todos los clientes
+    allClientsData = clients;
     
-    // Calcular índices para la paginación
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedClients = clients.slice(startIndex, endIndex);
@@ -206,30 +237,297 @@ const renderClientsTable = (clients) => {
         ? paginatedClients.map(createClientRow).join('') 
         : `<tr><td colspan="3" class="text-center py-4 text-gray-500">No hay clientes registrados.</td></tr>`;
     
-    // Renderizar controles de paginación
     renderPagination(clients.length);
 };
 // ====== FIN RENDERIZADO MODIFICADO ======
 
-// --- LÓGICA DEL MODAL DE DETALLES Y EDICIÓN ---
+// --- LÓGICA DEL MODAL DE AGENDAMIENTO MÚLTIPLE (NUEVA) ---
+
+const openMultiAppointmentModal = (clientId, clientName) => {
+    const client = allClientsWithPets.find(c => c.id === clientId);
+    if (!client || client.pets.length === 0) {
+        alert('Este cliente no tiene mascotas registradas para agendar una cita.');
+        return;
+    }
+    currentMultiAptClient = client;
+    scheduledAppointments = 0;
+    currentPetIndex = 0;
+    petsToSchedule = [];
+    currentSchedulingStep = 1;
+
+    multiAptClientName.textContent = clientName;
+    multiAptDateInput.value = '';
+    multiAptDateInput.min = new Date().toISOString().split("T")[0]; // Solo fechas futuras
+    multiAptDateMessage.classList.add('hidden');
+    multiAptPetMessage.classList.add('hidden');
+    multiAptIndividualMessage.classList.add('hidden');
+    
+    multiAppointmentModal.classList.remove('hidden');
+    showMultiAptStep(1);
+};
+
+const closeMultiAppointmentModal = () => {
+    multiAppointmentModal.classList.add('hidden');
+    // Reiniciar el estado
+    currentMultiAptClient = null;
+    petsToSchedule = [];
+    currentSchedulingStep = 1;
+    scheduledAppointments = 0;
+    currentPetIndex = 0;
+    // Forzar recarga de la tabla para actualizar la columna de Última Cita
+    initializeClientsSection();
+};
+
+const showMultiAptStep = (step) => {
+    currentSchedulingStep = step;
+    multiAptSteps.forEach((el, index) => el.classList.toggle('hidden', index + 1 !== step));
+    multiAptProgressBar.style.width = `${(step / 3) * 100}%`;
+    
+    // Configurar botones
+    multiAptBackBtn.classList.toggle('hidden', step === 1);
+    multiAptNextBtn.classList.remove('hidden', step === 3);
+    multiAptFinishBtn.classList.add('hidden');
+
+    if (step === 2) renderPetChecklist();
+    if (step === 3) startSchedulingLoop();
+};
+
+const renderPetChecklist = () => {
+    multiAptPetChecklist.innerHTML = '';
+    currentMultiAptClient.pets.forEach(pet => {
+        const petInfo = `(${pet.breed || 'Sin raza'})`;
+        multiAptPetChecklist.innerHTML += `
+            <div class="flex items-center">
+                <input type="checkbox" id="pet-${pet.id}" value="${pet.id}" data-pet-name="${pet.name}" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded pet-to-schedule-checkbox">
+                <label for="pet-${pet.id}" class="ml-3 block text-sm font-medium text-gray-700">${pet.name} ${petInfo}</label>
+            </div>
+        `;
+    });
+};
+
+const startSchedulingLoop = () => {
+    multiAptProgressBar.style.width = `100%`;
+    multiAptTimeSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
+    multiAptTimeSelect.disabled = true;
+    
+    const petIds = petsToSchedule.map(p => p.id);
+    const total = petIds.length;
+    
+    if (currentPetIndex >= total) {
+        // Finaliza el flujo
+        multiAptSteps.forEach(el => el.classList.add('hidden'));
+        document.getElementById('multi-apt-step-3-details').classList.remove('hidden'); // Mantener visible para el mensaje final
+        multiAptNextBtn.classList.add('hidden');
+        multiAptBackBtn.classList.add('hidden');
+        multiAptIndividualMessage.textContent = `✅ Se han agendado ${scheduledAppointments} citas para el cliente. Puedes cerrar el modal.`;
+        multiAptIndividualMessage.className = 'block p-3 rounded-lg bg-green-100 text-green-700 text-sm';
+        multiAptIndividualMessage.classList.remove('hidden');
+        multiAptFinishBtn.classList.remove('hidden'); // Botón de Finalizar Cita para cerrar el modal
+        return;
+    }
+    
+    const currentPet = petsToSchedule[currentPetIndex];
+    multiAptPetCounter.textContent = currentPetIndex + 1;
+    multiAptPetTotal.textContent = total;
+    multiAptCurrentPetName.textContent = currentPet.name;
+    
+    multiAptServiceSelect.value = '';
+    multiAptNotesTextarea.value = '';
+    
+    // Cargar horarios disponibles para la fecha seleccionada
+    renderAvailableTimes(multiAptDateInput, multiAptTimeSelect);
+
+    // Si es el último, cambiar el botón de "Siguiente" a "Agendar y Finalizar"
+    if (currentPetIndex === total - 1) {
+        multiAptNextBtn.classList.add('hidden');
+        multiAptFinishBtn.classList.remove('hidden');
+        multiAptFinishBtn.textContent = 'Agendar y Finalizar';
+    } else {
+        multiAptNextBtn.classList.remove('hidden');
+        multiAptFinishBtn.classList.add('hidden');
+        multiAptNextBtn.textContent = 'Agendar y Siguiente';
+    }
+    
+    // Habilitar los botones de agendamiento
+    multiAptNextBtn.disabled = false;
+    multiAptFinishBtn.disabled = false;
+};
+
+const handleNextStep = async (event) => {
+    // Determinar si el clic viene del botón 'Next' o 'Finish'
+    const isFinishButton = event.target.id === 'multi-apt-finish-btn';
+    
+    switch (currentSchedulingStep) {
+        case 1:
+            if (!multiAptDateInput.value) {
+                multiAptDateMessage.textContent = '❌ Por favor, selecciona una fecha.';
+                multiAptDateMessage.className = 'block p-3 rounded-lg bg-red-100 text-red-700 text-sm';
+                multiAptDateMessage.classList.remove('hidden');
+                return;
+            }
+            showMultiAptStep(2);
+            break;
+        case 2:
+            const selectedPets = Array.from(multiAptPetChecklist.querySelectorAll('.pet-to-schedule-checkbox:checked')).map(checkbox => {
+                return { 
+                    id: checkbox.value, 
+                    name: checkbox.dataset.petName,
+                    phone: currentMultiAptClient.phone,
+                    firstName: currentMultiAptClient.first_name || currentMultiAptClient.full_name
+                };
+            });
+            
+            multiAptPetMessage.classList.add('hidden');
+
+            if (selectedPets.length === 0) {
+                multiAptPetMessage.textContent = '❌ Debes seleccionar al menos una mascota.';
+                multiAptPetMessage.className = 'block p-3 rounded-lg bg-red-100 text-red-700 text-sm';
+                multiAptPetMessage.classList.remove('hidden');
+                return;
+            }
+            
+            // ** FIX 1: ELIMINAR LA REGLA DE EXCLUSIÓN Y ALERTA **
+            // Ahora se agendan TODAS las seleccionadas
+            petsToSchedule = selectedPets;
+            currentPetIndex = 0;
+            scheduledAppointments = 0;
+            showMultiAptStep(3);
+            break;
+        case 3:
+            // Ejecutar agendamiento para la mascota actual
+            await scheduleSinglePetAppointment();
+            // La lógica dentro de scheduleSinglePetAppointment se encargará de llamar a startSchedulingLoop
+            // que es lo que lo mueve al siguiente paso o muestra el mensaje final.
+            break;
+    }
+};
+
+const handleBackStep = () => {
+    multiAptIndividualMessage.classList.add('hidden');
+    if (currentSchedulingStep === 1) return;
+    if (currentSchedulingStep === 3) {
+        showMultiAptStep(2);
+    } else {
+        showMultiAptStep(currentSchedulingStep - 1);
+    }
+};
+
+const scheduleSinglePetAppointment = async () => {
+    const petId = petsToSchedule[currentPetIndex].id;
+    const petName = petsToSchedule[currentPetIndex].name;
+    const petPhone = petsToSchedule[currentPetIndex].phone;
+    const petOwnerFirstName = petsToSchedule[currentPetIndex].firstName;
+    
+    const service = multiAptServiceSelect.value;
+    const time = multiAptTimeSelect.value;
+    const notes = multiAptNotesTextarea.value;
+    const date = multiAptDateInput.value;
+    
+    if (!service || !time) {
+        multiAptIndividualMessage.textContent = '❌ Por favor, selecciona un servicio y una hora.';
+        multiAptIndividualMessage.className = 'block p-3 rounded-lg bg-red-100 text-red-700 text-sm';
+        multiAptIndividualMessage.classList.remove('hidden');
+        // Re-habilitar botones si falla la validación del paso 3
+        multiAptNextBtn.disabled = false;
+        multiAptFinishBtn.disabled = false;
+        return;
+    }
+
+    multiAptNextBtn.disabled = true;
+    multiAptFinishBtn.disabled = true;
+    
+    multiAptIndividualMessage.textContent = `⏳ Agendando cita para ${petName}...`;
+    multiAptIndividualMessage.className = 'block p-3 rounded-lg bg-blue-100 text-blue-700 text-sm';
+    multiAptIndividualMessage.classList.remove('hidden');
+    
+    const appointmentData = {
+        user_id: currentMultiAptClient.id,
+        pet_id: petId,
+        appointment_date: date,
+        appointment_time: time,
+        service: service,
+        notes: notes || null,
+        status: 'confirmada' // Agendada por Admin se confirma directamente
+    };
+    
+    const { success, error } = await addAppointmentFromDashboard(appointmentData);
+    
+    if (success) {
+        scheduledAppointments++;
+        
+        // Abrir WhatsApp de notificación
+        try {
+            const appointmentDate = new Date(date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            const message = `¡Hola ${petOwnerFirstName}! 👋 Te confirmamos tu cita en OhMyPet:\n\n*Mascota:* ${petName}\n*Fecha:* ${appointmentDate}\n*Hora:* ${time.slice(0, 5)}\n*Servicio:* ${service}\n\n¡Te esperamos! 🐾`;
+            
+            if (petPhone && petPhone !== 'N/A' && petPhone.length >= 9) {
+                 const whatsappUrl = `https://wa.me/51${petPhone}?text=${encodeURIComponent(message)}`;
+                 window.open(whatsappUrl, '_blank');
+            }
+        } catch(e) {
+            console.error("Error al intentar abrir WhatsApp:", e);
+        }
+
+        // Pasar a la siguiente mascota
+        currentPetIndex++;
+        
+        // ** FIX 3: Llamar a startSchedulingLoop para continuar o salir del bucle **
+        startSchedulingLoop();
+
+    } else {
+        multiAptIndividualMessage.textContent = `❌ Error al agendar cita para ${petName}: ${error.message}`;
+        multiAptIndividualMessage.className = 'block p-3 rounded-lg bg-red-100 text-red-700 text-sm';
+        multiAptIndividualMessage.classList.remove('hidden');
+        
+        // Re-habilitar botones si falla el agendamiento con la API
+        multiAptNextBtn.disabled = false;
+        multiAptFinishBtn.disabled = false;
+    }
+};
+
+const renderAvailableTimes = async (dateInput, timeSelect) => {
+    const selectedDate = dateInput.value;
+    if (!selectedDate) {
+        timeSelect.innerHTML = '<option value="">Selecciona una fecha</option>';
+        timeSelect.disabled = true;
+        return;
+    }
+
+    multiAptTimeMessage.textContent = 'Cargando disponibilidad...';
+    
+    const bookedTimes = await getBookedTimesForDashboard(selectedDate);
+    const hours = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"];
+    
+    timeSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
+    hours.forEach(hour => {
+        if (!bookedTimes.includes(hour)) {
+            const option = document.createElement('option');
+            option.value = hour + ':00';
+            option.textContent = hour;
+            timeSelect.appendChild(option);
+        }
+    });
+    timeSelect.disabled = false;
+    multiAptTimeMessage.textContent = `Se encontraron ${timeSelect.options.length - 1} horarios disponibles.`;
+};
+
+
+// --- LÓGICA DEL MODAL DE DETALLES Y EDICIÓN (SIN CAMBIOS RELEVANTES EN ESTE CONTEXTO) ---
 const openModal = () => clientDetailsModal.classList.remove('hidden');
 const closeModal = () => {
     clientDetailsModal.classList.add('hidden');
     currentClientId = null;
     currentClientProfile = null;
-    switchToViewMode(); // Asegurar que volvemos al modo de vista
+    switchToViewMode();
 };
 
 const renderEditForm = (profile) => {
-    // Limpiar mensajes de error previos
     editFormMessage.classList.add('hidden');
-
-    // Rellenar los campos del formulario de edición con los datos del perfil
     document.querySelector('#edit-client-id').value = profile.id;
     document.querySelector('#edit-first-name').value = profile.first_name || '';
     document.querySelector('#edit-last-name').value = profile.last_name || '';
     document.querySelector('#edit-email').value = profile.email || 'N/A';
-    // Se muestra el número original, el limpiado es solo para guardar
     document.querySelector('#edit-phone').value = profile.phone || ''; 
     document.querySelector('#edit-district').value = profile.district || '';
     document.querySelector('#edit-doc-type').value = profile.doc_type || '';
@@ -241,32 +539,26 @@ const renderEditForm = (profile) => {
 const switchToEditMode = () => {
     if (!currentClientProfile) return;
     
-    // Ocultar modo vista y mostrar modo edición
     modalContentView.classList.add('hidden');
     modalContentEdit.classList.remove('hidden');
 
-    // Ocultar botones de vista y mostrar botones de edición
     editClientBtn.classList.add('hidden');
     saveClientBtn.classList.remove('hidden');
     cancelEditClientBtn.classList.remove('hidden');
     modalAddPetBtnFooter.classList.add('hidden');
     
-    // Renderizar el formulario de edición con los datos actuales
     renderEditForm(currentClientProfile.profile);
 };
 
 const switchToViewMode = () => {
-    // Ocultar modo edición y mostrar modo vista
     modalContentEdit.classList.add('hidden');
     modalContentView.classList.remove('hidden');
 
-    // Ocultar botones de edición y mostrar botones de vista
     editClientBtn.classList.remove('hidden');
     saveClientBtn.classList.add('hidden');
     cancelEditClientBtn.classList.add('hidden');
     modalAddPetBtnFooter.classList.remove('hidden');
     
-    // Volver a renderizar la vista (por si se recargaron los datos)
     if (currentClientProfile) {
         populateModal(currentClientProfile);
     } else {
@@ -284,7 +576,6 @@ const handleSaveClient = async () => {
     const phoneRaw = formData.get('phone');
     const emergencyPhoneRaw = formData.get('emergency_contact_phone');
     
-    // Limpiar números de teléfono para la validación y el guardado
     const phoneCleaned = cleanPhoneNumber(phoneRaw);
     const emergencyPhoneCleaned = cleanPhoneNumber(emergencyPhoneRaw);
 
@@ -300,7 +591,6 @@ const handleSaveClient = async () => {
         emergency_contact_phone: emergencyPhoneCleaned,
     };
     
-    // Validación de campos requeridos (Nombre y Apellido)
     if (!updatedData.first_name || !updatedData.last_name) {
         editFormMessage.textContent = '⚠️ Los campos Nombre y Apellido son obligatorios.';
         editFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
@@ -328,7 +618,6 @@ const handleSaveClient = async () => {
         editFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
         editFormMessage.classList.remove('hidden');
         
-        // Recargar los detalles del cliente
         const updatedDetails = await getClientDetails(clientId);
         if (updatedDetails) {
             currentClientProfile = updatedDetails;
@@ -336,10 +625,9 @@ const handleSaveClient = async () => {
             editFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
             editFormMessage.classList.remove('hidden');
             
-            // Volver al modo de vista después de un breve retraso
             setTimeout(() => {
                 switchToViewMode();
-                initializeClientsSection(); // Recargar tabla principal para actualizar el nombre
+                initializeClientsSection();
             }, 1000);
         } else {
             editFormMessage.textContent = '⚠️ Cliente actualizado, pero hubo un error al recargar los detalles.';
@@ -358,16 +646,12 @@ const handleSaveClient = async () => {
 
 
 const populateModal = (details) => {
-    currentClientProfile = details; // Guardar detalles en caché
+    currentClientProfile = details;
     const { profile, pets, appointments } = details;
 
-    // ================== INICIO DE LA CORRECCIÓN ==================
-    // Filtramos las mascotas para asegurarnos de que no haya duplicados por ID
-    // Esto previene que se muestren mascotas duplicadas si hay un error en los datos.
     const uniquePets = pets.filter((pet, index, self) =>
         index === self.findIndex((p) => p.id === pet.id)
     );
-    // =================== FIN DE LA CORRECCIÓN ====================
 
     const displayName = (profile.first_name && profile.last_name) 
         ? `${profile.first_name} ${profile.last_name}` 
@@ -438,7 +722,7 @@ const populateModal = (details) => {
     `;
 };
 
-// --- LÓGICA DEL MODAL DE REGISTRO DE CLIENTE ---
+// --- LÓGICA DEL MODAL DE REGISTRO DE CLIENTE (SIN CAMBIOS RELEVANTES EN ESTE CONTEXTO) ---
 const openClientModal = () => clientModal.classList.remove('hidden');
 const closeClientModal = () => {
     clientModal.classList.add('hidden');
@@ -453,16 +737,9 @@ const setupClientModal = () => {
         if (e.target === clientDetailsModal) closeModal();
     });
     
-    // Listener para el botón de editar
     editClientBtn.addEventListener('click', switchToEditMode);
-    
-    // Listener para el botón de guardar cambios
     saveClientBtn.addEventListener('click', handleSaveClient);
-    
-    // Listener para el botón de cancelar edición
     cancelEditClientBtn.addEventListener('click', switchToViewMode);
-    
-    // Listener para abrir el modal de agregar mascota desde el modal de detalles
     modalAddPetBtnFooter.addEventListener('click', () => {
         if (currentClientId) openAddPetModal(currentClientId);
     });
@@ -485,7 +762,6 @@ const setupClientModal = () => {
         const phoneRaw = formData.get('phone');
         const emergencyPhoneRaw = formData.get('emergency_contact_phone');
         
-        // Limpiar números de teléfono
         const phoneCleaned = cleanPhoneNumber(phoneRaw);
         const emergencyPhoneCleaned = cleanPhoneNumber(emergencyPhoneRaw);
 
@@ -535,7 +811,7 @@ const setupClientModal = () => {
             setTimeout(async () => {
                 closeClientModal();
                 const updatedClients = await getClients();
-                currentPage = 1; // ====== RESETEAR PÁGINA AL REGISTRAR ======
+                currentPage = 1;
                 renderClientsTable(updatedClients);
             }, 1500);
         } else {
@@ -551,26 +827,23 @@ const setupClientModal = () => {
     });
 };
 
-// --- LÓGICA DEL MODAL DE AGREGAR MASCOTA ---
+// --- LÓGICA DEL MODAL DE AGREGAR MASCOTA (SIN CAMBIOS RELEVANTES EN ESTE CONTEXTO) ---
 const openAddPetModal = (clientId) => {
     currentClientId = clientId;
-    petOwnerIdInput.value = clientId; // Rellenar el campo oculto con el ID del dueño
-    addPetFormMessage.classList.add('hidden'); // Limpiar mensajes previos
-    addPetForm.reset(); // Resetea el formulario
-    petImagePreview.classList.add('hidden'); // Oculta la imagen de vista previa
-    petImagePreview.src = 'https://via.placeholder.com/100'; // Resetea la imagen
-    photoFile = null; // Limpia el archivo
+    petOwnerIdInput.value = clientId;
+    addPetFormMessage.classList.add('hidden');
+    addPetForm.reset();
+    petImagePreview.classList.add('hidden');
+    petImagePreview.src = 'https://via.placeholder.com/100';
+    photoFile = null;
     addPetModal.classList.remove('hidden');
-    // Cerrar el modal de detalles del cliente para que no se superponga
     clientDetailsModal.classList.add('hidden');
 };
 
 const closeAddPetModal = () => {
     addPetModal.classList.add('hidden');
     addPetForm.reset();
-    // Reabrir el modal de detalles del cliente
     clientDetailsModal.classList.remove('hidden');
-    // Recargar el contenido del modal de detalles para actualizar la lista de mascotas
     if (currentClientId) {
         modalContentView.innerHTML = '<div class="text-center py-10 text-gray-500">Actualizando...</div>';
         getClientDetails(currentClientId).then(updatedDetails => {
@@ -590,7 +863,6 @@ const setupAddPetModal = () => {
         if (e.target === addPetModal) closeAddPetModal();
     });
     
-    // Listener para la vista previa de la imagen
     petPhotoInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (file) {
@@ -614,11 +886,10 @@ const setupAddPetModal = () => {
         
         let imageUrl = null;
         
-        // Lógica para subir la foto a Supabase Storage
         if (photoFile) {
             const fileName = `public/${currentClientId || 'unknown'}/${Date.now()}_${photoFile.name}`;
             const { data, error: uploadError } = await supabase.storage
-                .from('pet_galleries') // Asegúrate que tu bucket se llame 'pet_galleries'
+                .from('pet_galleries')
                 .upload(fileName, photoFile);
 
             if (uploadError) {
@@ -680,7 +951,7 @@ const setupEventListeners = () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(async () => {
             const searchTerm = event.target.value.trim();
-            currentPage = 1; // ====== RESETEAR PÁGINA AL BUSCAR ======
+            currentPage = 1;
             clientsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-500">Buscando...</td></tr>`;
             const clients = searchTerm ? await searchClients(searchTerm) : await getClients();
             renderClientsTable(clients);
@@ -689,6 +960,8 @@ const setupEventListeners = () => {
 
     clientsTableBody.addEventListener('click', async (event) => {
         const viewButton = event.target.closest('.view-details-btn');
+        const scheduleButton = event.target.closest('.agendar-cita-btn');
+        
         if (viewButton) {
             const clientId = viewButton.dataset.clientId;
             if (!clientId) return;
@@ -704,6 +977,10 @@ const setupEventListeners = () => {
             } else {
                 modalContentView.innerHTML = '<div class="text-center py-10 text-red-500">Error al cargar los detalles del cliente.</div>';
             }
+        } else if (scheduleButton) {
+             const clientId = scheduleButton.dataset.clientId;
+             const clientName = scheduleButton.dataset.clientName;
+             openMultiAppointmentModal(clientId, clientName);
         }
     });
 
@@ -714,28 +991,49 @@ const setupEventListeners = () => {
         }
     });
     
-    // --- NUEVOS LISTENERS DE EDICIÓN ---
     editClientBtn.addEventListener('click', switchToEditMode);
-    saveClientBtn.addEventListener('click', handleSaveClient); // El handler se encarga de todo
+    saveClientBtn.addEventListener('click', handleSaveClient);
     cancelEditClientBtn.addEventListener('click', switchToViewMode); 
-    modalAddPetBtnFooter.addEventListener('click', () => { // Listener para el botón del footer
+    modalAddPetBtnFooter.addEventListener('click', () => {
         if (currentClientId) openAddPetModal(currentClientId);
     });
-    // --- FIN NUEVOS LISTENERS ---
+
+    // --- LISTENERS DEL MODAL MÚLTIPLE (NUEVOS) ---
+    closeMultiAptModalBtn?.addEventListener('click', closeMultiAppointmentModal);
+    multiAppointmentModal?.addEventListener('click', (e) => {
+        if (e.target === multiAppointmentModal) closeMultiAppointmentModal();
+    });
+    
+    // ** FIX 2: Ambos botones, Next y Finish, llaman a la lógica de agendamiento **
+    multiAptNextBtn?.addEventListener('click', handleNextStep);
+    multiAptFinishBtn?.addEventListener('click', handleNextStep); // Reemplaza el listener de cierre directo
+    
+    multiAptBackBtn?.addEventListener('click', handleBackStep);
+    multiAptDateInput?.addEventListener('change', () => multiAptDateMessage.classList.add('hidden'));
+    
+    multiAptDateInput?.addEventListener('change', () => {
+        if (currentSchedulingStep === 3) {
+            renderAvailableTimes(multiAptDateInput, multiAptTimeSelect);
+        }
+    });
+
+    multiAptServiceSelect?.addEventListener('change', () => multiAptIndividualMessage.classList.add('hidden'));
+    multiAptTimeSelect?.addEventListener('change', () => multiAptIndividualMessage.classList.add('hidden'));
 };
 
 // --- INICIALIZACIÓN DE LA SECCIÓN ---
 const initializeClientsSection = async () => {
-    // --- INICIO DE LA CORRECCIÓN: Prevenir reinicialización ---
     if (isInitialized) return;
     isInitialized = true;
-    // --- FIN DE LA CORRECCIÓN ---
 
     if (headerTitle) {
         headerTitle.textContent = 'Gestión de Clientes';
     }
     
-    currentPage = 1; // ====== RESETEAR PÁGINA AL INICIALIZAR ======
+    // Cargar todos los clientes con sus mascotas para el modal
+    allClientsWithPets = await getClientsWithPets();
+    
+    currentPage = 1;
     const initialClients = await getClients();
     renderClientsTable(initialClients);
     setupEventListeners();
