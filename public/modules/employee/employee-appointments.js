@@ -124,14 +124,39 @@ const openAppointmentDetails = async (appointmentId) => {
         fetchPetDetails(petId)
     ]);
     
-    const ownerName = currentAppointment.profiles?.first_name 
-        ? `${currentAppointment.profiles.first_name} ${currentAppointment.profiles.last_name || ''}`
-        : currentAppointment.profiles?.full_name || 'N/A';
+    // =========================================================
+    // CORRECCIÓN LÓGICA DE EXTRACCIÓN DE NOMBRE DEL CLIENTE
+    // =========================================================
+    const ownerProfile = currentAppointment.profiles;
+    let ownerName = 'N/A';
+    let clientPhone = 'N/A';
+    
+    if (ownerProfile) {
+        const firstName = ownerProfile.first_name || '';
+        const lastName = ownerProfile.last_name || '';
+        const fullName = ownerProfile.full_name || '';
+        clientPhone = ownerProfile.phone || 'N/A';
+        
+        // 1. Priorizar nombre y apellido
+        if (firstName.trim() !== '' || lastName.trim() !== '') {
+            ownerName = `${firstName} ${lastName}`.trim();
+        } 
+        
+        // 2. Usar full_name si es más descriptivo
+        if (ownerName.trim() === '' || ownerName === 'N/A') {
+             if (fullName.trim() !== '' && !fullName.includes('@')) {
+                 ownerName = fullName.trim();
+             }
+        }
+        
+        // 3. Si aún está vacío, usar el email si está disponible
+        if (ownerName.trim() === '' || ownerName === 'N/A') {
+            ownerName = ownerProfile.email || 'N/A';
+        }
+    }
+    // =========================================================
         
     const petName = currentAppointment.pets?.name || 'N/A';
-    
-    // Obtenemos el perfil completo del dueño (que ya está en la caché de clientes)
-    const clientProfile = state.allClients.find(c => c.id === currentAppointment.user_id);
     
     const petImage = currentAppointment.pets?.image_url 
         ? currentAppointment.pets.image_url 
@@ -148,7 +173,7 @@ const openAppointmentDetails = async (appointmentId) => {
                 <div>
                     <p class="font-bold text-xl text-gray-800">${petName}</p>
                     <p class="text-sm text-gray-600">Cliente: ${ownerName}</p>
-                    <p class="text-sm text-gray-600">Teléfono: <a href="tel:${clientProfile?.phone || ''}" class="text-blue-600">${clientProfile?.phone || 'N/A'}</a></p>
+                    <p class="text-sm text-gray-600">Teléfono: <a href="tel:${clientPhone}" class="text-blue-600">${clientPhone}</a></p>
                 </div>
             </div>
             
@@ -261,8 +286,23 @@ export const renderConfirmedAppointments = () => {
             ? app.pets.image_url 
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(app.pets?.name || 'M')}&background=10B981&color=FFFFFF`;
         
-        // Información del dueño
-        const ownerFirstName = app.profiles?.first_name || app.profiles?.full_name || 'Dueño';
+        // Información del dueño (usando la lógica reforzada)
+        const ownerProfile = app.profiles;
+        let ownerFirstName = 'Dueño';
+
+        if (ownerProfile) {
+            const firstName = ownerProfile.first_name || '';
+            const fullName = ownerProfile.full_name || '';
+
+            if (firstName.trim() !== '') {
+                ownerFirstName = firstName;
+            } else if (fullName.trim() !== '' && !fullName.includes('@')) {
+                ownerFirstName = fullName.split(' ')[0];
+            } else if (ownerProfile.email) {
+                ownerFirstName = ownerProfile.email.split('@')[0];
+            }
+        }
+
 
         // Estilos para el estado
         const statusClass = app.status === 'confirmada' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
@@ -368,9 +408,13 @@ const handleAddAppointment = async (e) => {
     const formData = new FormData(addAppointmentForm);
     
     // Obtener el valor del nuevo select para el servicio
-    const serviceValue = document.querySelector('#service-select-employee-modal').value; // <-- USO DEL NUEVO SELECT
+    const serviceValue = document.querySelector('#service-select-employee-modal').value; 
     
+    // CORRECCIÓN CLAVE: Obtener el ID del cliente del campo oculto.
+    const clientId = selectedClientIdInput.value; 
+
     const appointmentData = {
+        user_id: clientId, // <--- CORRECCIÓN: Asignar el ID del cliente a user_id
         pet_id: formData.get('pet_id'),
         appointment_date: formData.get('appointment_date'),
         appointment_time: formData.get('appointment_time'),
