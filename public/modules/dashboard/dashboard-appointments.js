@@ -135,7 +135,7 @@ const renderAppointmentsTable = (appointments) => {
     if (!appointmentsTableBody) return;
     appointmentsTableBody.innerHTML = appointments.length > 0
         ? appointments.map(createAppointmentRow).join('')
-        : `<tr><td colspan="5" class="text-center py-8 text-gray-500">No se encontraron citas.</td></tr>`;
+        : `<tr><td colspan="5" class="block md:table-cell text-center py-8 text-gray-500">No se encontraron citas.</td></tr>`;
 };
 
 const loadAppointmentsAndRender = async () => {
@@ -258,9 +258,19 @@ const openRescheduleModal = async (appointmentId) => {
 
     appointmentToRescheduleId = appointmentId;
 
-    const clientName = (appointment.profiles?.first_name && appointment.profiles?.last_name) 
-        ? `${appointment.profiles.first_name} ${appointment.profiles.last_name}` 
-        : appointment.profiles?.full_name || 'N/A';
+    // =================== CORRECCIÓN INICIADA AQUÍ ===================
+    const ownerProfile = appointment.profiles;
+    let clientName = 'N/A';
+    
+    if (ownerProfile) {
+        if (ownerProfile.first_name || ownerProfile.last_name) {
+            clientName = `${ownerProfile.first_name || ''} ${ownerProfile.last_name || ''}`.trim();
+        } else if (ownerProfile.full_name) {
+            clientName = ownerProfile.full_name;
+        }
+    }
+    // =================== CORRECCIÓN FINALIZADA AQUÍ ===================
+    
     const petName = appointment.pets?.name || 'N/A';
 
     rescheduleClientNameInput.value = clientName;

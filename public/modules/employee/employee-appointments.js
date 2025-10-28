@@ -11,6 +11,7 @@ let appointmentsList;
 let addAppointmentBtnEmployee, addAppointmentModal, addAppointmentForm, cancelAddAppointmentBtn;
 let petSelect, newAppointmentDateInput, newAppointmentTimeSelect, addAppointmentMessage;
 let clientSearchInputModal, clientSearchResults, selectedClientIdInput;
+let serviceSelectEmployeeModal; // <<-- NUEVO SELECT PARA EL SERVICIO
 
 // Modal de completar cita (Se mantienen las referencias, pero no se usarán en esta vista)
 let completionModal, beforeImageInput, beforeImagePreview, afterImageInput, afterImagePreview;
@@ -46,6 +47,7 @@ export const initAppointmentElements = () => {
     petSelect = document.querySelector('#pet-select-employee');
     newAppointmentDateInput = document.querySelector('#new-appointment-date-employee');
     newAppointmentTimeSelect = document.querySelector('#new-appointment-time-employee');
+    serviceSelectEmployeeModal = document.querySelector('#service-select-employee-modal'); // <<-- INICIALIZAR NUEVO SELECT
     addAppointmentMessage = document.querySelector('#add-appointment-message-employee');
     clientSearchInputModal = document.querySelector('#client-search-input-modal-employee');
     clientSearchResults = document.querySelector('#client-search-results-employee');
@@ -364,14 +366,25 @@ const handleAddAppointment = async (e) => {
     e.preventDefault();
     
     const formData = new FormData(addAppointmentForm);
+    
+    // Obtener el valor del nuevo select para el servicio
+    const serviceValue = document.querySelector('#service-select-employee-modal').value; // <-- USO DEL NUEVO SELECT
+    
     const appointmentData = {
         pet_id: formData.get('pet_id'),
         appointment_date: formData.get('appointment_date'),
         appointment_time: formData.get('appointment_time'),
-        service: formData.get('service'),
+        service: serviceValue, // <-- ASIGNACIÓN DEL VALOR DEL SELECT
         notes: formData.get('notes') || null,
         status: 'confirmada'
     };
+    
+    if (!appointmentData.service) {
+         addAppointmentMessage.textContent = '❌ El servicio es obligatorio.';
+         addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
+         addAppointmentMessage.classList.remove('hidden');
+         return;
+    }
     
     const result = await addAppointmentFromDashboard(appointmentData);
     
@@ -383,7 +396,7 @@ const handleAddAppointment = async (e) => {
         // Recargar citas
         const { data: appointments } = await supabase
             .from('appointments')
-            .select('*, pets(name), profiles(first_name, last_name)')
+            .select('*, pets(name), profiles(first_name, last_name, full_name)')
             .order('appointment_date', { ascending: true })
             .order('appointment_time', { ascending: true });
         
@@ -520,7 +533,7 @@ const handleCompleteAppointment = async () => {
     // 5. Recargar citas
     const { data: appointments } = await supabase
         .from('appointments')
-        .select('*, pets(name), profiles(first_name, last_name)')
+        .select('*, pets(name), profiles(first_name, last_name, full_name)')
         .order('appointment_date', { ascending: true })
         .order('appointment_time', { ascending: true });
     
