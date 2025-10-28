@@ -125,17 +125,17 @@ const openAppointmentDetails = async (appointmentId) => {
     ]);
     
     // =========================================================
-    // CORRECCIÓN LÓGICA DE EXTRACCIÓN DE NOMBRE DEL CLIENTE
+    // CORRECCIÓN LÓGICA DE EXTRACCIÓN DE NOMBRE Y TELÉFONO
     // =========================================================
     const ownerProfile = currentAppointment.profiles;
     let ownerName = 'N/A';
-    let clientPhone = 'N/A';
+    let clientPhone = 'N/A'; // Inicializar la variable
     
     if (ownerProfile) {
         const firstName = ownerProfile.first_name || '';
         const lastName = ownerProfile.last_name || '';
         const fullName = ownerProfile.full_name || '';
-        clientPhone = ownerProfile.phone || 'N/A';
+        clientPhone = ownerProfile.phone || 'N/A'; // <<-- OBTENER EL TELÉFONO DE AQUÍ
         
         // 1. Priorizar nombre y apellido
         if (firstName.trim() !== '' || lastName.trim() !== '') {
