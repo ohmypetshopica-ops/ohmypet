@@ -10,13 +10,11 @@ let petSearch, petsList, petsListView, petDetailsView, petDetailsContent, backTo
 let addPetModalEmployee, closeAddPetModalButtonEmployee, cancelAddPetButtonEmployee, petFormEmployee, petFormMessageEmployee;
 let clearPetSearchBtn;
 let addPetToClientBtn; 
-let paginationContainerPets; // ====== ELEMENTO AGREGADO ======
+let paginationContainerPets;
 
-// ====== VARIABLES AGREGADAS PARA PAGINACIÓN ======
+// Variables de paginación
 let currentPagePets = 1;
-const itemsPerPagePets = 8; // Número de mascotas por página
-// ====== FIN VARIABLES AGREGADAS ======
-
+const itemsPerPagePets = 8;
 
 export const initPetElements = () => {
     petSearch = document.getElementById('pet-search');
@@ -35,7 +33,7 @@ export const initPetElements = () => {
     petFormMessageEmployee = document.querySelector('#pet-form-message-employee');
 
     clearPetSearchBtn = document.getElementById('clear-pet-search-btn');
-    paginationContainerPets = document.getElementById('pagination-container-pets'); // ====== INICIALIZACIÓN AGREGADA ======
+    paginationContainerPets = document.getElementById('pagination-container-pets');
 };
 
 export const setupPetListeners = () => {
@@ -44,7 +42,7 @@ export const setupPetListeners = () => {
     }
     if (clearPetSearchBtn) {
         clearPetSearchBtn.addEventListener('click', () => {
-            currentPagePets = 1; // ====== LÍNEA AGREGADA ======
+            currentPagePets = 1;
             petSearch.value = '';
             clearPetSearchBtn.classList.add('hidden');
             handlePetSearch({ target: petSearch });
@@ -59,12 +57,12 @@ export const setupPetListeners = () => {
     });
     
     closeAddPetModalButtonEmployee?.addEventListener('click', closePetModal);
-    cancelAddPetButtonEmployee?.addEventListener('click', cancelAddPetButtonEmployee);
+    cancelAddPetButtonEmployee?.addEventListener('click', closePetModal);
     petFormEmployee?.addEventListener('submit', handleAddPet);
 };
 
 const handlePetSearch = (e) => {
-    currentPagePets = 1; // ====== LÍNEA AGREGADA: Reiniciar página al buscar ======
+    currentPagePets = 1;
     const term = e.target.value.toLowerCase();
     
     if (term.length > 0) {
@@ -81,7 +79,7 @@ const handlePetSearch = (e) => {
     renderPets(filtered);
 };
 
-// ====== FUNCIÓN DE RENDERIZADO DE PAGINACIÓN AGREGADA ======
+// ====== FUNCIÓN DE PAGINACIÓN MEJORADA ======
 const renderPaginationPets = (totalItems) => {
     if (!paginationContainerPets) return;
 
@@ -91,22 +89,51 @@ const renderPaginationPets = (totalItems) => {
         return;
     }
 
-    let paginationHTML = '<div class="flex items-center space-x-2">';
+    let paginationHTML = '<div class="flex items-center justify-center space-x-2">';
 
+    // Botón Anterior
+    const prevDisabled = currentPagePets === 1;
     paginationHTML += `
-        <button data-page="${currentPagePets - 1}" class="px-3 py-1 border rounded-lg ${currentPagePets === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}" ${currentPagePets === 1 ? 'disabled' : ''}>
-            Anterior
+        <button data-page="${currentPagePets - 1}" 
+                class="px-3 py-2 border rounded-lg transition-colors ${prevDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700'}" 
+                ${prevDisabled ? 'disabled' : ''}>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
         </button>
     `;
 
-    for (let i = 1; i <= totalPages; i++) {
-        const activeClass = i === currentPagePets ? 'bg-green-600 text-white' : 'bg-white hover:bg-gray-50';
-        paginationHTML += `<button data-page="${i}" class="px-3 py-1 border rounded-lg ${activeClass}">${i}</button>`;
+    // Lógica para mostrar solo 3 números centrados en la página actual
+    let startPage = Math.max(1, currentPagePets - 1);
+    let endPage = Math.min(totalPages, startPage + 2);
+    
+    // Ajustar si estamos cerca del final
+    if (endPage - startPage < 2) {
+        startPage = Math.max(1, endPage - 2);
     }
 
+    // Números de página (máximo 3)
+    for (let i = startPage; i <= endPage; i++) {
+        const activeClass = i === currentPagePets 
+            ? 'bg-green-600 text-white' 
+            : 'bg-white hover:bg-gray-50 text-gray-700';
+        paginationHTML += `
+            <button data-page="${i}" 
+                    class="w-10 h-10 border rounded-lg font-medium transition-colors ${activeClass}">
+                ${i}
+            </button>
+        `;
+    }
+
+    // Botón Siguiente
+    const nextDisabled = currentPagePets === totalPages;
     paginationHTML += `
-        <button data-page="${currentPagePets + 1}" class="px-3 py-1 border rounded-lg ${currentPagePets === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}" ${currentPagePets === totalPages ? 'disabled' : ''}>
-            Siguiente
+        <button data-page="${currentPagePets + 1}" 
+                class="px-3 py-2 border rounded-lg transition-colors ${nextDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700'}" 
+                ${nextDisabled ? 'disabled' : ''}>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
         </button>
     `;
 
@@ -115,23 +142,24 @@ const renderPaginationPets = (totalItems) => {
 
     paginationContainerPets.querySelectorAll('button[data-page]').forEach(button => {
         button.addEventListener('click', () => {
-            currentPagePets = parseInt(button.dataset.page);
-            const searchTerm = petSearch.value.toLowerCase();
-            const filtered = searchTerm ? state.allPets.filter(pet => {
-                const owner = state.allClients.find(c => c.id === pet.owner_id);
-                const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}`.toLowerCase() : 'dueño desconocido';
-                return pet.name.toLowerCase().includes(searchTerm) || ownerName.includes(searchTerm) || (pet.breed || '').toLowerCase().includes(searchTerm);
-            }) : state.allPets;
-            renderPets(filtered);
+            const newPage = parseInt(button.dataset.page);
+            if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
+                currentPagePets = newPage;
+                const searchTerm = petSearch.value.toLowerCase();
+                const filtered = searchTerm ? state.allPets.filter(pet => {
+                    const owner = state.allClients.find(c => c.id === pet.owner_id);
+                    const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}`.toLowerCase() : 'dueño desconocido';
+                    return pet.name.toLowerCase().includes(searchTerm) || ownerName.includes(searchTerm) || (pet.breed || '').toLowerCase().includes(searchTerm);
+                }) : state.allPets;
+                renderPets(filtered);
+            }
         });
     });
 };
 
-// ====== FUNCIÓN `renderPets` MODIFICADA ======
 export const renderPets = (pets) => {
     if (!petsList) return;
     
-    // Lógica de paginación
     const startIndex = (currentPagePets - 1) * itemsPerPagePets;
     const endIndex = startIndex + itemsPerPagePets;
     const paginatedPets = pets.slice(startIndex, endIndex);
@@ -146,50 +174,66 @@ export const renderPets = (pets) => {
         
         return `
             <button data-pet-id="${pet.id}" class="pet-btn w-full text-left bg-white p-4 rounded-lg shadow-sm border hover:bg-gray-50 flex items-center space-x-3">
-                <img src="${petImage}" 
-                     alt="${pet.name}" 
-                     class="w-12 h-12 rounded-full object-cover border border-gray-200 flex-shrink-0">
-                <div class="flex-1">
-                    <h3 class="font-bold text-gray-800">${pet.name}</h3>
-                    <p class="text-sm text-gray-600">${pet.breed || 'Raza no especificada'} | ${pet.sex || 'N/A'}</p>
-                    <p class="text-xs text-gray-500">Dueño: ${ownerName}</p>
+                <img src="${petImage}" alt="${pet.name}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-gray-800 truncate">${pet.name}</h3>
+                    <p class="text-sm text-gray-600 truncate">${pet.breed || 'Sin raza'}</p>
+                    <p class="text-xs text-gray-500 truncate">${ownerName}</p>
                 </div>
             </button>
         `;
     }).join('') : `<p class="text-center text-gray-500 mt-8">No se encontraron mascotas.</p>`;
 
-    // Renderizar la paginación
     renderPaginationPets(pets.length);
 };
 
+const showPetsList = () => {
+    petsListView?.classList.remove('hidden');
+    petDetailsView?.classList.add('hidden');
+    updateState('currentPetId', null);
+};
 
-const showPetDetails = (petId) => {
-    // ... (código sin cambios)
+const showPetDetails = async (petId) => {
     updateState('currentPetId', petId);
+    petsListView?.classList.add('hidden');
+    petDetailsView?.classList.remove('hidden');
+    
+    petDetailsContent.innerHTML = '<p class="text-center text-gray-500 mt-8">Cargando detalles...</p>';
+    
     const pet = state.allPets.find(p => p.id === petId);
-    if (!pet) return;
-    
-    const owner = state.allClients.find(c => c.id === pet.owner_id);
-    const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}` : 'Dueño desconocido';
-    
-    const petAppointments = state.allAppointments
-        .filter(app => app.pet_id === petId && app.status === 'completada')
-        .sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
-        
-    const lastAppointment = petAppointments[0];
-
-    let ageDisplay = 'N/A';
-    if (pet.birth_date) {
-        const birthDate = new Date(pet.birth_date);
-        const today = new Date();
-        let years = today.getFullYear() - birthDate.getFullYear();
-        if (today.getMonth() < birthDate.getMonth() || 
-            (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
-            years--;
-        }
-        ageDisplay = `${years} año${years !== 1 ? 's' : ''}`;
+    if (!pet) {
+        petDetailsContent.innerHTML = '<p class="text-center text-red-500 mt-8">Mascota no encontrada.</p>';
+        return;
     }
-    
+
+    const owner = state.allClients.find(c => c.id === pet.owner_id);
+    const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}`.trim() || 'Dueño desconocido' : 'Dueño desconocido';
+
+    const { data: appointments } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('pet_id', petId)
+        .eq('status', 'completada')
+        .order('appointment_date', { ascending: false })
+        .order('appointment_time', { ascending: false })
+        .limit(5);
+
+    const petAppointments = appointments || [];
+    const lastAppointment = petAppointments.length > 0 ? petAppointments[0] : null;
+
+    const calculateAge = (birthDate) => {
+        if (!birthDate) return null;
+        const today = new Date();
+        const birth = new Date(birthDate + 'T00:00:00');
+        let years = today.getFullYear() - birth.getFullYear();
+        let months = today.getMonth() - birth.getMonth();
+        if (months < 0) { years--; months += 12; }
+        if (years > 0) return `${years} año${years > 1 ? 's' : ''}`;
+        return `${months} mes${months !== 1 ? 'es' : ''}`;
+    };
+
+    const ageDisplay = calculateAge(pet.birth_date) || 'Edad desconocida';
+
     const petImage = pet.image_url 
         ? pet.image_url 
         : `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name || 'M')}&background=10B981&color=FFFFFF`;
@@ -266,78 +310,27 @@ const showPetDetails = (petId) => {
                             <p><strong>Peso Final:</strong> ${lastAppointment.final_weight ? `${lastAppointment.final_weight} kg` : 'N/A'}</p>
                             <p><strong>Pago:</strong> ${lastAppointment.payment_method || 'N/A'}</p>
                         </div>
-                        ${lastAppointment.final_observations ? `<p class="text-xs text-gray-600 mt-2"><strong>Obs. Empleado:</strong> ${lastAppointment.final_observations}</p>` : ''}
+                        ${lastAppointment.final_observations ? `<p class="text-xs text-gray-600 mt-2"><strong>Obs.:</strong> ${lastAppointment.final_observations}</p>` : ''}
                     </div>
-                ` : '<p class="text-sm text-gray-500">No se encontró el último servicio completado.</p>'}
+                ` : '<p class="text-sm text-gray-500">Sin servicios completados.</p>'}
             </div>
 
-            <div class="bg-white p-4 rounded-lg shadow-inner border border-gray-200">
-                <h4 class="text-lg font-semibold text-gray-700 mb-3">Historial Completo (${petAppointments.length} servicios)</h4>
-                <div class="space-y-2 max-h-48 overflow-y-auto">
-                    ${historyHTML}
-                </div>
+            <div>
+                <h4 class="text-lg font-semibold text-gray-800 mb-3">Historial de Servicios</h4>
+                <div class="space-y-2 max-h-64 overflow-y-auto">${historyHTML}</div>
             </div>
         </div>
     `;
-    
-    petsListView?.classList.add('hidden');
-    petDetailsView?.classList.remove('hidden');
-};
-
-const showPetsList = () => {
-    // ... (código sin cambios)
-    petsListView?.classList.remove('hidden');
-    petDetailsView?.classList.add('hidden');
-    updateState('currentPetId', null);
 };
 
 const closePetModal = () => {
-    // ... (código sin cambios)
     addPetModalEmployee?.classList.add('hidden');
-    document.body.style.overflow = '';
     petFormEmployee?.reset();
     petFormMessageEmployee?.classList.add('hidden');
 };
 
 const handleAddPet = async (e) => {
-    // ... (código sin cambios)
     e.preventDefault();
-    
-    if (!state.currentClientId) {
-        alert('No hay un cliente seleccionado');
-        return;
-    }
-    
-    const formData = new FormData(petFormEmployee);
-    const petData = {
-        owner_id: state.currentClientId,
-        name: formData.get('name'),
-        breed: formData.get('breed'),
-        size: formData.get('size'),
-        weight: parseFloat(formData.get('weight')) || null,
-        sex: formData.get('sex'),
-        observations: formData.get('observations') || null
-    };
-    
-    const result = await addPetFromDashboard(petData);
-    
-    if (result.success) {
-        petFormMessageEmployee.textContent = '✅ Mascota registrada con éxito';
-        petFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
-        petFormMessageEmployee.classList.remove('hidden');
-        
-        const { data: pets } = await supabase.from('pets').select('*').order('created_at', { ascending: false });
-        if (pets) {
-            updateState('allPets', pets);
-            renderPets(pets);
-        }
-        
-        setTimeout(() => {
-            closePetModal();
-        }, 1500);
-    } else {
-        petFormMessageEmployee.textContent = `❌ ${result.error?.message || 'Error al registrar mascota'}`;
-        petFormMessageEmployee.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
-        petFormMessageEmployee.classList.remove('hidden');
-    }
+    alert('Funcionalidad no disponible en esta vista. Agrega mascotas desde la vista de clientes.');
+    closePetModal();
 };

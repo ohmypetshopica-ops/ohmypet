@@ -6,17 +6,16 @@ import { supabase } from '../../core/supabase.js';
 
 // Elementos del DOM
 let serviceSearch, completedServicesList;
-let paginationContainerServices; // ====== ELEMENTO AGREGADO ======
+let paginationContainerServices;
 
-// ====== VARIABLES AGREGADAS PARA PAGINACIÓN ======
+// Variables de paginación
 let currentPageServices = 1;
-const itemsPerPageServices = 10; // Puedes ajustar este número
-// ====== FIN VARIABLES AGREGADAS ======
+const itemsPerPageServices = 10;
 
 export function initServiceElements() {
     serviceSearch = document.getElementById('service-search');
     completedServicesList = document.getElementById('completed-services-list');
-    paginationContainerServices = document.getElementById('pagination-container-services'); // ====== INICIALIZACIÓN AGREGADA ======
+    paginationContainerServices = document.getElementById('pagination-container-services');
 }
 
 export function setupServiceListeners() {
@@ -25,7 +24,6 @@ export function setupServiceListeners() {
     }
 }
 
-// Función para obtener servicios completados (sin cambios)
 const getCompletedServices = async () => {
     const { data, error } = await supabase
         .from('appointments')
@@ -46,7 +44,7 @@ const getCompletedServices = async () => {
     return data || [];
 };
 
-// ====== FUNCIÓN DE RENDERIZADO DE PAGINACIÓN AGREGADA ======
+// ====== FUNCIÓN DE PAGINACIÓN MEJORADA ======
 const renderPaginationServices = (totalItems) => {
     if (!paginationContainerServices) return;
 
@@ -56,22 +54,51 @@ const renderPaginationServices = (totalItems) => {
         return;
     }
 
-    let paginationHTML = '<div class="flex items-center space-x-2">';
+    let paginationHTML = '<div class="flex items-center justify-center space-x-2">';
 
+    // Botón Anterior
+    const prevDisabled = currentPageServices === 1;
     paginationHTML += `
-        <button data-page="${currentPageServices - 1}" class="px-3 py-1 border rounded-lg ${currentPageServices === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}" ${currentPageServices === 1 ? 'disabled' : ''}>
-            Anterior
+        <button data-page="${currentPageServices - 1}" 
+                class="px-3 py-2 border rounded-lg transition-colors ${prevDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700'}" 
+                ${prevDisabled ? 'disabled' : ''}>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
         </button>
     `;
 
-    for (let i = 1; i <= totalPages; i++) {
-        const activeClass = i === currentPageServices ? 'bg-green-600 text-white' : 'bg-white hover:bg-gray-50';
-        paginationHTML += `<button data-page="${i}" class="px-3 py-1 border rounded-lg ${activeClass}">${i}</button>`;
+    // Lógica para mostrar solo 3 números centrados en la página actual
+    let startPage = Math.max(1, currentPageServices - 1);
+    let endPage = Math.min(totalPages, startPage + 2);
+    
+    // Ajustar si estamos cerca del final
+    if (endPage - startPage < 2) {
+        startPage = Math.max(1, endPage - 2);
     }
 
+    // Números de página (máximo 3)
+    for (let i = startPage; i <= endPage; i++) {
+        const activeClass = i === currentPageServices 
+            ? 'bg-green-600 text-white' 
+            : 'bg-white hover:bg-gray-50 text-gray-700';
+        paginationHTML += `
+            <button data-page="${i}" 
+                    class="w-10 h-10 border rounded-lg font-medium transition-colors ${activeClass}">
+                ${i}
+            </button>
+        `;
+    }
+
+    // Botón Siguiente
+    const nextDisabled = currentPageServices === totalPages;
     paginationHTML += `
-        <button data-page="${currentPageServices + 1}" class="px-3 py-1 border rounded-lg ${currentPageServices === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50'}" ${currentPageServices === totalPages ? 'disabled' : ''}>
-            Siguiente
+        <button data-page="${currentPageServices + 1}" 
+                class="px-3 py-2 border rounded-lg transition-colors ${nextDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700'}" 
+                ${nextDisabled ? 'disabled' : ''}>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
         </button>
     `;
 
@@ -80,32 +107,31 @@ const renderPaginationServices = (totalItems) => {
 
     paginationContainerServices.querySelectorAll('button[data-page]').forEach(button => {
         button.addEventListener('click', () => {
-            currentPageServices = parseInt(button.dataset.page);
-            const searchTerm = serviceSearch.value.toLowerCase();
-            const filtered = searchTerm ? state.completedServices.filter(service => {
-                const ownerName = (service.profiles?.first_name ? `${service.profiles.first_name} ${service.profiles.last_name || ''}` : service.profiles?.full_name || '').toLowerCase();
-                const petName = (service.pets?.name || '').toLowerCase();
-                return petName.includes(searchTerm) || ownerName.includes(searchTerm);
-            }) : state.completedServices;
-            renderCompletedServices(filtered);
+            const newPage = parseInt(button.dataset.page);
+            if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
+                currentPageServices = newPage;
+                const searchTerm = serviceSearch.value.toLowerCase();
+                const filtered = searchTerm ? state.completedServices.filter(service => {
+                    const ownerName = (service.profiles?.first_name ? `${service.profiles.first_name} ${service.profiles.last_name || ''}` : service.profiles?.full_name || '').toLowerCase();
+                    const petName = (service.pets?.name || '').toLowerCase();
+                    return petName.includes(searchTerm) || ownerName.includes(searchTerm);
+                }) : state.completedServices;
+                renderCompletedServices(filtered);
+            }
         });
     });
 };
 
-
-// ====== FUNCIÓN `renderCompletedServices` MODIFICADA ======
 export const renderCompletedServices = (services) => {
     if (!completedServicesList) return;
 
-    // Lógica de paginación
     const startIndex = (currentPageServices - 1) * itemsPerPageServices;
     const endIndex = startIndex + itemsPerPageServices;
     const paginatedServices = services.slice(startIndex, endIndex);
 
-
     if (paginatedServices.length === 0) {
         completedServicesList.innerHTML = `<p class="text-center text-gray-500 mt-8">No se encontraron servicios completados.</p>`;
-        renderPaginationServices(0); // Limpiar paginación si no hay resultados
+        renderPaginationServices(0);
         return;
     }
 
@@ -118,42 +144,44 @@ export const renderCompletedServices = (services) => {
         const paymentMethod = service.payment_method || 'N/A';
 
         return `
-            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-start space-x-3">
-                <img src="${petImage}" alt="${petName}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
-                <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-center mb-1">
-                        <p class="font-bold text-gray-800 truncate">${petName} <span class="text-sm text-gray-500 font-normal">(${ownerName})</span></p>
-                        <span class="text-xs font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded">${serviceDate}</span>
+            <div class="bg-white p-4 rounded-lg border hover:bg-gray-50 transition-colors">
+                <div class="flex items-center space-x-3 mb-3">
+                    <img src="${petImage}" alt="${petName}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-lg text-gray-800">${petName} <span class="text-sm text-gray-500 font-normal">(${ownerName})</span></p>
+                        <p class="text-sm text-gray-600">${service.service || 'Servicio general'}</p>
                     </div>
-                    <p class="text-sm text-gray-600">${service.service || 'Servicio General'}</p>
-                    <div class="text-xs text-gray-500 mt-1 flex flex-wrap gap-x-3">
-                        <span>Precio: ${servicePrice}</span>
-                        <span>Pago: ${paymentMethod}</span>
-                        ${service.final_weight ? `<span>Peso: ${service.final_weight} kg</span>` : ''}
+                    <div class="text-right flex-shrink-0">
+                        <p class="font-bold text-green-600">${servicePrice}</p>
+                        <p class="text-xs text-gray-500">${paymentMethod}</p>
                     </div>
-                     ${service.final_observations ? `<p class="text-xs text-gray-500 mt-1 truncate">Obs: ${service.final_observations}</p>` : ''}
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <p class="text-gray-600"><strong>Fecha:</strong> ${serviceDate}</p>
+                    <p class="text-gray-600"><strong>Hora:</strong> ${service.appointment_time.slice(0, 5)}</p>
+                    ${service.final_weight ? `<p class="text-gray-600"><strong>Peso:</strong> ${service.final_weight} kg</p>` : ''}
+                    ${service.final_observations ? `<p class="text-gray-600 col-span-2 truncate"><strong>Obs.:</strong> ${service.final_observations}</p>` : ''}
                 </div>
             </div>
         `;
     }).join('');
 
-    // Renderizar la paginación
     renderPaginationServices(services.length);
 };
 
-// Función de búsqueda
 const handleServiceSearch = (e) => {
-    currentPageServices = 1; // ====== LÍNEA AGREGADA ======
+    currentPageServices = 1;
     const term = e.target.value.toLowerCase();
+
     const filtered = term ? state.completedServices.filter(service => {
-        const ownerName = service.profiles?.first_name ? `${service.profiles.first_name} ${service.profiles.last_name || ''}`.toLowerCase() : (service.profiles?.full_name || '').toLowerCase();
+        const ownerName = (service.profiles?.first_name ? `${service.profiles.first_name} ${service.profiles.last_name || ''}` : service.profiles?.full_name || '').toLowerCase();
         const petName = (service.pets?.name || '').toLowerCase();
         return petName.includes(term) || ownerName.includes(term);
     }) : state.completedServices;
+
     renderCompletedServices(filtered);
 };
 
-// Cargar datos iniciales (se llamará desde dashboard.js)
 export const loadCompletedServicesData = async () => {
     const services = await getCompletedServices();
     updateState('completedServices', services);
