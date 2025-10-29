@@ -71,7 +71,7 @@ const getCompletedServices = async () => {
         .from('appointments')
         .select(`
             id, appointment_date, appointment_time, service, service_price, payment_method,
-            final_observations, final_weight, pet_id, invoice_pdf_url,
+            final_observations, final_weight, pet_id, invoice_pdf_url, shampoo_type,
             pets (id, name),
             profiles (id, full_name, first_name, last_name),
             appointment_photos (id, photo_type, image_url)
@@ -262,6 +262,7 @@ const openServiceDetailsModal = (service) => {
     const cost = service.service_price ? `S/ ${service.service_price.toFixed(2)}` : 'No especificado';
     const finalWeight = service.final_weight ? `${service.final_weight} kg` : 'No registrado';
     const observations = service.final_observations || 'Sin observaciones';
+    const shampooUsed = service.shampoo_type || 'General';
 
     const photos = service.appointment_photos || [];
     const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
@@ -313,6 +314,11 @@ const openServiceDetailsModal = (service) => {
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Servicio Realizado</h4>
                 <p class="text-base text-gray-900">${service.service || 'Servicio general'}</p>
+            </div>
+            
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Shampoo Utilizado</h4>
+                <p class="text-base text-gray-900 font-medium">${shampooUsed}</p>
             </div>
             
             <div>
@@ -382,7 +388,6 @@ const switchToViewMode = () => {
 const switchToEditMode = () => {
     if (!selectedService) return;
 
-    // Resetear archivos
     newArrivalFile = null;
     newDepartureFile = null;
     newReceiptFile = null;
@@ -390,13 +395,11 @@ const switchToEditMode = () => {
     deleteDeparturePhoto = false;
     deleteReceipt = false;
 
-    // Poblar campos
     editServicePriceInput.value = selectedService.service_price || '';
     editPaymentMethodSelect.value = selectedService.payment_method || '';
     editFinalWeightInput.value = selectedService.final_weight || '';
     editFinalObservationsTextarea.value = selectedService.final_observations || '';
 
-    // Fotos
     const photos = selectedService.appointment_photos || [];
     const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
     const departurePhoto = photos.find(p => p.photo_type === 'departure');
@@ -413,7 +416,6 @@ const switchToEditMode = () => {
         editDeparturePhotoPreview.innerHTML = '<p class="text-sm text-gray-400">Sin foto de salida</p>';
     }
 
-    // Boleta
     if (selectedService.invoice_pdf_url) {
         editReceiptPreview.innerHTML = `<a href="${selectedService.invoice_pdf_url}" target="_blank" class="text-blue-600 hover:underline text-sm">📄 Ver boleta actual</a>`;
     } else {
@@ -474,7 +476,6 @@ const handleSaveChanges = async () => {
     editMessage.classList.remove('hidden');
 
     try {
-        // 1. Eliminar fotos si se solicitó
         if (deleteArrivalPhoto) {
             const { error } = await supabase
                 .from('appointment_photos')
@@ -493,7 +494,6 @@ const handleSaveChanges = async () => {
             if (error) console.error('Error al eliminar foto de salida:', error);
         }
 
-        // 2. Subir nuevas fotos
         if (newArrivalFile) {
             await uploadAppointmentPhoto(selectedService.id, newArrivalFile, 'arrival');
         }
@@ -502,7 +502,6 @@ const handleSaveChanges = async () => {
             await uploadAppointmentPhoto(selectedService.id, newDepartureFile, 'departure');
         }
 
-        // 3. Eliminar o subir boleta
         if (deleteReceipt && selectedService.invoice_pdf_url) {
             await supabase
                 .from('appointments')
@@ -514,7 +513,6 @@ const handleSaveChanges = async () => {
             await uploadReceiptFile(selectedService.id, newReceiptFile);
         }
 
-        // 4. Actualizar datos del servicio
         const updatedData = {
             service_price: price,
             payment_method: paymentMethod,
@@ -532,7 +530,6 @@ const handleSaveChanges = async () => {
         editMessage.textContent = '✅ Cambios guardados exitosamente';
         editMessage.className = 'block text-center text-sm font-medium p-3 rounded-lg bg-green-100 text-green-700';
 
-        // Recargar datos
         allCompletedServices = await getCompletedServices();
         const updatedService = allCompletedServices.find(s => s.id === selectedService.id);
         if (updatedService) {
@@ -555,9 +552,7 @@ const handleSaveChanges = async () => {
     }
 };
 
-// --- LISTENERS DE FOTOS Y BOLETA ---
 const setupPhotoListeners = () => {
-    // Foto de llegada
     editArrivalPhotoBtn.addEventListener('click', () => editArrivalPhotoInput.click());
     editArrivalPhotoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -578,7 +573,6 @@ const setupPhotoListeners = () => {
         editArrivalPhotoPreview.innerHTML = '<p class="text-sm text-gray-400">Sin foto de llegada</p>';
     });
 
-    // Foto de salida
     editDeparturePhotoBtn.addEventListener('click', () => editDeparturePhotoInput.click());
     editDeparturePhotoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -599,7 +593,6 @@ const setupPhotoListeners = () => {
         editDeparturePhotoPreview.innerHTML = '<p class="text-sm text-gray-400">Sin foto de salida</p>';
     });
 
-    // Boleta
     editReceiptBtn.addEventListener('click', () => editReceiptInput.click());
     editReceiptInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -617,7 +610,6 @@ const setupPhotoListeners = () => {
     });
 };
 
-// --- LISTENERS ---
 const attachServiceRowListeners = () => {
     document.querySelectorAll('.view-service-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -629,7 +621,6 @@ const attachServiceRowListeners = () => {
     });
 };
 
-// --- INICIALIZACIÓN ---
 const initializeServicesPage = async () => {
     if (petIdFromUrl) {
         currentFilters.petId = petIdFromUrl;
@@ -657,12 +648,10 @@ const initializeServicesPage = async () => {
     clearFiltersBtn?.addEventListener('click', clearFilters);
     closeServiceModal?.addEventListener('click', closeModal);
 
-    // Listeners de los botones del modal
     editServiceBtn.addEventListener('click', switchToEditMode);
     cancelEditBtn.addEventListener('click', switchToViewMode);
     saveServiceBtn.addEventListener('click', handleSaveChanges);
 
-    // Listeners de fotos y boleta
     setupPhotoListeners();
 };
 

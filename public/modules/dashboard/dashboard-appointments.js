@@ -45,6 +45,7 @@ const finalObservationsTextarea = document.querySelector('#final-observations-te
 const petWeightInput = document.querySelector('#pet-weight-input');
 const servicePriceInput = document.querySelector('#service-price-input');
 const paymentMethodSelect = document.querySelector('#payment-method-select');
+const shampooSelect = document.querySelector('#shampoo-select');
 const cancelCompletionBtn = document.querySelector('#cancel-completion-btn');
 const confirmCompletionBtn = document.querySelector('#confirm-completion-btn');
 const saveDuringAppointmentBtn = document.querySelector('#save-during-appointment-btn');
@@ -425,16 +426,14 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
     petWeightInput.value = '';
     servicePriceInput.value = '';
     paymentMethodSelect.value = '';
+    shampooSelect.value = '';
     uploadMessage.classList.add('hidden');
 
     const appointment = allAppointments.find(app => app.id == appointmentId);
     
-    // --- INICIO: CÓDIGO ACTUALIZADO (Lógica de edición eliminada) ---
-    // MODO COMPLETAR (única opción ahora)
     confirmCompletionBtn.classList.remove('hidden');
     saveDuringAppointmentBtn.textContent = '💾 Guardar Información (Continuar editando)';
     document.querySelector('#completion-modal h3').textContent = 'Completar Cita';
-    // --- FIN: CÓDIGO ACTUALIZADO ---
 
     completionModal.classList.remove('hidden');
 
@@ -443,6 +442,7 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
         petWeightInput.value = appointment.final_weight || '';
         servicePriceInput.value = appointment.service_price || '';
         paymentMethodSelect.value = appointment.payment_method || '';
+        shampooSelect.value = appointment.shampoo_type || '';
     }
 
     await loadExistingPhotosAndReceipt(appointmentId);
@@ -538,8 +538,7 @@ const initializePage = async () => {
             }
         } else if (action === 'reprogramar') {
             openRescheduleModal(appointmentId);
-        // --- INICIO: CÓDIGO ACTUALIZADO ---
-        } else if (action === 'completar') { // Se elimina la condición 'edit-completed'
+        } else if (action === 'completar') {
             const appointment = allAppointments.find(app => app.id == appointmentId);
             if (appointment) {
                 const petName = appointment.pets?.name || 'N/A';
@@ -547,7 +546,6 @@ const initializePage = async () => {
                 openCompletionModal(appointmentId, petName, petId);
             }
         }
-        // --- FIN: CÓDIGO ACTUALIZADO ---
     });
 
     cancelCompletionBtn?.addEventListener('click', closeCompletionModal);
@@ -615,6 +613,7 @@ const initializePage = async () => {
             const weight = petWeightInput.value.trim();
             const price = servicePriceInput.value.trim();
             const paymentMethod = paymentMethodSelect.value;
+            const shampooType = shampooSelect.value;
 
             const updateData = {};
             if (observations) updateData.final_observations = observations;
@@ -622,6 +621,7 @@ const initializePage = async () => {
             if (weight) updateData.final_weight = parseFloat(weight);
             if (price) updateData.service_price = parseFloat(price);
             if (paymentMethod) updateData.payment_method = paymentMethod;
+            if (shampooType) updateData.shampoo_type = shampooType;
 
             if (Object.keys(updateData).length > 0) {
                 uploadMessage.textContent = 'Guardando datos adicionales...';
@@ -656,6 +656,7 @@ const initializePage = async () => {
         const weight = petWeightInput.value.trim();
         const price = servicePriceInput.value.trim();
         const paymentMethod = paymentMethodSelect.value;
+        const shampooType = shampooSelect.value;
         
         let missingFields = [];
         if (!price) missingFields.push('precio del servicio');
@@ -701,7 +702,8 @@ const initializePage = async () => {
                 observations: observations,
                 weight: weight ? parseFloat(weight) : undefined, 
                 price: parseFloat(price),
-                paymentMethod: paymentMethod
+                paymentMethod: paymentMethod,
+                shampoo: shampooType
             });
 
             if (success) {

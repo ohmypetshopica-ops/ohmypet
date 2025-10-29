@@ -11,29 +11,29 @@ let appointmentsList;
 let addAppointmentBtnEmployee, addAppointmentModal, addAppointmentForm, cancelAddAppointmentBtn;
 let petSelect, newAppointmentDateInput, newAppointmentTimeSelect, addAppointmentMessage;
 let clientSearchInputModal, clientSearchResults, selectedClientIdInput;
-let serviceSelectEmployeeModal; // <<-- NUEVO SELECT PARA EL SERVICIO
+let serviceSelectEmployeeModal;
 
-// Modal de completar cita (Se mantienen las referencias, pero no se usarán en esta vista)
+// Modal de completar cita
 let completionModal, beforeImageInput, beforeImagePreview, afterImageInput, afterImagePreview;
 let receiptInput, receiptContainer, finalObservationsTextarea, uploadMessage;
 let cancelCompletionBtn, confirmCompletionBtn;
 let currentAppointmentToComplete = null;
 
 // NUEVOS ELEMENTOS PARA LA VISTA DE DETALLES
-let appointmentsListView; // Contenedor de la lista principal
-let appointmentDetailsView; // Contenedor de la vista de detalle
-let backToAppointmentsListBtn; // Botón para volver
-let appointmentDetailsContent; // Contenedor del contenido del detalle
+let appointmentsListView;
+let appointmentDetailsView;
+let backToAppointmentsListBtn;
+let appointmentDetailsContent;
 
 // NUEVOS INPUTS DEL MODAL DE COMPLETAR CITA
 let servicePriceInput;
 let petWeightInput;
 let paymentMethodSelect;
+let shampooSelectEmployee;
 
 export const initAppointmentElements = () => {
     appointmentsList = document.getElementById('appointments-list');
     
-    // Inicialización de Vistas
     appointmentsListView = document.getElementById('appointments-list-view'); 
     appointmentDetailsView = document.getElementById('appointment-details-view');
     appointmentDetailsContent = document.getElementById('appointment-details-content');
@@ -47,13 +47,12 @@ export const initAppointmentElements = () => {
     petSelect = document.querySelector('#pet-select-employee');
     newAppointmentDateInput = document.querySelector('#new-appointment-date-employee');
     newAppointmentTimeSelect = document.querySelector('#new-appointment-time-employee');
-    serviceSelectEmployeeModal = document.querySelector('#service-select-employee-modal'); // <<-- INICIALIZAR NUEVO SELECT
+    serviceSelectEmployeeModal = document.querySelector('#service-select-employee-modal');
     addAppointmentMessage = document.querySelector('#add-appointment-message-employee');
     clientSearchInputModal = document.querySelector('#client-search-input-modal-employee');
     clientSearchResults = document.querySelector('#client-search-results-employee');
     selectedClientIdInput = document.querySelector('#selected-client-id-employee');
     
-    // Modal de completar cita (mantener por si se usa en otra función en el futuro)
     completionModal = document.querySelector('#completion-modal-employee');
     beforeImageInput = document.querySelector('#before-image-input');
     beforeImagePreview = document.querySelector('#before-image-preview');
@@ -66,10 +65,10 @@ export const initAppointmentElements = () => {
     cancelCompletionBtn = document.querySelector('#cancel-completion-btn');
     confirmCompletionBtn = document.querySelector('#confirm-completion-btn');
 
-    // Inicializar nuevos inputs
     servicePriceInput = document.getElementById('service-price-input');
     petWeightInput = document.getElementById('pet-weight-input');
     paymentMethodSelect = document.getElementById('payment-method-select');
+    shampooSelectEmployee = document.getElementById('shampoo-select-employee');
 };
 
 const showAppointmentsList = () => {
@@ -80,7 +79,7 @@ const showAppointmentsList = () => {
 const fetchLastCompletedAppointment = async (petId) => {
     const { data, error } = await supabase
         .from('appointments')
-        .select(`appointment_date, final_observations, final_weight, service`)
+        .select(`appointment_date, final_observations, final_weight, service, shampoo_type`)
         .eq('pet_id', petId)
         .eq('status', 'completada')
         .order('appointment_date', { ascending: false })
@@ -88,7 +87,7 @@ const fetchLastCompletedAppointment = async (petId) => {
         .limit(1)
         .single();
     
-    if (error && error.code !== 'PGRST116') { // PGRST116 is no rows found
+    if (error && error.code !== 'PGRST116') {
         return null;
     }
     return data;
@@ -113,48 +112,39 @@ const openAppointmentDetails = async (appointmentId) => {
     
     const petId = currentAppointment.pet_id;
     
-    // 1. Mostrar vista de detalle e indicador de carga inmediatamente
     appointmentsListView?.classList.add('hidden');
     appointmentDetailsView?.classList.remove('hidden');
     appointmentDetailsContent.innerHTML = '<p class="text-center text-gray-500 py-8">Cargando detalles de historial...</p>';
 
-    // 2. Fetch de datos en paralelo
     const [lastCompleted, petDetails] = await Promise.all([
         fetchLastCompletedAppointment(petId),
         fetchPetDetails(petId)
     ]);
     
-    // =========================================================
-    // CORRECCIÓN LÓGICA DE EXTRACCIÓN DE NOMBRE Y TELÉFONO
-    // =========================================================
     const ownerProfile = currentAppointment.profiles;
     let ownerName = 'N/A';
-    let clientPhone = 'N/A'; // Inicializar la variable
+    let clientPhone = 'N/A';
     
     if (ownerProfile) {
         const firstName = ownerProfile.first_name || '';
         const lastName = ownerProfile.last_name || '';
         const fullName = ownerProfile.full_name || '';
-        clientPhone = ownerProfile.phone || 'N/A'; // <<-- OBTENER EL TELÉFONO DE AQUÍ
+        clientPhone = ownerProfile.phone || 'N/A';
         
-        // 1. Priorizar nombre y apellido
         if (firstName.trim() !== '' || lastName.trim() !== '') {
             ownerName = `${firstName} ${lastName}`.trim();
         } 
         
-        // 2. Usar full_name si es más descriptivo
         if (ownerName.trim() === '' || ownerName === 'N/A') {
              if (fullName.trim() !== '' && !fullName.includes('@')) {
                  ownerName = fullName.trim();
              }
         }
         
-        // 3. Si aún está vacío, usar el email si está disponible
         if (ownerName.trim() === '' || ownerName === 'N/A') {
             ownerName = ownerProfile.email || 'N/A';
         }
     }
-    // =========================================================
         
     const petName = currentAppointment.pets?.name || 'N/A';
     
@@ -198,6 +188,7 @@ const openAppointmentDetails = async (appointmentId) => {
                 ${lastCompleted ? `
                     <div class="space-y-1 text-sm">
                         <p><strong>Fecha:</strong> ${lastCompleted.appointment_date} (${lastCompleted.service})</p>
+                        <p><strong>Shampoo:</strong> ${lastCompleted.shampoo_type || 'General'}</p>
                         <p><strong>Peso Final:</strong> ${lastCompleted.final_weight ? `${lastCompleted.final_weight} kg` : 'N/A'}</p>
                         <p><strong>Observaciones:</strong> ${lastCompleted.final_observations || 'Sin observaciones finales.'}</p>
                     </div>
@@ -211,9 +202,7 @@ const openAppointmentDetails = async (appointmentId) => {
         </div>
     `;
     
-    // Wire up the new button to the existing modal logic
     document.getElementById('detail-complete-btn')?.addEventListener('click', (e) => {
-        // Establecer el ID de la cita actual
         currentAppointmentToComplete = e.target.dataset.appointmentId; 
         openCompletionModal(e.target.dataset.appointmentId);
     });
@@ -228,21 +217,16 @@ export const setupAppointmentListeners = () => {
     clientSearchInputModal?.addEventListener('input', handleClientSearchInModal);
     newAppointmentDateInput?.addEventListener('change', handleDateChange);
     
-    // Listener para volver a la lista
     backToAppointmentsListBtn?.addEventListener('click', showAppointmentsList);
     
-    // Modified: Clicking anywhere on the list item triggers the detail view
     appointmentsList?.addEventListener('click', (e) => {
         const item = e.target.closest('.appointment-list-item');
         if (item) {
-            // Abrir la vista de detalle
             openAppointmentDetails(item.dataset.appointmentId);
         }
     });
     
-    // Listeners del modal de completar cita
     cancelCompletionBtn?.addEventListener('click', closeCompletionModal);
-    // Se añade un listener para los nuevos campos si fuera necesario validación en tiempo real
     
     confirmCompletionBtn?.addEventListener('click', handleCompleteAppointment);
     
@@ -268,7 +252,6 @@ const extractNotes = (app) => {
 export const renderConfirmedAppointments = () => {
     if (!appointmentsList) return;
     
-    // Filtrar para mostrar SOLO confirmadas y pendientes
     const workingAppointments = state.allAppointments
         .filter(app => app.status === 'confirmada' || app.status === 'pendiente') 
         .sort((a, b) => new Date(`${a.appointment_date}T${a.appointment_time}`) - new Date(`${b.appointment_date}T${b.appointment_time}`));
@@ -281,12 +264,10 @@ export const renderConfirmedAppointments = () => {
     appointmentsList.innerHTML = workingAppointments.map(app => {
         const { serviceDisplay, notesDisplay } = extractNotes(app);
 
-        // Lógica de Avatar/Imagen
         const petImage = app.pets?.image_url 
             ? app.pets.image_url 
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(app.pets?.name || 'M')}&background=10B981&color=FFFFFF`;
         
-        // Información del dueño (usando la lógica reforzada)
         const ownerProfile = app.profiles;
         let ownerFirstName = 'Dueño';
 
@@ -304,7 +285,6 @@ export const renderConfirmedAppointments = () => {
         }
 
 
-        // Estilos para el estado
         const statusClass = app.status === 'confirmada' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
         const statusText = app.status === 'confirmada' ? 'Confirmada' : 'Pendiente';
 
@@ -407,18 +387,16 @@ const handleAddAppointment = async (e) => {
     
     const formData = new FormData(addAppointmentForm);
     
-    // Obtener el valor del nuevo select para el servicio
     const serviceValue = document.querySelector('#service-select-employee-modal').value; 
     
-    // CORRECCIÓN CLAVE: Obtener el ID del cliente del campo oculto.
     const clientId = selectedClientIdInput.value; 
 
     const appointmentData = {
-        user_id: clientId, // <--- CORRECCIÓN: Asignar el ID del cliente a user_id
+        user_id: clientId,
         pet_id: formData.get('pet_id'),
         appointment_date: formData.get('appointment_date'),
         appointment_time: formData.get('appointment_time'),
-        service: serviceValue, // <-- ASIGNACIÓN DEL VALOR DEL SELECT
+        service: serviceValue,
         notes: formData.get('notes') || null,
         status: 'confirmada'
     };
@@ -437,7 +415,6 @@ const handleAddAppointment = async (e) => {
         addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
         addAppointmentMessage.classList.remove('hidden');
         
-        // Recargar citas
         const { data: appointments } = await supabase
             .from('appointments')
             .select('*, pets(name), profiles(first_name, last_name, full_name)')
@@ -459,22 +436,22 @@ const handleAddAppointment = async (e) => {
     }
 };
 
-// Funciones para completar cita
 const openCompletionModal = (appointmentId) => {
     currentAppointmentToComplete = appointmentId;
 
-    // Obtener cita para prellenar precio y peso si existen
     const appointment = state.allAppointments.find(app => app.id === appointmentId);
     if (appointment) {
         servicePriceInput.value = appointment.service_price || '';
         petWeightInput.value = appointment.final_weight || '';
         paymentMethodSelect.value = appointment.payment_method || '';
         finalObservationsTextarea.value = appointment.final_observations || '';
+        shampooSelectEmployee.value = appointment.shampoo_type || '';
     } else {
          servicePriceInput.value = '';
          petWeightInput.value = '';
          paymentMethodSelect.value = '';
          finalObservationsTextarea.value = '';
+         shampooSelectEmployee.value = '';
     }
 
     completionModal?.classList.remove('hidden');
@@ -508,7 +485,6 @@ const handleImagePreview = (e, previewContainer) => {
 const handleCompleteAppointment = async () => {
     if (!currentAppointmentToComplete) return;
 
-    // 1. Validar campos obligatorios
     const price = parseFloat(servicePriceInput.value);
     const paymentMethod = paymentMethodSelect.value;
     
@@ -524,7 +500,6 @@ const handleCompleteAppointment = async () => {
     confirmCompletionBtn.disabled = true;
     confirmCompletionBtn.textContent = 'Procesando...';
     
-    // 2. Subir archivos
     if (beforeImageInput.files[0]) {
         await uploadAppointmentPhoto(currentAppointmentToComplete, beforeImageInput.files[0], 'before');
     }
@@ -537,23 +512,21 @@ const handleCompleteAppointment = async () => {
         await uploadReceiptFile(currentAppointmentToComplete, receiptInput.files[0]);
     }
 
-    // 3. Obtener Pet ID y registrar peso
     const appointment = state.allAppointments.find(app => app.id === currentAppointmentToComplete);
     const petId = appointment?.pet_id;
     const weight = parseFloat(petWeightInput.value);
 
     if (petId && !isNaN(weight) && weight > 0) {
-        // Se registra el peso solo si es válido y hay Pet ID
         await addWeightRecord(petId, weight, currentAppointmentToComplete);
     }
     
-    // 4. Actualizar estado y datos finales de la cita
     const updateData = {
         status: 'completada',
         final_observations: finalObservationsTextarea.value || null,
         service_price: price,
         payment_method: paymentMethod,
         final_weight: isNaN(weight) ? null : weight,
+        shampoo_type: shampooSelectEmployee.value || null
     };
     
     const { error } = await supabase
@@ -574,7 +547,6 @@ const handleCompleteAppointment = async () => {
     uploadMessage.className = 'block text-center text-sm font-medium p-3 rounded-lg bg-green-100 text-green-700';
     uploadMessage.classList.remove('hidden');
     
-    // 5. Recargar citas
     const { data: appointments } = await supabase
         .from('appointments')
         .select('*, pets(name), profiles(first_name, last_name, full_name)')

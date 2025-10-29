@@ -142,7 +142,7 @@ export const searchClients = async (searchTerm) => {
         };
     });
 };
-// MODIFICACIÓN CLAVE: Se añade paginación (range) a getAppointments y se invierte el orden a DESC
+
 export const getAppointments = async (page = 1, itemsPerPage = 10, search = '', status = '', date = '') => {
     const from = (page - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
@@ -151,15 +151,23 @@ export const getAppointments = async (page = 1, itemsPerPage = 10, search = '', 
         .from('appointments')
         .select(`
             id, appointment_date, appointment_time, service, status, final_observations, 
-            final_weight, invoice_pdf_url, pet_id, service_price, payment_method, 
-            pets ( name, image_url ), 
-            profiles ( full_name, first_name, last_name, phone )
+            final_weight, invoice_pdf_url, pet_id, service_price, payment_method, shampoo_type,
+            pets!inner ( name, image_url ), 
+            profiles!inner ( full_name, first_name, last_name, phone )
         `, { count: 'exact' });
         
+    // ========== INICIO DE LA CORRECCIÓN ==========
     // Aplicar filtros
     if (search) {
-        query = query.or(`pets.name.ilike.%${search}%,profiles.full_name.ilike.%${search}%,profiles.first_name.ilike.%${search}%,profiles.last_name.ilike.%${search}%`);
+        // La sintaxis correcta para buscar en tablas relacionadas es "tabla_relacionada.columna"
+        query = query.or(
+            `pets.name.ilike.%${search}%,` +
+            `profiles.full_name.ilike.%${search}%,` +
+            `profiles.first_name.ilike.%${search}%,` +
+            `profiles.last_name.ilike.%${search}%`
+        );
     }
+    // ========== FIN DE LA CORRECCIÓN ==========
     
     if (status) {
         query = query.eq('status', status);
@@ -185,13 +193,15 @@ export const getAppointments = async (page = 1, itemsPerPage = 10, search = '', 
     return { data: data || [], count: count || 0 };
 };
 
+
 export const updateAppointmentStatus = async (appointmentId, newStatus, details = {}) => {
     const updateData = {
         status: newStatus,
         final_observations: details.observations,
         final_weight: details.weight,
         service_price: details.price,
-        payment_method: details.paymentMethod
+        payment_method: details.paymentMethod,
+        shampoo_type: details.shampoo
     };
 
     Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
@@ -213,7 +223,6 @@ export const filterAppointments = async (filters) => {
     let query = supabase.from('appointments').select(`id, appointment_date, appointment_time, service, status, pets ( name ), profiles ( full_name, first_name, last_name )`);
     if (filters.status) query = query.eq('status', filters.status);
     if (filters.date) query = query.eq('appointment_date', filters.date);
-    // ORDENACIÓN: Descendente para la gestión (más reciente primero)
     const { data, error } = await query
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
@@ -351,7 +360,6 @@ export const getClientDetails = async (clientId) => {
         const [profileRes, petsRes, appointmentsRes] = await Promise.all([
             supabase.from('profiles').select('*, email').eq('id', clientId).single(),
             supabase.from('pets').select('*').eq('owner_id', clientId),
-            // ORDENACIÓN: Descendente para que el historial muestre la más reciente primero
             supabase.from('appointments').select('*, pets(name)').eq('user_id', clientId).order('appointment_date', { ascending: false }).order('appointment_time', { ascending: false })
         ]);
 
@@ -489,9 +497,6 @@ export const getReportData = async (startDate, endDate) => {
     };
 };
 
-/**
- * Obtiene y procesa los datos de ventas de productos para el reporte.
- */
 export const getSalesReportData = async (startDate, endDate) => {
     const { data: sales, error } = await supabase
         .from('sales')
@@ -528,15 +533,12 @@ export const getSalesReportData = async (startDate, endDate) => {
         const price = sale.total_price || 0;
         totalSalesRevenue += price;
         productsSoldCount += sale.quantity;
-
-        // =================== CÓDIGO ACTUALIZADO ===================
         const method = sale.payment_method || 'No especificado';
         if (paymentMethodSummaryMap.has(method)) {
             paymentMethodSummaryMap.set(method, paymentMethodSummaryMap.get(method) + price);
         } else {
             paymentMethodSummaryMap.set(method, price);
         }
-        // =================== FIN CÓDIGO ACTUALIZADO ===================
     });
 
     const paymentMethodSummary = Array.from(paymentMethodSummaryMap, ([payment_method, total]) => ({
@@ -719,7 +721,7 @@ export const getClientsWithPets = async () => {
 export const getBookedTimesForDashboard = async (date) => {
     const { data: appointments, error: appointmentsError } = await supabase
         .from('appointments')
-        .select('appointment_time, id') // Seleccionamos cualquier columna para poder contar
+        .select('appointment_time, id')
         .eq('appointment_date', date)
         .in('status', ['pendiente', 'confirmada', 'completada']);
 
@@ -736,7 +738,6 @@ export const getBookedTimesForDashboard = async (date) => {
         console.error("Error al verificar horarios bloqueados:", blockedError);
     }
     
-    // Contar citas por horario
     const appointmentCounts = (appointments || []).reduce((acc, app) => {
         const time = app.appointment_time.slice(0, 5);
         acc[time] = (acc[time] || 0) + 1;
@@ -745,7 +746,6 @@ export const getBookedTimesForDashboard = async (date) => {
     
     const blockedTimes = blockedSlots ? blockedSlots.map(slot => slot.blocked_time.slice(0, 5)) : [];
 
-    // Devolver solo los horarios que están completamente llenos (3 o más citas) o bloqueados
     const fullyBookedTimes = Object.keys(appointmentCounts).filter(time => appointmentCounts[time] >= 3);
     
     return [...new Set([...fullyBookedTimes, ...blockedTimes])];
@@ -764,7 +764,6 @@ export const addAppointmentFromDashboard = async (appointmentData) => {
     return { success: true, data: data[0] };
 };
 
-// --- NUEVA FUNCIÓN PARA ACTUALIZAR PERFIL DE CLIENTE ---
 export const updateClientProfile = async (clientId, profileData) => {
     const { data, error } = await supabase
         .from('profiles')
@@ -778,13 +777,11 @@ export const updateClientProfile = async (clientId, profileData) => {
     }
     return { success: true, data: data[0] };
 };
-// --- FIN NUEVA FUNCIÓN ---
 
-// --- INICIO: CÓDIGO ACTUALIZADO ---
 export const rescheduleAppointmentFromDashboard = async (appointmentId, updatedData) => {
     const dataToUpdate = {
         ...updatedData,
-        status: 'pendiente' // Regresa a pendiente para requerir re-confirmación
+        status: 'pendiente'
     };
 
     const { data, error } = await supabase
@@ -799,12 +796,7 @@ export const rescheduleAppointmentFromDashboard = async (appointmentId, updatedD
     }
     return { success: true, data: data[0] };
 };
-// --- FIN: CÓDIGO ACTUALIZADO ---
 
-// =================== CÓDIGO A AGREGAR ===================
-/**
- * Obtiene un listado de ventas con datos del cliente y producto.
- */
 export const getSales = async () => {
     const { data, error } = await supabase
         .from('sales')
@@ -822,14 +814,10 @@ export const getSales = async () => {
     return data;
 };
 
-/**
- * Registra una nueva venta y descuenta el stock del producto.
- */
 export const addSale = async (saleData) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: { message: 'Usuario no autenticado' } };
 
-    // 1. Registrar la venta
     const salesRecords = saleData.items.map(item => ({
         client_id: saleData.client_id,
         product_id: item.product_id,
@@ -850,7 +838,6 @@ export const addSale = async (saleData) => {
         return { success: false, error: saleError };
     }
 
-    // 2. Obtener el stock actual del producto
     for (const item of saleData.items) {
         const { data: product, error: productError } = await supabase
             .from('products')
@@ -860,10 +847,9 @@ export const addSale = async (saleData) => {
 
         if (productError) {
             console.error('Error al obtener stock para actualizar:', productError);
-            continue; // Continuar con otros productos si este falla
+            continue;
         }
 
-        // 3. Calcular y actualizar el nuevo stock
         const newStock = product.stock - item.quantity;
         const { error: updateStockError } = await supabase
             .from('products')
@@ -878,11 +864,7 @@ export const addSale = async (saleData) => {
     return { success: true };
 };
 
-/**
- * Obtiene las mascotas que necesitan una cita.
- */
 export const getPetsNeedingAppointment = async () => {
-    // 1. Obtiene todas las mascotas que tienen una fecha de último servicio y una frecuencia.
     const { data: pets, error } = await supabase
         .from('pets')
         .select(`
@@ -907,20 +889,17 @@ export const getPetsNeedingAppointment = async () => {
     }
     
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalizar a medianoche para comparar solo fechas
+    today.setHours(0, 0, 0, 0);
 
-    // 2. Filtra en JavaScript las que ya están "vencidas".
     const petsNeedingCare = pets.filter(pet => {
         const lastGrooming = new Date(pet.last_grooming_date + 'T00:00:00');
         const nextAppointmentDate = new Date(lastGrooming);
         nextAppointmentDate.setDate(lastGrooming.getDate() + pet.reminder_frequency_days);
         
-        // Retorna true si la fecha de la próxima cita es hoy o ya pasó.
         return nextAppointmentDate <= today;
     });
 
     return petsNeedingCare;
 };
-// =================== FIN DEL CÓDIGO ===================
 
 export { supabase };

@@ -301,10 +301,18 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div>
                         <h4 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                            <span>3. Peso de la Mascota (kg) (Opcional)</span>
+                            <span>3. Precio del Servicio (S/.)</span>
+                            <span class="text-red-500">*</span>
+                        </h4>
+                        <input type="number" id="service-price-input" step="0.01" min="0" placeholder="Ej: 50.00"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                     <div>
+                        <h4 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            <span>4. Peso (kg) (Opcional)</span>
                         </h4>
                         <input type="number" id="pet-weight-input" step="0.1" min="0" placeholder="Ej: 5.5"
                             class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
@@ -312,15 +320,7 @@
                     <div>
                         <h4 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                             <span class="text-red-500">*</span>
-                            <span>Precio del Servicio (S/.)</span>
-                        </h4>
-                        <input type="number" id="service-price-input" step="0.01" min="0" placeholder="Ej: 50.00"
-                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                            <span class="text-red-500">*</span>
-                            <span>Método de Pago</span>
+                            <span>5. Método de Pago</span>
                         </h4>
                         <select id="payment-method-select"
                             class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 bg-white">
@@ -332,11 +332,24 @@
                             <option value="Transferencia">Transferencia</option>
                         </select>
                     </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">6. Shampoo (Opcional)</h4>
+                        <select id="shampoo-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 bg-white">
+                            <option value="">Shampoo General</option>
+                            <option value="Avena">Avena</option>
+                            <option value="Pelo Blanco">Pelo Blanco</option>
+                            <option value="Pelo Oscuro">Pelo Oscuro</option>
+                            <option value="Clorixidina">Clorixidina</option>
+                            <option value="Hipoalergenico">Hipoalergenico</option>
+                            <option value="Junior">Junior</option>
+                            <option value="Mascarilla">Mascarilla</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <h4 class="font-semibold text-gray-700 mb-2">4. Boleta / Comprobante (Opcional)</h4>
+                        <h4 class="font-semibold text-gray-700 mb-2">7. Boleta / Comprobante (Opcional)</h4>
                         <label for="receipt-input" id="receipt-container"
                             class="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-20 flex items-center justify-center text-center hover:bg-gray-50 transition-colors">
                             <p class="text-sm text-gray-500">Clic para subir boleta (opcional)</p>
@@ -346,7 +359,7 @@
                 </div>
 
                 <div>
-                    <h4 class="font-semibold text-gray-700 mb-2">5. Observaciones Finales (Opcional)</h4>
+                    <h4 class="font-semibold text-gray-700 mb-2">8. Observaciones Finales (Opcional)</h4>
                     <textarea id="final-observations-textarea" rows="4"
                         placeholder="Escribe cualquier observación relevante sobre el servicio, comportamiento de la mascota, etc."
                         class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-vertical"></textarea>

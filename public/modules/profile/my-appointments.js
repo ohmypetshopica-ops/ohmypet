@@ -3,7 +3,6 @@ import { supabase, getUserAppointments, cancelAppointment, getBookedTimes, resch
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- 1. SELECCIÓN DE ELEMENTOS ---
     const appointmentsContainer = document.querySelector('#appointments-container');
     const rescheduleModal = document.querySelector('#reschedule-modal');
     const closeRescheduleModalBtn = document.querySelector('#close-reschedule-modal-btn');
@@ -16,15 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalArrivalPhoto = document.querySelector('#modal-arrival-photo');
     const modalDeparturePhoto = document.querySelector('#modal-departure-photo');
     const modalStylistNotes = document.querySelector('#modal-stylist-notes');
+    const modalShampooType = document.querySelector('#modal-shampoo-type');
 
-    // --- 2. ESTADO ---
     let allAppointments = [];
     let selectedTime = null;
     let appointmentToRescheduleId = null;
     let clientFullName = 'Cliente';
     let petNameForReschedule = '';
-
-    // --- 3. FUNCIONES ---
 
     const openModal = (appointmentId, petName) => {
         appointmentToRescheduleId = appointmentId;
@@ -75,8 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         modalPetName.textContent = `Servicio para ${petName}`;
         modalStylistNotes.textContent = appointment.final_observations || 'No se dejaron observaciones.';
+        modalShampooType.textContent = appointment.shampoo_type || 'General';
         
-        const placeholder = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; // Imagen transparente
+        const placeholder = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
         modalArrivalPhoto.src = arrivalPhoto ? arrivalPhoto.image_url : placeholder;
         modalDeparturePhoto.src = departurePhoto ? departurePhoto.image_url : placeholder;
 
@@ -136,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const loadAppointments = async () => {
-        // ========= INICIO DE LA MEJORA DE CARGA =========
         appointmentsContainer.innerHTML = '';
         const skeletonTemplate = document.querySelector('#appointment-card-skeleton');
         if (skeletonTemplate) {
@@ -146,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             appointmentsContainer.innerHTML = '<p class="text-center text-gray-500 py-8">Cargando tus citas...</p>';
         }
-        // ========= FIN DE LA MEJORA DE CARGA =========
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -162,7 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         allAppointments = appointmentsData;
 
-        // Limpiar los esqueletos antes de renderizar los datos reales
         appointmentsContainer.innerHTML = ''; 
 
         if (allAppointments && allAppointments.length > 0) {
@@ -171,8 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
             appointmentsContainer.innerHTML = '<p class="text-center text-gray-500 py-8">Aún no tienes ninguna cita registrada.</p>';
         }
     };
-    
-    // --- 4. EVENT LISTENERS ---
     
     if (dateInput) {
         dateInput.min = new Date().toISOString().split("T")[0];
@@ -244,6 +237,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 5. INICIALIZACIÓN ---
     loadAppointments();
 });
