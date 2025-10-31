@@ -33,7 +33,7 @@ let totalAppointmentsCount = 0;
 // --- OPCIONES DE SHAMPOO (NUEVO) ---
 const SHAMPOO_OPTIONS = [
     'Shampoo General', 'Avena', 'Pelo Blanco', 'Pelo Oscuro', 'Clorixidina',
-    'Hipoalergenico', 'Junior', 'Mascarilla'
+    'Hipoalergenico', 'Junior', 'Mascarilla', 'SHAMPO PROPIO' // <--- OPCIÓN AÑADIDA
 ];
 
 // --- ELEMENTOS DEL DOM GENERAL ---
