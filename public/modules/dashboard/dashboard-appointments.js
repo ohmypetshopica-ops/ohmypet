@@ -30,6 +30,12 @@ let currentPage = 1;
 const itemsPerPage = 10;
 let totalAppointmentsCount = 0;
 
+// --- OPCIONES DE SHAMPOO (NUEVO) ---
+const SHAMPOO_OPTIONS = [
+    'Shampoo General', 'Avena', 'Pelo Blanco', 'Pelo Oscuro', 'Clorixidina',
+    'Hipoalergenico', 'Junior', 'Mascarilla'
+];
+
 // --- ELEMENTOS DEL DOM GENERAL ---
 const appointmentsTableBody = document.querySelector('#appointments-table-body');
 const searchInput = document.querySelector('#appointment-search-input');
@@ -45,7 +51,10 @@ const finalObservationsTextarea = document.querySelector('#final-observations-te
 const petWeightInput = document.querySelector('#pet-weight-input');
 const servicePriceInput = document.querySelector('#service-price-input');
 const paymentMethodSelect = document.querySelector('#payment-method-select');
-const shampooSelect = document.querySelector('#shampoo-select');
+// Elementos del Dropdown de Shampoo (NUEVOS)
+const shampooSelectToggle = document.querySelector('#shampoo-select-toggle'); 
+const shampooDropdownContent = document.querySelector('#shampoo-dropdown-content');
+const shampooDisplayText = document.querySelector('#shampoo-display-text');
 const cancelCompletionBtn = document.querySelector('#cancel-completion-btn');
 const confirmCompletionBtn = document.querySelector('#confirm-completion-btn');
 const saveDuringAppointmentBtn = document.querySelector('#save-during-appointment-btn');
@@ -84,6 +93,54 @@ const cancelRescheduleBtn = document.querySelector('#cancel-reschedule-btn');
 const confirmRescheduleBtn = document.querySelector('#confirm-reschedule-btn');
 
 let appointmentToRescheduleId = null;
+
+
+// --- FUNCIONES SHAMPOO CHECKLIST (NUEVO) ---
+const updateShampooDisplayText = () => {
+    const checkedBoxes = document.querySelectorAll('#shampoo-dropdown-content .shampoo-checkbox:checked');
+    const count = checkedBoxes.length;
+
+    if (shampooDisplayText) {
+        if (count === 0) {
+            shampooDisplayText.textContent = 'Seleccionar...';
+        } else if (count === 1) {
+            shampooDisplayText.textContent = checkedBoxes[0].value;
+        } else {
+            shampooDisplayText.textContent = `${count} seleccionados`;
+        }
+    }
+};
+
+const renderShampooChecklist = (selectedShampoos = []) => {
+    if (!shampooDropdownContent) return;
+
+    shampooDropdownContent.innerHTML = SHAMPOO_OPTIONS.map(shampoo => {
+        const sanitizedShampoo = shampoo.replace(/[^a-zA-Z0-9]/g, '-');
+        const isChecked = selectedShampoos.some(s => s.trim() === shampoo);
+        
+        return `
+            <label for="shampoo-${sanitizedShampoo}" class="flex items-center hover:bg-gray-50 p-1 rounded-md cursor-pointer">
+                <input id="shampoo-${sanitizedShampoo}" type="checkbox" value="${shampoo}"
+                    class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 shampoo-checkbox" ${isChecked ? 'checked' : ''}>
+                <span class="ml-2 text-sm text-gray-700">${shampoo}</span>
+            </label>
+        `;
+    }).join('');
+
+    // Añadir listener para actualizar el texto del botón al cambiar un checkbox
+    shampooDropdownContent.querySelectorAll('.shampoo-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateShampooDisplayText);
+    });
+
+    updateShampooDisplayText();
+};
+
+const getShampooList = () => {
+    const checkedBoxes = document.querySelectorAll('#shampoo-dropdown-content .shampoo-checkbox:checked');
+    const selectedShampoos = Array.from(checkedBoxes).map(cb => cb.value).join(',');
+    return selectedShampoos || null;
+};
+// --- FIN FUNCIONES SHAMPOO CHECKLIST ---
 
 
 // --- PAGINACIÓN ---
@@ -259,7 +316,6 @@ const openRescheduleModal = async (appointmentId) => {
 
     appointmentToRescheduleId = appointmentId;
 
-    // =================== CORRECCIÓN INICIADA AQUÍ ===================
     const ownerProfile = appointment.profiles;
     let clientName = 'N/A';
     
@@ -270,7 +326,6 @@ const openRescheduleModal = async (appointmentId) => {
             clientName = ownerProfile.full_name;
         }
     }
-    // =================== CORRECCIÓN FINALIZADA AQUÍ ===================
     
     const petName = appointment.pets?.name || 'N/A';
 
@@ -426,7 +481,8 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
     petWeightInput.value = '';
     servicePriceInput.value = '';
     paymentMethodSelect.value = '';
-    shampooSelect.value = '';
+    
+
     uploadMessage.classList.add('hidden');
 
     const appointment = allAppointments.find(app => app.id == appointmentId);
@@ -442,7 +498,12 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
         petWeightInput.value = appointment.final_weight || '';
         servicePriceInput.value = appointment.service_price || '';
         paymentMethodSelect.value = appointment.payment_method || '';
-        shampooSelect.value = appointment.shampoo_type || '';
+        
+        // --- Cargar y renderizar checkboxes (NUEVO) ---
+        const selectedShampoos = appointment.shampoo_type ? appointment.shampoo_type.split(',').map(s => s.trim()) : [];
+        renderShampooChecklist(selectedShampoos);
+    } else {
+        renderShampooChecklist([]); // Nuevo: Si no hay cita, renderiza vacío
     }
 
     await loadExistingPhotosAndReceipt(appointmentId);
@@ -485,6 +546,19 @@ const closeCompletionModal = () => {
 
 const initializePage = async () => {
     await loadAppointmentsAndRender();
+
+    // --- EVENTOS DEL DROPDOWN DE SHAMPOO (NUEVO) ---
+    shampooSelectToggle?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        shampooDropdownContent?.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!shampooSelectToggle?.contains(e.target) && !shampooDropdownContent?.contains(e.target)) {
+            shampooDropdownContent?.classList.add('hidden');
+        }
+    });
+    // --- FIN EVENTOS DROPDOWN SHAMPOO ---
 
     searchInput?.addEventListener('input', applyFiltersAndSearch);
     statusFilter?.addEventListener('change', applyFiltersAndSearch);
@@ -613,7 +687,7 @@ const initializePage = async () => {
             const weight = petWeightInput.value.trim();
             const price = servicePriceInput.value.trim();
             const paymentMethod = paymentMethodSelect.value;
-            const shampooType = shampooSelect.value;
+            const shampooType = getShampooList(); // NEW: Read from checklist
 
             const updateData = {};
             if (observations) updateData.final_observations = observations;
@@ -621,7 +695,7 @@ const initializePage = async () => {
             if (weight) updateData.final_weight = parseFloat(weight);
             if (price) updateData.service_price = parseFloat(price);
             if (paymentMethod) updateData.payment_method = paymentMethod;
-            if (shampooType) updateData.shampoo_type = shampooType;
+            if (shampooType) updateData.shampoo_type = shampooType; // NEW
 
             if (Object.keys(updateData).length > 0) {
                 uploadMessage.textContent = 'Guardando datos adicionales...';
@@ -656,7 +730,7 @@ const initializePage = async () => {
         const weight = petWeightInput.value.trim();
         const price = servicePriceInput.value.trim();
         const paymentMethod = paymentMethodSelect.value;
-        const shampooType = shampooSelect.value;
+        const shampooType = getShampooList(); // NEW: Read from checklist
         
         let missingFields = [];
         if (!price) missingFields.push('precio del servicio');
@@ -703,7 +777,7 @@ const initializePage = async () => {
                 weight: weight ? parseFloat(weight) : undefined, 
                 price: parseFloat(price),
                 paymentMethod: paymentMethod,
-                shampoo: shampooType
+                shampoo: shampooType // NEW: shampooType is the string of selected shampoos
             });
 
             if (success) {
