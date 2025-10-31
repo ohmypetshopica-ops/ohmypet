@@ -50,7 +50,7 @@ const AVAILABLE_HOURS = [
     "15:00", "15:30", "16:00"
 ];
 
-// --- FUNCIONES DE API (sin cambios, solo importadas) ---
+// --- FUNCIONES DE API ---
 
 /**
  * Obtiene todas las citas de un mes específico
@@ -143,7 +143,7 @@ const unblockTimeSlot = async (date, time) => {
 };
 
 
-// --- FUNCIONES DEL CALENDARIO (createDayCell y renderCalendar se mantienen igual) ---
+// --- FUNCIONES DEL CALENDARIO ---
 
 /**
  * Renderiza el calendario del mes actual
@@ -342,12 +342,23 @@ const openDayDetailModal = async (dateStr) => {
     // Renderizar horarios
     timeSlotsContainer.innerHTML = '';
     
+    // --- INICIO DE LA CORRECCIÓN: Definir el tiempo actual para la validación ---
+    const now = new Date();
+    // Normalizamos el tiempo actual a la precisión del minuto
+    now.setSeconds(0, 0); 
+    // --- FIN DE LA CORRECCIÓN ---
+
     AVAILABLE_HOURS.forEach(time => {
         const appointment = dayAppointments.find(apt => apt.appointment_time.startsWith(time));
         const blocked = dayBlocked.find(slot => slot.blocked_time.startsWith(time));
         
         const slot = document.createElement('div');
         slot.className = 'p-3 rounded-lg border-2 transition-all';
+        
+        // Determinar si el slot de tiempo es pasado o actual
+        const slotDateTime = new Date(`${dateStr}T${time}:00`);
+        const isPastOrCurrent = slotDateTime <= now;
+
         
         if (appointment) {
             // Hay una cita - Mostrar detalles
@@ -378,32 +389,41 @@ const openDayDetailModal = async (dateStr) => {
                 <div class="font-bold text-sm">${time}</div>
                 <div class="text-xs text-red-700 mt-1">🚫 Bloqueado</div>
                 <div class="text-xs text-gray-600">${blocked.reason || 'Sin motivo'}</div>
-                <div class="mt-2">
-                    <button class="unblock-btn w-full bg-red-500 text-white text-xs font-semibold py-1 rounded hover:bg-red-600">Desbloquear</button>
-                </div>
+                ${!isPastOrCurrent ? `
+                    <div class="mt-2">
+                        <button class="unblock-btn w-full bg-red-500 text-white text-xs font-semibold py-1 rounded hover:bg-red-600">Desbloquear</button>
+                    </div>
+                ` : `<div class="mt-2 text-xs text-gray-500">Horario pasado</div>`}
             `;
             
-            slot.querySelector('.unblock-btn').addEventListener('click', async () => {
-                if (confirm(`¿Desbloquear el horario ${time}?`)) {
-                    const result = await unblockTimeSlot(dateStr, time + ':00');
-                    if (result.success) {
-                        alert('Horario desbloqueado');
-                        await renderCalendar();
-                        openDayDetailModal(dateStr);
-                    } else {
-                        alert('Error al desbloquear horario');
+            if (!isPastOrCurrent) {
+                 slot.querySelector('.unblock-btn').addEventListener('click', async () => {
+                    if (confirm(`¿Desbloquear el horario ${time}?`)) {
+                        const result = await unblockTimeSlot(dateStr, time + ':00');
+                        if (result.success) {
+                            alert('Horario desbloqueado');
+                            await renderCalendar();
+                            openDayDetailModal(dateStr);
+                        } else {
+                            alert('Error al desbloquear horario');
+                        }
                     }
-                }
-            });
+                });
+            }
+           
         } else {
             // Está disponible - Opciones de agendar/bloquear
             slot.className += ' border-green-300 bg-green-50 hover:bg-green-100 cursor-pointer';
+
+            const blockButtonHTML = isPastOrCurrent ? '' : 
+                `<button class="block-btn bg-gray-600 text-white text-xs font-semibold py-1 px-2 rounded hover:bg-gray-700">Bloquear</button>`;
+            
             slot.innerHTML = `
                 <div class="font-bold text-sm">${time}</div>
                 <div class="text-xs text-green-700 mt-1">✓ Disponible</div>
                 <div class="mt-2 flex gap-2 justify-center">
                     <button class="schedule-btn bg-green-600 text-white text-xs font-semibold py-1 px-2 rounded hover:bg-green-700">Agendar Cita</button>
-                    <button class="block-btn bg-gray-600 text-white text-xs font-semibold py-1 px-2 rounded hover:bg-gray-700">Bloquear</button>
+                    ${blockButtonHTML}
                 </div>
             `;
             
@@ -411,20 +431,22 @@ const openDayDetailModal = async (dateStr) => {
                 // Abrir el modal de agendar cita con la fecha y hora seleccionadas
                 openAddAppointmentModal(dateStr, time);
             });
-
-            slot.querySelector('.block-btn').addEventListener('click', async () => {
-                const reason = prompt(`Bloquear horario ${time}. Motivo (opcional):`, 'Bloqueado por administrador');
-                if (reason !== null) {
-                    const result = await blockTimeSlot(dateStr, time + ':00', reason || 'Bloqueado por administrador');
-                    if (result.success) {
-                        alert('Horario bloqueado');
-                        await renderCalendar();
-                        openDayDetailModal(dateStr);
-                    } else {
-                        alert('Error al bloquear horario');
+            
+            if (!isPastOrCurrent) {
+                slot.querySelector('.block-btn').addEventListener('click', async () => {
+                    const reason = prompt(`Bloquear horario ${time}. Motivo (opcional):`, 'Bloqueado por administrador');
+                    if (reason !== null) {
+                        const result = await blockTimeSlot(dateStr, time + ':00', reason || 'Bloqueado por administrador');
+                        if (result.success) {
+                            alert('Horario bloqueado');
+                            await renderCalendar();
+                            openDayDetailModal(dateStr);
+                        } else {
+                            alert('Error al bloquear horario');
+                        }
                     }
-                }
-            });
+                });
+            }
         }
         
         timeSlotsContainer.appendChild(slot);
@@ -616,6 +638,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Configurar listeners del modal de agendamiento después de que el DOM esté cargado.
     setupAppointmentModalListeners();
+    
+    // Establecer la fecha mínima para la nueva cita a la fecha actual.
+    newAppointmentDateInput.min = new Date().toISOString().split("T")[0];
     
     await renderCalendar();
 });
