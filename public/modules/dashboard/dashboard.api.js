@@ -152,20 +152,19 @@ export const getAppointments = async (page = 1, itemsPerPage = 10, search = '', 
         .select(`
             id, appointment_date, appointment_time, service, status, final_observations, 
             final_weight, invoice_pdf_url, pet_id, service_price, payment_method, shampoo_type,
+            client_name_denorm, pet_name_denorm,
             pets!inner ( name, image_url ), 
             profiles!inner ( full_name, first_name, last_name, phone )
         `, { count: 'exact' });
         
-    // ========== INICIO DE LA CORRECCIÓN ==========
-    // Aplicar filtros
+    // ========== INICIO DE LA CORRECCIÓN CON DENORMALIZACIÓN ==========
+    // Aplicar filtro directo en los nuevos campos denormalizados.
     if (search) {
-        // La sintaxis correcta para buscar en tablas relacionadas es "tabla_relacionada.columna"
-        query = query.or(
-            `pets.name.ilike.%${search}%,` +
-            `profiles.full_name.ilike.%${search}%,` +
-            `profiles.first_name.ilike.%${search}%,` +
-            `profiles.last_name.ilike.%${search}%`
-        );
+        const searchTerm = `%${search}%`;
+        // La consulta ahora busca si el término está en el nombre del cliente o de la mascota (denormalizado).
+        const filterString = `pet_name_denorm.ilike."${searchTerm}",client_name_denorm.ilike."${searchTerm}"`;
+        
+        query = query.or(filterString);
     }
     // ========== FIN DE LA CORRECCIÓN ==========
     
@@ -751,10 +750,31 @@ export const getBookedTimesForDashboard = async (date) => {
     return [...new Set([...fullyBookedTimes, ...blockedTimes])];
 };
 
+// ===========================================
+// FUNCIÓN ACTUALIZADA CON DENORMALIZACIÓN
+// ===========================================
 export const addAppointmentFromDashboard = async (appointmentData) => {
+    // 1. Fetch denormalized data
+    const [petRes, clientRes] = await Promise.all([
+        supabase.from('pets').select('name').eq('id', appointmentData.pet_id).single(),
+        supabase.from('profiles').select('first_name, last_name, full_name').eq('id', appointmentData.user_id).single()
+    ]);
+
+    const petName = petRes.data?.name || 'Mascota eliminada';
+    const clientProfile = clientRes.data;
+    const clientName = (clientProfile?.first_name && clientProfile?.last_name) 
+        ? `${clientProfile.first_name} ${clientProfile.last_name}` 
+        : clientProfile?.full_name || 'Cliente eliminado';
+
+    const insertData = {
+        ...appointmentData,
+        pet_name_denorm: petName,      // <<-- NUEVO CAMPO
+        client_name_denorm: clientName // <<-- NUEVO CAMPO
+    };
+    
     const { data, error } = await supabase
         .from('appointments')
-        .insert([appointmentData])
+        .insert([insertData])
         .select();
 
     if (error) {
@@ -779,9 +799,31 @@ export const updateClientProfile = async (clientId, profileData) => {
 };
 
 export const rescheduleAppointmentFromDashboard = async (appointmentId, updatedData) => {
+    // 1. Fetch data to denormalize for update
+    const appointmentRes = await supabase.from('appointments').select('pet_id, user_id').eq('id', appointmentId).single();
+    
+    let petName = null;
+    let clientName = null;
+    
+    if (appointmentRes.data) {
+        const [petRes, clientRes] = await Promise.all([
+            supabase.from('pets').select('name').eq('id', appointmentRes.data.pet_id).single(),
+            supabase.from('profiles').select('first_name, last_name, full_name').eq('id', appointmentRes.data.user_id).single()
+        ]);
+        
+        petName = petRes.data?.name || 'Mascota eliminada';
+        const clientProfile = clientRes.data;
+        clientName = (clientProfile?.first_name && clientProfile?.last_name) 
+            ? `${clientProfile.first_name} ${clientProfile.last_name}` 
+            : clientProfile?.full_name || 'Cliente eliminado';
+    }
+
+
     const dataToUpdate = {
         ...updatedData,
-        status: 'pendiente'
+        status: 'pendiente',
+        pet_name_denorm: petName,      // <<-- AÑADIDO
+        client_name_denorm: clientName // <<-- AÑADIDO
     };
 
     const { data, error } = await supabase
