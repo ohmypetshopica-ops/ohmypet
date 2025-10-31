@@ -459,7 +459,7 @@ const scheduleSinglePetAppointment = async () => {
         try {
             const appointmentDate = new Date(date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             
-            const message = `¡Hola ${petOwnerFirstName}! 👋 Te confirmamos tu cita en OhMyPet:\n\n*Mascota:* ${petName}\n*Fecha:* ${appointmentDate}\n*Hora:* ${time.slice(0, 5)}\n*Servicio:* ${service}\n\n¡Te esperamos! 🐾`;
+            const message = `*¡Nueva Solicitud de Cita OhMyPet!*\n(Ya registrada en el sistema)\n\n*Cliente:* ${petOwnerFirstName}\n*Mascota:* ${petName}\n*Fecha:* ${appointmentDate}\n*Hora:* ${time.slice(0, 5)}\n*Servicio:* ${service}\n\n¡Te esperamos! 🐾`;
             
             if (petPhone && petPhone !== 'N/A' && petPhone.length >= 9) {
                  const whatsappUrl = `https://wa.me/51${petPhone}?text=${encodeURIComponent(message)}`;
@@ -928,6 +928,14 @@ const setupAddPetModal = () => {
 
         if (success) {
             alert('¡Mascota registrada con éxito!');
+            
+            // --- INICIO DE CORRECCIÓN ---
+            // Recargar la sección principal para actualizar el conteo de mascotas en la tabla
+            const updatedClients = await getClients();
+            currentPage = 1;
+            renderClientsTable(updatedClients);
+            // --- FIN DE CORRECCIÓN ---
+
             closeAddPetModal();
         } else {
             if(addPetFormMessage) {
@@ -997,6 +1005,15 @@ const setupEventListeners = () => {
     modalAddPetBtnFooter.addEventListener('click', () => {
         if (currentClientId) openAddPetModal(currentClientId);
     });
+
+    // --- LISTENERS DEL MODAL DE REGISTRO DE CLIENTE ---
+    addClientButton.addEventListener('click', openClientModal);
+    closeClientModalButton.addEventListener('click', closeClientModal);
+    cancelClientButton.addEventListener('click', closeClientModal);
+    clientModal.addEventListener('click', (e) => {
+        if (e.target === clientModal) closeClientModal();
+    });
+    // --- FIN LISTENERS MODAL REGISTRO DE CLIENTE ---
 
     // --- LISTENERS DEL MODAL MÚLTIPLE (NUEVOS) ---
     closeMultiAptModalBtn?.addEventListener('click', closeMultiAppointmentModal);
