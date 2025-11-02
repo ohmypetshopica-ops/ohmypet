@@ -1,7 +1,7 @@
 // public/modules/dashboard/dashboard-pos.js
 
 import { supabase } from '../../core/supabase.js';
-import { getProducts } from './dashboard.api.js';
+import { getProducts, addSale } from './dashboard.api.js'; // addSale importado correctamente
 
 console.log('✅ dashboard-pos.js cargado');
 
@@ -32,6 +32,7 @@ const cancelPaymentBtn = document.getElementById('cancel-payment-btn');
 const confirmPaymentBtn = document.getElementById('confirm-payment-btn');
 const modalTotalElement = document.getElementById('modal-total');
 const cashSection = document.getElementById('cash-section');
+const saleDateInput = document.getElementById('sale-date'); // <-- NUEVO ELEMENTO
 
 // --- VARIABLES GLOBALES ---
 let allProducts = [];
@@ -54,32 +55,7 @@ const getClients = async () => {
     return data || [];
 };
 
-const saveSale = async (saleData) => {
-    // Obtener el usuario actual para recorded_by
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // Crear múltiples registros de venta (uno por cada producto)
-    const salesRecords = saleData.items.map(item => ({
-        client_id: saleData.client_id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.subtotal,
-        payment_method: saleData.payment_method,
-        recorded_by: user?.id || null
-    }));
-    
-    const { data, error } = await supabase
-        .from('sales')
-        .insert(salesRecords)
-        .select();
-    
-    if (error) {
-        console.error('Error al guardar venta:', error);
-        return { success: false, error };
-    }
-    return { success: true, data };
-};
+// addSale se importa desde dashboard.api.js
 
 const updateProductStock = async (productId, newStock) => {
     const { error } = await supabase
@@ -164,6 +140,8 @@ const updateQuantity = (productId, newQuantity) => {
     
     if (newQuantity > item.stock) {
         alert(`Stock máximo: ${item.stock} unidades`);
+        // No actualiza la cantidad, pero sí renderiza para resetear el input (si se implementara)
+        renderCart(); 
         return;
     }
     
@@ -269,6 +247,11 @@ const openPaymentModal = () => {
     selectedCustomerIdInput.value = '';
     selectedCustomerDisplay.classList.add('hidden');
     paymentMethodSelect.value = 'efectivo';
+    
+    // --- LÍNEA AÑADIDA ---
+    // Establece la fecha actual por defecto
+    saleDateInput.value = new Date().toISOString().split('T')[0];
+
     updatePaymentButton();
 };
 
@@ -280,9 +263,10 @@ const updatePaymentButton = () => {
     const paymentMethod = paymentMethodSelect.value;
     const total = parseFloat(modalTotalElement.textContent);
     const customerId = selectedCustomerIdInput.value;
+    const saleDate = saleDateInput.value; // <-- NUEVA LECTURA
     
-    // El cliente es obligatorio
-    if (!customerId) {
+    // El cliente y la fecha son obligatorios
+    if (!customerId || !saleDate) { // <-- CHEQUEO MODIFICADO
         confirmPaymentBtn.disabled = true;
         return;
     }
@@ -340,9 +324,10 @@ const searchClients = (searchTerm) => {
 // --- PROCESAMIENTO DE VENTA ---
 const processSale = async () => {
     const customerId = selectedCustomerIdInput.value;
-    
-    if (!customerId) {
-        alert('Debe seleccionar un cliente para procesar la venta');
+    const saleDate = saleDateInput.value; // <-- NUEVA LECTURA
+
+    if (!customerId || !saleDate) { // <-- CHEQUEO MODIFICADO
+        alert('Debe seleccionar un cliente y una fecha para la venta');
         return;
     }
     
@@ -363,7 +348,10 @@ const processSale = async () => {
         }))
     };
     
-    const { success, error } = await saveSale(saleData);
+    // --- LLAMADA MODIFICADA ---
+    // Pasamos la fecha de la venta a la función de la API
+    // ***** ESTA ES LA LÍNEA CORREGIDA *****
+    const { success, error } = await addSale(saleData, saleDate); 
     
     if (!success) {
         console.error('Error completo:', error);
@@ -412,6 +400,9 @@ clearCartBtn.addEventListener('click', clearCart);
 processSaleBtn.addEventListener('click', openPaymentModal);
 cancelPaymentBtn.addEventListener('click', closePaymentModal);
 confirmPaymentBtn.addEventListener('click', processSale);
+
+// --- LISTENER AÑADIDO ---
+saleDateInput.addEventListener('change', updatePaymentButton);
 
 paymentMethodSelect.addEventListener('change', (e) => {
     if (e.target.value === 'efectivo') {
@@ -473,7 +464,7 @@ const initializePOS = async () => {
         console.log('✅ Clientes cargados:', allClients.length);
         
         console.log('🎨 Renderizando productos...');
-        renderProducts(allProducts);
+        renderProducts(allProducts.filter(p => p.stock > 0)); // <-- Solo mostrar productos con stock
         
         console.log('🛒 Renderizando carrito...');
         renderCart();

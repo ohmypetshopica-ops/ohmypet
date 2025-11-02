@@ -856,9 +856,17 @@ export const getSales = async () => {
     return data;
 };
 
-export const addSale = async (saleData) => {
+/**
+ * MODIFICADO: Acepta un saleDate opcional para registrar ventas pasadas
+ */
+export const addSale = async (saleData, saleDate = null) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: { message: 'Usuario no autenticado' } };
+
+    // Determinar el timestamp de la venta
+    const saleTimestamp = saleDate 
+        ? new Date(`${saleDate}T12:00:00`).toISOString() // Usa el mediodía de la fecha seleccionada para evitar problemas de zona horaria
+        : new Date().toISOString(); // Usa la fecha y hora actual si no se proporciona
 
     const salesRecords = saleData.items.map(item => ({
         client_id: saleData.client_id,
@@ -867,7 +875,8 @@ export const addSale = async (saleData) => {
         unit_price: item.unit_price,
         total_price: item.subtotal,
         payment_method: saleData.payment_method,
-        recorded_by: user?.id || null
+        recorded_by: user?.id || null,
+        created_at: saleTimestamp // <-- CAMPO AÑADIDO
     }));
     
     const { data, error: saleError } = await supabase
@@ -880,6 +889,7 @@ export const addSale = async (saleData) => {
         return { success: false, error: saleError };
     }
 
+    // La lógica de actualización de stock permanece igual
     for (const item of saleData.items) {
         const { data: product, error: productError } = await supabase
             .from('products')
