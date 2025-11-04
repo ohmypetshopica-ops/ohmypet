@@ -58,7 +58,11 @@ export const setupPetListeners = () => {
     
     closeAddPetModalButtonEmployee?.addEventListener('click', closePetModal);
     cancelAddPetButtonEmployee?.addEventListener('click', closePetModal);
-    petFormEmployee?.addEventListener('submit', handleAddPet);
+    
+    // ===== INICIO DE LA CORRECCIÓN (Eliminar listener conflictivo) =====
+    // Se elimina la siguiente línea que causaba el conflicto de listeners
+    // petFormEmployee?.addEventListener('submit', handleAddPet);
+    // ===== FIN DE LA CORRECCIÓN =====
 };
 
 const handlePetSearch = (e) => {
@@ -329,6 +333,9 @@ const closePetModal = () => {
     petFormMessageEmployee?.classList.add('hidden');
 };
 
+// Esta función se llama desde el listener de 'submit' en employee-pets.js,
+// pero la hemos deshabilitado para que solo 'employee-clients.js' la maneje.
+// La mantenemos aquí por si se reutiliza, pero ya no está conectada.
 const handleAddPet = async (e) => {
     e.preventDefault();
     alert('Funcionalidad no disponible en esta vista. Agrega mascotas desde la vista de clientes.');

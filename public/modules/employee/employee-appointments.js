@@ -464,6 +464,12 @@ const handleDateChange = async () => {
 const handleAddAppointment = async (e) => {
     e.preventDefault();
     
+    // ===== INICIO DE LA CORRECCIÓN 6 (Evitar duplicados al crear cita) =====
+    const submitButton = addAppointmentForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Confirmando...';
+    // ===== FIN DE LA CORRECCIÓN 6 =====
+
     const formData = new FormData(addAppointmentForm);
     
     const serviceValue = document.querySelector('#service-select-employee-modal').value; 
@@ -484,34 +490,51 @@ const handleAddAppointment = async (e) => {
          addAppointmentMessage.textContent = '❌ El servicio es obligatorio.';
          addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
          addAppointmentMessage.classList.remove('hidden');
+         
+         // ===== INICIO DE LA CORRECCIÓN 6 (Habilitar botón en error) =====
+         submitButton.disabled = false;
+         submitButton.textContent = 'Confirmar Cita';
+         // ===== FIN DE LA CORRECCIÓN 6 =====
          return;
     }
     
-    const result = await addAppointmentFromDashboard(appointmentData);
+    let result;
+    try {
+        result = await addAppointmentFromDashboard(appointmentData);
     
-    if (result.success) {
-        addAppointmentMessage.textContent = '✅ Cita agendada con éxito';
-        addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
-        addAppointmentMessage.classList.remove('hidden');
-        
-        const { data: appointments } = await supabase
-            .from('appointments')
-            .select('*, pets(name), profiles(first_name, last_name, full_name)')
-            .order('appointment_date', { ascending: true })
-            .order('appointment_time', { ascending: true });
-        
-        if (appointments) {
-            updateState('allAppointments', appointments);
-            renderConfirmedAppointments();
+        if (result.success) {
+            addAppointmentMessage.textContent = '✅ Cita agendada con éxito';
+            addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-green-100 text-green-700';
+            addAppointmentMessage.classList.remove('hidden');
+            
+            const { data: appointments } = await supabase
+                .from('appointments')
+                .select('*, pets(name), profiles(first_name, last_name, full_name)')
+                .order('appointment_date', { ascending: true })
+                .order('appointment_time', { ascending: true });
+            
+            if (appointments) {
+                updateState('allAppointments', appointments);
+                renderConfirmedAppointments();
+            }
+            
+            setTimeout(() => {
+                closeAddAppointmentModal();
+            }, 1500);
+        } else {
+            addAppointmentMessage.textContent = `❌ ${result.error?.message || 'Error al agendar cita'}`;
+            addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
+            addAppointmentMessage.classList.remove('hidden');
         }
-        
-        setTimeout(() => {
-            closeAddAppointmentModal();
-        }, 1500);
-    } else {
-        addAppointmentMessage.textContent = `❌ ${result.error?.message || 'Error al agendar cita'}`;
+    } catch (error) {
+        addAppointmentMessage.textContent = `❌ ${error.message || 'Error al agendar cita'}`;
         addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
         addAppointmentMessage.classList.remove('hidden');
+    } finally {
+        // ===== INICIO DE LA CORRECCIÓN 6 (Habilitar botón post-envío) =====
+        submitButton.disabled = false;
+        submitButton.textContent = 'Confirmar Cita';
+        // ===== FIN DE LA CORRECCIÓN 6 =====
     }
 };
 

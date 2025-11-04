@@ -32,7 +32,7 @@ let cancelClientButtonEmployee;
 let clientFormEmployee;
 let clientFormMessageEmployee;
 let clearSearchBtn;
-let addPetBtn; // <--- ESTA ES LA VARIABLE
+let addPetBtn;
 let editClientBtn;
 let saveClientBtn;
 let cancelEditClientBtn;
@@ -76,10 +76,10 @@ export function initClientElements() {
 
     clientDetailsActions = document.getElementById('client-details-actions');
     
-    // ===== INICIO DE LA CORRECCIÓN =====
-    // Se corrige el ID que se estaba buscando
-    addPetBtn = document.getElementById('add-pet-to-client-btn'); 
-    // ===== FIN DE LA CORRECCIÓN =====
+    // ===== INICIO DE LA CORRECCIÓN 1 (Botón Agregar Mascota) =====
+    // Se corrige el ID del botón que se busca
+    addPetBtn = document.getElementById('add-pet-to-client-btn');
+    // ===== FIN DE LA CORRECCIÓN 1 =====
 
     editClientBtn = document.getElementById('edit-client-btn');
     saveClientBtn = document.getElementById('save-client-btn');
@@ -112,17 +112,25 @@ export function setupClientListeners() {
 
     addClientBtnEmployee?.addEventListener('click', () => openClientModal());
     cancelClientButtonEmployee?.addEventListener('click', closeClientModal);
-    submitAddClientButtonEmployee?.addEventListener('click', handleAddClient);
+    
+    // ===== INICIO DE LA CORRECCIÓN 2 (Evitar duplicados al crear cliente) =====
+    // Se cambia de 'click' a 'submit' en el formulario
+    clientFormEmployee?.addEventListener('submit', handleAddClient);
+    // ===== FIN DE LA CORRECCIÓN 2 =====
+
 
     editClientBtn?.addEventListener('click', switchToEditMode);
     cancelEditClientBtn?.addEventListener('click', switchToViewMode);
     saveClientBtn?.addEventListener('click', handleSaveClient);
 
-    // Este listener ahora funcionará gracias a la corrección en initClientElements
     addPetBtn?.addEventListener('click', openAddPetModal);
     
     cancelAddPetButtonEmployee?.addEventListener('click', closeAddPetModal);
-    submitAddPetButtonEmployee?.addEventListener('click', handleAddPetToClient);
+    
+    // ===== INICIO DE LA CORRECCIÓN 3 (Manejo robusto de formulario de mascota) =====
+    // Se cambia de 'click' a 'submit' en el formulario
+    petFormEmployee?.addEventListener('submit', handleAddPetToClient);
+    // ===== FIN DE LA CORRECCIÓN 3 =====
 }
 
 const handleSearch = (e) => {
@@ -401,38 +409,49 @@ const handleAddClient = async (e) => {
         return;
     }
 
+    // ===== INICIO DE LA CORRECCIÓN 4 (Evitar duplicados al crear cliente) =====
     submitAddClientButtonEmployee.disabled = true;
     submitAddClientButtonEmployee.textContent = 'Registrando...';
+    // ===== FIN DE LA CORRECCIÓN 4 =====
 
-    const result = await registerClientFromDashboard(
-        email, password, firstName, lastName, cleanedPhone, district, docType, docNum, emergencyName, emergencyPhone
-    );
+    let result;
+    try {
+        result = await registerClientFromDashboard(
+            email, password, firstName, lastName, cleanedPhone, district, docType, docNum, emergencyName, emergencyPhone
+        );
 
-    if (result.success) {
-        clientFormMessageEmployee.textContent = '✅ Cliente registrado exitosamente.';
-        clientFormMessageEmployee.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
-        clientFormMessageEmployee.classList.remove('hidden');
+        if (result.success) {
+            clientFormMessageEmployee.textContent = '✅ Cliente registrado exitosamente.';
+            clientFormMessageEmployee.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
+            clientFormMessageEmployee.classList.remove('hidden');
 
-        setTimeout(async () => {
-            closeClientModal();
-            const clientsData = await getClientsWithPets();
-            updateState('clientsWithPets', clientsData);
-            const allClients = clientsData.map(c => ({
-                id: c.id, first_name: c.first_name, last_name: c.last_name, 
-                phone: c.phone, email: c.email, district: c.district
-            }));
-            updateState('allClients', allClients);
-            currentPage = 1;
-            renderClients(allClients);
-        }, 1500);
-    } else {
-        clientFormMessageEmployee.textContent = `❌ Error: ${result.error?.message || 'Error desconocido'}`;
+            setTimeout(async () => {
+                closeClientModal();
+                const clientsData = await getClientsWithPets();
+                updateState('clientsWithPets', clientsData);
+                const allClients = clientsData.map(c => ({
+                    id: c.id, first_name: c.first_name, last_name: c.last_name, 
+                    phone: c.phone, email: c.email, district: c.district
+                }));
+                updateState('allClients', allClients);
+                currentPage = 1;
+                renderClients(allClients);
+            }, 1500);
+        } else {
+            clientFormMessageEmployee.textContent = `❌ Error: ${result.error?.message || 'Error desconocido'}`;
+            clientFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+            clientFormMessageEmployee.classList.remove('hidden');
+        }
+    } catch (error) {
+        clientFormMessageEmployee.textContent = `❌ Error: ${error.message || 'Error desconocido'}`;
         clientFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         clientFormMessageEmployee.classList.remove('hidden');
+    } finally {
+        // ===== INICIO DE LA CORRECCIÓN 4 (Evitar duplicados al crear cliente) =====
+        submitAddClientButtonEmployee.disabled = false;
+        submitAddClientButtonEmployee.textContent = 'Registrar Cliente';
+        // ===== FIN DE LA CORRECCIÓN 4 =====
     }
-
-    submitAddClientButtonEmployee.disabled = false;
-    submitAddClientButtonEmployee.textContent = 'Registrar Cliente';
 };
 
 const handleSaveClient = async (e) => {
@@ -531,28 +550,39 @@ const handleAddPetToClient = async (e) => {
         return;
     }
 
+    // ===== INICIO DE LA CORRECCIÓN 5 (Evitar duplicados al crear mascota) =====
     submitAddPetButtonEmployee.disabled = true;
     submitAddPetButtonEmployee.textContent = 'Guardando...';
+    // ===== FIN DE LA CORRECCIÓN 5 =====
 
-    const result = await addPetFromDashboard(petData);
+    let result;
+    try {
+        result = await addPetFromDashboard(petData);
 
-    if (result.success) {
-        petFormMessageEmployee.textContent = '✅ Mascota agregada correctamente.';
-        petFormMessageEmployee.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
-        petFormMessageEmployee.classList.remove('hidden');
+        if (result.success) {
+            petFormMessageEmployee.textContent = '✅ Mascota agregada correctamente.';
+            petFormMessageEmployee.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
+            petFormMessageEmployee.classList.remove('hidden');
 
-        setTimeout(async () => {
-            closeAddPetModal();
-            const updatedDetails = await getClientDetails(currentClientProfile.profile.id);
-            currentClientProfile = updatedDetails;
-            renderClientDetailsView(updatedDetails);
-        }, 1500);
-    } else {
-        petFormMessageEmployee.textContent = `❌ Error: ${result.error?.message || 'Error desconocido'}`;
+            setTimeout(async () => {
+                closeAddPetModal();
+                const updatedDetails = await getClientDetails(currentClientProfile.profile.id);
+                currentClientProfile = updatedDetails;
+                renderClientDetailsView(updatedDetails);
+            }, 1500);
+        } else {
+            petFormMessageEmployee.textContent = `❌ Error: ${result.error?.message || 'Error desconocido'}`;
+            petFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+            petFormMessageEmployee.classList.remove('hidden');
+        }
+    } catch (error) {
+        petFormMessageEmployee.textContent = `❌ Error: ${error.message || 'Error desconocido'}`;
         petFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         petFormMessageEmployee.classList.remove('hidden');
+    } finally {
+        // ===== INICIO DE LA CORRECCIÓN 5 (Evitar duplicados al crear mascota) =====
+        submitAddPetButtonEmployee.disabled = false;
+        submitAddPetButtonEmployee.textContent = 'Agregar Mascota';
+        // ===== FIN DE LA CORRECCIÓN 5 =====
     }
-
-    submitAddPetButtonEmployee.disabled = false;
-    submitAddPetButtonEmployee.textContent = 'Agregar Mascota';
 };
