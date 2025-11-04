@@ -32,7 +32,7 @@ let cancelClientButtonEmployee;
 let clientFormEmployee;
 let clientFormMessageEmployee;
 let clearSearchBtn;
-let addPetBtn;
+let addPetBtn; // <--- ESTA ES LA VARIABLE
 let editClientBtn;
 let saveClientBtn;
 let cancelEditClientBtn;
@@ -75,7 +75,12 @@ export function initClientElements() {
     paginationContainer = document.getElementById('pagination-container');
 
     clientDetailsActions = document.getElementById('client-details-actions');
-    addPetBtn = document.getElementById('add-pet-btn');
+    
+    // ===== INICIO DE LA CORRECCIÓN =====
+    // Se corrige el ID que se estaba buscando
+    addPetBtn = document.getElementById('add-pet-to-client-btn'); 
+    // ===== FIN DE LA CORRECCIÓN =====
+
     editClientBtn = document.getElementById('edit-client-btn');
     saveClientBtn = document.getElementById('save-client-btn');
     cancelEditClientBtn = document.getElementById('cancel-edit-client-btn');
@@ -113,7 +118,9 @@ export function setupClientListeners() {
     cancelEditClientBtn?.addEventListener('click', switchToViewMode);
     saveClientBtn?.addEventListener('click', handleSaveClient);
 
+    // Este listener ahora funcionará gracias a la corrección en initClientElements
     addPetBtn?.addEventListener('click', openAddPetModal);
+    
     cancelAddPetButtonEmployee?.addEventListener('click', closeAddPetModal);
     submitAddPetButtonEmployee?.addEventListener('click', handleAddPetToClient);
 }
