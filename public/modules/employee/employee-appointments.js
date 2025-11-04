@@ -6,6 +6,12 @@ import { getClientsWithPets, getBookedTimesForDashboard, addAppointmentFromDashb
 import { supabase } from '../../core/supabase.js';
 import { addWeightRecord } from '../dashboard/pet-weight.api.js';
 
+// --- OPCIONES DE SHAMPOO (NUEVO) ---
+const SHAMPOO_OPTIONS = [
+    'Shampoo General', 'Avena', 'Pelo Blanco', 'Pelo Oscuro', 'Clorixidina',
+    'Hipoalergenico', 'Junior', 'Mascarilla', 'SHAMPO PROPIO'
+];
+
 // Elementos del DOM
 let appointmentsList;
 let addAppointmentBtnEmployee, addAppointmentModal, addAppointmentForm, cancelAddAppointmentBtn;
@@ -29,7 +35,12 @@ let appointmentDetailsContent;
 let servicePriceInput;
 let petWeightInput;
 let paymentMethodSelect;
-let shampooSelectEmployee;
+// let shampooSelectEmployee; // Reemplazado por el grupo de abajo
+
+// --- INICIO DE LA ACTUALIZACIÓN (Nuevos elementos DOM para multi-select) ---
+let shampooSelectToggleEmployee, shampooDropdownContentEmployee, shampooDisplayTextEmployee;
+// --- FIN DE LA ACTUALIZACIÓN ---
+
 
 export const initAppointmentElements = () => {
     appointmentsList = document.getElementById('appointments-list');
@@ -68,8 +79,62 @@ export const initAppointmentElements = () => {
     servicePriceInput = document.getElementById('service-price-input');
     petWeightInput = document.getElementById('pet-weight-input');
     paymentMethodSelect = document.getElementById('payment-method-select');
-    shampooSelectEmployee = document.getElementById('shampoo-select-employee');
+    
+    // --- INICIO DE LA ACTUALIZACIÓN (Inicializar nuevos elementos) ---
+    // shampooSelectEmployee = document.getElementById('shampoo-select-employee'); // <-- LÍNEA ANTIGUA ELIMINADA
+    shampooSelectToggleEmployee = document.getElementById('shampoo-select-toggle-employee');
+    shampooDropdownContentEmployee = document.getElementById('shampoo-dropdown-content-employee');
+    shampooDisplayTextEmployee = document.getElementById('shampoo-display-text-employee');
+    // --- FIN DE LA ACTUALIZACIÓN ---
 };
+
+// --- INICIO DE LA ACTUALIZACIÓN (Nuevas funciones helper para multi-select) ---
+const updateShampooDisplayText = () => {
+    const checkedBoxes = document.querySelectorAll('#shampoo-dropdown-content-employee .shampoo-checkbox:checked');
+    const count = checkedBoxes.length;
+
+    if (shampooDisplayTextEmployee) {
+        if (count === 0) {
+            shampooDisplayTextEmployee.textContent = 'Seleccionar...';
+        } else if (count === 1) {
+            shampooDisplayTextEmployee.textContent = checkedBoxes[0].value;
+        } else {
+            shampooDisplayTextEmployee.textContent = `${count} seleccionados`;
+        }
+    }
+};
+
+const renderShampooChecklist = (selectedShampoos = []) => {
+    if (!shampooDropdownContentEmployee) return;
+
+    shampooDropdownContentEmployee.innerHTML = SHAMPOO_OPTIONS.map(shampoo => {
+        // ID único para el label/input en el modal de empleado
+        const sanitizedShampoo = shampoo.replace(/[^a-zA-Z0-9]/g, '-');
+        const isChecked = selectedShampoos.some(s => s.trim() === shampoo);
+        
+        return `
+            <label for="shampoo-emp-${sanitizedShampoo}" class="flex items-center hover:bg-gray-50 p-1 rounded-md cursor-pointer">
+                <input id="shampoo-emp-${sanitizedShampoo}" type="checkbox" value="${shampoo}"
+                    class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 shampoo-checkbox" ${isChecked ? 'checked' : ''}>
+                <span class="ml-2 text-sm text-gray-700">${shampoo}</span>
+            </label>
+        `;
+    }).join('');
+
+    shampooDropdownContentEmployee.querySelectorAll('.shampoo-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateShampooDisplayText);
+    });
+
+    updateShampooDisplayText();
+};
+
+const getShampooList = () => {
+    const checkedBoxes = document.querySelectorAll('#shampoo-dropdown-content-employee .shampoo-checkbox:checked');
+    const selectedShampoos = Array.from(checkedBoxes).map(cb => cb.value).join(',');
+    return selectedShampoos || null;
+};
+// --- FIN DE LA ACTUALIZACIÓN ---
+
 
 const showAppointmentsList = () => {
     appointmentsListView?.classList.remove('hidden');
@@ -232,6 +297,20 @@ export const setupAppointmentListeners = () => {
     
     beforeImageInput?.addEventListener('change', (e) => handleImagePreview(e, beforeImagePreview));
     afterImageInput?.addEventListener('change', (e) => handleImagePreview(e, afterImagePreview));
+
+    // --- INICIO DE LA ACTUALIZACIÓN (Listeners para el nuevo dropdown) ---
+    shampooSelectToggleEmployee?.addEventListener('click', (e) => {
+        e.stopPropagation(); // Evita que el click se propague al 'document'
+        shampooDropdownContentEmployee?.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+        // Cierra el dropdown si se hace clic fuera de él
+        if (!shampooSelectToggleEmployee?.contains(e.target) && !shampooDropdownContentEmployee?.contains(e.target)) {
+            shampooDropdownContentEmployee?.classList.add('hidden');
+        }
+    });
+    // --- FIN DE LA ACTUALIZACIÓN ---
 };
 
 const extractNotes = (app) => {
@@ -445,13 +524,23 @@ const openCompletionModal = (appointmentId) => {
         petWeightInput.value = appointment.final_weight || '';
         paymentMethodSelect.value = appointment.payment_method || '';
         finalObservationsTextarea.value = appointment.final_observations || '';
-        shampooSelectEmployee.value = appointment.shampoo_type || '';
+        
+        // --- INICIO DE LA ACTUALIZACIÓN (Leer datos para el checklist) ---
+        // shampooSelectEmployee.value = appointment.shampoo_type || ''; // <-- LÍNEA ANTIGUA
+        const selectedShampoos = appointment.shampoo_type ? appointment.shampoo_type.split(',').map(s => s.trim()) : [];
+        renderShampooChecklist(selectedShampoos);
+        // --- FIN DE LA ACTUALIZACIÓN ---
+
     } else {
          servicePriceInput.value = '';
          petWeightInput.value = '';
          paymentMethodSelect.value = '';
          finalObservationsTextarea.value = '';
-         shampooSelectEmployee.value = '';
+         
+         // --- INICIO DE LA ACTUALIZACIÓN ---
+         // shampooSelectEmployee.value = ''; // <-- LÍNEA ANTIGUA
+         renderShampooChecklist([]); // Renderizar vacío si no hay datos
+         // --- FIN DE LA ACTUALIZACIÓN ---
     }
 
     completionModal?.classList.remove('hidden');
@@ -469,6 +558,11 @@ const closeCompletionModal = () => {
     afterImagePreview.innerHTML = '<p class="text-sm text-gray-500">Clic para subir imagen</p>';
     finalObservationsTextarea.value = '';
     uploadMessage?.classList.add('hidden');
+
+    // --- INICIO DE LA ACTUALIZACIÓN (Resetear dropdown) ---
+    if(shampooDropdownContentEmployee) shampooDropdownContentEmployee.classList.add('hidden');
+    if(shampooDisplayTextEmployee) shampooDisplayTextEmployee.textContent = 'Seleccionar...';
+    // --- FIN DE LA ACTUALIZACIÓN ---
 };
 
 const handleImagePreview = (e, previewContainer) => {
@@ -526,7 +620,11 @@ const handleCompleteAppointment = async () => {
         service_price: price,
         payment_method: paymentMethod,
         final_weight: isNaN(weight) ? null : weight,
-        shampoo_type: shampooSelectEmployee.value || null
+        
+        // --- INICIO DE LA ACTUALIZACIÓN (Leer desde la nueva función) ---
+        // shampoo_type: shampooSelectEmployee.value || null // <-- LÍNEA ANTIGUA
+        shampoo_type: getShampooList()
+        // --- FIN DE LA ACTUALIZACIÓN ---
     };
     
     const { error } = await supabase
