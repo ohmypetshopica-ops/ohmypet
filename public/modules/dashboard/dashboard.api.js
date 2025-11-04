@@ -954,4 +954,21 @@ export const getPetsNeedingAppointment = async () => {
     return petsNeedingCare;
 };
 
+/**
+ * Actualiza una fila de venta individual en la base de datos
+ */
+export const updateSaleItem = async (saleId, updates) => {
+    const { data, error } = await supabase
+        .from('sales')
+        .update(updates)
+        .eq('id', saleId)
+        .select();
+
+    if (error) {
+        console.error('Error al actualizar el item de venta:', error);
+        return { success: false, error };
+    }
+    return { success: true, data: data[0] };
+};
+
 export { supabase };

@@ -1,7 +1,7 @@
 // public/modules/dashboard/dashboard-sales.js
 
 import { supabase } from '../../core/supabase.js';
-import { getSales } from './dashboard.api.js';
+import { getSales, updateSaleItem } from './dashboard.api.js'; // Importar updateSaleItem
 
 // --- ELEMENTOS DEL DOM ---
 const salesTableBody = document.querySelector('#sales-table-body');
@@ -11,9 +11,23 @@ const saleDetailsModal = document.querySelector('#sale-details-modal');
 const closeSaleDetailsBtn = document.querySelector('#close-sale-details-btn');
 const saleDetailsContent = document.querySelector('#sale-details-content');
 const deleteSaleBtn = document.querySelector('#delete-sale-btn');
+const editSaleBtn = document.querySelector('#edit-sale-btn'); // Botón Editar en modal detalles
+
+// Modal de Edición
+const editSaleModal = document.querySelector('#edit-sale-modal');
+const closeEditSaleBtn = document.querySelector('#close-edit-sale-btn');
+const cancelEditSaleBtn = document.querySelector('#cancel-edit-sale-btn');
+const saveSaleBtn = document.querySelector('#save-sale-btn');
+const editSaleForm = document.querySelector('#edit-sale-form');
+const editSaleMessage = document.querySelector('#edit-sale-message');
+const editSaleDate = document.querySelector('#edit-sale-date');
+const editPaymentMethod = document.querySelector('#edit-payment-method');
+const editSaleItemsContainer = document.querySelector('#edit-sale-items-container');
+
 
 // --- VARIABLES GLOBALES ---
 let allSales = [];
+let groupedSalesData = new Map(); // Almacenar datos agrupados
 let selectedSaleGroup = null;
 
 // --- RENDERIZADO DE LA TABLA ---
@@ -27,16 +41,19 @@ const renderSalesTable = async () => {
     }
     
     // Agrupar ventas por fecha, cliente y método de pago
-    const groupedSales = new Map();
+    groupedSalesData.clear();
     
     allSales.forEach(sale => {
         const saleDate = new Date(sale.created_at);
         const dateKey = saleDate.toISOString().split('T')[0];
-        const timeKey = saleDate.toTimeString().split(' ')[0].substring(0, 5);
+        // Agrupar por hora y minuto para diferenciar ventas cercanas
+        const timeKey = saleDate.toTimeString().split(' ')[0].substring(0, 5); 
+        
+        // Usar sale.payment_method en la clave
         const key = `${dateKey}-${timeKey}-${sale.client_id}-${sale.payment_method}`;
         
-        if (!groupedSales.has(key)) {
-            groupedSales.set(key, {
+        if (!groupedSalesData.has(key)) {
+            groupedSalesData.set(key, {
                 key: key,
                 created_at: sale.created_at,
                 client: sale.client,
@@ -44,24 +61,24 @@ const renderSalesTable = async () => {
                 payment_method: sale.payment_method,
                 products: [],
                 total: 0,
-                sale_ids: []
+                sale_ids: [] // Guardar los IDs de las ventas individuales
             });
         }
         
-        const group = groupedSales.get(key);
+        const group = groupedSalesData.get(key);
         group.products.push({
-            id: sale.id,
+            id: sale.id, // ID de la fila 'sales'
             name: sale.product?.name || 'Producto Eliminado',
             quantity: sale.quantity,
             unit_price: sale.unit_price,
             price: sale.total_price,
             product_id: sale.product_id
         });
-        group.sale_ids.push(sale.id);
+        group.sale_ids.push(sale.id); // Guardar ID
         group.total += sale.total_price;
     });
     
-    const salesArray = Array.from(groupedSales.values()).sort((a, b) => 
+    const salesArray = Array.from(groupedSalesData.values()).sort((a, b) => 
         new Date(b.created_at) - new Date(a.created_at)
     );
     
@@ -159,6 +176,108 @@ const closeSaleDetails = () => {
     selectedSaleGroup = null;
 };
 
+// --- MODAL DE EDICIÓN ---
+const openEditModal = () => {
+    if (!selectedSaleGroup) return;
+
+    // Formatear fecha para datetime-local (YYYY-MM-DDTHH:mm)
+    const saleDate = new Date(selectedSaleGroup.created_at);
+    const localDateTime = new Date(saleDate.getTime() - (saleDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+    
+    editSaleDate.value = localDateTime;
+    editPaymentMethod.value = selectedSaleGroup.payment_method;
+    editSaleMessage.classList.add('hidden');
+
+    // Renderizar items editables
+    editSaleItemsContainer.innerHTML = selectedSaleGroup.products.map(p => `
+        <div class="grid grid-cols-3 gap-3 p-3 border rounded-lg bg-gray-50" data-sale-id="${p.id}">
+            <div class="col-span-3">
+                <p class="font-semibold text-gray-800">${p.name}</p>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Cantidad</label>
+                <input type="number" value="${p.quantity}" min="1" step="1" 
+                       class="edit-item-quantity w-full p-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Monto Total (S/)</label>
+                <input type="number" value="${p.price.toFixed(2)}" min="0" step="0.10" 
+                       class="edit-item-price w-full p-2 border border-gray-300 rounded-lg">
+            </div>
+        </div>
+    `).join('');
+    
+    saleDetailsModal.classList.add('hidden');
+    editSaleModal.classList.remove('hidden');
+};
+
+const closeEditModal = () => {
+    editSaleModal.classList.add('hidden');
+    // No reseteamos selectedSaleGroup para que el modal de detalles
+    // pueda reabrirse si es necesario.
+};
+
+const handleSaveSale = async () => {
+    if (!selectedSaleGroup) return;
+
+    saveSaleBtn.disabled = true;
+    saveSaleBtn.textContent = 'Guardando...';
+    editSaleMessage.classList.add('hidden');
+
+    try {
+        const newDate = new Date(editSaleDate.value).toISOString();
+        const newPaymentMethod = editPaymentMethod.value;
+
+        const updatePromises = [];
+        const itemRows = editSaleItemsContainer.querySelectorAll('[data-sale-id]');
+
+        for (const itemRow of itemRows) {
+            const saleId = itemRow.dataset.saleId;
+            const newQuantity = parseInt(itemRow.querySelector('.edit-item-quantity').value);
+            const newTotalPrice = parseFloat(itemRow.querySelector('.edit-item-price').value);
+            
+            if (isNaN(newQuantity) || newQuantity < 1 || isNaN(newTotalPrice) || newTotalPrice < 0) {
+                throw new Error('Cantidad o Precio inválido para un producto.');
+            }
+
+            const newUnitPrice = newTotalPrice / newQuantity;
+
+            const updates = {
+                created_at: newDate,
+                payment_method: newPaymentMethod,
+                quantity: newQuantity,
+                total_price: newTotalPrice,
+                unit_price: newUnitPrice
+            };
+            
+            // Usar la función de la API para actualizar CADA fila
+            updatePromises.push(updateSaleItem(saleId, updates));
+        }
+
+        await Promise.all(updatePromises);
+
+        editSaleMessage.textContent = '✅ Venta actualizada con éxito.';
+        editSaleMessage.className = 'block p-3 rounded-lg bg-green-100 text-green-700 text-sm';
+        editSaleMessage.classList.remove('hidden');
+
+        setTimeout(async () => {
+            closeEditModal();
+            closeSaleDetails();
+            await renderSalesTable();
+        }, 1500);
+
+    } catch (error) {
+        console.error('Error al guardar la venta:', error);
+        editSaleMessage.textContent = `❌ ${error.message || 'Error al guardar la venta.'}`;
+        editSaleMessage.className = 'block p-3 rounded-lg bg-red-100 text-red-700 text-sm';
+        editSaleMessage.classList.remove('hidden');
+    } finally {
+        saveSaleBtn.disabled = false;
+        saveSaleBtn.textContent = 'Guardar Cambios';
+    }
+};
+
+// --- ELIMINAR VENTA ---
 const deleteSale = async () => {
     if (!selectedSaleGroup) return;
     
@@ -170,7 +289,9 @@ const deleteSale = async () => {
     deleteSaleBtn.textContent = 'Eliminando...';
     
     // Eliminar todas las filas de venta del grupo
+    // ***** INICIO DE LA CORRECCIÓN *****
     const { error } = await supabase
+    // ***** FIN DE LA CORRECCIÓN *****
         .from('sales')
         .delete()
         .in('id', selectedSaleGroup.sale_ids);
@@ -185,13 +306,13 @@ const deleteSale = async () => {
     
     // Devolver stock a los productos
     for (const product of selectedSaleGroup.products) {
-        const { data: currentProduct } = await supabase
+        const { data: currentProduct, error: getStockError } = await supabase
             .from('products')
             .select('stock')
             .eq('id', product.product_id)
             .single();
         
-        if (currentProduct) {
+        if (currentProduct && !getStockError) {
             await supabase
                 .from('products')
                 .update({ stock: currentProduct.stock + product.quantity })
@@ -211,10 +332,20 @@ const deleteSale = async () => {
 const initializeSalesPage = async () => {
     await renderSalesTable();
 
+    // Listeners Modal Detalles
     closeSaleDetailsBtn.addEventListener('click', closeSaleDetails);
     deleteSaleBtn.addEventListener('click', deleteSale);
+    editSaleBtn.addEventListener('click', openEditModal);
     saleDetailsModal.addEventListener('click', (e) => {
         if (e.target === saleDetailsModal) closeSaleDetails();
+    });
+
+    // Listeners Modal Edición
+    closeEditSaleBtn.addEventListener('click', closeEditModal);
+    cancelEditSaleBtn.addEventListener('click', closeEditModal);
+    saveSaleBtn.addEventListener('click', handleSaveSale);
+    editSaleModal.addEventListener('click', (e) => {
+        if (e.target === editSaleModal) closeEditModal();
     });
 };
 
