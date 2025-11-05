@@ -496,7 +496,25 @@ export const getReportData = async (startDate, endDate) => {
     };
 };
 
+// ===========================================
+// INICIO DE LA CORRECCIÓN DE ZONA HORARIA
+// ===========================================
 export const getSalesReportData = async (startDate, endDate) => {
+    
+    // 1. Convertir 'startDate' (ej: '2025-11-01') a un timestamp ISO
+    //    Esto crea un objeto de fecha en la zona horaria local
+    const startDateTime = new Date(startDate + 'T00:00:00');
+    
+    // 2. Convertir 'endDate' (ej: '2025-11-30') al DÍA SIGUIENTE
+    const endDateObj = new Date(endDate + 'T00:00:00');
+    endDateObj.setDate(endDateObj.getDate() + 1); // Se convierte en '2025-12-01'
+
+    // 3. Convertir a strings ISO. 
+    //    .toISOString() convierte la fecha local a UTC (ej: '2025-11-01T05:00:00Z' si estás en UTC-5)
+    //    Esto es lo que la base de datos (que guarda en UTC) necesita para una comparación precisa.
+    const startISO = startDateTime.toISOString();
+    const endISO = endDateObj.toISOString();
+
     const { data: sales, error } = await supabase
         .from('sales')
         .select(`
@@ -507,13 +525,16 @@ export const getSalesReportData = async (startDate, endDate) => {
             client:client_id ( full_name, first_name, last_name ),
             product:product_id ( name, category )
         `)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate);
+        .gte('created_at', startISO)       // Mayor o igual al inicio del 'startDate' (en UTC)
+        .lt('created_at', endISO);         // Menor que el inicio del día *siguiente* al 'endDate' (en UTC)
 
     if (error) {
         console.error('Error al obtener datos del reporte de ventas:', error);
         return null;
     }
+// ===========================================
+// FIN DE LA CORRECCIÓN
+// ===========================================
 
     if (!sales || sales.length === 0) {
         return {

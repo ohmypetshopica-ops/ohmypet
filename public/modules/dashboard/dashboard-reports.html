@@ -262,6 +262,7 @@
                 const headerModule = await import(`./dashboard-header.js?v=${CACHE_VERSION}`);
                 if (headerModule?.initializeHeader) headerModule.initializeHeader();
 
+                // Esta es la única línea que carga el script de la página
                 const pageModulePath = window.location.pathname.replace('.html', '.js');
                 await import(pageModulePath + `?v=${CACHE_VERSION}`);
 
@@ -272,8 +273,6 @@
 
         document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
-
-    <script type="module" src="../../core/auth.js"></script>
-    <script type="module" src="./dashboard-reports.js"></script>
-</body>
+    
+    </body>
 </html>

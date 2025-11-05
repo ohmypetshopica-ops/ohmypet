@@ -1,4 +1,7 @@
-import { getReportData, getSalesReportData } from './dashboard.api.js';
+// public/modules/dashboard/dashboard-reports.js
+
+// --- CORRECCIÓN: Se elimina la importación estática de aquí ---
+// import { getReportData, getSalesReportData } from './dashboard.api.js';
 
 // --- ELEMENTOS DEL DOM ---
 const headerTitle = document.querySelector('#header-title');
@@ -27,6 +30,13 @@ const downloadSalesCsvBtn = document.querySelector('#download-sales-csv');
 let paymentChart = null;
 let productSalesChart = null; // Variable para el nuevo gráfico de ventas
 let reportDataCache = null;
+
+// --- INICIO DE LA CORRECCIÓN (Cache Busting) ---
+// Se añade una versión aleatoria para forzar la recarga del archivo API
+const CACHE_VERSION = Date.now();
+let api; // Se declara la variable de la API aquí
+// --- FIN DE LA CORRECCIÓN ---
+
 
 // --- FUNCIONES ---
 
@@ -74,15 +84,12 @@ const renderPaymentChart = (paymentSummary) => {
     });
 };
 
-// =================== LÓGICA DE GRÁFICO ACTUALIZADA ===================
 const renderProductSalesChart = (summary) => {
     if (productSalesChart) {
         productSalesChart.destroy();
     }
-    // Ahora las etiquetas se basan en 'payment_method'
     const labels = summary.map(item => item.payment_method);
     const data = summary.map(item => item.total);
-    // Usamos los mismos colores que el otro gráfico para consistencia
     const backgroundColors = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899', '#EF4444'];
     
     productSalesChart = new Chart(productSalesChartCanvas, {
@@ -104,7 +111,6 @@ const renderProductSalesChart = (summary) => {
         }
     });
 };
-// =================== FIN DE LA ACTUALIZACIÓN ===================
 
 const downloadCsv = (filename, data) => {
     if (!data || data.length === 0) {
@@ -126,6 +132,13 @@ const downloadCsv = (filename, data) => {
 };
 
 const generateReport = async () => {
+    // --- CORRECCIÓN: Asegurarse de que la API esté cargada ---
+    if (!api) {
+        console.log('Cargando módulo API (con cache buster)...');
+        api = await import(`./dashboard.api.js?v=${CACHE_VERSION}`);
+    }
+    // --- FIN DE LA CORRECCIÓN ---
+
     const startDate = startDateInput.value;
     const endDate = endDateInput.value;
 
@@ -137,10 +150,12 @@ const generateReport = async () => {
     generateReportBtn.disabled = true;
     generateReportBtn.textContent = 'Generando...';
 
+    // --- CORRECCIÓN: Usar la variable 'api' importada ---
     const [serviceReportData, salesReportData] = await Promise.all([
-        getReportData(startDate, endDate),
-        getSalesReportData(startDate, endDate)
+        api.getReportData(startDate, endDate),
+        api.getSalesReportData(startDate, endDate)
     ]);
+    // --- FIN DE LA CORRECCIÓN ---
     
     reportDataCache = { serviceReportData, salesReportData };
 
@@ -153,11 +168,12 @@ const generateReport = async () => {
 
     if (salesReportData) {
         updateSalesKpiCards(salesReportData);
-        // =================== LLAMADA ACTUALIZADA ===================
         renderProductSalesChart(salesReportData.paymentMethodSummary);
-        // =================== FIN DE LA ACTUALIZACIÓN ===================
     } else {
-        alert('No se pudieron obtener los datos para el reporte de ventas.');
+        // No mostramos alerta aquí, puede que simplemente no haya ventas
+        console.log("No se encontraron datos de ventas de productos.");
+        updateSalesKpiCards({ totalSalesRevenue: 0, productsSoldCount: 0 }); // Limpiamos los KPIs
+        renderProductSalesChart([]); // Limpiamos el gráfico
     }
 
     if (serviceReportData || salesReportData) {
@@ -170,7 +186,7 @@ const generateReport = async () => {
     generateReportBtn.textContent = 'Generar Reporte';
 };
 
-const initializeReportsPage = () => {
+const initializeReportsPage = async () => {
     if (headerTitle) {
         headerTitle.textContent = 'Reportes';
     }
@@ -193,14 +209,14 @@ const initializeReportsPage = () => {
 
     downloadSalesCsvBtn.addEventListener('click', () => {
         if (reportDataCache && reportDataCache.salesReportData?.detailedSales) {
-            // Se actualiza el nombre del archivo para mayor claridad
             downloadCsv('reporte_ventas_productos.csv', reportDataCache.salesReportData.detailedSales);
         } else {
             alert('Primero genera un reporte para poder descargarlo.');
         }
     });
 
-    generateReport();
+    await generateReport();
 };
 
-document.addEventListener('DOMContentLoaded', initializeReportsPage);
+// Esta función es llamada por el script en línea del HTML
+initializeReportsPage();
