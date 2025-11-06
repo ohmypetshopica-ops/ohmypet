@@ -35,11 +35,12 @@ let appointmentDetailsContent;
 let servicePriceInput;
 let petWeightInput;
 let paymentMethodSelect;
-// let shampooSelectEmployee; // Reemplazado por el grupo de abajo
 
-// --- INICIO DE LA ACTUALIZACIÓN (Nuevos elementos DOM para multi-select) ---
+// Elementos del Dropdown de Shampoo
 let shampooSelectToggleEmployee, shampooDropdownContentEmployee, shampooDisplayTextEmployee;
-// --- FIN DE LA ACTUALIZACIÓN ---
+
+// --- ELEMENTO CORREGIDO ---
+let submitAddAppointmentButtonEmployee;
 
 
 export const initAppointmentElements = () => {
@@ -80,12 +81,13 @@ export const initAppointmentElements = () => {
     petWeightInput = document.getElementById('pet-weight-input');
     paymentMethodSelect = document.getElementById('payment-method-select');
     
-    // --- INICIO DE LA ACTUALIZACIÓN (Inicializar nuevos elementos) ---
-    // shampooSelectEmployee = document.getElementById('shampoo-select-employee'); // <-- LÍNEA ANTIGUA ELIMINADA
+    // --- INICIO DE LA CORRECCIÓN 1: Buscar el botón asociado al formulario ---
+    submitAddAppointmentButtonEmployee = document.querySelector('button[form="add-appointment-form-employee"]');
+    // --- FIN DE LA CORRECCIÓN 1 ---
+
     shampooSelectToggleEmployee = document.getElementById('shampoo-select-toggle-employee');
     shampooDropdownContentEmployee = document.getElementById('shampoo-dropdown-content-employee');
     shampooDisplayTextEmployee = document.getElementById('shampoo-display-text-employee');
-    // --- FIN DE LA ACTUALIZACIÓN ---
 };
 
 // --- INICIO DE LA ACTUALIZACIÓN (Nuevas funciones helper para multi-select) ---
@@ -257,7 +259,7 @@ const openAppointmentDetails = async (appointmentId) => {
                         <p><strong>Peso Final:</strong> ${lastCompleted.final_weight ? `${lastCompleted.final_weight} kg` : 'N/A'}</p>
                         <p><strong>Observaciones:</strong> ${lastCompleted.final_observations || 'Sin observaciones finales.'}</p>
                     </div>
-                ` : '<p class="text-sm text-gray-600">No se encontró historial de citas completadas.</p>'}
+                ` : '<p class="text-sm text-gray-500">Sin servicios completados.</p>'}
             </div>
 
             <button id="detail-complete-btn" data-appointment-id="${appointmentId}"
@@ -277,6 +279,8 @@ const openAppointmentDetails = async (appointmentId) => {
 export const setupAppointmentListeners = () => {
     addAppointmentBtnEmployee?.addEventListener('click', openAddAppointmentModal);
     cancelAddAppointmentBtn?.addEventListener('click', closeAddAppointmentModal);
+    
+    // --- CORRECCIÓN 2: El formulario llama a la función al ser enviado ---
     addAppointmentForm?.addEventListener('submit', handleAddAppointment);
     
     clientSearchInputModal?.addEventListener('input', handleClientSearchInModal);
@@ -457,18 +461,22 @@ const handleDateChange = async () => {
     
     newAppointmentTimeSelect.innerHTML = availableHours
         .filter(time => !bookedTimes.includes(time))
-        .map(time => `<option value="${time}">${time}</option>`)
+        .map(time => `<option value="${time}:00">${time}</option>`)
         .join('');
 };
 
 const handleAddAppointment = async (e) => {
     e.preventDefault();
     
-    // ===== INICIO DE LA CORRECCIÓN 6 (Evitar duplicados al crear cita) =====
-    const submitButton = addAppointmentForm.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = 'Confirmando...';
-    // ===== FIN DE LA CORRECCIÓN 6 =====
+    // --- CORRECCIÓN 3: Uso de la variable correcta ---
+    if (!submitAddAppointmentButtonEmployee) {
+        console.error('El botón de envío no fue inicializado correctamente.');
+        return;
+    }
+    
+    submitAddAppointmentButtonEmployee.disabled = true;
+    submitAddAppointmentButtonEmployee.textContent = 'Confirmando...';
+    // --- FIN CORRECCIÓN 3 ---
 
     const formData = new FormData(addAppointmentForm);
     
@@ -486,17 +494,7 @@ const handleAddAppointment = async (e) => {
         status: 'confirmada'
     };
     
-    if (!appointmentData.service) {
-         addAppointmentMessage.textContent = '❌ El servicio es obligatorio.';
-         addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
-         addAppointmentMessage.classList.remove('hidden');
-         
-         // ===== INICIO DE LA CORRECCIÓN 6 (Habilitar botón en error) =====
-         submitButton.disabled = false;
-         submitButton.textContent = 'Confirmar Cita';
-         // ===== FIN DE LA CORRECCIÓN 6 =====
-         return;
-    }
+    // NOTA: La validación de campos obligatorios es ahora manejada por HTML5.
     
     let result;
     try {
@@ -525,16 +523,24 @@ const handleAddAppointment = async (e) => {
             addAppointmentMessage.textContent = `❌ ${result.error?.message || 'Error al agendar cita'}`;
             addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
             addAppointmentMessage.classList.remove('hidden');
+            
+            submitAddAppointmentButtonEmployee.disabled = false;
+            submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
         }
     } catch (error) {
         addAppointmentMessage.textContent = `❌ ${error.message || 'Error al agendar cita'}`;
         addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
         addAppointmentMessage.classList.remove('hidden');
+        
+        submitAddAppointmentButtonEmployee.disabled = false;
+        submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
     } finally {
-        // ===== INICIO DE LA CORRECCIÓN 6 (Habilitar botón post-envío) =====
-        submitButton.disabled = false;
-        submitButton.textContent = 'Confirmar Cita';
-        // ===== FIN DE LA CORRECCIÓN 6 =====
+        // En caso de que el timeout de éxito no se complete, re-habilitamos si hay un error no capturado.
+        // Pero la lógica de éxito ya tiene un setTimeout que cierra y resetea todo.
+        if (result && !result.success) {
+            submitAddAppointmentButtonEmployee.disabled = false;
+            submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
+        }
     }
 };
 
@@ -549,7 +555,6 @@ const openCompletionModal = (appointmentId) => {
         finalObservationsTextarea.value = appointment.final_observations || '';
         
         // --- INICIO DE LA ACTUALIZACIÓN (Leer datos para el checklist) ---
-        // shampooSelectEmployee.value = appointment.shampoo_type || ''; // <-- LÍNEA ANTIGUA
         const selectedShampoos = appointment.shampoo_type ? appointment.shampoo_type.split(',').map(s => s.trim()) : [];
         renderShampooChecklist(selectedShampoos);
         // --- FIN DE LA ACTUALIZACIÓN ---
@@ -561,7 +566,6 @@ const openCompletionModal = (appointmentId) => {
          finalObservationsTextarea.value = '';
          
          // --- INICIO DE LA ACTUALIZACIÓN ---
-         // shampooSelectEmployee.value = ''; // <-- LÍNEA ANTIGUA
          renderShampooChecklist([]); // Renderizar vacío si no hay datos
          // --- FIN DE LA ACTUALIZACIÓN ---
     }
@@ -645,7 +649,6 @@ const handleCompleteAppointment = async () => {
         final_weight: isNaN(weight) ? null : weight,
         
         // --- INICIO DE LA ACTUALIZACIÓN (Leer desde la nueva función) ---
-        // shampoo_type: shampooSelectEmployee.value || null // <-- LÍNEA ANTIGUA
         shampoo_type: getShampooList()
         // --- FIN DE LA ACTUALIZACIÓN ---
     };
