@@ -39,7 +39,7 @@ let paymentMethodSelect;
 // Elementos del Dropdown de Shampoo
 let shampooSelectToggleEmployee, shampooDropdownContentEmployee, shampooDisplayTextEmployee;
 
-// --- ELEMENTO CORREGIDO ---
+// Elemento del botón de submit (agendar cita)
 let submitAddAppointmentButtonEmployee;
 
 
@@ -81,16 +81,15 @@ export const initAppointmentElements = () => {
     petWeightInput = document.getElementById('pet-weight-input');
     paymentMethodSelect = document.getElementById('payment-method-select');
     
-    // --- INICIO DE LA CORRECCIÓN 1: Buscar el botón asociado al formulario ---
+    // CORRECCIÓN 1: Buscar el botón asociado al formulario
     submitAddAppointmentButtonEmployee = document.querySelector('button[form="add-appointment-form-employee"]');
-    // --- FIN DE LA CORRECCIÓN 1 ---
 
     shampooSelectToggleEmployee = document.getElementById('shampoo-select-toggle-employee');
     shampooDropdownContentEmployee = document.getElementById('shampoo-dropdown-content-employee');
     shampooDisplayTextEmployee = document.getElementById('shampoo-display-text-employee');
 };
 
-// --- INICIO DE LA ACTUALIZACIÓN (Nuevas funciones helper para multi-select) ---
+// --- FUNCIONES SHAMPOO CHECKLIST ---
 const updateShampooDisplayText = () => {
     const checkedBoxes = document.querySelectorAll('#shampoo-dropdown-content-employee .shampoo-checkbox:checked');
     const count = checkedBoxes.length;
@@ -135,7 +134,7 @@ const getShampooList = () => {
     const selectedShampoos = Array.from(checkedBoxes).map(cb => cb.value).join(',');
     return selectedShampoos || null;
 };
-// --- FIN DE LA ACTUALIZACIÓN ---
+// --- FIN FUNCIONES SHAMPOO CHECKLIST ---
 
 
 const showAppointmentsList = () => {
@@ -259,7 +258,7 @@ const openAppointmentDetails = async (appointmentId) => {
                         <p><strong>Peso Final:</strong> ${lastCompleted.final_weight ? `${lastCompleted.final_weight} kg` : 'N/A'}</p>
                         <p><strong>Observaciones:</strong> ${lastCompleted.final_observations || 'Sin observaciones finales.'}</p>
                     </div>
-                ` : '<p class="text-sm text-gray-500">Sin servicios completados.</p>'}
+                ` : '<p class="text-sm text-gray-500">No se encontró historial de citas completadas.</p>'}
             </div>
 
             <button id="detail-complete-btn" data-appointment-id="${appointmentId}"
@@ -280,7 +279,7 @@ export const setupAppointmentListeners = () => {
     addAppointmentBtnEmployee?.addEventListener('click', openAddAppointmentModal);
     cancelAddAppointmentBtn?.addEventListener('click', closeAddAppointmentModal);
     
-    // --- CORRECCIÓN 2: El formulario llama a la función al ser enviado ---
+    // CORRECCIÓN 2: El formulario llama a la función al ser enviado
     addAppointmentForm?.addEventListener('submit', handleAddAppointment);
     
     clientSearchInputModal?.addEventListener('input', handleClientSearchInModal);
@@ -347,9 +346,13 @@ export const renderConfirmedAppointments = () => {
     appointmentsList.innerHTML = workingAppointments.map(app => {
         const { serviceDisplay, notesDisplay } = extractNotes(app);
 
+        const petNameRaw = app.pets?.name || 'Mascota';
+        // CORRECCIÓN 3: Truncar nombre de mascota a la primera palabra o 10 caracteres
+        const petName = petNameRaw.split(' ')[0].length > 10 ? petNameRaw.substring(0, 10) + '...' : petNameRaw.split(' ')[0];
+
         const petImage = app.pets?.image_url 
             ? app.pets.image_url 
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(app.pets?.name || 'M')}&background=10B981&color=FFFFFF`;
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(petName || 'M')}&background=10B981&color=FFFFFF`;
         
         const ownerProfile = app.profiles;
         let ownerFirstName = 'Dueño';
@@ -358,8 +361,9 @@ export const renderConfirmedAppointments = () => {
             const firstName = ownerProfile.first_name || '';
             const fullName = ownerProfile.full_name || '';
 
+            // CORRECCIÓN 4: Usar solo el primer nombre
             if (firstName.trim() !== '') {
-                ownerFirstName = firstName;
+                ownerFirstName = firstName.split(' ')[0];
             } else if (fullName.trim() !== '' && !fullName.includes('@')) {
                 ownerFirstName = fullName.split(' ')[0];
             } else if (ownerProfile.email) {
@@ -375,11 +379,11 @@ export const renderConfirmedAppointments = () => {
             <div class="appointment-list-item bg-white p-4 rounded-lg border hover:bg-gray-50 transition-colors duration-200 cursor-pointer" data-appointment-id="${app.id}">
                 <div class="flex justify-between items-start mb-2">
                     <div class="flex items-center space-x-3">
-                        <img src="${petImage}" alt="${app.pets.name}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
-                        <div class="min-w-0">
-                            <p class="font-bold text-lg text-gray-800 truncate">${app.pets.name} <span class="text-sm text-gray-500 font-normal">(${ownerFirstName})</span></p>
+                        <img src="${petImage}" alt="${petNameRaw}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+                        <div class="min-w-0 flex-1"> 
+                            <p class="font-bold text-lg text-gray-800 truncate">${petName} <span class="text-sm text-gray-500 font-normal">(${ownerFirstName})</span></p>
                             <p class="text-sm text-gray-600">${serviceDisplay}</p>
-                            ${notesDisplay ? `<p class="text-xs text-red-500 mt-1"><strong>Instrucciones:</strong> ${notesDisplay}</p>` : ''}
+                            ${notesDisplay ? `<p class="text-xs text-red-500 mt-1 truncate"><strong>Instrucciones:</strong> ${notesDisplay}</p>` : ''}
                         </div>
                     </div>
                     <div class="text-right flex-shrink-0">
@@ -468,7 +472,7 @@ const handleDateChange = async () => {
 const handleAddAppointment = async (e) => {
     e.preventDefault();
     
-    // --- CORRECCIÓN 3: Uso de la variable correcta ---
+    // CORRECCIÓN 5: Uso de la variable correcta
     if (!submitAddAppointmentButtonEmployee) {
         console.error('El botón de envío no fue inicializado correctamente.');
         return;
@@ -476,7 +480,7 @@ const handleAddAppointment = async (e) => {
     
     submitAddAppointmentButtonEmployee.disabled = true;
     submitAddAppointmentButtonEmployee.textContent = 'Confirmando...';
-    // --- FIN CORRECCIÓN 3 ---
+    
 
     const formData = new FormData(addAppointmentForm);
     
@@ -493,8 +497,6 @@ const handleAddAppointment = async (e) => {
         notes: formData.get('notes') || null,
         status: 'confirmada'
     };
-    
-    // NOTA: La validación de campos obligatorios es ahora manejada por HTML5.
     
     let result;
     try {
@@ -535,8 +537,6 @@ const handleAddAppointment = async (e) => {
         submitAddAppointmentButtonEmployee.disabled = false;
         submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
     } finally {
-        // En caso de que el timeout de éxito no se complete, re-habilitamos si hay un error no capturado.
-        // Pero la lógica de éxito ya tiene un setTimeout que cierra y resetea todo.
         if (result && !result.success) {
             submitAddAppointmentButtonEmployee.disabled = false;
             submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
