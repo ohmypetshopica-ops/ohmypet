@@ -992,4 +992,120 @@ export const updateSaleItem = async (saleId, updates) => {
     return { success: true, data: data[0] };
 };
 
+/**
+ * NUEVA FUNCIÓN: Obtiene todos los datos denormalizados para exportación.
+ * CORRECCIÓN: Se elimina 'created_at' de la consulta de profiles.
+ */
+export const getAllDenormalizedDataForExport = async () => {
+    try {
+        const [
+            clientsRes,
+            petsRes,
+            appointmentsRes,
+            salesRes,
+            complaintsRes,
+        ] = await Promise.all([
+            // Clientes (Profiles)
+            supabase
+                .from('profiles')
+                .select(`
+                    first_name, last_name, full_name, email, phone, district, doc_type, doc_num, emergency_contact_name, emergency_contact_phone,
+                    role
+                `)
+                .eq('role', 'cliente'),
+            
+            // Mascotas (Pets)
+            supabase
+                .from('pets')
+                .select(`
+                    name, breed, species, size, weight, sex, observations, birth_date, reminder_frequency_days, last_grooming_date,
+                    profiles ( full_name, phone )
+                `),
+            
+            // Citas (Appointments)
+            supabase
+                .from('appointments')
+                .select(`
+                    appointment_date, appointment_time, service, status, final_observations, final_weight, service_price, payment_method, shampoo_type,
+                    pets ( name ),
+                    profiles ( full_name )
+                `),
+                
+            // Ventas (Sales)
+            supabase
+                .from('sales')
+                .select(`
+                    created_at, total_price, quantity, payment_method,
+                    client:client_id ( full_name, phone ),
+                    product:product_id ( name, category )
+                `),
+                
+            // Reclamos (Complaints)
+            supabase
+                .from('complaints')
+                .select(`
+                    created_at, status, doc_type, doc_num, first_name, last_name, mother_last_name, email, phone, district, bien_contratado, monto, description, tipo_reclamo, detalle_reclamo, pedido
+                `),
+        ]);
+
+        if (clientsRes.error) throw clientsRes.error;
+        if (petsRes.error) throw petsRes.error;
+        if (appointmentsRes.error) throw appointmentsRes.error;
+        if (salesRes.error) throw salesRes.error;
+        if (complaintsRes.error) throw complaintsRes.error;
+
+        // Limpiar y denormalizar la estructura de los datos para la exportación.
+        const cleanedPets = petsRes.data.map(pet => ({
+            'Nombre Mascota': pet.name,
+            'Raza': pet.breed,
+            'Especie': pet.species,
+            'Tamaño': pet.size,
+            'Peso (kg)': pet.weight,
+            'Sexo': pet.sex,
+            'Fecha Nacimiento': pet.birth_date,
+            'Dueño': pet.profiles?.full_name,
+            'Frecuencia Recordatorio (días)': pet.reminder_frequency_days,
+            'Último Servicio': pet.last_grooming_date,
+            'Observaciones': pet.observations,
+        }));
+        
+        const cleanedAppointments = appointmentsRes.data.map(apt => ({
+            'Cliente': apt.profiles?.full_name,
+            'Mascota': apt.pets?.name,
+            'Fecha Cita': apt.appointment_date,
+            'Hora Cita': apt.appointment_time,
+            'Servicio Solicitado': apt.service,
+            'Estado': apt.status,
+            'Precio Servicio (S/)': apt.service_price,
+            'Método Pago': apt.payment_method,
+            'Peso Final (kg)': apt.final_weight,
+            'Shampoo Utilizado': apt.shampoo_type,
+            'Observaciones Finales': apt.final_observations,
+        }));
+
+        const cleanedSales = salesRes.data.map(sale => ({
+            'Fecha Venta': new Date(sale.created_at).toLocaleString('es-ES'),
+            'Cliente': sale.client?.full_name,
+            'Producto': sale.product?.name,
+            'Categoría Producto': sale.product?.category,
+            'Cantidad': sale.quantity,
+            'Precio Total (S/)': sale.total_price,
+            'Método Pago': sale.payment_method,
+        }));
+
+
+        return {
+            clients: clientsRes.data,
+            pets: cleanedPets,
+            appointments: cleanedAppointments,
+            sales: cleanedSales,
+            complaints: complaintsRes.data
+        };
+        
+    } catch (error) {
+        console.error('Error general al obtener datos para exportar:', error);
+        return { error: error.message };
+    }
+};
+
 export { supabase };
