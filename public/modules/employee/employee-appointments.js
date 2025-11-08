@@ -419,6 +419,12 @@ const closeAddAppointmentModal = () => {
     addAppointmentMessage?.classList.add('hidden');
     selectedClientIdInput.value = '';
     petSelect.innerHTML = '<option value="">Selecciona una mascota</option>';
+    
+    // CORRECCIÓN 6: Asegurar que el botón de submit esté habilitado al cerrar
+    if (submitAddAppointmentButtonEmployee) {
+        submitAddAppointmentButtonEmployee.disabled = false;
+        submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
+    }
 };
 
 const handleClientSearchInModal = (e) => {
@@ -478,6 +484,7 @@ const handleAddAppointment = async (e) => {
         return;
     }
     
+    // CORRECCIÓN 7: Deshabilitar el botón y cambiar el texto (para la primera y segunda vez)
     submitAddAppointmentButtonEmployee.disabled = true;
     submitAddAppointmentButtonEmployee.textContent = 'Confirmando...';
     
@@ -518,14 +525,23 @@ const handleAddAppointment = async (e) => {
                 renderConfirmedAppointments();
             }
             
-            setTimeout(() => {
-                closeAddAppointmentModal();
-            }, 1500);
+            // CORRECCIÓN 8: Forzar el re-renderizado del modal (solo el formulario) para la segunda cita
+            addAppointmentForm.reset();
+            addAppointmentMessage.classList.add('hidden');
+            selectedClientIdInput.value = '';
+            petSelect.innerHTML = '<option value="">Selecciona una mascota</option>';
+            clientSearchInputModal.value = '';
+            
+            // Re-habilitar botón
+            submitAddAppointmentButtonEmployee.disabled = false;
+            submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
+            
         } else {
             addAppointmentMessage.textContent = `❌ ${result.error?.message || 'Error al agendar cita'}`;
             addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
             addAppointmentMessage.classList.remove('hidden');
             
+            // CORRECCIÓN 9: Re-habilitar botón en caso de error
             submitAddAppointmentButtonEmployee.disabled = false;
             submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
         }
@@ -534,14 +550,10 @@ const handleAddAppointment = async (e) => {
         addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
         addAppointmentMessage.classList.remove('hidden');
         
+        // CORRECCIÓN 10: Re-habilitar botón en caso de error de red/código
         submitAddAppointmentButtonEmployee.disabled = false;
         submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
-    } finally {
-        if (result && !result.success) {
-            submitAddAppointmentButtonEmployee.disabled = false;
-            submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
-        }
-    }
+    } 
 };
 
 const openCompletionModal = (appointmentId) => {
