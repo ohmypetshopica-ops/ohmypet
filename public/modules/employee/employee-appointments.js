@@ -12,6 +12,10 @@ const SHAMPOO_OPTIONS = [
     'Hipoalergenico', 'Junior', 'Mascarilla', 'SHAMPO PROPIO'
 ];
 
+// Variables de paginación
+let currentPage = 1;
+const itemsPerPage = 8; // Mostrar 8 citas por página
+
 // Elementos del DOM
 let appointmentsList;
 let addAppointmentBtnEmployee, addAppointmentModal, addAppointmentForm, cancelAddAppointmentBtn;
@@ -42,6 +46,9 @@ let shampooSelectToggleEmployee, shampooDropdownContentEmployee, shampooDisplayT
 // Elemento del botón de submit (agendar cita)
 let submitAddAppointmentButtonEmployee;
 
+// Elemento de paginación (Asumiendo que se agregará un contenedor en employee-appointments.html)
+let paginationContainerAppointments;
+
 
 export const initAppointmentElements = () => {
     appointmentsList = document.getElementById('appointments-list');
@@ -50,6 +57,9 @@ export const initAppointmentElements = () => {
     appointmentDetailsView = document.getElementById('appointment-details-view');
     appointmentDetailsContent = document.getElementById('appointment-details-content');
     backToAppointmentsListBtn = document.getElementById('back-to-appointments-list-btn');
+
+    // Inicializar el contenedor de paginación
+    paginationContainerAppointments = document.getElementById('pagination-container-appointments');
 
 
     addAppointmentBtnEmployee = document.querySelector('#add-appointment-btn-employee');
@@ -331,19 +341,98 @@ const extractNotes = (app) => {
     return { serviceDisplay, notesDisplay };
 };
 
+// ====== FUNCIÓN DE PAGINACIÓN ======
+const renderPagination = (totalItems) => {
+    if (!paginationContainerAppointments) return;
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (totalPages <= 1) {
+        paginationContainerAppointments.innerHTML = '';
+        return;
+    }
+
+    let paginationHTML = '<div class="flex items-center justify-center space-x-2 mt-4">';
+
+    const prevDisabled = currentPage === 1;
+    paginationHTML += `
+        <button data-page="${currentPage - 1}" 
+                class="px-3 py-2 border rounded-lg transition-colors ${prevDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700'}" 
+                ${prevDisabled ? 'disabled' : ''}>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </button>
+    `;
+
+    let startPage = Math.max(1, currentPage - 1);
+    let endPage = Math.min(totalPages, startPage + 2);
+    
+    if (endPage - startPage < 2) {
+        startPage = Math.max(1, endPage - 2);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const activeClass = i === currentPage 
+            ? 'bg-green-600 text-white' 
+            : 'bg-white hover:bg-gray-50 text-gray-700';
+        paginationHTML += `
+            <button data-page="${i}" 
+                    class="w-10 h-10 border rounded-lg font-medium transition-colors ${activeClass}">
+                ${i}
+            </button>
+        `;
+    }
+
+    const nextDisabled = currentPage === totalPages;
+    paginationHTML += `
+        <button data-page="${currentPage + 1}" 
+                class="px-3 py-2 border rounded-lg transition-colors ${nextDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700'}" 
+                ${nextDisabled ? 'disabled' : ''}>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </button>
+    `;
+
+    paginationHTML += '</div>';
+    paginationContainerAppointments.innerHTML = paginationHTML;
+
+    paginationContainerAppointments.querySelectorAll('button[data-page]').forEach(button => {
+        button.addEventListener('click', () => {
+            const newPage = parseInt(button.dataset.page);
+            if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderConfirmedAppointments();
+            }
+        });
+    });
+};
+// ====== FIN FUNCIÓN DE PAGINACIÓN ======
+
 export const renderConfirmedAppointments = () => {
     if (!appointmentsList) return;
     
-    const workingAppointments = state.allAppointments
-        .filter(app => app.status === 'confirmada' || app.status === 'pendiente') 
-        .sort((a, b) => new Date(`${a.appointment_date}T${a.appointment_time}`) - new Date(`${b.appointment_date}T${b.appointment_time}`));
+    let workingAppointments = state.allAppointments
+        .filter(app => app.status === 'confirmada' || app.status === 'pendiente'); 
+    
+    // CORRECCIÓN 1: Ordenar de más cercano (ascendente) a más lejano (ascendente)
+    workingAppointments.sort((a, b) => 
+        new Date(`${a.appointment_date}T${a.appointment_time}`) - new Date(`${b.appointment_date}T${b.appointment_time}`)
+    );
+    
+    const totalAppointments = workingAppointments.length;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedAppointments = workingAppointments.slice(startIndex, endIndex);
 
-    if (workingAppointments.length === 0) {
+
+    if (paginatedAppointments.length === 0) {
         appointmentsList.innerHTML = `<p class="text-center text-gray-500 mt-8">No hay citas pendientes o confirmadas.</p>`;
+        renderPagination(totalAppointments);
         return;
     }
     
-    appointmentsList.innerHTML = workingAppointments.map(app => {
+    appointmentsList.innerHTML = paginatedAppointments.map(app => {
         const { serviceDisplay, notesDisplay } = extractNotes(app);
 
         const petNameRaw = app.pets?.name || 'Mascota';
@@ -404,6 +493,8 @@ export const renderConfirmedAppointments = () => {
             </div>
         `;
     }).join('');
+    
+    renderPagination(totalAppointments);
 };
 
 const openAddAppointmentModal = async () => {
