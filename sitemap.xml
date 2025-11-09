@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://ohmypet.codearlo.com/public/index.html</loc>
+    <loc>https://ohmypetica.com/</loc>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ohmypet.codearlo.com/public/modules/store/store.html</loc>
+    <loc>https://ohmypetica.com/modules/store/store.html</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ohmypet.codearlo.com/public/modules/appointments/schedule-app.html</loc>
+    <loc>https://ohmypetica.com/modules/appointments/schedule-app.html</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ohmypet.codearlo.com/public/register.html</loc>
+    <loc>https://ohmypetica.com/register.html</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ohmypet.codearlo.com/public/modules/login/login.html</loc>
+    <loc>https://ohmypetica.com/modules/login/login.html</loc>
     <priority>0.6</priority>
   </url>
 </urlset>
