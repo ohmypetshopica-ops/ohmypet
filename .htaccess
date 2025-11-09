@@ -1,4 +1,21 @@
 # ============================================
+# REDIRECCIÓN A CARPETA /PUBLIC
+# ============================================
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # 1. Si entran a la raíz del dominio, servir internamente public/index.html
+    RewriteRule ^$ public/index.html [L]
+
+    # 2. Para cualquier otra solicitud (ej: /css/style.css), si no existe en la raíz,
+    # buscarla automáticamente dentro de la carpeta /public
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# ============================================
 # SISTEMA DE CACHÉ AUTOMÁTICO
 # ============================================
 
