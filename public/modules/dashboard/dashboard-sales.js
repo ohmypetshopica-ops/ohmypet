@@ -1,17 +1,21 @@
 // public/modules/dashboard/dashboard-sales.js
 
 import { supabase } from '../../core/supabase.js';
-import { getSales, updateSaleItem } from './dashboard.api.js'; // Importar updateSaleItem
+import { getSales, updateSaleItem } from './dashboard.api.js';
 
 // --- ELEMENTOS DEL DOM ---
 const salesTableBody = document.querySelector('#sales-table-body');
+const salesSearchInput = document.querySelector('#sales-search-input');
+const salesDateFilter = document.querySelector('#sales-date-filter');
+const clearSalesFiltersBtn = document.querySelector('#clear-sales-filters');
+const paginationContainer = document.querySelector('#pagination-container');
 
 // Modal de detalles
 const saleDetailsModal = document.querySelector('#sale-details-modal');
 const closeSaleDetailsBtn = document.querySelector('#close-sale-details-btn');
 const saleDetailsContent = document.querySelector('#sale-details-content');
 const deleteSaleBtn = document.querySelector('#delete-sale-btn');
-const editSaleBtn = document.querySelector('#edit-sale-btn'); // Botón Editar en modal detalles
+const editSaleBtn = document.querySelector('#edit-sale-btn');
 
 // Modal de Edición
 const editSaleModal = document.querySelector('#edit-sale-modal');
@@ -24,107 +28,235 @@ const editSaleDate = document.querySelector('#edit-sale-date');
 const editPaymentMethod = document.querySelector('#edit-payment-method');
 const editSaleItemsContainer = document.querySelector('#edit-sale-items-container');
 
-
 // --- VARIABLES GLOBALES ---
-let allSales = [];
-let groupedSalesData = new Map(); // Almacenar datos agrupados
+let allSalesGrouped = [];
+let filteredSales = [];
 let selectedSaleGroup = null;
 
-// --- RENDERIZADO DE LA TABLA ---
-const renderSalesTable = async () => {
-    salesTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500">Cargando...</td></tr>`;
-    allSales = await getSales();
+// Variables de paginación
+let currentPage = 1;
+const itemsPerPage = 10;
+
+// --- LÓGICA DE AGRUPACIÓN ---
+const groupSalesData = (salesRaw) => {
+    const groupedDataMap = new Map();
     
-    if (allSales.length === 0) {
-        salesTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500">No hay ventas registradas.</td></tr>`;
-        return;
-    }
-    
-    // Agrupar ventas por fecha, cliente y método de pago
-    groupedSalesData.clear();
-    
-    allSales.forEach(sale => {
-        const saleDate = new Date(sale.created_at);
-        const dateKey = saleDate.toISOString().split('T')[0];
-        // Agrupar por hora y minuto para diferenciar ventas cercanas
-        const timeKey = saleDate.toTimeString().split(' ')[0].substring(0, 5); 
-        
-        // Usar sale.payment_method en la clave
-        const key = `${dateKey}-${timeKey}-${sale.client_id}-${sale.payment_method}`;
-        
-        if (!groupedSalesData.has(key)) {
-            groupedSalesData.set(key, {
-                key: key,
-                created_at: sale.created_at,
-                client: sale.client,
-                client_id: sale.client_id,
-                payment_method: sale.payment_method,
-                products: [],
-                total: 0,
-                sale_ids: [] // Guardar los IDs de las ventas individuales
+    salesRaw.forEach(sale => {
+        try {
+             // Asegurar que created_at existe para evitar errores de fecha
+            const createdVal = sale.created_at || new Date().toISOString();
+            const saleDate = new Date(createdVal);
+            
+            const dateKey = saleDate.toISOString().split('T')[0];
+            // Usamos substring de forma segura
+            const timeStr = saleDate.toTimeString().split(' ')[0] || '00:00:00';
+            const timeKey = timeStr.substring(0, 5);
+             // Normalizamos el método de pago a minúsculas para agrupar mejor
+            const paymentMethod = (sale.payment_method || 'desconocido').toLowerCase();
+            
+            const key = `${dateKey}-${timeKey}-${sale.client_id}-${paymentMethod}`;
+            
+            if (!groupedDataMap.has(key)) {
+                groupedDataMap.set(key, {
+                    key: key,
+                    created_at: createdVal,
+                    client: sale.client,
+                    client_id: sale.client_id,
+                    payment_method: paymentMethod,
+                    products: [],
+                    total: 0,
+                    sale_ids: []
+                });
+            }
+            
+            const group = groupedDataMap.get(key);
+            group.products.push({
+                id: sale.id,
+                name: sale.product?.name || 'Producto Eliminado',
+                quantity: sale.quantity,
+                unit_price: sale.unit_price,
+                price: sale.total_price,
+                product_id: sale.product_id
             });
+            group.sale_ids.push(sale.id);
+            group.total += (sale.total_price || 0);
+        } catch (err) {
+            console.warn("Error al agrupar una venta:", sale, err);
         }
-        
-        const group = groupedSalesData.get(key);
-        group.products.push({
-            id: sale.id, // ID de la fila 'sales'
-            name: sale.product?.name || 'Producto Eliminado',
-            quantity: sale.quantity,
-            unit_price: sale.unit_price,
-            price: sale.total_price,
-            product_id: sale.product_id
-        });
-        group.sale_ids.push(sale.id); // Guardar ID
-        group.total += sale.total_price;
     });
     
-    const salesArray = Array.from(groupedSalesData.values()).sort((a, b) => 
+    return Array.from(groupedDataMap.values()).sort((a, b) => 
         new Date(b.created_at) - new Date(a.created_at)
     );
+};
+
+// --- CARGA INICIAL DE DATOS ---
+const loadSalesData = async () => {
+    try {
+        if (salesTableBody) {
+             salesTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500">Cargando ventas...</td></tr>`;
+        }
+        
+        console.log("Iniciando carga de ventas...");
+        const rawSales = await getSales();
+        console.log(`Ventas cargadas: ${rawSales ? rawSales.length : 0}`);
+
+        if (!rawSales || rawSales.length === 0) {
+            allSalesGrouped = [];
+            filteredSales = [];
+            renderCurrentPage();
+            return;
+        }
+        
+        allSalesGrouped = groupSalesData(rawSales);
+        console.log(`Grupos de ventas creados: ${allSalesGrouped.length}`);
+        applyFilters();
+
+    } catch (error) {
+        console.error("❌ Error fatal al cargar ventas:", error);
+        if (salesTableBody) {
+            salesTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-500 font-medium">Error al cargar los datos. Por favor, recarga la página.</td></tr>`;
+        }
+    }
+};
+
+// --- FILTRADO ---
+const applyFilters = () => {
+    const searchTerm = salesSearchInput ? salesSearchInput.value.toLowerCase().trim() : '';
+    const filterDate = salesDateFilter ? salesDateFilter.value : '';
+
+    filteredSales = allSalesGrouped.filter(sale => {
+        let matchesSearch = true;
+        if (searchTerm) {
+            const clientName = (sale.client?.first_name && sale.client?.last_name) 
+                ? `${sale.client.first_name} ${sale.client.last_name}`.toLowerCase() 
+                : (sale.client?.full_name || '').toLowerCase();
+            
+            const productsString = sale.products.map(p => p.name.toLowerCase()).join(' ');
+            matchesSearch = clientName.includes(searchTerm) || productsString.includes(searchTerm);
+        }
+
+        let matchesDate = true;
+        if (filterDate) {
+            const saleDateStr = new Date(sale.created_at).toISOString().split('T')[0];
+            matchesDate = saleDateStr === filterDate;
+        }
+
+        return matchesSearch && matchesDate;
+    });
+
+    currentPage = 1;
+    renderCurrentPage();
+};
+
+const clearFilters = () => {
+    if (salesSearchInput) salesSearchInput.value = '';
+    if (salesDateFilter) salesDateFilter.value = '';
+    applyFilters();
+};
+
+// --- PAGINACIÓN Y RENDERIZADO ---
+const renderPaginationControls = () => {
+    if (!paginationContainer) return;
     
-    salesTableBody.innerHTML = salesArray.map(sale => {
+    const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
+    
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+
+    let paginationHTML = '<div class="flex items-center gap-2">';
+    
+    if (currentPage > 1) {
+        paginationHTML += `<button class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 text-sm transition-colors page-btn bg-white" data-page="${currentPage - 1}">Anterior</button>`;
+    }
+
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `<button class="px-3 py-1 border rounded-md text-sm font-medium transition-colors page-btn ${i === currentPage ? 'bg-green-600 text-white border-green-600' : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-700'}" data-page="${i}">${i}</button>`;
+    }
+
+    if (currentPage < totalPages) {
+        paginationHTML += `<button class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 text-sm transition-colors page-btn bg-white" data-page="${currentPage + 1}">Siguiente</button>`;
+    }
+
+    paginationHTML += '</div>';
+    paginationContainer.innerHTML = paginationHTML;
+
+    paginationContainer.querySelectorAll('.page-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentPage = parseInt(btn.dataset.page);
+            renderCurrentPage();
+        });
+    });
+};
+
+const renderCurrentPage = () => {
+    if (!salesTableBody) return;
+
+    if (filteredSales.length === 0) {
+        salesTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500">No se encontraron ventas con los filtros actuales.</td></tr>`;
+        if (paginationContainer) paginationContainer.innerHTML = '';
+        return;
+    }
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const salesToShow = filteredSales.slice(startIndex, endIndex);
+
+    salesTableBody.innerHTML = salesToShow.map(sale => {
         const clientName = (sale.client?.first_name && sale.client?.last_name) 
             ? `${sale.client.first_name} ${sale.client.last_name}` 
             : sale.client?.full_name || 'Cliente Eliminado';
         
-        const productsList = sale.products.map(p => 
-            `${p.name} (x${p.quantity})`
-        ).join(', ');
+        const productsList = sale.products.map(p => `${p.name} (x${p.quantity})`).join(', ');
         
         return `
-            <tr class="hover:bg-gray-50 cursor-pointer" data-sale-key="${sale.key}">
-                <td class="px-6 py-4 text-sm text-gray-700">${new Date(sale.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${new Date(sale.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</td>
+            <tr class="hover:bg-gray-50 cursor-pointer transition-colors" data-sale-key="${sale.key}">
+                <td class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
+                    <div>${new Date(sale.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                    <div class="text-xs text-gray-500">${new Date(sale.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+                </td>
                 <td class="px-6 py-4 text-sm font-medium text-gray-900">${clientName}</td>
-                <td class="px-6 py-4 text-sm text-gray-800">${productsList}</td>
-                <td class="px-6 py-4 text-sm font-bold text-green-600">S/ ${sale.total.toFixed(2)}</td>
-                <td class="px-6 py-4 text-sm text-gray-600">${sale.payment_method}</td>
-                <td class="px-6 py-4 text-center">
-                    <button class="text-blue-600 hover:text-blue-800 font-semibold text-sm">Ver Detalles</button>
+                <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" title="${productsList}">${productsList}</td>
+                <td class="px-6 py-4 text-sm font-bold text-green-600 whitespace-nowrap">S/ ${sale.total.toFixed(2)}</td>
+                <td class="px-6 py-4 text-sm text-gray-600 capitalize">${sale.payment_method}</td>
+                <td class="px-6 py-4 text-center whitespace-nowrap">
+                    <button class="text-blue-600 hover:text-blue-800 font-semibold text-sm py-1 px-3 hover:bg-blue-50 rounded transition-colors view-details-btn">
+                        Ver Detalles
+                    </button>
                 </td>
             </tr>
         `;
     }).join('');
-    
-    // Event listeners para abrir detalles
-    salesTableBody.querySelectorAll('tr[data-sale-key]').forEach(row => {
+
+    // Usar event delegation para mejor rendimiento
+    const newRows = salesTableBody.querySelectorAll('tr[data-sale-key]');
+    newRows.forEach(row => {
         row.addEventListener('click', (e) => {
-            const saleKey = row.dataset.saleKey;
-            const sale = salesArray.find(s => s.key === saleKey);
-            if (sale) openSaleDetails(sale);
+            // Evitar doble disparo si se hace clic específicamente en el botón, aunque el bubbling lo manejaría
+             const saleKey = row.dataset.saleKey;
+             const sale = filteredSales.find(s => s.key === saleKey);
+             if (sale) openSaleDetails(sale);
         });
     });
+
+    renderPaginationControls();
 };
 
 // --- MODAL DE DETALLES ---
 const openSaleDetails = (sale) => {
     selectedSaleGroup = sale;
-    
     const clientName = (sale.client?.first_name && sale.client?.last_name) 
         ? `${sale.client.first_name} ${sale.client.last_name}` 
         : sale.client?.full_name || 'Cliente Eliminado';
     
     const productsHTML = sale.products.map(p => `
-        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+        <div class="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
             <div>
                 <p class="font-medium text-gray-800">${p.name}</p>
                 <p class="text-xs text-gray-500">Cantidad: ${p.quantity} × S/ ${p.unit_price.toFixed(2)}</p>
@@ -134,40 +266,41 @@ const openSaleDetails = (sale) => {
     `).join('');
     
     saleDetailsContent.innerHTML = `
-        <div class="space-y-4">
-            <div class="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg">
-                <h3 class="text-lg font-bold text-gray-800 mb-2">Información de la Venta</h3>
-                <div class="grid grid-cols-2 gap-3 text-sm">
+        <div class="space-y-6">
+            <div class="bg-green-50 p-4 rounded-xl border border-green-100">
+                <h4 class="text-xs font-bold text-green-800 uppercase tracking-wider mb-3">Resumen de Venta</h4>
+                <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                        <p class="text-gray-600">Fecha:</p>
-                        <p class="font-semibold">${new Date(sale.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                        <p class="text-gray-500 mb-1">Fecha</p>
+                        <p class="font-semibold text-gray-900">${new Date(sale.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                     </div>
                     <div>
-                        <p class="text-gray-600">Hora:</p>
-                        <p class="font-semibold">${new Date(sale.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p class="text-gray-500 mb-1">Hora</p>
+                        <p class="font-semibold text-gray-900">${new Date(sale.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                     <div>
-                        <p class="text-gray-600">Cliente:</p>
-                        <p class="font-semibold">${clientName}</p>
+                        <p class="text-gray-500 mb-1">Cliente</p>
+                        <p class="font-semibold text-gray-900">${clientName}</p>
                     </div>
-                    <div>
-                        <p class="text-gray-600">Método de Pago:</p>
-                        <p class="font-semibold">${sale.payment_method}</p>
+                     <div>
+                        <p class="text-gray-500 mb-1">Método de Pago</p>
+                        <p class="font-semibold text-gray-900 capitalize">${sale.payment_method}</p>
                     </div>
                 </div>
             </div>
             
-            <div class="bg-white border border-gray-200 rounded-lg p-4">
-                <h4 class="font-semibold text-gray-800 mb-3">Productos</h4>
-                ${productsHTML}
-                <div class="flex justify-between items-center pt-3 mt-3 border-t-2 border-gray-300">
-                    <p class="text-lg font-bold text-gray-800">Total:</p>
-                    <p class="text-2xl font-bold text-green-600">S/ ${sale.total.toFixed(2)}</p>
+            <div>
+                <h4 class="text-base font-bold text-gray-800 mb-3">Productos</h4>
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 max-h-64 overflow-y-auto custom-scrollbar">
+                    ${productsHTML}
+                </div>
+                <div class="flex justify-between items-center pt-4 mt-2">
+                    <p class="text-lg font-bold text-gray-800">Total Pagado:</p>
+                    <p class="text-3xl font-bold text-green-600">S/ ${sale.total.toFixed(2)}</p>
                 </div>
             </div>
         </div>
     `;
-    
     saleDetailsModal.classList.remove('hidden');
 };
 
@@ -180,29 +313,30 @@ const closeSaleDetails = () => {
 const openEditModal = () => {
     if (!selectedSaleGroup) return;
 
-    // Formatear fecha para datetime-local (YYYY-MM-DDTHH:mm)
+    // Ajustar la fecha a formato local para el input datetime-local
     const saleDate = new Date(selectedSaleGroup.created_at);
-    const localDateTime = new Date(saleDate.getTime() - (saleDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+    const tzOffset = saleDate.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(saleDate - tzOffset)).toISOString().slice(0, 16);
     
-    editSaleDate.value = localDateTime;
-    editPaymentMethod.value = selectedSaleGroup.payment_method;
+    editSaleDate.value = localISOTime;
+    // Asegurar que el valor coincida con las opciones del select (minúsculas)
+    editPaymentMethod.value = (selectedSaleGroup.payment_method || '').toLowerCase();
     editSaleMessage.classList.add('hidden');
 
-    // Renderizar items editables
     editSaleItemsContainer.innerHTML = selectedSaleGroup.products.map(p => `
-        <div class="grid grid-cols-3 gap-3 p-3 border rounded-lg bg-gray-50" data-sale-id="${p.id}">
-            <div class="col-span-3">
-                <p class="font-semibold text-gray-800">${p.name}</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 border rounded-lg bg-gray-50 items-center" data-sale-id="${p.id}">
+            <div class="sm:col-span-3">
+                <p class="font-semibold text-gray-800 text-sm">${p.name}</p>
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Cantidad</label>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Cantidad</label>
                 <input type="number" value="${p.quantity}" min="1" step="1" 
-                       class="edit-item-quantity w-full p-2 border border-gray-300 rounded-lg">
+                       class="edit-item-quantity w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
             </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Monto Total (S/)</label>
+            <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Total Producto (S/)</label>
                 <input type="number" value="${p.price.toFixed(2)}" min="0" step="0.10" 
-                       class="edit-item-price w-full p-2 border border-gray-300 rounded-lg">
+                       class="edit-item-price w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
             </div>
         </div>
     `).join('');
@@ -213,8 +347,6 @@ const openEditModal = () => {
 
 const closeEditModal = () => {
     editSaleModal.classList.add('hidden');
-    // No reseteamos selectedSaleGroup para que el modal de detalles
-    // pueda reabrirse si es necesario.
 };
 
 const handleSaveSale = async () => {
@@ -225,9 +357,14 @@ const handleSaveSale = async () => {
     editSaleMessage.classList.add('hidden');
 
     try {
-        const newDate = new Date(editSaleDate.value).toISOString();
+        const newDateVal = editSaleDate.value;
         const newPaymentMethod = editPaymentMethod.value;
+        
+        if (!newDateVal || !newPaymentMethod) {
+             throw new Error("Por favor completa la fecha y el método de pago.");
+        }
 
+        const newDateISO = new Date(newDateVal).toISOString();
         const updatePromises = [];
         const itemRows = editSaleItemsContainer.querySelectorAll('[data-sale-id]');
 
@@ -243,14 +380,12 @@ const handleSaveSale = async () => {
             const newUnitPrice = newTotalPrice / newQuantity;
 
             const updates = {
-                created_at: newDate,
+                created_at: newDateISO,
                 payment_method: newPaymentMethod,
                 quantity: newQuantity,
                 total_price: newTotalPrice,
                 unit_price: newUnitPrice
             };
-            
-            // Usar la función de la API para actualizar CADA fila
             updatePromises.push(updateSaleItem(saleId, updates));
         }
 
@@ -263,12 +398,12 @@ const handleSaveSale = async () => {
         setTimeout(async () => {
             closeEditModal();
             closeSaleDetails();
-            await renderSalesTable();
+            await loadSalesData();
         }, 1500);
 
     } catch (error) {
         console.error('Error al guardar la venta:', error);
-        editSaleMessage.textContent = `❌ ${error.message || 'Error al guardar la venta.'}`;
+        editSaleMessage.textContent = `❌ ${error.message || 'Error al guardar.'}`;
         editSaleMessage.className = 'block p-3 rounded-lg bg-red-100 text-red-700 text-sm';
         editSaleMessage.classList.remove('hidden');
     } finally {
@@ -281,72 +416,84 @@ const handleSaveSale = async () => {
 const deleteSale = async () => {
     if (!selectedSaleGroup) return;
     
-    if (!confirm('¿Estás seguro de eliminar esta venta? Esta acción no se puede deshacer.')) {
+    if (!confirm('¿Estás seguro de eliminar esta venta? El stock de los productos será devuelto.')) {
         return;
     }
     
     deleteSaleBtn.disabled = true;
     deleteSaleBtn.textContent = 'Eliminando...';
     
-    // Eliminar todas las filas de venta del grupo
-    // ***** INICIO DE LA CORRECCIÓN *****
-    const { error } = await supabase
-    // ***** FIN DE LA CORRECCIÓN *****
-        .from('sales')
-        .delete()
-        .in('id', selectedSaleGroup.sale_ids);
-    
-    if (error) {
+    try {
+        // 1. Eliminar registros de venta
+        const { error: deleteError } = await supabase
+            .from('sales')
+            .delete()
+            .in('id', selectedSaleGroup.sale_ids);
+        
+        if (deleteError) throw deleteError;
+        
+        // 2. Devolver stock (optimista, si falla uno no detiene todo, pero idealmente usaría una transacción RPC)
+        for (const product of selectedSaleGroup.products) {
+            // Obtener stock actual para asegurar consistencia
+            const { data: currentProd } = await supabase
+                .from('products')
+                .select('stock')
+                .eq('id', product.product_id)
+                .single();
+
+            if (currentProd) {
+                 await supabase
+                    .from('products')
+                    .update({ stock: currentProd.stock + product.quantity })
+                    .eq('id', product.product_id);
+            }
+        }
+        
+        alert('Venta eliminada exitosamente.');
+        closeSaleDetails();
+        await loadSalesData();
+
+    } catch (error) {
         console.error('Error al eliminar venta:', error);
-        alert('Error al eliminar la venta');
+        alert('Error al eliminar la venta: ' + error.message);
+    } finally {
         deleteSaleBtn.disabled = false;
         deleteSaleBtn.textContent = 'Eliminar Venta';
-        return;
     }
-    
-    // Devolver stock a los productos
-    for (const product of selectedSaleGroup.products) {
-        const { data: currentProduct, error: getStockError } = await supabase
-            .from('products')
-            .select('stock')
-            .eq('id', product.product_id)
-            .single();
-        
-        if (currentProduct && !getStockError) {
-            await supabase
-                .from('products')
-                .update({ stock: currentProduct.stock + product.quantity })
-                .eq('id', product.product_id);
-        }
-    }
-    
-    alert('Venta eliminada exitosamente');
-    closeSaleDetails();
-    await renderSalesTable();
-    
-    deleteSaleBtn.disabled = false;
-    deleteSaleBtn.textContent = 'Eliminar Venta';
 };
 
-// --- INICIALIZACIÓN Y EVENTOS ---
+// --- INICIALIZACIÓN ---
 const initializeSalesPage = async () => {
-    await renderSalesTable();
+    console.log("Inicializando página de ventas...");
+    await loadSalesData();
 
-    // Listeners Modal Detalles
-    closeSaleDetailsBtn.addEventListener('click', closeSaleDetails);
-    deleteSaleBtn.addEventListener('click', deleteSale);
-    editSaleBtn.addEventListener('click', openEditModal);
-    saleDetailsModal.addEventListener('click', (e) => {
+    // Listeners de Filtros
+    salesSearchInput?.addEventListener('input', () => {
+        clearTimeout(window.searchTimeout);
+        window.searchTimeout = setTimeout(applyFilters, 300);
+    });
+    salesDateFilter?.addEventListener('change', applyFilters);
+    clearSalesFiltersBtn?.addEventListener('click', clearFilters);
+
+    // Listeners Modales
+    closeSaleDetailsBtn?.addEventListener('click', closeSaleDetails);
+    deleteSaleBtn?.addEventListener('click', deleteSale);
+    editSaleBtn?.addEventListener('click', openEditModal);
+    saleDetailsModal?.addEventListener('click', (e) => {
         if (e.target === saleDetailsModal) closeSaleDetails();
     });
 
-    // Listeners Modal Edición
-    closeEditSaleBtn.addEventListener('click', closeEditModal);
-    cancelEditSaleBtn.addEventListener('click', closeEditModal);
-    saveSaleBtn.addEventListener('click', handleSaveSale);
-    editSaleModal.addEventListener('click', (e) => {
+    closeEditSaleBtn?.addEventListener('click', closeEditModal);
+    cancelEditSaleBtn?.addEventListener('click', closeEditModal);
+    saveSaleBtn?.addEventListener('click', handleSaveSale);
+    editSaleModal?.addEventListener('click', (e) => {
         if (e.target === editSaleModal) closeEditModal();
     });
 };
 
-initializeSalesPage();
+// Asegurar que se ejecute cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeSalesPage);
+} else {
+    initializeSalesPage();
+}
