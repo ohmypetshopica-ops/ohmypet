@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 
 # Ubicación del mapa del sitio
-Sitemap: https://ohmypet.codearlo.com/sitemap.xml
+Sitemap: https://ohmypetica.com/sitemap.xml
