@@ -10,7 +10,7 @@ import { supabase } from '../../core/supabase.js';
 export const recoverPassword = async (email) => {
     // Asegúrate de que esta URL sea la de tu hosting en producción
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://ohmypet.codearlo.com/public/modules/login/update-password.html'
+        redirectTo: 'https://ohmypetica.com/public/modules/login/update-password.html'
     });
 
     if (error) {
