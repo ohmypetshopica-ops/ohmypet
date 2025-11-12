@@ -79,3 +79,26 @@ registerForm.addEventListener('submit', async (event) => {
         registerForm.reset(); // Limpiamos el formulario
     }
 });
+
+// **** INICIO DE LA NUEVA FUNCIONALIDAD ****
+// --- ELEMENTOS DEL DOM (AÑADIDOS PARA VISIBILIDAD) ---
+const passwordInput = document.querySelector('#password');
+const toggleButton = document.querySelector('#toggle-password-visibility');
+const eyeIcon = document.querySelector('#eye-icon');
+const eyeSlashIcon = document.querySelector('#eye-slash-icon');
+
+// --- LÓGICA PARA MOSTRAR/OCULTAR CONTRASEÑA (AÑADIDO) ---
+if (toggleButton && passwordInput && eyeIcon && eyeSlashIcon) {
+    toggleButton.addEventListener('click', () => {
+        // Comprueba si el tipo de input es 'password'
+        const isPassword = passwordInput.type === 'password';
+        
+        // Cambia el tipo de input
+        passwordInput.type = isPassword ? 'text' : 'password';
+        
+        // Alterna la visibilidad de los iconos
+        eyeIcon.classList.toggle('hidden', isPassword);
+        eyeSlashIcon.classList.toggle('hidden', !isPassword);
+    });
+}
+// **** FIN DE LA NUEVA FUNCIONALIDAD ****

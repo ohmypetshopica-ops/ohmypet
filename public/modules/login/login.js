@@ -15,6 +15,25 @@ const formSubtitle = document.querySelector('#form-subtitle');
 const forgotPasswordLink = document.querySelector('#forgot-password-link');
 const backToLoginLink = document.querySelector('#back-to-login-link');
 
+// **** INICIO DE LA NUEVA FUNCIONALIDAD ****
+// --- ELEMENTOS DEL DOM (AÑADIDOS PARA VISIBILIDAD) ---
+const loginPasswordInput = document.querySelector('#password'); // Re-usa el existente
+const loginToggleBtn = document.querySelector('#toggle-login-password');
+const loginEyeIcon = document.querySelector('#login-eye-icon');
+const loginEyeSlashIcon = document.querySelector('#login-eye-slash-icon');
+
+// --- LÓGICA PARA MOSTRAR/OCULTAR CONTRASEÑA (AÑADIDO) ---
+if (loginToggleBtn && loginPasswordInput && loginEyeIcon && loginEyeSlashIcon) {
+    loginToggleBtn.addEventListener('click', () => {
+        const isPassword = loginPasswordInput.type === 'password';
+        loginPasswordInput.type = isPassword ? 'text' : 'password';
+        loginEyeIcon.classList.toggle('hidden', isPassword);
+        loginEyeSlashIcon.classList.toggle('hidden', !isPassword);
+    });
+}
+// **** FIN DE LA NUEVA FUNCIONALIDAD ****
+
+
 // --- EVENT LISTENERS PARA CAMBIAR DE VISTA ---
 forgotPasswordLink.addEventListener('click', () => {
     clientLoginForm.classList.add('hidden');
