@@ -51,8 +51,11 @@ const groupSalesData = (salesRaw) => {
             // Usamos substring de forma segura
             const timeStr = saleDate.toTimeString().split(' ')[0] || '00:00:00';
             const timeKey = timeStr.substring(0, 5);
-             // Normalizamos el método de pago a minúsculas para agrupar mejor
-            const paymentMethod = (sale.payment_method || 'desconocido').toLowerCase();
+             
+            // **** INICIO DE LA CORRECCIÓN 1 ****
+            // Normalizamos el método de pago a MAYÚSCULAS para agrupar mejor
+            const paymentMethod = (sale.payment_method || 'DESCONOCIDO').toUpperCase();
+            // **** FIN DE LA CORRECCIÓN 1 ****
             
             const key = `${dateKey}-${timeKey}-${sale.client_id}-${paymentMethod}`;
             
@@ -224,7 +227,7 @@ const renderCurrentPage = () => {
                 <td class="px-6 py-4 text-sm font-medium text-gray-900">${clientName}</td>
                 <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" title="${productsList}">${productsList}</td>
                 <td class="px-6 py-4 text-sm font-bold text-green-600 whitespace-nowrap">S/ ${sale.total.toFixed(2)}</td>
-                <td class="px-6 py-4 text-sm text-gray-600 capitalize">${sale.payment_method}</td>
+                <td class="px-6 py-4 text-sm text-gray-600 uppercase">${sale.payment_method}</td>
                 <td class="px-6 py-4 text-center whitespace-nowrap">
                     <button class="text-blue-600 hover:text-blue-800 font-semibold text-sm py-1 px-3 hover:bg-blue-50 rounded transition-colors view-details-btn">
                         Ver Detalles
@@ -284,8 +287,8 @@ const openSaleDetails = (sale) => {
                     </div>
                      <div>
                         <p class="text-gray-500 mb-1">Método de Pago</p>
-                        <p class="font-semibold text-gray-900 capitalize">${sale.payment_method}</p>
-                    </div>
+                        <p class="font-semibold text-gray-900 uppercase">${sale.payment_method}</p>
+                        </div>
                 </div>
             </div>
             
@@ -319,8 +322,12 @@ const openEditModal = () => {
     const localISOTime = (new Date(saleDate - tzOffset)).toISOString().slice(0, 16);
     
     editSaleDate.value = localISOTime;
-    // Asegurar que el valor coincida con las opciones del select (minúsculas)
-    editPaymentMethod.value = (selectedSaleGroup.payment_method || '').toLowerCase();
+    
+    // **** INICIO DE LA CORRECCIÓN 4 ****
+    // Asegurar que el valor coincida con las opciones del select (MAYÚSCULAS)
+    editPaymentMethod.value = (selectedSaleGroup.payment_method || 'DESCONOCIDO').toUpperCase();
+    // **** FIN DE LA CORRECCIÓN 4 ****
+    
     editSaleMessage.classList.add('hidden');
 
     editSaleItemsContainer.innerHTML = selectedSaleGroup.products.map(p => `
@@ -358,6 +365,7 @@ const handleSaveSale = async () => {
 
     try {
         const newDateVal = editSaleDate.value;
+        // El valor del select ya vendrá en MAYÚSCULAS
         const newPaymentMethod = editPaymentMethod.value;
         
         if (!newDateVal || !newPaymentMethod) {
@@ -381,7 +389,7 @@ const handleSaveSale = async () => {
 
             const updates = {
                 created_at: newDateISO,
-                payment_method: newPaymentMethod,
+                payment_method: newPaymentMethod, // Ya está en MAYÚSCULAS
                 quantity: newQuantity,
                 total_price: newTotalPrice,
                 unit_price: newUnitPrice

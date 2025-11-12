@@ -460,7 +460,11 @@ export const getReportData = async (startDate, endDate) => {
         const price = service.service_price || 0;
         totalRevenue += price;
 
-        const method = service.payment_method || 'No especificado';
+        // **** INICIO DE LA CORRECCIÓN ****
+        // Convertir a mayúsculas para agrupar (ej. 'tarjeta' y 'TARJETA' se vuelven 'TARJETA')
+        const method = (service.payment_method || 'DESCONOCIDO').toUpperCase();
+        // **** FIN DE LA CORRECCIÓN ****
+
         if (paymentSummaryMap.has(method)) {
             paymentSummaryMap.set(method, paymentSummaryMap.get(method) + price);
         } else {
@@ -483,7 +487,9 @@ export const getReportData = async (startDate, endDate) => {
            fecha: service.appointment_date,
            cliente: ownerName,
            mascota: service.pets?.name || 'N/A',
-           metodo_pago: service.payment_method || 'N/A',
+           // **** INICIO DE LA CORRECCIÓN ****
+           metodo_pago: (service.payment_method || 'DESCONOCIDO').toUpperCase(),
+           // **** FIN DE LA CORRECCIÓN ****
            ingreso: service.service_price || 0
        };
    });
@@ -496,22 +502,11 @@ export const getReportData = async (startDate, endDate) => {
     };
 };
 
-// ===========================================
-// INICIO DE LA CORRECCIÓN DE ZONA HORARIA
-// ===========================================
 export const getSalesReportData = async (startDate, endDate) => {
     
-    // 1. Convertir 'startDate' (ej: '2025-11-01') a un timestamp ISO
-    //    Esto crea un objeto de fecha en la zona horaria local
     const startDateTime = new Date(startDate + 'T00:00:00');
-    
-    // 2. Convertir 'endDate' (ej: '2025-11-30') al DÍA SIGUIENTE
     const endDateObj = new Date(endDate + 'T00:00:00');
-    endDateObj.setDate(endDateObj.getDate() + 1); // Se convierte en '2025-12-01'
-
-    // 3. Convertir a strings ISO. 
-    //    .toISOString() convierte la fecha local a UTC (ej: '2025-11-01T05:00:00Z' si estás en UTC-5)
-    //    Esto es lo que la base de datos (que guarda en UTC) necesita para una comparación precisa.
+    endDateObj.setDate(endDateObj.getDate() + 1); 
     const startISO = startDateTime.toISOString();
     const endISO = endDateObj.toISOString();
 
@@ -525,16 +520,13 @@ export const getSalesReportData = async (startDate, endDate) => {
             client:client_id ( full_name, first_name, last_name ),
             product:product_id ( name, category )
         `)
-        .gte('created_at', startISO)       // Mayor o igual al inicio del 'startDate' (en UTC)
-        .lt('created_at', endISO);         // Menor que el inicio del día *siguiente* al 'endDate' (en UTC)
+        .gte('created_at', startISO)       
+        .lt('created_at', endISO);         
 
     if (error) {
         console.error('Error al obtener datos del reporte de ventas:', error);
         return null;
     }
-// ===========================================
-// FIN DE LA CORRECCIÓN
-// ===========================================
 
     if (!sales || sales.length === 0) {
         return {
@@ -553,7 +545,12 @@ export const getSalesReportData = async (startDate, endDate) => {
         const price = sale.total_price || 0;
         totalSalesRevenue += price;
         productsSoldCount += sale.quantity;
-        const method = sale.payment_method || 'No especificado';
+        
+        // **** INICIO DE LA CORRECCIÓN ****
+        // Convertir a mayúsculas para agrupar
+        const method = (sale.payment_method || 'DESCONOCIDO').toUpperCase();
+        // **** FIN DE LA CORRECCIÓN ****
+
         if (paymentMethodSummaryMap.has(method)) {
             paymentMethodSummaryMap.set(method, paymentMethodSummaryMap.get(method) + price);
         } else {
@@ -578,7 +575,9 @@ export const getSalesReportData = async (startDate, endDate) => {
             producto: sale.product?.name || 'N/A',
             categoria: sale.product?.category || 'N/A',
             cantidad: sale.quantity,
-            metodo_pago: sale.payment_method || 'N/A',
+            // **** INICIO DE LA CORRECCIÓN ****
+            metodo_pago: (sale.payment_method || 'DESCONOCIDO').toUpperCase(),
+            // **** FIN DE LA CORRECCIÓN ****
             ingreso: sale.total_price || 0
         };
     });
@@ -895,7 +894,9 @@ export const addSale = async (saleData, saleDate = null) => {
         quantity: item.quantity,
         unit_price: item.unit_price,
         total_price: item.subtotal,
-        payment_method: saleData.payment_method,
+        // **** INICIO DE LA CORRECCIÓN ****
+        payment_method: (saleData.payment_method || 'DESCONOCIDO').toUpperCase(),
+        // **** FIN DE LA CORRECCIÓN ****
         recorded_by: user?.id || null,
         created_at: saleTimestamp // <-- CAMPO AÑADIDO
     }));
@@ -979,6 +980,13 @@ export const getPetsNeedingAppointment = async () => {
  * Actualiza una fila de venta individual en la base de datos
  */
 export const updateSaleItem = async (saleId, updates) => {
+    // **** INICIO DE LA CORRECCIÓN ****
+    // Asegurarse de que el payment_method se actualice en MAYÚSCULAS
+    if (updates.payment_method) {
+        updates.payment_method = updates.payment_method.toUpperCase();
+    }
+    // **** FIN DE LA CORRECCIÓN ****
+
     const { data, error } = await supabase
         .from('sales')
         .update(updates)
@@ -1077,7 +1085,9 @@ export const getAllDenormalizedDataForExport = async () => {
             'Servicio Solicitado': apt.service,
             'Estado': apt.status,
             'Precio Servicio (S/)': apt.service_price,
-            'Método Pago': apt.payment_method,
+            // **** INICIO DE LA CORRECCIÓN ****
+            'Método Pago': (apt.payment_method || 'DESCONOCIDO').toUpperCase(),
+            // **** FIN DE LA CORRECCIÓN ****
             'Peso Final (kg)': apt.final_weight,
             'Shampoo Utilizado': apt.shampoo_type,
             'Observaciones Finales': apt.final_observations,
@@ -1090,7 +1100,9 @@ export const getAllDenormalizedDataForExport = async () => {
             'Categoría Producto': sale.product?.category,
             'Cantidad': sale.quantity,
             'Precio Total (S/)': sale.total_price,
-            'Método Pago': sale.payment_method,
+            // **** INICIO DE LA CORRECCIÓN ****
+            'Método Pago': (sale.payment_method || 'DESCONOCIDO').toUpperCase(),
+            // **** FIN DE LA CORRECCIÓN ****
         }));
 
 

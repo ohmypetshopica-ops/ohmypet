@@ -654,7 +654,13 @@ const openCompletionModal = (appointmentId) => {
     if (appointment) {
         servicePriceInput.value = appointment.service_price || '';
         petWeightInput.value = appointment.final_weight || '';
-        paymentMethodSelect.value = appointment.payment_method || '';
+        // **** INICIO DE LA CORRECCIÓN ****
+        // Aseguramos que el valor (MAYÚSCULAS) coincida con el select
+        paymentMethodSelect.value = (appointment.payment_method || '').toUpperCase();
+        if (!paymentMethodSelect.value) {
+             paymentMethodSelect.value = ""; // Si es null o "", vuelve a "Seleccionar..."
+        }
+        // **** FIN DE LA CORRECCIÓN ****
         finalObservationsTextarea.value = appointment.final_observations || '';
         
         // --- INICIO DE LA ACTUALIZACIÓN (Leer datos para el checklist) ---
@@ -716,7 +722,10 @@ const handleCompleteAppointment = async () => {
         alert('Por favor, ingresa un precio de servicio válido (> 0).');
         return;
     }
+    // **** INICIO DE LA CORRECCIÓN ****
+    // Se asegura que el valor seleccionado (que ya es mayúscula) no esté vacío
     if (!paymentMethod) {
+    // **** FIN DE LA CORRECCIÓN ****
         alert('Por favor, selecciona un método de pago.');
         return;
     }
@@ -748,7 +757,10 @@ const handleCompleteAppointment = async () => {
         status: 'completada',
         final_observations: finalObservationsTextarea.value || null,
         service_price: price,
+        // **** INICIO DE LA CORRECCIÓN ****
+        // El valor ya viene en MAYÚSCULAS desde el select
         payment_method: paymentMethod,
+        // **** FIN DE LA CORRECCIÓN ****
         final_weight: isNaN(weight) ? null : weight,
         
         // --- INICIO DE LA ACTUALIZACIÓN (Leer desde la nueva función) ---

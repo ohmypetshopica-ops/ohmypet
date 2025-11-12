@@ -174,7 +174,12 @@ const createServiceHistoryRow = (service) => {
         : ownerProfile?.full_name || 'Sin cliente';
 
     const petName = service.pets?.name || 'Sin mascota';
-    const paymentMethod = service.payment_method || 'N/A';
+    
+    // **** INICIO DE LA CORRECCIÓN ****
+    // Forzar mayúsculas en la visualización para consistencia
+    const paymentMethod = (service.payment_method || 'N/A').toUpperCase();
+    // **** FIN DE LA CORRECCIÓN ****
+    
     const cost = service.service_price ? `S/ ${service.service_price.toFixed(2)}` : 'N/A';
 
     return `

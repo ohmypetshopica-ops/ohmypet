@@ -196,7 +196,9 @@ const clearCartEmployee = () => {
 const openPaymentModalEmployee = () => {
     const totalToPay = parseFloat(totalEmployee.textContent.replace('S/ ', '')) || 0;
     
-    state.paymentLines = [{ method: 'efectivo', amount: totalToPay }];
+    // **** INICIO DE LA CORRECCIÓN 1 ****
+    state.paymentLines = [{ method: 'EFECTIVO', amount: totalToPay }];
+    // **** FIN DE LA CORRECCIÓN 1 ****
     
     selectedCustomerIdInputEmployee.value = '';
     selectedCustomerDisplayEmployee?.classList.add('hidden');
@@ -254,19 +256,24 @@ const clearCustomer = () => {
 const renderPaymentLines = () => {
     if (!paymentLinesContainer) return;
     
+    // **** INICIO DE LA CORRECCIÓN 2 ****
+    // Los 'value' del select están ahora en MAYÚSCULAS
     paymentLinesContainer.innerHTML = state.paymentLines.map((line, index) => `
         <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
             <select class="payment-method-select flex-1 p-2 border rounded-lg" data-index="${index}">
-                <option value="efectivo" ${line.method === 'efectivo' ? 'selected' : ''}>Efectivo</option>
-                <option value="yape" ${line.method === 'yape' ? 'selected' : ''}>Yape</option>
-                <option value="plin" ${line.method === 'plin' ? 'selected' : ''}>Plin</option>
-                <option value="tarjeta" ${line.method === 'tarjeta' ? 'selected' : ''}>Tarjeta</option>
+                <option value="EFECTIVO" ${line.method === 'EFECTIVO' ? 'selected' : ''}>Efectivo</option>
+                <option value="YAPE" ${line.method === 'YAPE' ? 'selected' : ''}>Yape</option>
+                <option value="PLIN" ${line.method === 'PLIN' ? 'selected' : ''}>Plin</option>
+                <option value="TARJETA" ${line.method === 'TARJETA' ? 'selected' : ''}>Tarjeta</option>
+                <option value="TRANSFERENCIA" ${line.method === 'TRANSFERENCIA' ? 'selected' : ''}>Transferencia</option>
+                <option value="DESCONOCIDO" ${line.method === 'DESCONOCIDO' ? 'selected' : ''}>Desconocido</option>
             </select>
             <input type="number" step="0.01" min="0" value="${line.amount.toFixed(2)}" 
                    class="payment-amount-input w-28 p-2 border rounded-lg" data-index="${index}">
             ${state.paymentLines.length > 1 ? `<button class="remove-payment-line text-red-500 hover:text-red-700" data-index="${index}">✕</button>` : ''}
         </div>
     `).join('');
+    // **** FIN DE LA CORRECCIÓN 2 ****
     
     paymentLinesContainer.querySelectorAll('.payment-method-select').forEach(select => {
         select.addEventListener('change', (e) => {
@@ -298,7 +305,10 @@ const addPaymentLine = () => {
     const totalPaid = state.paymentLines.reduce((sum, line) => sum + line.amount, 0);
     const remaining = Math.max(0, totalToPay - totalPaid);
     
-    state.paymentLines.push({ method: 'yape', amount: remaining });
+    // **** INICIO DE LA CORRECCIÓN 3 ****
+    state.paymentLines.push({ method: 'YAPE', amount: remaining });
+    // **** FIN DE LA CORRECCIÓN 3 ****
+    
     renderPaymentLines();
     updatePaymentTotalsAndButtonState();
 };
@@ -340,30 +350,36 @@ const processSaleEmployee = async () => {
     confirmPaymentBtnEmployee.disabled = true;
     confirmPaymentBtnEmployee.textContent = 'Procesando...';
     
-    const paymentMethodString = state.paymentLines
-        .filter(line => line.amount > 0)
-        .map(line => `${line.method.charAt(0).toUpperCase() + line.method.slice(1)} (S/ ${line.amount.toFixed(2)})`)
-        .join(', ');
-    
-    for (const item of state.cart) {
-        const saleData = {
-            client_id: selectedCustomerIdInputEmployee.value,
+    // **** INICIO DE LA CORRECCIÓN 4 ****
+    // La API (addSale) espera un *único* método de pago para el *lote* de items.
+    // Usaremos el primer método de la lista como el método de pago principal para el registro.
+    // Este valor ya estará en MAYÚSCULAS gracias a las correcciones anteriores.
+    const primaryPaymentMethod = state.paymentLines[0]?.method || 'DESCONOCIDO';
+
+    // Se construye el objeto saleData UNA VEZ, con el array de items.
+    const saleData = {
+        client_id: selectedCustomerIdInputEmployee.value,
+        payment_method: primaryPaymentMethod, // Se envía el valor ENUM
+        items: state.cart.map(item => ({
             product_id: item.id,
             quantity: item.quantity,
             unit_price: item.price,
-            total_price: item.price * item.quantity,
-            payment_method: paymentMethodString
-        };
-        
-        const { error } = await addSale(saleData);
-        if (error) {
-            alert('Hubo un error al registrar una de las ventas. Por favor, revisa el stock e inténtalo de nuevo.');
-            console.error(error);
-            confirmPaymentBtnEmployee.disabled = false;
-            confirmPaymentBtnEmployee.textContent = 'Confirmar Venta';
-            return;
-        }
+            subtotal: item.price * item.quantity
+        }))
+    };
+
+    // Se llama a addSale UNA SOLA VEZ, pasando el objeto con el array de items.
+    // Pasamos 'null' para la fecha, para que la API use la fecha actual por defecto.
+    const { error } = await addSale(saleData, null);
+    
+    if (error) {
+        alert('Hubo un error al registrar la venta. Por favor, revisa el stock e inténtalo de nuevo.');
+        console.error(error);
+        confirmPaymentBtnEmployee.disabled = false;
+        confirmPaymentBtnEmployee.textContent = 'Confirmar Venta';
+        return;
     }
+    // **** FIN DE LA CORRECCIÓN 4 ****
     
     alert('Venta procesada con éxito');
     

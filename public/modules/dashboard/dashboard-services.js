@@ -116,7 +116,12 @@ const createServiceRow = (service) => {
         : ownerProfile?.full_name || 'Sin cliente';
 
     const petName = service.pets?.name || 'Sin mascota';
-    const paymentMethod = service.payment_method || 'N/A';
+    
+    // **** INICIO DE LA CORRECCIÓN 1 ****
+    // Forzar mayúsculas en la visualización para consistencia
+    const paymentMethod = (service.payment_method || 'N/A').toUpperCase();
+    // **** FIN DE LA CORRECCIÓN 1 ****
+    
     const cost = service.service_price ? `S/ ${service.service_price.toFixed(2)}` : 'N/A';
 
     return `
@@ -258,7 +263,12 @@ const openServiceDetailsModal = (service) => {
         : ownerProfile?.full_name || 'Sin cliente';
 
     const petName = service.pets?.name || 'Sin mascota';
-    const paymentMethod = service.payment_method || 'No especificado';
+    
+    // **** INICIO DE LA CORRECCIÓN 2 ****
+    // Forzar mayúsculas en la visualización
+    const paymentMethod = (service.payment_method || 'No especificado').toUpperCase();
+    // **** FIN DE LA CORRECCIÓN 2 ****
+    
     const cost = service.service_price ? `S/ ${service.service_price.toFixed(2)}` : 'No especificado';
     const finalWeight = service.final_weight ? `${service.final_weight} kg` : 'No registrado';
     const observations = service.final_observations || 'Sin observaciones';
@@ -396,7 +406,15 @@ const switchToEditMode = () => {
     deleteReceipt = false;
 
     editServicePriceInput.value = selectedService.service_price || '';
-    editPaymentMethodSelect.value = selectedService.payment_method || '';
+    
+    // **** INICIO DE LA CORRECCIÓN 3 ****
+    // Convertir el valor a MAYÚSCULAS antes de asignarlo al select
+    editPaymentMethodSelect.value = (selectedService.payment_method || '').toUpperCase();
+    if (!editPaymentMethodSelect.value) {
+        editPaymentMethodSelect.value = ""; // Si es null o "", vuelve a "Seleccionar..."
+    }
+    // **** FIN DE LA CORRECCIÓN 3 ****
+
     editFinalWeightInput.value = selectedService.final_weight || '';
     editFinalObservationsTextarea.value = selectedService.final_observations || '';
 
@@ -453,7 +471,11 @@ const handleSaveChanges = async () => {
     if (!selectedService) return;
 
     const price = parseFloat(editServicePriceInput.value);
+    
+    // **** INICIO DE LA CORRECCIÓN 4 ****
+    // El valor del select ya está en MAYÚSCULAS
     const paymentMethod = editPaymentMethodSelect.value;
+    // **** FIN DE LA CORRECCIÓN 4 ****
 
     if (!price || price <= 0) {
         editMessage.textContent = '❌ El precio del servicio debe ser mayor a 0';
@@ -515,7 +537,7 @@ const handleSaveChanges = async () => {
 
         const updatedData = {
             service_price: price,
-            payment_method: paymentMethod,
+            payment_method: paymentMethod, // Ya está en MAYÚSCULAS
             final_weight: parseFloat(editFinalWeightInput.value) || null,
             final_observations: editFinalObservationsTextarea.value.trim()
         };

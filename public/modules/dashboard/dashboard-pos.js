@@ -246,7 +246,7 @@ const openPaymentModal = () => {
     customerResults.classList.add('hidden');
     selectedCustomerIdInput.value = '';
     selectedCustomerDisplay.classList.add('hidden');
-    paymentMethodSelect.value = 'efectivo';
+    paymentMethodSelect.value = 'EFECTIVO'; // Default to first ENUM value
     
     // --- LÍNEA AÑADIDA ---
     // Establece la fecha actual por defecto
@@ -271,7 +271,7 @@ const updatePaymentButton = () => {
         return;
     }
     
-    if (paymentMethod === 'efectivo') {
+    if (paymentMethod === 'EFECTIVO') {
         const cashReceived = parseFloat(cashReceivedInput.value) || 0;
         confirmPaymentBtn.disabled = cashReceived < total;
     } else {
@@ -335,11 +335,15 @@ const processSale = async () => {
     confirmPaymentBtn.textContent = 'Procesando...';
     
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // **** INICIO DE LA CORRECCIÓN ****
+    // El valor del select ya está en MAYÚSCULAS
     const paymentMethod = paymentMethodSelect.value;
+    // **** FIN DE LA CORRECCIÓN ****
     
     const saleData = {
         client_id: customerId,
-        payment_method: paymentMethod,
+        payment_method: paymentMethod, // Se envía en MAYÚSCULAS
         items: cart.map(item => ({
             product_id: item.id,
             quantity: item.quantity,
@@ -405,7 +409,10 @@ confirmPaymentBtn.addEventListener('click', processSale);
 saleDateInput.addEventListener('change', updatePaymentButton);
 
 paymentMethodSelect.addEventListener('change', (e) => {
-    if (e.target.value === 'efectivo') {
+    // **** INICIO DE LA CORRECCIÓN ****
+    // Comparamos con el valor ENUM en MAYÚSCULAS
+    if (e.target.value === 'EFECTIVO') {
+    // **** FIN DE LA CORRECCIÓN ****
         cashSection.classList.remove('hidden');
     } else {
         cashSection.classList.add('hidden');

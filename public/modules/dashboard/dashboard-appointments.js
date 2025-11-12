@@ -497,7 +497,14 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
         finalObservationsTextarea.value = appointment.final_observations || '';
         petWeightInput.value = appointment.final_weight || '';
         servicePriceInput.value = appointment.service_price || '';
-        paymentMethodSelect.value = appointment.payment_method || '';
+        
+        // **** INICIO DE LA CORRECCIÓN 1 ****
+        // Aseguramos que el valor (MAYÚSCULAS) coincida con el select
+        paymentMethodSelect.value = (appointment.payment_method || '').toUpperCase();
+        if (!paymentMethodSelect.value) {
+             paymentMethodSelect.value = ""; // Si es null o "", vuelve a "Seleccionar..."
+        }
+        // **** FIN DE LA CORRECCIÓN 1 ****
         
         // --- Cargar y renderizar checkboxes (NUEVO) ---
         const selectedShampoos = appointment.shampoo_type ? appointment.shampoo_type.split(',').map(s => s.trim()) : [];
@@ -694,7 +701,12 @@ const initializePage = async () => {
             
             if (weight) updateData.final_weight = parseFloat(weight);
             if (price) updateData.service_price = parseFloat(price);
-            if (paymentMethod) updateData.payment_method = paymentMethod;
+            
+            // **** INICIO DE LA CORRECCIÓN 2 ****
+            // Asegurarse de que el valor se guarde en MAYÚSCULAS
+            if (paymentMethod) updateData.payment_method = paymentMethod.toUpperCase();
+            // **** FIN DE LA CORRECCIÓN 2 ****
+
             if (shampooType) updateData.shampoo_type = shampooType; // NEW
 
             if (Object.keys(updateData).length > 0) {
@@ -772,13 +784,16 @@ const initializePage = async () => {
             const appointment = allAppointments.find(app => app.id === currentAppointmentId);
             const appointmentDate = appointment ? appointment.appointment_date : new Date().toISOString().split('T')[0];
 
+            // **** INICIO DE LA CORRECCIÓN 3 ****
+            // Asegurarse de que el valor se guarde en MAYÚSCULAS
             const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', {
                 observations: observations,
                 weight: weight ? parseFloat(weight) : undefined, 
                 price: parseFloat(price),
-                paymentMethod: paymentMethod,
+                paymentMethod: paymentMethod.toUpperCase(), // Se envía el valor en MAYÚSCULAS
                 shampoo: shampooType // NEW: shampooType is the string of selected shampoos
             });
+            // **** FIN DE LA CORRECCIÓN 3 ****
 
             if (success) {
                 uploadMessage.textContent = 'Actualizando fecha de último servicio...';
