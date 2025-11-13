@@ -2,35 +2,19 @@
 // Módulo de gestión de mascotas
 
 import { state, updateState } from './employee-state.js';
-// --- INICIO: CÓDIGO ACTUALIZADO ---
-import { addPetFromDashboard, deletePet, getClientsWithPets } from '../dashboard/dashboard.api.js';
-// --- FIN: CÓDIGO ACTUALIZADO ---
+import { addPetFromDashboard } from '../dashboard/dashboard.api.js';
 import { supabase } from '../../core/supabase.js';
 
 // Elementos del DOM
 let petSearch, petsList, petsListView, petDetailsView, petDetailsContent, backToPetsBtn;
 let addPetModalEmployee, closeAddPetModalButtonEmployee, cancelAddPetButtonEmployee, petFormEmployee, petFormMessageEmployee;
 let clearPetSearchBtn;
+let addPetToClientBtn; 
 let paginationContainerPets;
-
-// --- INICIO: CÓDIGO ACTUALIZADO (Nuevos Selectores) ---
-// Elementos de la vista de detalles
-let petDetailsActions;
-let modalDeletePetBtnEmployee;
-
-// Elementos del Modal Eliminar Mascota
-let deletePetConfirmModalEmployee;
-let deletePetNameEmployee;
-let cancelDeletePetBtnEmployee;
-let confirmDeletePetBtnEmployee;
-let deletePetErrorMessageEmployee;
-// --- FIN: CÓDIGO ACTUALIZADO ---
-
 
 // Variables de paginación
 let currentPagePets = 1;
 const itemsPerPagePets = 8;
-let currentPetForDetails = null; // Para guardar la mascota seleccionada
 
 export const initPetElements = () => {
     petSearch = document.getElementById('pet-search');
@@ -40,26 +24,16 @@ export const initPetElements = () => {
     petDetailsContent = document.getElementById('pet-details-content');
     backToPetsBtn = document.getElementById('back-to-pets-btn');
     
-    // Esto es para el modal que se abre desde "Clientes"
+    addPetToClientBtn = document.querySelector('#add-pet-to-client-btn'); 
+    
     addPetModalEmployee = document.querySelector('#add-pet-modal-employee');
-    closeAddPetModalButtonEmployee = document.querySelector('#submit-add-pet-button-employee'); // Corregido el ID si es el de submit
+    closeAddPetModalButtonEmployee = document.querySelector('#close-add-pet-modal-button-employee');
     cancelAddPetButtonEmployee = document.querySelector('#cancel-add-pet-button-employee');
     petFormEmployee = document.querySelector('#pet-form-employee');
     petFormMessageEmployee = document.querySelector('#pet-form-message-employee');
 
     clearPetSearchBtn = document.getElementById('clear-pet-search-btn');
     paginationContainerPets = document.getElementById('pagination-container-pets');
-
-    // --- INICIO: CÓDIGO ACTUALIZADO (Inicialización de nuevos elementos) ---
-    petDetailsActions = document.getElementById('pet-details-actions');
-    modalDeletePetBtnEmployee = document.getElementById('modal-delete-pet-btn-employee');
-
-    deletePetConfirmModalEmployee = document.getElementById('delete-pet-confirm-modal-employee');
-    deletePetNameEmployee = document.getElementById('delete-pet-name-employee');
-    cancelDeletePetBtnEmployee = document.getElementById('cancel-delete-pet-btn-employee');
-    confirmDeletePetBtnEmployee = document.getElementById('confirm-delete-pet-btn-employee');
-    deletePetErrorMessageEmployee = document.getElementById('delete-pet-error-message-employee');
-    // --- FIN: CÓDIGO ACTUALIZADO ---
 };
 
 export const setupPetListeners = () => {
@@ -82,14 +56,13 @@ export const setupPetListeners = () => {
         if (btn) showPetDetails(btn.dataset.petId);
     });
     
-    // --- INICIO: CÓDIGO ACTUALIZADO (Listeners de borrado) ---
-    modalDeletePetBtnEmployee?.addEventListener('click', openDeletePetModalEmployee);
-    cancelDeletePetBtnEmployee?.addEventListener('click', closeDeletePetModalEmployee);
-    confirmDeletePetBtnEmployee?.addEventListener('click', handleDeletePetEmployee);
-    deletePetConfirmModalEmployee?.addEventListener('click', (e) => {
-        if (e.target === deletePetConfirmModalEmployee) closeDeletePetModalEmployee();
-    });
-    // --- FIN: CÓDIGO ACTUALIZADO ---
+    closeAddPetModalButtonEmployee?.addEventListener('click', closePetModal);
+    cancelAddPetButtonEmployee?.addEventListener('click', closePetModal);
+    
+    // ===== INICIO DE LA CORRECCIÓN (Eliminar listener conflictivo) =====
+    // Se elimina la siguiente línea que causaba el conflicto de listeners
+    // petFormEmployee?.addEventListener('submit', handleAddPet);
+    // ===== FIN DE LA CORRECCIÓN =====
 };
 
 const handlePetSearch = (e) => {
@@ -222,7 +195,6 @@ const showPetsList = () => {
     petsListView?.classList.remove('hidden');
     petDetailsView?.classList.add('hidden');
     updateState('currentPetId', null);
-    currentPetForDetails = null; // Limpiar mascota seleccionada
 };
 
 const showPetDetails = async (petId) => {
@@ -237,8 +209,6 @@ const showPetDetails = async (petId) => {
         petDetailsContent.innerHTML = '<p class="text-center text-red-500 mt-8">Mascota no encontrada.</p>';
         return;
     }
-    
-    currentPetForDetails = pet; // Guardar mascota actual
 
     const owner = state.allClients.find(c => c.id === pet.owner_id);
     const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}`.trim() || 'Dueño desconocido' : 'Dueño desconocido';
@@ -355,69 +325,7 @@ const showPetDetails = async (petId) => {
             </div>
         </div>
     `;
-
-    // --- INICIO: CÓDIGO ACTUALIZADO ---
-    // Asegurarse de que la vista de edición esté oculta y la de detalles visible
-    petDetailsContent?.classList.remove('hidden');
-    petDetailsActions?.classList.remove('hidden');
-    petDetailsContentEdit?.classList.add('hidden');
-    // --- FIN: CÓDIGO ACTUALIZADO ---
 };
-
-// --- INICIO: CÓDIGO ACTUALIZADO (Funciones de Edición/Borrado eliminadas) ---
-
-// Se elimina la función switchToViewModeEmployee
-// Se elimina la función switchToEditModeEmployee
-// Se elimina la función handleSavePetEmployee
-
-// --- FIN: CÓDIGO ACTUALIZADO ---
-
-
-// --- INICIO: CÓDIGO AÑADIDO (Lógica modal borrado mascota) ---
-const openDeletePetModalEmployee = () => {
-    if (!currentPetForDetails) return;
-    
-    deletePetNameEmployee.textContent = currentPetForDetails.name;
-    deletePetErrorMessageEmployee.classList.add('hidden');
-    confirmDeletePetBtnEmployee.disabled = false;
-    confirmDeletePetBtnEmployee.textContent = 'Sí, Eliminar';
-    deletePetConfirmModalEmployee.classList.remove('hidden');
-};
-
-const closeDeletePetModalEmployee = () => {
-    deletePetConfirmModalEmployee.classList.add('hidden');
-};
-
-const handleDeletePetEmployee = async () => {
-    if (!currentPetForDetails) return;
-
-    confirmDeletePetBtnEmployee.disabled = true;
-    confirmDeletePetBtnEmployee.textContent = 'Eliminando...';
-    
-    const { success, error } = await deletePet(currentPetForDetails.id);
-
-    if (success) {
-        closeDeletePetModalEmployee();
-        showPetsList(); // Volver a la lista
-        
-        // Recargar datos
-        const clientsData = await getClientsWithPets();
-        updateState('clientsWithPets', clientsData);
-        const allPets = clientsData.flatMap(client =>
-            client.pets ? client.pets.map(pet => ({ ...pet, owner_id: client.id })) : []
-        );
-        updateState('allPets', allPets);
-        renderPets(allPets); // Actualizar la lista principal
-
-    } else {
-        deletePetErrorMessageEmployee.textContent = `Error: ${error.message}`;
-        deletePetErrorMessageEmployee.classList.remove('hidden');
-        confirmDeletePetBtnEmployee.disabled = false;
-        confirmDeletePetBtnEmployee.textContent = 'Sí, Eliminar';
-    }
-};
-// --- FIN: CÓDIGO AÑADIDO ---
-
 
 const closePetModal = () => {
     addPetModalEmployee?.classList.add('hidden');
@@ -427,6 +335,7 @@ const closePetModal = () => {
 
 // Esta función se llama desde el listener de 'submit' en employee-pets.js,
 // pero la hemos deshabilitado para que solo 'employee-clients.js' la maneje.
+// La mantenemos aquí por si se reutiliza, pero ya no está conectada.
 const handleAddPet = async (e) => {
     e.preventDefault();
     alert('Funcionalidad no disponible en esta vista. Agrega mascotas desde la vista de clientes.');
