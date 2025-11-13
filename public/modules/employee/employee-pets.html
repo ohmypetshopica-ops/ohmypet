@@ -39,15 +39,21 @@
     
     <div id="pet-details-content">
         </div>
+    
+    <div id="pet-details-actions" class="mt-6 space-y-3">
+         <button id="modal-delete-pet-btn-employee" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+             Eliminar Mascota
+         </button>
+     </div>
 </div>
 
-<div id="add-pet-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
+<div id="add-pet-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4"> 
     <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
         <div class="p-6 border-b flex-shrink-0">
             <h2 class="text-2xl font-bold text-gray-800">Agregar Nueva Mascota</h2>
             <p class="text-sm text-gray-500 mt-1">Completa los datos de la mascota</p>
         </div>
-        
+
         <form id="pet-form-employee" class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
             <div id="pet-form-message-employee" class="hidden"></div>
             
@@ -96,9 +102,101 @@
                 <button type="button" id="cancel-add-pet-button-employee" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors">
                     Cancelar
                 </button>
-                <button type="submit" form="pet-form-employee" id="close-add-pet-modal-button-employee" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                <button type="submit" form="pet-form-employee" id="submit-add-pet-button-employee" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
                     Guardar Mascota
                 </button>
             </div>
         </div>
     </div>
+
+
+<div id="delete-pet-confirm-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[80] flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
+        <div class="flex items-start space-x-4">
+            <div class="flex-shrink-0 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-xl font-bold text-gray-900">Eliminar Mascota</h3>
+                <p class="text-gray-600 mt-2">
+                    ¿Estás seguro de que quieres eliminar a <strong id="delete-pet-name-employee" class="text-gray-900">...</strong>?
+                    <br>
+                    <span class="font-semibold text-red-600">¡Esta acción es permanente y eliminará su historial de citas!</span>
+                </p>
+                <div id="delete-pet-error-message-employee" class="hidden rounded-lg p-3 text-sm font-medium mt-4 bg-red-100 text-red-700" role="alert"></div>
+            </div>
+        </div>
+        <div class="mt-6 flex justify-end gap-3">
+            <button type="button" id="cancel-delete-pet-btn-employee" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg">
+                Cancelar
+            </button>
+            <button type="button" id="confirm-delete-pet-btn-employee" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">
+                Sí, Eliminar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="history-modal-employee" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[70] flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl max-h-[95vh] flex flex-col">
+        <div class="p-6 border-b flex-shrink-0 flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Detalle de Servicio Pasado</h2>
+                <p id="history-pet-name" class="text-sm text-gray-500 mt-1"></p>
+            </div>
+            <button type="button" id="close-history-modal-btn" class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        
+        <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-2">Foto de Llegada</h4>
+                    <div id="history-arrival-photo" class="border-2 border-dashed border-gray-300 rounded-lg h-48 flex items-center justify-center text-center bg-gray-50">
+                        <p class="text-sm text-gray-500">Sin foto</p>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-2">Foto de Salida</h4>
+                    <div id="history-departure-photo" class="border-2 border-dashed border-gray-300 rounded-lg h-48 flex items-center justify-center text-center bg-gray-50">
+                        <p class="text-sm text-gray-500">Sin foto</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Precio (S/.)</label>
+                    <p id="history-price" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 font-semibold"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
+                    <p id="history-weight" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 font-semibold"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+                    <p id="history-payment" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 font-semibold"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Shampoo</label>
+                    <p id="history-shampoo" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 font-semibold"></p>
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="font-semibold text-gray-700 mb-2">Observaciones Finales</h4>
+                <p id="history-observations" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 min-h-[100px] whitespace-pre-wrap"></p>
+            </div>
+        </div>
+        
+        <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t flex-shrink-0">
+            <button type="button" id="close-history-modal-btn-bottom" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>

@@ -2,7 +2,9 @@
 // Módulo de gestión de citas
 
 import { state, updateState } from './employee-state.js';
-import { getClientsWithPets, getBookedTimesForDashboard, addAppointmentFromDashboard, uploadAppointmentPhoto, uploadReceiptFile, updateAppointmentStatus } from '../dashboard/dashboard.api.js';
+// --- INICIO: CÓDIGO ACTUALIZADO ---
+import { getClientsWithPets, getBookedTimesForDashboard, addAppointmentFromDashboard, uploadAppointmentPhoto, uploadReceiptFile, updateAppointmentStatus, deleteAppointment, getAppointmentPhotos } from '../dashboard/dashboard.api.js';
+// --- FIN: CÓDIGO ACTUALIZADO ---
 import { supabase } from '../../core/supabase.js';
 import { addWeightRecord } from '../dashboard/pet-weight.api.js';
 
@@ -34,6 +36,24 @@ let appointmentsListView;
 let appointmentDetailsView;
 let backToAppointmentsListBtn;
 let appointmentDetailsContent;
+let appointmentDetailsActions; // Div que contiene el botón de eliminar
+let modalDeleteAppointmentBtnEmployee;
+
+// Elementos del Modal Eliminar Cita
+let deleteAppointmentConfirmModalEmployee;
+let deleteAppointmentPetNameEmployee;
+let cancelDeleteAppointmentBtnEmployee;
+let confirmDeleteAppointmentBtnEmployee;
+let deleteAppointmentErrorMessageEmployee;
+let appointmentToDeleteId = null; // Para guardar el ID de la cita a eliminar
+
+// --- INICIO: CÓDIGO AÑADIDO (Modal Historial) ---
+let historyModalEmployee, closeHistoryModalBtn, closeHistoryModalBtnBottom;
+let historyPetName, historyArrivalPhoto, historyDeparturePhoto;
+let historyPrice, historyWeight, historyPayment, historyShampoo, historyObservations;
+let lastCompletedAppointmentData = null; // Para guardar los datos del historial
+// --- FIN: CÓDIGO AÑADIDO ---
+
 
 // NUEVOS INPUTS DEL MODAL DE COMPLETAR CITA
 let servicePriceInput;
@@ -50,6 +70,50 @@ let submitAddAppointmentButtonEmployee;
 let paginationContainerAppointments;
 
 
+// ==================================================
+// === INICIO: CÓDIGO AÑADIDO (Alerta Dinámica) ===
+// ==================================================
+/**
+ * Muestra una alerta dinámica en la parte superior del área de contenido.
+ * @param {string} message - El mensaje a mostrar.
+ * @param {boolean} isError - true para alerta roja (error), false para verde (éxito).
+ */
+const showMainAlert = (message, isError = false) => {
+    // El 'main-content' está en dashboard.html, es el contenedor principal
+    const mainContent = document.querySelector('.content-area');
+    if (!mainContent) return;
+
+    // Crear el elemento de alerta
+    const alertDiv = document.createElement('div');
+    alertDiv.textContent = message;
+    
+    let alertClasses = "rounded-lg p-4 text-sm font-medium mb-4 shadow-md";
+    if (isError) {
+        alertClasses += " bg-red-100 text-red-700";
+    } else {
+        alertClasses += " bg-green-100 text-green-700";
+    }
+    alertDiv.className = alertClasses;
+    alertDiv.role = "alert";
+
+    // Insertar la alerta al principio del main-content
+    mainContent.insertBefore(alertDiv, mainContent.firstChild);
+    
+    // Hacer scroll para que sea visible
+    mainContent.scrollTop = 0;
+
+    // Ocultar automáticamente después de 4 segundos
+    setTimeout(() => {
+        alertDiv.style.transition = 'opacity 0.5s ease';
+        alertDiv.style.opacity = '0';
+        setTimeout(() => alertDiv.remove(), 500);
+    }, 4000);
+};
+// ==================================================
+// === FIN: CÓDIGO AÑADIDO ===
+// ==================================================
+
+
 export const initAppointmentElements = () => {
     appointmentsList = document.getElementById('appointments-list');
     
@@ -57,6 +121,30 @@ export const initAppointmentElements = () => {
     appointmentDetailsView = document.getElementById('appointment-details-view');
     appointmentDetailsContent = document.getElementById('appointment-details-content');
     backToAppointmentsListBtn = document.getElementById('back-to-appointments-list-btn');
+
+    appointmentDetailsActions = document.getElementById('appointment-details-actions');
+    modalDeleteAppointmentBtnEmployee = document.getElementById('modal-delete-appointment-btn-employee');
+    
+    deleteAppointmentConfirmModalEmployee = document.getElementById('delete-appointment-confirm-modal-employee');
+    deleteAppointmentPetNameEmployee = document.getElementById('delete-appointment-pet-name-employee');
+    cancelDeleteAppointmentBtnEmployee = document.getElementById('cancel-delete-appointment-btn-employee');
+    confirmDeleteAppointmentBtnEmployee = document.getElementById('confirm-delete-appointment-btn-employee');
+    deleteAppointmentErrorMessageEmployee = document.getElementById('delete-appointment-error-message-employee');
+
+    // --- INICIO: CÓDIGO AÑADIDO (Modal Historial) ---
+    historyModalEmployee = document.getElementById('history-modal-employee');
+    closeHistoryModalBtn = document.getElementById('close-history-modal-btn');
+    closeHistoryModalBtnBottom = document.getElementById('close-history-modal-btn-bottom');
+    historyPetName = document.getElementById('history-pet-name');
+    historyArrivalPhoto = document.getElementById('history-arrival-photo');
+    historyDeparturePhoto = document.getElementById('history-departure-photo');
+    historyPrice = document.getElementById('history-price');
+    historyWeight = document.getElementById('history-weight');
+    historyPayment = document.getElementById('history-payment');
+    historyShampoo = document.getElementById('history-shampoo');
+    historyObservations = document.getElementById('history-observations');
+    // --- FIN: CÓDIGO AÑADIDO ---
+
 
     // Inicializar el contenedor de paginación
     paginationContainerAppointments = document.getElementById('pagination-container-appointments');
@@ -91,7 +179,6 @@ export const initAppointmentElements = () => {
     petWeightInput = document.getElementById('pet-weight-input');
     paymentMethodSelect = document.getElementById('payment-method-select');
     
-    // CORRECCIÓN 1: Buscar el botón asociado al formulario
     submitAddAppointmentButtonEmployee = document.querySelector('button[form="add-appointment-form-employee"]');
 
     shampooSelectToggleEmployee = document.getElementById('shampoo-select-toggle-employee');
@@ -119,7 +206,6 @@ const renderShampooChecklist = (selectedShampoos = []) => {
     if (!shampooDropdownContentEmployee) return;
 
     shampooDropdownContentEmployee.innerHTML = SHAMPOO_OPTIONS.map(shampoo => {
-        // ID único para el label/input en el modal de empleado
         const sanitizedShampoo = shampoo.replace(/[^a-zA-Z0-9]/g, '-');
         const isChecked = selectedShampoos.some(s => s.trim() === shampoo);
         
@@ -150,12 +236,19 @@ const getShampooList = () => {
 const showAppointmentsList = () => {
     appointmentsListView?.classList.remove('hidden');
     appointmentDetailsView?.classList.add('hidden');
+    appointmentDetailsActions?.classList.add('hidden'); 
 };
 
+// --- INICIO: CÓDIGO ACTUALIZADO ---
+// Se añaden más campos al select, incluyendo 'id' y 'appointment_photos'
 const fetchLastCompletedAppointment = async (petId) => {
     const { data, error } = await supabase
         .from('appointments')
-        .select(`appointment_date, final_observations, final_weight, service, shampoo_type`)
+        .select(`
+            id, appointment_date, final_observations, final_weight, service, shampoo_type,
+            service_price, payment_method,
+            appointment_photos ( photo_type, image_url ) 
+        `)
         .eq('pet_id', petId)
         .eq('status', 'completada')
         .order('appointment_date', { ascending: false })
@@ -168,6 +261,7 @@ const fetchLastCompletedAppointment = async (petId) => {
     }
     return data;
 };
+// --- FIN: CÓDIGO ACTUALIZADO ---
 
 const fetchPetDetails = async (petId) => {
     const { data, error } = await supabase
@@ -186,16 +280,21 @@ const openAppointmentDetails = async (appointmentId) => {
     const currentAppointment = state.allAppointments.find(app => app.id === appointmentId);
     if (!currentAppointment) return;
     
+    appointmentToDeleteId = appointmentId; 
     const petId = currentAppointment.pet_id;
     
     appointmentsListView?.classList.add('hidden');
     appointmentDetailsView?.classList.remove('hidden');
+    appointmentDetailsActions?.classList.remove('hidden'); 
+    
     appointmentDetailsContent.innerHTML = '<p class="text-center text-gray-500 py-8">Cargando detalles de historial...</p>';
 
     const [lastCompleted, petDetails] = await Promise.all([
         fetchLastCompletedAppointment(petId),
         fetchPetDetails(petId)
     ]);
+    
+    lastCompletedAppointmentData = lastCompleted; // <-- CÓDIGO AÑADIDO
     
     const ownerProfile = currentAppointment.profiles;
     let ownerName = 'N/A';
@@ -231,6 +330,7 @@ const openAppointmentDetails = async (appointmentId) => {
     const statusClass = currentAppointment.status === 'confirmada' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
     const statusText = currentAppointment.status.charAt(0).toUpperCase() + currentAppointment.status.slice(1);
     
+    // --- INICIO: CÓDIGO ACTUALIZADO (HTML del historial) ---
     appointmentDetailsContent.innerHTML = `
         <div class="bg-white p-4 rounded-lg border border-gray-200">
             <h4 class="text-2xl font-bold text-gray-800 mb-4">Detalles de Cita</h4>
@@ -259,7 +359,7 @@ const openAppointmentDetails = async (appointmentId) => {
                 <p class="text-sm text-gray-800">${petDetails?.observations || 'No hay observaciones permanentes registradas.'}</p>
             </div>
             
-            <div class="mb-6 p-4 rounded-xl border border-gray-200 bg-gray-50">
+            <div id="history-block-button" class="mb-6 p-4 rounded-xl border border-gray-200 bg-gray-50 ${lastCompleted ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''}">
                 <h5 class="text-sm font-semibold text-gray-700 mb-2">Historial - Último Servicio Completo</h5>
                 ${lastCompleted ? `
                     <div class="space-y-1 text-sm">
@@ -267,6 +367,7 @@ const openAppointmentDetails = async (appointmentId) => {
                         <p><strong>Shampoo:</strong> ${lastCompleted.shampoo_type || 'General'}</p>
                         <p><strong>Peso Final:</strong> ${lastCompleted.final_weight ? `${lastCompleted.final_weight} kg` : 'N/A'}</p>
                         <p><strong>Observaciones:</strong> ${lastCompleted.final_observations || 'Sin observaciones finales.'}</p>
+                        <p class="text-xs text-blue-600 font-semibold text-right mt-2">Ver detalles y fotos &rarr;</p>
                     </div>
                 ` : '<p class="text-sm text-gray-500">No se encontró historial de citas completadas.</p>'}
             </div>
@@ -277,11 +378,21 @@ const openAppointmentDetails = async (appointmentId) => {
             </button>
         </div>
     `;
+    // --- FIN: CÓDIGO ACTUALIZADO ---
     
     document.getElementById('detail-complete-btn')?.addEventListener('click', (e) => {
         currentAppointmentToComplete = e.target.dataset.appointmentId; 
         openCompletionModal(e.target.dataset.appointmentId);
     });
+
+    // --- INICIO: CÓDIGO AÑADIDO (Listener para el bloque de historial) ---
+    const historyBlock = document.getElementById('history-block-button');
+    if (historyBlock && lastCompletedAppointmentData) {
+        historyBlock.addEventListener('click', () => {
+            openHistoryModal(lastCompletedAppointmentData, petName);
+        });
+    }
+    // --- FIN: CÓDIGO AÑADIDO ---
 };
 
 
@@ -289,7 +400,6 @@ export const setupAppointmentListeners = () => {
     addAppointmentBtnEmployee?.addEventListener('click', openAddAppointmentModal);
     cancelAddAppointmentBtn?.addEventListener('click', closeAddAppointmentModal);
     
-    // CORRECCIÓN 2: El formulario llama a la función al ser enviado
     addAppointmentForm?.addEventListener('submit', handleAddAppointment);
     
     clientSearchInputModal?.addEventListener('input', handleClientSearchInModal);
@@ -324,7 +434,79 @@ export const setupAppointmentListeners = () => {
         }
     });
     // --- FIN DE LA ACTUALIZACIÓN ---
+
+    // --- INICIO: CÓDIGO AÑADIDO (Listeners modal borrado cita) ---
+    modalDeleteAppointmentBtnEmployee?.addEventListener('click', openDeleteAppointmentModalEmployee);
+    cancelDeleteAppointmentBtnEmployee?.addEventListener('click', closeDeleteAppointmentModalEmployee);
+    confirmDeleteAppointmentBtnEmployee?.addEventListener('click', handleDeleteAppointmentEmployee);
+    deleteAppointmentConfirmModalEmployee?.addEventListener('click', (e) => {
+        if (e.target === deleteAppointmentConfirmModalEmployee) closeDeleteAppointmentModalEmployee();
+    });
+    // --- FIN: CÓDIGO AÑADIDO ---
+    
+    // --- INICIO: CÓDIGO AÑADIDO (Listeners Modal Historial) ---
+    closeHistoryModalBtn?.addEventListener('click', closeHistoryModal);
+    closeHistoryModalBtnBottom?.addEventListener('click', closeHistoryModal);
+    historyModalEmployee?.addEventListener('click', (e) => {
+        if (e.target === historyModalEmployee) closeHistoryModal();
+    });
+    // --- FIN: CÓDIGO AÑADIDO ---
 };
+
+// --- INICIO: CÓDIGO AÑADIDO (Lógica modal borrado cita) ---
+const openDeleteAppointmentModalEmployee = () => {
+    if (!appointmentToDeleteId) return;
+    
+    const appointment = state.allAppointments.find(app => app.id === appointmentToDeleteId);
+    const petName = appointment?.pets?.name || 'esta cita';
+    
+    deleteAppointmentPetNameEmployee.textContent = petName;
+    deleteAppointmentErrorMessageEmployee.classList.add('hidden');
+    confirmDeleteAppointmentBtnEmployee.disabled = false;
+    confirmDeleteAppointmentBtnEmployee.textContent = 'Sí, Eliminar';
+    deleteAppointmentConfirmModalEmployee.classList.remove('hidden');
+};
+
+const closeDeleteAppointmentModalEmployee = () => {
+    deleteAppointmentConfirmModalEmployee.classList.add('hidden');
+    appointmentToDeleteId = null; // Limpiar el ID
+};
+
+const handleDeleteAppointmentEmployee = async () => {
+    if (!appointmentToDeleteId) return;
+
+    confirmDeleteAppointmentBtnEmployee.disabled = true;
+    confirmDeleteAppointmentBtnEmployee.textContent = 'Eliminando...';
+    
+    const { success, error } = await deleteAppointment(appointmentToDeleteId);
+    
+    if (success) {
+        closeDeleteAppointmentModalEmployee();
+        showAppointmentsList(); // Volver a la lista
+        
+        // Recargar datos
+        const { data: appointments } = await supabase
+            .from('appointments')
+            .select('*, pets(name), profiles(first_name, last_name, full_name)')
+            .order('appointment_date', { ascending: true })
+            .order('appointment_time', { ascending: true });
+        
+        if (appointments) {
+            updateState('allAppointments', appointments);
+            renderConfirmedAppointments();
+        }
+        
+        showMainAlert('Cita eliminada exitosamente.', false);
+
+    } else {
+        deleteAppointmentErrorMessageEmployee.textContent = `Error: ${error.message}`;
+        deleteAppointmentErrorMessageEmployee.classList.remove('hidden');
+        confirmDeleteAppointmentBtnEmployee.disabled = false;
+        confirmDeleteAppointmentBtnEmployee.textContent = 'Sí, Eliminar';
+    }
+};
+// --- FIN: CÓDIGO AÑADIDO ---
+
 
 const extractNotes = (app) => {
     let serviceDisplay = app.service || 'Servicio general';
@@ -415,7 +597,6 @@ export const renderConfirmedAppointments = () => {
     let workingAppointments = state.allAppointments
         .filter(app => app.status === 'confirmada' || app.status === 'pendiente'); 
     
-    // CORRECCIÓN 1: Ordenar de más cercano (ascendente) a más lejano (ascendente)
     workingAppointments.sort((a, b) => 
         new Date(`${a.appointment_date}T${a.appointment_time}`) - new Date(`${b.appointment_date}T${b.appointment_time}`)
     );
@@ -436,7 +617,6 @@ export const renderConfirmedAppointments = () => {
         const { serviceDisplay, notesDisplay } = extractNotes(app);
 
         const petNameRaw = app.pets?.name || 'Mascota';
-        // CORRECCIÓN 3: Truncar nombre de mascota a la primera palabra o 10 caracteres
         const petName = petNameRaw.split(' ')[0].length > 10 ? petNameRaw.substring(0, 10) + '...' : petNameRaw.split(' ')[0];
 
         const petImage = app.pets?.image_url 
@@ -450,7 +630,6 @@ export const renderConfirmedAppointments = () => {
             const firstName = ownerProfile.first_name || '';
             const fullName = ownerProfile.full_name || '';
 
-            // CORRECCIÓN 4: Usar solo el primer nombre
             if (firstName.trim() !== '') {
                 ownerFirstName = firstName.split(' ')[0];
             } else if (fullName.trim() !== '' && !fullName.includes('@')) {
@@ -511,7 +690,6 @@ const closeAddAppointmentModal = () => {
     selectedClientIdInput.value = '';
     petSelect.innerHTML = '<option value="">Selecciona una mascota</option>';
     
-    // CORRECCIÓN 6: Asegurar que el botón de submit esté habilitado al cerrar
     if (submitAddAppointmentButtonEmployee) {
         submitAddAppointmentButtonEmployee.disabled = false;
         submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
@@ -569,13 +747,11 @@ const handleDateChange = async () => {
 const handleAddAppointment = async (e) => {
     e.preventDefault();
     
-    // CORRECCIÓN 5: Uso de la variable correcta
     if (!submitAddAppointmentButtonEmployee) {
         console.error('El botón de envío no fue inicializado correctamente.');
         return;
     }
     
-    // CORRECCIÓN 7: Deshabilitar el botón y cambiar el texto (para la primera y segunda vez)
     submitAddAppointmentButtonEmployee.disabled = true;
     submitAddAppointmentButtonEmployee.textContent = 'Confirmando...';
     
@@ -616,14 +792,12 @@ const handleAddAppointment = async (e) => {
                 renderConfirmedAppointments();
             }
             
-            // CORRECCIÓN 8: Forzar el re-renderizado del modal (solo el formulario) para la segunda cita
             addAppointmentForm.reset();
             addAppointmentMessage.classList.add('hidden');
             selectedClientIdInput.value = '';
             petSelect.innerHTML = '<option value="">Selecciona una mascota</option>';
             clientSearchInputModal.value = '';
             
-            // Re-habilitar botón
             submitAddAppointmentButtonEmployee.disabled = false;
             submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
             
@@ -632,7 +806,6 @@ const handleAddAppointment = async (e) => {
             addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
             addAppointmentMessage.classList.remove('hidden');
             
-            // CORRECCIÓN 9: Re-habilitar botón en caso de error
             submitAddAppointmentButtonEmployee.disabled = false;
             submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
         }
@@ -641,7 +814,6 @@ const handleAddAppointment = async (e) => {
         addAppointmentMessage.className = 'block mb-4 p-4 rounded-md bg-red-100 text-red-700';
         addAppointmentMessage.classList.remove('hidden');
         
-        // CORRECCIÓN 10: Re-habilitar botón en caso de error de red/código
         submitAddAppointmentButtonEmployee.disabled = false;
         submitAddAppointmentButtonEmployee.textContent = 'Confirmar Cita';
     } 
@@ -654,19 +826,14 @@ const openCompletionModal = (appointmentId) => {
     if (appointment) {
         servicePriceInput.value = appointment.service_price || '';
         petWeightInput.value = appointment.final_weight || '';
-        // **** INICIO DE LA CORRECCIÓN ****
-        // Aseguramos que el valor (MAYÚSCULAS) coincida con el select
         paymentMethodSelect.value = (appointment.payment_method || '').toUpperCase();
         if (!paymentMethodSelect.value) {
-             paymentMethodSelect.value = ""; // Si es null o "", vuelve a "Seleccionar..."
+             paymentMethodSelect.value = ""; 
         }
-        // **** FIN DE LA CORRECCIÓN ****
         finalObservationsTextarea.value = appointment.final_observations || '';
         
-        // --- INICIO DE LA ACTUALIZACIÓN (Leer datos para el checklist) ---
         const selectedShampoos = appointment.shampoo_type ? appointment.shampoo_type.split(',').map(s => s.trim()) : [];
         renderShampooChecklist(selectedShampoos);
-        // --- FIN DE LA ACTUALIZACIÓN ---
 
     } else {
          servicePriceInput.value = '';
@@ -674,9 +841,7 @@ const openCompletionModal = (appointmentId) => {
          paymentMethodSelect.value = '';
          finalObservationsTextarea.value = '';
          
-         // --- INICIO DE LA ACTUALIZACIÓN ---
-         renderShampooChecklist([]); // Renderizar vacío si no hay datos
-         // --- FIN DE LA ACTUALIZACIÓN ---
+         renderShampooChecklist([]); 
     }
 
     completionModal?.classList.remove('hidden');
@@ -695,10 +860,8 @@ const closeCompletionModal = () => {
     finalObservationsTextarea.value = '';
     uploadMessage?.classList.add('hidden');
 
-    // --- INICIO DE LA ACTUALIZACIÓN (Resetear dropdown) ---
     if(shampooDropdownContentEmployee) shampooDropdownContentEmployee.classList.add('hidden');
     if(shampooDisplayTextEmployee) shampooDisplayTextEmployee.textContent = 'Seleccionar...';
-    // --- FIN DE LA ACTUALIZACIÓN ---
 };
 
 const handleImagePreview = (e, previewContainer) => {
@@ -722,10 +885,7 @@ const handleCompleteAppointment = async () => {
         alert('Por favor, ingresa un precio de servicio válido (> 0).');
         return;
     }
-    // **** INICIO DE LA CORRECCIÓN ****
-    // Se asegura que el valor seleccionado (que ya es mayúscula) no esté vacío
     if (!paymentMethod) {
-    // **** FIN DE LA CORRECCIÓN ****
         alert('Por favor, selecciona un método de pago.');
         return;
     }
@@ -757,15 +917,9 @@ const handleCompleteAppointment = async () => {
         status: 'completada',
         final_observations: finalObservationsTextarea.value || null,
         service_price: price,
-        // **** INICIO DE LA CORRECCIÓN ****
-        // El valor ya viene en MAYÚSCULAS desde el select
         payment_method: paymentMethod,
-        // **** FIN DE LA CORRECCIÓN ****
         final_weight: isNaN(weight) ? null : weight,
-        
-        // --- INICIO DE LA ACTUALIZACIÓN (Leer desde la nueva función) ---
         shampoo_type: getShampooList()
-        // --- FIN DE LA ACTUALIZACIÓN ---
     };
     
     const { error } = await supabase
@@ -801,5 +955,47 @@ const handleCompleteAppointment = async () => {
         closeCompletionModal();
         confirmCompletionBtn.disabled = false;
         confirmCompletionBtn.textContent = '✓ Completar Cita';
+        showMainAlert('Cita completada exitosamente.', false); // <-- ALERTA DINÁMICA
     }, 1500);
 };
+
+// --- INICIO: CÓDIGO AÑADIDO (Funciones Modal Historial) ---
+const openHistoryModal = (appointment, petName) => {
+    if (!appointment) return;
+    
+    historyPetName.textContent = `Mascota: ${petName} (Servicio del ${appointment.appointment_date})`;
+    
+    const photos = appointment.appointment_photos || [];
+    const arrivalPhoto = photos.find(p => p.photo_type === 'arrival');
+    const departurePhoto = photos.find(p => p.photo_type === 'departure');
+
+    if (arrivalPhoto) {
+        historyArrivalPhoto.innerHTML = `<img src="${arrivalPhoto.image_url}" alt="Foto de llegada" class="w-full h-full object-cover rounded-lg">`;
+    } else {
+        historyArrivalPhoto.innerHTML = `<p class="text-sm text-gray-500">Sin foto</p>`;
+    }
+
+    if (departurePhoto) {
+        historyDeparturePhoto.innerHTML = `<img src="${departurePhoto.image_url}" alt="Foto de salida" class="w-full h-full object-cover rounded-lg">`;
+    } else {
+        historyDeparturePhoto.innerHTML = `<p class="text-sm text-gray-500">Sin foto</p>`;
+    }
+
+    historyPrice.textContent = appointment.service_price ? `S/ ${appointment.service_price.toFixed(2)}` : 'N/A';
+    historyWeight.textContent = appointment.final_weight ? `${appointment.final_weight} kg` : 'N/A';
+    historyPayment.textContent = (appointment.payment_method || 'N/A').toUpperCase();
+    historyShampoo.textContent = appointment.shampoo_type || 'General';
+    historyObservations.textContent = appointment.final_observations || 'Sin observaciones.';
+
+    historyModalEmployee?.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Bloquear scroll del body
+};
+
+const closeHistoryModal = () => {
+    historyModalEmployee?.classList.add('hidden');
+    // Solo desbloquear scroll si el modal de completar NO está visible
+    if (completionModal?.classList.contains('hidden')) {
+        document.body.style.overflow = ''; // Desbloquear scroll
+    }
+};
+// --- FIN: CÓDIGO AÑADIDO ---
