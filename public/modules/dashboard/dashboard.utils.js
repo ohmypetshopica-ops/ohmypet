@@ -125,17 +125,22 @@ const createAppointmentRow = (appointment) => {
         actionButtons = `
             <button data-action="confirmar" class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition-colors">Confirmar</button>
             <button data-action="reprogramar" class="text-xs bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition-colors">Editar</button>
-            <button data-action="rechazar" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors">Rechazar</button>
+            <button data-action="eliminar" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors">Eliminar</button>
         `;
     } else if (status === 'confirmada') {
         actionButtons = `
             <button data-action="completar" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors">Completar</button>
             <button data-action="reprogramar" class="text-xs bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition-colors">Editar</button>
+            <button data-action="eliminar" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors">Eliminar</button>
         `;
     } else if (status === 'completada') {
         actionButtons = `<span class="text-xs text-gray-500 font-medium">Finalizada</span>`;
     } else {
-        actionButtons = `<span class="text-xs text-gray-400">Sin acciones</span>`;
+        // Para 'cancelada' y 'rechazada'
+        actionButtons = `
+            <span class="text-xs text-gray-400">Sin acciones</span>
+            <button data-action="eliminar" class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors">Eliminar</button>
+        `;
     }
     // --- FIN: CÓDIGO ACTUALIZADO ---
 

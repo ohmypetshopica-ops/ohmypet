@@ -859,6 +859,68 @@ export const rescheduleAppointmentFromDashboard = async (appointmentId, updatedD
     return { success: true, data: data[0] };
 };
 
+// --- INICIO: CÓDIGO AÑADIDO ---
+/**
+ * Elimina una cita y sus fotos asociadas.
+ * @param {string} appointmentId - El ID de la cita a eliminar.
+ * @returns {Promise<{success: boolean, error?: Error}>}
+ */
+export const deleteAppointment = async (appointmentId) => {
+    // 1. Eliminar fotos asociadas (si las hay)
+    // Asumimos que las fotos están en un bucket 'appointment_images' y
+    // la tabla es 'appointment_photos'
+    const { data: photos, error: photoFetchError } = await supabase
+        .from('appointment_photos')
+        .select('image_url')
+        .eq('appointment_id', appointmentId);
+
+    if (photoFetchError) {
+        console.warn('No se pudieron buscar fotos para eliminar:', photoFetchError.message);
+    }
+
+    if (photos && photos.length > 0) {
+        // Extraer los nombres de los archivos de las URLs
+        const fileNames = photos.map(photo => {
+            const urlParts = photo.image_url.split('/');
+            return urlParts[urlParts.length - 1]; // Obtener la última parte de la URL (el nombre del archivo)
+        });
+        
+        // Eliminar los archivos del bucket
+        const { error: storageError } = await supabase.storage
+            .from('appointment_images')
+            .remove(fileNames);
+            
+        if (storageError) {
+            console.error('Error al eliminar archivos de storage:', storageError);
+            // No detenemos el proceso, pero lo registramos
+        }
+    }
+    
+    // 2. Eliminar registros de la tabla 'appointment_photos'
+    const { error: photoDbError } = await supabase
+        .from('appointment_photos')
+        .delete()
+        .eq('appointment_id', appointmentId);
+
+    if (photoDbError) {
+        console.error('Error al eliminar registros de fotos de la DB:', photoDbError);
+    }
+    
+    // 3. Eliminar la cita principal
+    const { error: appointmentError } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', appointmentId);
+
+    if (appointmentError) {
+        console.error('Error al eliminar la cita:', appointmentError);
+        return { success: false, error: appointmentError };
+    }
+
+    return { success: true };
+};
+// --- FIN: CÓDIGO AÑADIDO ---
+
 export const getSales = async () => {
     const { data, error } = await supabase
         .from('sales')

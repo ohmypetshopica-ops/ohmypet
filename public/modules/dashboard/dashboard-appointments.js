@@ -10,7 +10,8 @@ import {
     getClientsWithPets,
     getBookedTimesForDashboard,
     addAppointmentFromDashboard,
-    rescheduleAppointmentFromDashboard 
+    rescheduleAppointmentFromDashboard,
+    deleteAppointment 
 } from './dashboard.api.js';
 import { addWeightRecord } from './pet-weight.api.js';
 import { createAppointmentRow } from './dashboard.utils.js';
@@ -30,6 +31,9 @@ let currentPage = 1;
 const itemsPerPage = 10;
 let totalAppointmentsCount = 0;
 
+let appointmentToDeleteId = null; 
+
+
 // --- OPCIONES DE SHAMPOO (NUEVO) ---
 const SHAMPOO_OPTIONS = [
     'Shampoo General', 'Avena', 'Pelo Blanco', 'Pelo Oscuro', 'Clorixidina',
@@ -43,6 +47,8 @@ const statusFilter = document.querySelector('#appointment-status-filter');
 const dateFilter = document.querySelector('#appointment-date-filter');
 const clearFiltersButton = document.querySelector('#clear-filters-button');
 const paginationContainer = document.querySelector('#pagination-container');
+
+const mainAlertMessage = document.querySelector('#main-alert-message');
 
 // --- MODAL DE COMPLETAR CITA ---
 const completionModal = document.querySelector('#completion-modal');
@@ -91,8 +97,63 @@ const rescheduleServiceSelect = document.querySelector('#reschedule-service');
 const rescheduleNotesTextarea = document.querySelector('#reschedule-notes');
 const cancelRescheduleBtn = document.querySelector('#cancel-reschedule-btn');
 const confirmRescheduleBtn = document.querySelector('#confirm-reschedule-btn');
+const rescheduleMessage = document.querySelector('#reschedule-message');
 
 let appointmentToRescheduleId = null;
+
+// --- ELEMENTOS DEL MODAL DE BORRADO ---
+const deleteConfirmModal = document.querySelector('#delete-confirm-modal');
+const deletePetNameElement = document.querySelector('#delete-pet-name');
+const confirmDeleteBtn = document.querySelector('#confirm-delete-btn');
+const cancelDeleteBtn = document.querySelector('#cancel-delete-btn');
+
+
+// --- INICIO: CÓDIGO AÑADIDO (Helpers de Alertas) ---
+
+/**
+ * Muestra la alerta principal en la página (fuera de los modales)
+ * @param {string} message - El mensaje a mostrar.
+ * @param {boolean} isError - true para alerta roja (error), false para verde (éxito).
+ */
+const showMainAlert = (message, isError = false) => {
+    if (!mainAlertMessage) return;
+
+    mainAlertMessage.textContent = message;
+    if (isError) {
+        mainAlertMessage.className = "rounded-lg p-4 text-sm font-medium mb-4 bg-red-100 text-red-700";
+    } else {
+        mainAlertMessage.className = "rounded-lg p-4 text-sm font-medium mb-4 bg-green-100 text-green-700";
+    }
+    mainAlertMessage.classList.remove('hidden');
+
+    // Ocultar automáticamente después de 4 segundos
+    setTimeout(() => {
+        mainAlertMessage.classList.add('hidden');
+    }, 4000);
+};
+
+/**
+ * Muestra una alerta DENTRO del modal de reprogramación.
+ */
+const showRescheduleAlert = (message, isError = false) => {
+    if (!rescheduleMessage) return;
+
+    rescheduleMessage.textContent = message;
+    if (isError) {
+        rescheduleMessage.className = "rounded-lg p-4 text-sm font-medium mb-4 bg-red-100 text-red-700";
+    } else {
+        rescheduleMessage.className = "rounded-lg p-4 text-sm font-medium mb-4 bg-green-100 text-green-700";
+    }
+    rescheduleMessage.classList.remove('hidden');
+};
+
+/**
+ * Oculta la alerta del modal de reprogramación.
+ */
+const hideRescheduleAlert = () => {
+    if (rescheduleMessage) rescheduleMessage.classList.add('hidden');
+};
+// --- FIN: CÓDIGO AÑADIDO ---
 
 
 // --- FUNCIONES SHAMPOO CHECKLIST (NUEVO) ---
@@ -345,7 +406,33 @@ const openRescheduleModal = async (appointmentId) => {
 const closeRescheduleModal = () => {
     rescheduleModal.classList.add('hidden');
     appointmentToRescheduleId = null;
+    hideRescheduleAlert(); 
 };
+
+// --- INICIO: CÓDIGO ACTUALIZADO ---
+const openDeleteModal = (appointmentId, petName) => {
+    appointmentToDeleteId = appointmentId;
+    deletePetNameElement.textContent = petName;
+    
+    // Limpiar mensajes de error anteriores
+    const deleteModalText = deletePetNameElement.parentElement.querySelector('p');
+    if (deleteModalText) { // Asegurarse de que el elemento exista
+        const errorText = deleteModalText.querySelector('.error-text');
+        if (errorText) {
+            errorText.remove();
+        }
+    }
+    
+    deleteConfirmModal.classList.remove('hidden');
+};
+
+const closeDeleteModal = () => {
+    appointmentToDeleteId = null;
+    deleteConfirmModal.classList.add('hidden');
+    confirmDeleteBtn.disabled = false;
+    confirmDeleteBtn.textContent = 'Sí, Eliminar';
+};
+// --- FIN: CÓDIGO ACTUALIZADO ---
 
 const initializeAddAppointmentModal = async () => {
     clientsWithPets = await getClientsWithPets();
@@ -418,7 +505,9 @@ const initializeAddAppointmentModal = async () => {
         };
 
         if (!appointmentData.user_id || !appointmentData.pet_id || !appointmentData.appointment_date || !appointmentData.appointment_time || !appointmentData.service) {
-            alert('Por favor, completa todos los campos obligatorios (Cliente, Mascota, Fecha, Hora y Servicio).');
+            addAppointmentMessage.textContent = 'Error: Por favor, completa todos los campos obligatorios.';
+            addAppointmentMessage.className = 'p-3 rounded-md bg-red-100 text-red-700 text-sm';
+            addAppointmentMessage.classList.remove('hidden');
             submitButton.disabled = false;
             return;
         }
@@ -426,7 +515,7 @@ const initializeAddAppointmentModal = async () => {
         const { success, error } = await addAppointmentFromDashboard(appointmentData);
 
         if (success) {
-            alert('¡Cita agendada con éxito!');
+            showMainAlert('¡Cita agendada con éxito!', false); // <-- ALERTA DINÁMICA
             
             try {
                 const appointmentDateTime = new Date(`${appointmentData.appointment_date}T${appointmentData.appointment_time}`);
@@ -444,14 +533,14 @@ const initializeAddAppointmentModal = async () => {
                         const whatsappUrl = `https://wa.me/51${client.phone}?text=${encodeURIComponent(message)}`;
                         window.open(whatsappUrl, '_blank');
                     } else {
-                        alert('La cita fue agendada, pero no se pudo notificar por WhatsApp porque el cliente no tiene un número de teléfono registrado.');
+                        showMainAlert('Cita agendada, pero no se pudo notificar por WhatsApp (cliente sin teléfono).', true);
                     }
                 } else {
-                    alert('La cita fue agendada para una fecha pasada. No se envió notificación por WhatsApp.');
+                    showMainAlert('Cita agendada para una fecha pasada (sin notificación).', false);
                 }
             } catch (e) {
                 console.error('Error al intentar enviar WhatsApp:', e);
-                alert('La cita fue agendada, pero ocurrió un error al intentar generar el mensaje de WhatsApp.');
+                showMainAlert('Cita agendada, pero falló al generar el mensaje de WhatsApp.', true);
             }
 
             closeAddAppointmentModal();
@@ -606,15 +695,16 @@ const initializePage = async () => {
                         window.open(whatsappUrl, '_blank');
 
                     } else {
-                        alert('No se pudo encontrar el número de teléfono del cliente para notificar.');
+                        showMainAlert('No se pudo encontrar el número de teléfono del cliente para notificar.', true);
                     }
                 }
 
                 const { success } = await updateAppointmentStatus(appointmentId, newStatus);
                 if (success) {
+                    showMainAlert(`Cita ${newStatus} exitosamente.`, false);
                     await loadAppointmentsAndRender();
                 } else {
-                    alert(`Error al ${action} la cita.`);
+                    showMainAlert(`Error al ${action} la cita.`, true);
                 }
             }
         } else if (action === 'reprogramar') {
@@ -626,6 +716,11 @@ const initializePage = async () => {
                 const petId = appointment.pet_id;
                 openCompletionModal(appointmentId, petName, petId);
             }
+        } else if (action === 'eliminar') {
+            const appointment = allAppointments.find(app => app.id == appointmentId);
+            const petName = appointment?.pets?.name || 'esta cita';
+            
+            openDeleteModal(appointmentId, petName);
         }
     });
 
@@ -702,10 +797,7 @@ const initializePage = async () => {
             if (weight) updateData.final_weight = parseFloat(weight);
             if (price) updateData.service_price = parseFloat(price);
             
-            // **** INICIO DE LA CORRECCIÓN 2 ****
-            // Asegurarse de que el valor se guarde en MAYÚSCULAS
             if (paymentMethod) updateData.payment_method = paymentMethod.toUpperCase();
-            // **** FIN DE LA CORRECCIÓN 2 ****
 
             if (shampooType) updateData.shampoo_type = shampooType; // NEW
 
@@ -784,16 +876,13 @@ const initializePage = async () => {
             const appointment = allAppointments.find(app => app.id === currentAppointmentId);
             const appointmentDate = appointment ? appointment.appointment_date : new Date().toISOString().split('T')[0];
 
-            // **** INICIO DE LA CORRECCIÓN 3 ****
-            // Asegurarse de que el valor se guarde en MAYÚSCULAS
             const { success } = await updateAppointmentStatus(currentAppointmentId, 'completada', {
                 observations: observations,
                 weight: weight ? parseFloat(weight) : undefined, 
                 price: parseFloat(price),
-                paymentMethod: paymentMethod.toUpperCase(), // Se envía el valor en MAYÚSCULAS
-                shampoo: shampooType // NEW: shampooType is the string of selected shampoos
+                paymentMethod: paymentMethod.toUpperCase(), 
+                shampoo: shampooType 
             });
-            // **** FIN DE LA CORRECCIÓN 3 ****
 
             if (success) {
                 uploadMessage.textContent = 'Actualizando fecha de último servicio...';
@@ -803,13 +892,15 @@ const initializePage = async () => {
                     .eq('id', currentPetId);
 
                 if (petUpdateError) {
-                    alert('La cita se completó, pero hubo un error al actualizar la fecha del último baño en el perfil de la mascota.');
+                    showMainAlert('Cita completada, pero hubo un error al actualizar la fecha del último baño en el perfil de la mascota.', true);
                     console.error('Error al actualizar last_grooming_date:', petUpdateError);
+                } else {
+                     showMainAlert('✓ Cita completada exitosamente', false); 
                 }
                 
                 await loadAppointmentsAndRender();
                 closeCompletionModal();
-                alert('✓ Cita completada exitosamente');
+                
             } else {
                 throw new Error('No se pudo actualizar el estado de la cita.');
             }
@@ -831,8 +922,9 @@ const initializePage = async () => {
     });
 
     confirmRescheduleBtn?.addEventListener('click', async () => {
+        hideRescheduleAlert(); 
         if (!appointmentToRescheduleId || !rescheduleDateInput.value || !rescheduleTimeSelect.value) {
-            alert('Por favor, selecciona una nueva fecha y hora.');
+            showRescheduleAlert('Por favor, selecciona una nueva fecha y hora.', true); 
             return;
         }
 
@@ -852,16 +944,54 @@ const initializePage = async () => {
         );
 
         if (success) {
-            alert('¡Cita reprogramada con éxito! La cita ha vuelto al estado "Pendiente" y necesita ser re-confirmada.');
-            closeRescheduleModal();
-            await loadAppointmentsAndRender();
+            showRescheduleAlert('¡Cita reprogramada con éxito! La cita ha vuelto al estado "Pendiente".', false); 
+            setTimeout(async () => {
+                closeRescheduleModal();
+                await loadAppointmentsAndRender();
+            }, 2000); 
         } else {
-            alert(`Error al reprogramar: ${error.message}`);
+            showRescheduleAlert(`Error al reprogramar: ${error.message}`, true); 
         }
 
         confirmRescheduleBtn.disabled = false;
         confirmRescheduleBtn.textContent = 'Confirmar Cambios';
     });
+    
+    // --- INICIO: CÓDIGO ACTUALIZADO (Listeners del modal de borrado) ---
+    cancelDeleteBtn?.addEventListener('click', closeDeleteModal);
+    deleteConfirmModal?.addEventListener('click', (e) => {
+        if (e.target === deleteConfirmModal) closeDeleteModal();
+    });
+
+    confirmDeleteBtn?.addEventListener('click', async () => {
+        if (!appointmentToDeleteId) return;
+
+        confirmDeleteBtn.disabled = true;
+        confirmDeleteBtn.textContent = 'Eliminando...';
+
+        const { success, error } = await deleteAppointment(appointmentToDeleteId);
+        
+        if (success) {
+            showMainAlert('Cita eliminada exitosamente.', false); // <-- ALERTA DINÁMICA
+            closeDeleteModal();
+            await loadAppointmentsAndRender(); // Recargar la tabla
+        } else {
+            // Mostrar error dentro del modal
+            const deleteModalText = deletePetNameElement.parentElement.querySelector('p');
+            if (deleteModalText) { 
+                const existingError = deleteModalText.querySelector('.error-text');
+                if (existingError) {
+                    existingError.textContent = `Error: ${error.message}`;
+                } else {
+                    deleteModalText.innerHTML += `<br><strong class="text-red-700 error-text">Error: ${error.message}</strong>`;
+                }
+            }
+            // Reactivamos el botón en el modal
+            confirmDeleteBtn.disabled = false;
+            confirmDeleteBtn.textContent = 'Sí, Eliminar';
+        }
+    });
+    // --- FIN: CÓDIGO ACTUALIZADO ---
     
     initializeAddAppointmentModal();
 };
