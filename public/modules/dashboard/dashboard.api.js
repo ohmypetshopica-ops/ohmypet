@@ -859,12 +859,6 @@ export const rescheduleAppointmentFromDashboard = async (appointmentId, updatedD
     return { success: true, data: data[0] };
 };
 
-// --- INICIO: CÓDIGO AÑADIDO ---
-/**
- * Elimina una cita y sus fotos asociadas.
- * @param {string} appointmentId - El ID de la cita a eliminar.
- * @returns {Promise<{success: boolean, error?: Error}>}
- */
 export const deleteAppointment = async (appointmentId) => {
     // 1. Eliminar fotos asociadas (si las hay)
     // Asumimos que las fotos están en un bucket 'appointment_images' y
@@ -882,7 +876,13 @@ export const deleteAppointment = async (appointmentId) => {
         // Extraer los nombres de los archivos de las URLs
         const fileNames = photos.map(photo => {
             const urlParts = photo.image_url.split('/');
-            return urlParts[urlParts.length - 1]; // Obtener la última parte de la URL (el nombre del archivo)
+            // Asegurarnos de tomar el path correcto en el bucket
+            const bucketName = 'appointment_images';
+            const pathIndex = photo.image_url.indexOf(bucketName + '/');
+            if (pathIndex > -1) {
+                 return photo.image_url.substring(pathIndex + bucketName.length + 1);
+            }
+            return urlParts[urlParts.length - 1]; // Fallback
         });
         
         // Eliminar los archivos del bucket
@@ -905,8 +905,20 @@ export const deleteAppointment = async (appointmentId) => {
     if (photoDbError) {
         console.error('Error al eliminar registros de fotos de la DB:', photoDbError);
     }
+
+    // --- INICIO: CÓDIGO AÑADIDO (Mascotas) ---
+    // 3. Eliminar historial de peso asociado a ESTA cita
+    const { error: weightError } = await supabase
+        .from('pet_weight_history')
+        .delete()
+        .eq('appointment_id', appointmentId);
     
-    // 3. Eliminar la cita principal
+    if (weightError) {
+        console.warn('Error al eliminar historial de peso de la cita:', weightError.message);
+    }
+    // --- FIN: CÓDIGO AÑADIDO ---
+    
+    // 4. Eliminar la cita principal
     const { error: appointmentError } = await supabase
         .from('appointments')
         .delete()
@@ -919,7 +931,152 @@ export const deleteAppointment = async (appointmentId) => {
 
     return { success: true };
 };
+
+// --- INICIO: CÓDIGO AÑADIDO (Mascotas) ---
+/**
+ * Elimina una mascota y todos sus datos asociados (citas, historial de peso).
+ * @param {string} petId - El ID de la mascota a eliminar.
+ * @returns {Promise<{success: boolean, error?: Error}>}
+ */
+export const deletePet = async (petId) => {
+    try {
+        // 1. Obtener todas las citas de la mascota para eliminar fotos
+        const { data: appointments, error: apptError } = await supabase
+            .from('appointments')
+            .select('id')
+            .eq('pet_id', petId);
+        
+        if (apptError) throw new Error(`Error al obtener citas: ${apptError.message}`);
+
+        const appointmentIds = appointments.map(a => a.id);
+
+        if (appointmentIds.length > 0) {
+            // 2. Eliminar fotos de storage de todas sus citas
+            const { data: photos, error: photoError } = await supabase
+                .from('appointment_photos')
+                .select('image_url')
+                .in('appointment_id', appointmentIds);
+
+            if (photoError) console.warn("Error al buscar fotos de citas:", photoError.message);
+
+            if (photos && photos.length > 0) {
+                const fileNames = photos.map(photo => {
+                    const urlParts = photo.image_url.split('/');
+                    const bucketName = 'appointment_images';
+                    const pathIndex = photo.image_url.indexOf(bucketName + '/');
+                    if (pathIndex > -1) {
+                         return photo.image_url.substring(pathIndex + bucketName.length + 1);
+                    }
+                    return urlParts[urlParts.length - 1];
+                });
+                
+                await supabase.storage.from('appointment_images').remove(fileNames);
+            }
+
+            // 3. Eliminar 'appointment_photos' (se borra en cascada con 'appointments')
+            // 4. Eliminar 'pet_weight_history'
+            await supabase.from('pet_weight_history').delete().eq('pet_id', petId);
+            
+            // 5. Eliminar 'appointments'
+            await supabase.from('appointments').delete().in('id', appointmentIds);
+        }
+
+        // 6. Eliminar foto de la mascota del storage 'pet_galleries'
+        const { data: petData, error: petFetchError } = await supabase
+            .from('pets')
+            .select('image_url')
+            .eq('id', petId)
+            .single();
+        
+        if (petFetchError) console.warn("Error al buscar foto de mascota:", petFetchError.message);
+
+        if (petData && petData.image_url) {
+            const urlParts = petData.image_url.split('/');
+            const bucketName = 'pet_galleries';
+            const pathIndex = petData.image_url.indexOf(bucketName + '/');
+            if (pathIndex > -1) {
+                const fileName = petData.image_url.substring(pathIndex + bucketName.length + 1);
+                await supabase.storage.from(bucketName).remove([fileName]);
+            }
+        }
+        
+        // 7. Finalmente, eliminar la mascota
+        const { error: petDeleteError } = await supabase
+            .from('pets')
+            .delete()
+            .eq('id', petId);
+            
+        if (petDeleteError) throw new Error(`Error al eliminar mascota: ${petDeleteError.message}`);
+
+        return { success: true };
+
+    } catch (error) {
+        console.error('Error en el proceso de eliminación de la mascota:', error);
+        return { success: false, error };
+    }
+};
 // --- FIN: CÓDIGO AÑADIDO ---
+
+
+export const deleteClient = async (clientId) => {
+    try {
+        // 1. Obtener todas las mascotas del cliente
+        const { data: pets, error: petsError } = await supabase
+            .from('pets')
+            .select('id')
+            .eq('owner_id', clientId);
+        if (petsError) throw new Error(`Error al obtener mascotas: ${petsError.message}`);
+        
+        const petIds = pets.map(p => p.id);
+
+        if (petIds.length > 0) {
+            // 2. Eliminar CUALQUIER historial de peso de CUALQUIERA de las mascotas
+            const { error: weightError } = await supabase
+                .from('pet_weight_history')
+                .delete()
+                .in('pet_id', petIds);
+            if (weightError) console.warn('Error al eliminar historial de peso:', weightError.message); // No es crítico
+        }
+
+        // 3. Eliminar todas las ventas asociadas al cliente
+        const { error: salesError } = await supabase
+            .from('sales')
+            .delete()
+            .eq('client_id', clientId);
+        if (salesError) console.warn('Error al eliminar ventas:', salesError.message); // No es crítico
+
+        // 4. Eliminar todas las citas asociadas al cliente
+        const { error: apptError } = await supabase
+            .from('appointments')
+            .delete()
+            .eq('user_id', clientId);
+        // Si hay un error aquí (ej. RLS), el resto fallará, lo cual es bueno.
+        if (apptError) throw new Error(`Error al eliminar citas: ${apptError.message}`);
+
+        // 5. Eliminar todas las mascotas del cliente
+        if (petIds.length > 0) {
+            const { error: petDeleteError } = await supabase
+                .from('pets')
+                .delete()
+                .in('id', petIds);
+            if (petDeleteError) throw new Error(`Error al eliminar mascotas: ${petDeleteError.message}`);
+        }
+
+        // 6. Finalmente, eliminar el perfil del cliente
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', clientId);
+        if (profileError) throw new Error(`Error al eliminar el perfil: ${profileError.message}`);
+
+        return { success: true };
+
+    } catch (error) {
+        console.error('Error en el proceso de eliminación del cliente:', error);
+        return { success: false, error };
+    }
+};
+
 
 export const getSales = async () => {
     const { data, error } = await supabase

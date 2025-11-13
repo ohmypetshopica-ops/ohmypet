@@ -9,7 +9,8 @@ import {
     updateClientProfile,
     getClientsWithPets,
     getBookedTimesForDashboard,
-    addAppointmentFromDashboard
+    addAppointmentFromDashboard,
+    deleteClient // <<< --- IMPORTACIÓN AÑADIDA
 } from './dashboard.api.js';
 import { supabase } from '../../core/supabase.js'; 
 
@@ -31,6 +32,15 @@ let petsToSchedule = []; // Array de IDs de las mascotas seleccionadas
 let scheduledAppointments = 0; // Contador de citas ya agendadas
 let currentPetIndex = 0; // Índice de la mascota actual en el paso 3
 // ====== FIN ESTADO MÚLTIPLE ======
+
+// ==================================================
+// === INICIO: CÓDIGO AÑADIDO (Alerta Dinámica) ===
+// ==================================================
+let mainAlertMessage = null; // Se inicializará en initializeClientsSection
+// ==================================================
+// === FIN: CÓDIGO AÑADIDO ===
+// ==================================================
+
 
 // ====== FUNCIÓN createClientRow DEFINIDA LOCALMENTE ======
 const createClientRow = (client) => {
@@ -118,6 +128,8 @@ const editClientBtn = document.querySelector('#edit-client-btn');
 const saveClientBtn = document.querySelector('#save-client-btn');
 const cancelEditClientBtn = document.querySelector('#cancel-edit-client-btn');
 const modalAddPetBtnFooter = document.querySelector('#modal-add-pet-btn-footer');
+const modalDeleteClientBtn = document.querySelector('#modal-delete-client-btn');
+
 
 // --- ELEMENTOS DEL MODAL DE REGISTRO DE CLIENTE---
 const addClientButton = document.querySelector('#add-client-button');
@@ -159,6 +171,44 @@ const multiAptNextBtn = document.querySelector('#multi-apt-next-btn');
 const multiAptFinishBtn = document.querySelector('#multi-apt-finish-btn');
 const multiAptSteps = document.querySelectorAll('.multi-apt-step');
 const closeMultiAptModalBtn = multiAppointmentModal?.querySelector('.p-6 button');
+
+// --- ELEMENTOS DEL MODAL DE BORRADO DE CLIENTE ---
+const deleteClientConfirmModal = document.querySelector('#delete-client-confirm-modal');
+const deleteClientNameElement = document.querySelector('#delete-client-name');
+const confirmDeleteClientBtn = document.querySelector('#confirm-delete-client-btn');
+const cancelDeleteClientBtn = document.querySelector('#cancel-delete-client-btn');
+const deleteClientErrorMessage = document.querySelector('#delete-client-error-message');
+
+
+// ==================================================
+// === INICIO: CÓDIGO AÑADIDO (Función Alerta) ===
+// ==================================================
+/**
+ * Muestra la alerta principal en la página (fuera de los modales)
+ * @param {string} message - El mensaje a mostrar.
+ * @param {boolean} isError - true para alerta roja (error), false para verde (éxito).
+ */
+const showMainAlert = (message, isError = false) => {
+    if (!mainAlertMessage) mainAlertMessage = document.querySelector('#main-alert-message'); // Asegurar que esté inicializado
+    if (!mainAlertMessage) return;
+
+    mainAlertMessage.textContent = message;
+    if (isError) {
+        mainAlertMessage.className = "rounded-lg p-4 text-sm font-medium mb-4 bg-red-100 text-red-700";
+    } else {
+        mainAlertMessage.className = "rounded-lg p-4 text-sm font-medium mb-4 bg-green-100 text-green-700";
+    }
+    mainAlertMessage.classList.remove('hidden');
+
+    // Ocultar automáticamente después de 4 segundos
+    setTimeout(() => {
+        mainAlertMessage.classList.add('hidden');
+    }, 4000);
+};
+// ==================================================
+// === FIN: CÓDIGO AÑADIDO ===
+// ==================================================
+
 
 // ====== FUNCIÓN DE RENDERIZADO DE PAGINACIÓN AGREGADA ======
 const renderPagination = (totalItems) => {
@@ -246,7 +296,7 @@ const renderClientsTable = (clients) => {
 const openMultiAppointmentModal = (clientId, clientName) => {
     const client = allClientsWithPets.find(c => c.id === clientId);
     if (!client || client.pets.length === 0) {
-        alert('Este cliente no tiene mascotas registradas para agendar una cita.');
+        showMainAlert('Este cliente no tiene mascotas registradas para agendar una cita.', true); // <-- ALERTA DINÁMICA
         return;
     }
     currentMultiAptClient = client;
@@ -275,7 +325,7 @@ const closeMultiAppointmentModal = () => {
     scheduledAppointments = 0;
     currentPetIndex = 0;
     // Forzar recarga de la tabla para actualizar la columna de Última Cita
-    initializeClientsSection();
+    loadAndRenderClients(false); // Refrescar datos sin resetear paginación
 };
 
 const showMultiAptStep = (step) => {
@@ -386,18 +436,13 @@ const handleNextStep = async (event) => {
                 return;
             }
             
-            // ** FIX 1: ELIMINAR LA REGLA DE EXCLUSIÓN Y ALERTA **
-            // Ahora se agendan TODAS las seleccionadas
             petsToSchedule = selectedPets;
             currentPetIndex = 0;
             scheduledAppointments = 0;
             showMultiAptStep(3);
             break;
         case 3:
-            // Ejecutar agendamiento para la mascota actual
             await scheduleSinglePetAppointment();
-            // La lógica dentro de scheduleSinglePetAppointment se encargará de llamar a startSchedulingLoop
-            // que es lo que lo mueve al siguiente paso o muestra el mensaje final.
             break;
     }
 };
@@ -427,7 +472,6 @@ const scheduleSinglePetAppointment = async () => {
         multiAptIndividualMessage.textContent = '❌ Por favor, selecciona un servicio y una hora.';
         multiAptIndividualMessage.className = 'block p-3 rounded-lg bg-red-100 text-red-700 text-sm';
         multiAptIndividualMessage.classList.remove('hidden');
-        // Re-habilitar botones si falla la validación del paso 3
         multiAptNextBtn.disabled = false;
         multiAptFinishBtn.disabled = false;
         return;
@@ -455,7 +499,6 @@ const scheduleSinglePetAppointment = async () => {
     if (success) {
         scheduledAppointments++;
         
-        // Abrir WhatsApp de notificación
         try {
             const appointmentDate = new Date(date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             
@@ -469,10 +512,7 @@ const scheduleSinglePetAppointment = async () => {
             console.error("Error al intentar abrir WhatsApp:", e);
         }
 
-        // Pasar a la siguiente mascota
         currentPetIndex++;
-        
-        // ** FIX 3: Llamar a startSchedulingLoop para continuar o salir del bucle **
         startSchedulingLoop();
 
     } else {
@@ -480,7 +520,6 @@ const scheduleSinglePetAppointment = async () => {
         multiAptIndividualMessage.className = 'block p-3 rounded-lg bg-red-100 text-red-700 text-sm';
         multiAptIndividualMessage.classList.remove('hidden');
         
-        // Re-habilitar botones si falla el agendamiento con la API
         multiAptNextBtn.disabled = false;
         multiAptFinishBtn.disabled = false;
     }
@@ -513,7 +552,7 @@ const renderAvailableTimes = async (dateInput, timeSelect) => {
 };
 
 
-// --- LÓGICA DEL MODAL DE DETALLES Y EDICIÓN (SIN CAMBIOS RELEVANTES EN ESTE CONTEXTO) ---
+// --- LÓGICA DEL MODAL DE DETALLES Y EDICIÓN ---
 const openModal = () => clientDetailsModal.classList.remove('hidden');
 const closeModal = () => {
     clientDetailsModal.classList.add('hidden');
@@ -546,6 +585,7 @@ const switchToEditMode = () => {
     saveClientBtn.classList.remove('hidden');
     cancelEditClientBtn.classList.remove('hidden');
     modalAddPetBtnFooter.classList.add('hidden');
+    modalDeleteClientBtn.classList.add('hidden'); 
     
     renderEditForm(currentClientProfile.profile);
 };
@@ -558,6 +598,7 @@ const switchToViewMode = () => {
     saveClientBtn.classList.add('hidden');
     cancelEditClientBtn.classList.add('hidden');
     modalAddPetBtnFooter.classList.remove('hidden');
+    modalDeleteClientBtn.classList.remove('hidden'); 
     
     if (currentClientProfile) {
         populateModal(currentClientProfile);
@@ -627,7 +668,7 @@ const handleSaveClient = async () => {
             
             setTimeout(() => {
                 switchToViewMode();
-                initializeClientsSection();
+                loadAndRenderClients(false); // <-- CÓDIGO ACTUALIZADO
             }, 1000);
         } else {
             editFormMessage.textContent = '⚠️ Cliente actualizado, pero hubo un error al recargar los detalles.';
@@ -722,7 +763,7 @@ const populateModal = (details) => {
     `;
 };
 
-// --- LÓGICA DEL MODAL DE REGISTRO DE CLIENTE (SIN CAMBIOS RELEVANTES EN ESTE CONTEXTO) ---
+// --- LÓGICA DEL MODAL DE REGISTRO DE CLIENTE ---
 const openClientModal = () => clientModal.classList.remove('hidden');
 const closeClientModal = () => {
     clientModal.classList.add('hidden');
@@ -739,10 +780,29 @@ const setupClientModal = () => {
     
     editClientBtn.addEventListener('click', switchToEditMode);
     saveClientBtn.addEventListener('click', handleSaveClient);
-    cancelEditClientBtn.addEventListener('click', switchToViewMode);
+    cancelEditClientBtn.addEventListener('click', switchToViewMode); 
     modalAddPetBtnFooter.addEventListener('click', () => {
         if (currentClientId) openAddPetModal(currentClientId);
     });
+
+    // --- INICIO: CÓDIGO ACTUALIZADO (Listeners modal borrado cliente) ---
+    modalDeleteClientBtn.addEventListener('click', () => {
+        if (currentClientProfile && currentClientProfile.profile) {
+            const profile = currentClientProfile.profile;
+            const displayName = (profile.first_name && profile.last_name) 
+                ? `${profile.first_name} ${profile.last_name}` 
+                : profile.full_name;
+            openDeleteClientModal(profile.id, displayName);
+        }
+    });
+
+    cancelDeleteClientBtn.addEventListener('click', closeDeleteClientModal);
+    deleteClientConfirmModal.addEventListener('click', (e) => {
+        if (e.target === deleteClientConfirmModal) closeDeleteClientModal();
+    });
+    confirmDeleteClientBtn.addEventListener('click', handleDeleteClient);
+    // --- FIN: CÓDIGO AÑADIDO ---
+
 
     addClientButton.addEventListener('click', openClientModal);
     closeClientModalButton.addEventListener('click', closeClientModal);
@@ -800,19 +860,17 @@ const setupClientModal = () => {
             return;
         }
 
-        const { success, error } = await registerClientFromDashboard(clientData);
+        const { success, error, message } = await registerClientFromDashboard(clientData);
 
         if (success) {
             if(clientFormMessage) {
-                clientFormMessage.textContent = '¡Cliente registrado con éxito!';
+                clientFormMessage.textContent = `¡Cliente registrado con éxito! (${message})`;
                 clientFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
                 clientFormMessage.classList.remove('hidden');
             }
             setTimeout(async () => {
                 closeClientModal();
-                const updatedClients = await getClients();
-                currentPage = 1;
-                renderClientsTable(updatedClients);
+                await loadAndRenderClients(true); // <-- CÓDIGO ACTUALIZADO
             }, 1500);
         } else {
             if(clientFormMessage) {
@@ -827,7 +885,46 @@ const setupClientModal = () => {
     });
 };
 
-// --- LÓGICA DEL MODAL DE AGREGAR MASCOTA (SIN CAMBIOS RELEVANTES EN ESTE CONTEXTO) ---
+// --- INICIO: CÓDIGO AÑADIDO (Lógica modal borrado cliente) ---
+const openDeleteClientModal = (clientId, clientName) => {
+    currentClientId = clientId; // Asegurarse de que el ID del cliente actual esté seteado
+    deleteClientNameElement.textContent = clientName;
+    deleteClientErrorMessage.classList.add('hidden');
+    confirmDeleteClientBtn.disabled = false;
+    confirmDeleteClientBtn.textContent = 'Sí, Eliminar Todo';
+    deleteClientConfirmModal.classList.remove('hidden');
+};
+
+const closeDeleteClientModal = () => {
+    deleteClientConfirmModal.classList.add('hidden');
+    // No reseteamos currentClientId aquí, lo hacemos en el modal principal
+};
+
+const handleDeleteClient = async () => {
+    if (!currentClientId) return;
+
+    confirmDeleteClientBtn.disabled = true;
+    confirmDeleteClientBtn.textContent = 'Eliminando...';
+    deleteClientErrorMessage.classList.add('hidden');
+
+    const { success, error } = await deleteClient(currentClientId);
+
+    if (success) {
+        closeDeleteClientModal();
+        closeModal(); // Cierra el modal de detalles también
+        showMainAlert('Cliente eliminado exitosamente.', false); // Muestra la alerta verde
+        await loadAndRenderClients(true); // Recarga toda la sección de clientes
+    } else {
+        deleteClientErrorMessage.textContent = `Error: ${error.message}`;
+        deleteClientErrorMessage.classList.remove('hidden');
+        confirmDeleteClientBtn.disabled = false;
+        confirmDeleteClientBtn.textContent = 'Sí, Eliminar Todo';
+    }
+};
+// --- FIN: CÓDIGO AÑADIDO ---
+
+
+// --- LÓGICA DEL MODAL DE AGREGAR MASCOTA ---
 const openAddPetModal = (clientId) => {
     currentClientId = clientId;
     petOwnerIdInput.value = clientId;
@@ -893,7 +990,7 @@ const setupAddPetModal = () => {
                 .upload(fileName, photoFile);
 
             if (uploadError) {
-                alert('Error al subir la imagen: ' + uploadError.message);
+                showMainAlert('Error al subir la imagen: ' + uploadError.message, true); // <-- ALERTA DINÁMICA
                 submitButton.disabled = false;
                 submitButton.textContent = 'Guardar Mascota';
                 return;
@@ -918,7 +1015,10 @@ const setupAddPetModal = () => {
         };
 
         if (!petData.name || !petData.breed) {
-            alert('El nombre y la raza son obligatorios.');
+            // Reemplazamos alert() por el mensaje en el modal
+            addPetFormMessage.textContent = 'El nombre y la raza son obligatorios.';
+            addPetFormMessage.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
+            addPetFormMessage.classList.remove('hidden');
             submitButton.disabled = false;
             submitButton.textContent = 'Guardar Mascota';
             return;
@@ -927,14 +1027,9 @@ const setupAddPetModal = () => {
         const { success, error } = await addPetFromDashboard(petData);
 
         if (success) {
-            alert('¡Mascota registrada con éxito!');
+            showMainAlert('¡Mascota registrada con éxito!', false); // <-- ALERTA DINÁMICA
             
-            // --- INICIO DE CORRECCIÓN ---
-            // Recargar la sección principal para actualizar el conteo de mascotas en la tabla
-            const updatedClients = await getClients();
-            currentPage = 1;
-            renderClientsTable(updatedClients);
-            // --- FIN DE CORRECCIÓN ---
+            await loadAndRenderClients(false); // <-- CÓDIGO ACTUALIZADO
 
             closeAddPetModal();
         } else {
@@ -1021,9 +1116,8 @@ const setupEventListeners = () => {
         if (e.target === multiAppointmentModal) closeMultiAppointmentModal();
     });
     
-    // ** FIX 2: Ambos botones, Next y Finish, llaman a la lógica de agendamiento **
     multiAptNextBtn?.addEventListener('click', handleNextStep);
-    multiAptFinishBtn?.addEventListener('click', handleNextStep); // Reemplaza el listener de cierre directo
+    multiAptFinishBtn?.addEventListener('click', handleNextStep); 
     
     multiAptBackBtn?.addEventListener('click', handleBackStep);
     multiAptDateInput?.addEventListener('change', () => multiAptDateMessage.classList.add('hidden'));
@@ -1038,24 +1132,42 @@ const setupEventListeners = () => {
     multiAptTimeSelect?.addEventListener('change', () => multiAptIndividualMessage.classList.add('hidden'));
 };
 
+// --- INICIO: CÓDIGO ACTUALIZADO (Nueva función de refresco) ---
+const loadAndRenderClients = async (resetPage = true) => {
+    if (resetPage) currentPage = 1;
+    clientsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-500">Cargando...</td></tr>`;
+    
+    // Cargar datos frescos
+    allClientsWithPets = await getClientsWithPets();
+    const clients = await getClients();
+    
+    // Renderizar
+    renderClientsTable(clients);
+};
+// --- FIN: CÓDIGO ACTUALIZADO ---
+
+
 // --- INICIALIZACIÓN DE LA SECCIÓN ---
 const initializeClientsSection = async () => {
-    if (isInitialized) return;
-    isInitialized = true;
-
-    if (headerTitle) {
-        headerTitle.textContent = 'Gestión de Clientes';
+    // --- INICIO: CÓDIGO ACTUALIZADO ---
+    // Solo inicializa los listeners UNA VEZ
+    if (!isInitialized) { 
+        isInitialized = true;
+        
+        mainAlertMessage = document.querySelector('#main-alert-message');
+        if (headerTitle) {
+            headerTitle.textContent = 'Gestión de Clientes';
+        }
+        
+        // Configurar listeners (solo se hace una vez)
+        setupEventListeners();
+        setupClientModal();
+        setupAddPetModal();
     }
-    
-    // Cargar todos los clientes con sus mascotas para el modal
-    allClientsWithPets = await getClientsWithPets();
-    
-    currentPage = 1;
-    const initialClients = await getClients();
-    renderClientsTable(initialClients);
-    setupEventListeners();
-    setupClientModal();
-    setupAddPetModal();
+    // --- FIN: CÓDIGO ACTUALIZADO ---
+
+    // Cargar/Recargar los datos
+    await loadAndRenderClients(true);
 };
 
 document.addEventListener('DOMContentLoaded', initializeClientsSection);

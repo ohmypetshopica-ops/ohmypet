@@ -1,5 +1,10 @@
 // public/modules/dashboard/dashboard-pets.js
 import { supabase } from '../../core/supabase.js';
+// --- INICIO: CÓDIGO ACTUALIZADO ---
+// Se eliminó 'getPetLastServiceDate' de esta línea de importación
+import { deletePet } from './dashboard.api.js';
+// --- FIN: CÓDIGO ACTUALIZADO ---
+
 
 const petsTableBody = document.querySelector('#pets-table-body');
 const petSearchInput = document.querySelector('#pet-search-input');
@@ -32,7 +37,19 @@ const editSetLastServiceDateBtn = document.querySelector('#edit-set-last-service
 const reminderFieldsContainer = document.querySelector('#reminder-fields-container');
 const toggleReminderInput = document.querySelector('#toggle-reminder-input');
 const toggleReminderLabel = document.querySelector('#toggle-reminder-label');
-const addAppointmentFromPetBtn = document.querySelector('#add-appointment-from-pet-btn'); // <<< NUEVO BOTÓN
+const addAppointmentFromPetBtn = document.querySelector('#add-appointment-from-pet-btn'); 
+
+// --- INICIO: CÓDIGO AÑADIDO ---
+const mainAlertMessage = document.querySelector('#main-alert-message');
+const modalDeletePetBtn = document.querySelector('#modal-delete-pet-btn');
+const deletePetConfirmModal = document.querySelector('#delete-pet-confirm-modal');
+const deletePetName = document.querySelector('#delete-pet-name');
+const cancelDeletePetBtn = document.querySelector('#cancel-delete-pet-btn');
+const confirmDeletePetBtn = document.querySelector('#confirm-delete-pet-btn');
+const deletePetErrorMessage = document.querySelector('#delete-pet-error-message');
+let isInitialized = false;
+// --- FIN: CÓDIGO AÑADIDO ---
+
 
 let currentPage = 1;
 const itemsPerPage = 10;
@@ -42,6 +59,31 @@ let selectedBreeds = [];
 let allBreeds = [];
 let currentPetData = null;
 let photoFile = null;
+
+// --- INICIO: CÓDIGO AÑADIDO (Función Alerta) ---
+/**
+ * Muestra la alerta principal en la página (fuera de los modales)
+ * @param {string} message - El mensaje a mostrar.
+ * @param {boolean} isError - true para alerta roja (error), false para verde (éxito).
+ */
+const showMainAlert = (message, isError = false) => {
+    if (!mainAlertMessage) return;
+
+    mainAlertMessage.textContent = message;
+    if (isError) {
+        mainAlertMessage.className = "rounded-lg p-4 text-sm font-medium mb-4 bg-red-100 text-red-700";
+    } else {
+        mainAlertMessage.className = "rounded-lg p-4 text-sm font-medium mb-4 bg-green-100 text-green-700";
+    }
+    mainAlertMessage.classList.remove('hidden');
+
+    // Ocultar automáticamente después de 4 segundos
+    setTimeout(() => {
+        mainAlertMessage.classList.add('hidden');
+    }, 4000);
+};
+// --- FIN: CÓDIGO AÑADIDO ---
+
 
 // --- FUNCIÓN ADICIONAL PARA OBTENER ÚLTIMA CITA COMPLETADA ---
 const getPetLastServiceDate = async (petId) => {
@@ -107,7 +149,7 @@ const getPetsPaginated = async (page = 1, search = '', breeds = []) => {
     const from = (page - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
     let query = supabase.from('pets').select(`id, name, breed, sex, size, weight, birth_date, image_url, last_grooming_date, reminder_frequency_days, profiles (id, full_name, first_name, last_name)`, { count: 'exact' }).order('created_at', { ascending: false }).range(from, to);
-    if (search) query = query.or(`name.ilike.%${search}%,breed.ilike.%${search}%`);
+    if (search) query = query.or(`name.ilike.%${search}%,breed.ilike.%${search}%,profiles.full_name.ilike.%${search}%,profiles.first_name.ilike.%${search}%,profiles.last_name.ilike.%${search}%`);
     if (breeds.length > 0) query = query.in('breed', breeds);
     const { data, error, count } = await query;
     if (error) { console.error('Error al obtener mascotas:', error); return { pets: [], total: 0 }; }
@@ -197,13 +239,17 @@ const renderPagination = () => {
     paginationHTML += '</div>';
     paginationContainer.innerHTML = paginationHTML;
     paginationContainer.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', async () => { currentPage = parseInt(btn.dataset.page); await loadPets(); });
+        btn.addEventListener('click', async () => { currentPage = parseInt(btn.dataset.page); await loadAndRenderPets(false); });
     });
 };
 
-const loadPets = async () => {
+const loadAndRenderPets = async (resetPage = true) => {
+    if (resetPage) currentPage = 1;
     petsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Cargando mascotas...</td></tr>';
+    
+    currentSearch = petSearchInput?.value.trim() || '';
     const { pets, total } = await getPetsPaginated(currentPage, currentSearch, selectedBreeds);
+    
     totalPets = total;
     renderPetsTable(pets);
     renderPagination();
@@ -256,9 +302,7 @@ const toggleBreedDropdown = () => {
 };
 
 const applyFilters = async () => {
-    currentSearch = petSearchInput?.value.trim() || '';
-    currentPage = 1;
-    await loadPets();
+    await loadAndRenderPets(true); // Usar la nueva función de recarga
 };
 
 const openPetDetailsModal = async (petId) => {
@@ -331,6 +375,7 @@ const openPetDetailsModal = async (petId) => {
     editPetBtn.classList.remove('hidden');
     savePetBtn.classList.add('hidden');
     cancelEditBtn.classList.add('hidden');
+    modalDeletePetBtn.classList.remove('hidden'); // <-- CÓDIGO AÑADIDO
 
     petDetailsModal.classList.remove('hidden');
 };
@@ -389,6 +434,7 @@ const switchToEditMode = () => {
     editPetBtn.classList.add('hidden');
     savePetBtn.classList.remove('hidden');
     cancelEditBtn.classList.remove('hidden');
+    modalDeletePetBtn.classList.add('hidden'); // <-- CÓDIGO AÑADIDO
 };
 
 const switchToViewMode = () => {
@@ -397,6 +443,7 @@ const switchToViewMode = () => {
     editPetBtn.classList.remove('hidden');
     savePetBtn.classList.add('hidden');
     cancelEditBtn.classList.add('hidden');
+    modalDeletePetBtn.classList.remove('hidden'); // <-- CÓDIGO AÑADIDO
 };
 
 const savePetChanges = async () => {
@@ -412,7 +459,7 @@ const savePetChanges = async () => {
         reminderStartDate = editReminderStartDateInput.value || null;
         
         if (reminderFrequency === null || reminderFrequency < 1) {
-            alert('Debes ingresar una frecuencia válida (mayor a 0) para guardar los recordatorios activos.');
+            showMainAlert('Debes ingresar una frecuencia válida (mayor a 0) para guardar los recordatorios activos.', true); // <-- ALERTA DINÁMICA
             return;
         }
     }
@@ -431,7 +478,7 @@ const savePetChanges = async () => {
     };
 
     if (!updates.name || !updates.breed) {
-        alert('El nombre y la raza son obligatorios');
+        showMainAlert('El nombre y la raza son obligatorios', true); // <-- ALERTA DINÁMICA
         return;
     }
 
@@ -448,7 +495,7 @@ const savePetChanges = async () => {
             
             if (uploadError) {
                 console.error('Error al subir imagen:', uploadError);
-                alert('Error al subir la imagen: ' + uploadError.message);
+                showMainAlert('Error al subir la imagen: ' + uploadError.message, true); // <-- ALERTA DINÁMICA
                 savePetBtn.disabled = false;
                 savePetBtn.textContent = 'Guardar';
                 return;
@@ -461,7 +508,7 @@ const savePetChanges = async () => {
             updates.image_url = publicUrl;
         } catch (error) {
             console.error('Error procesando imagen:', error);
-            alert('Error al procesar la imagen');
+            showMainAlert('Error al procesar la imagen', true); // <-- ALERTA DINÁMICA
             savePetBtn.disabled = false;
             savePetBtn.textContent = 'Guardar';
             return;
@@ -471,12 +518,12 @@ const savePetChanges = async () => {
     const result = await updatePet(petId, updates);
 
     if (result.success) {
-        alert('¡Mascota actualizada con éxito!');
+        showMainAlert('¡Mascota actualizada con éxito!', false); // <-- ALERTA DINÁMICA
         photoFile = null;
         await openPetDetailsModal(petId);
-        await loadPets();
+        await loadAndRenderPets(false); // <-- CÓDIGO ACTUALIZADO
     } else {
-        alert('Error al actualizar la mascota: ' + (result.error?.message || 'Error desconocido'));
+        showMainAlert('Error al actualizar la mascota: ' + (result.error?.message || 'Error desconocido'), true); // <-- ALERTA DINÁMICA
     }
 
     savePetBtn.disabled = false;
@@ -489,7 +536,52 @@ const closePetDetailsModal = () => {
     switchToViewMode();
 };
 
+// --- INICIO: CÓDIGO AÑADIDO (Lógica modal borrado mascota) ---
+const openDeletePetModal = () => {
+    if (!currentPetData) return;
+    deletePetName.textContent = currentPetData.name;
+    deletePetErrorMessage.classList.add('hidden');
+    confirmDeletePetBtn.disabled = false;
+    confirmDeletePetBtn.textContent = 'Sí, Eliminar';
+    deletePetConfirmModal.classList.remove('hidden');
+};
+
+const closeDeletePetModal = () => {
+    deletePetConfirmModal.classList.add('hidden');
+};
+
+const handleDeletePet = async () => {
+    if (!currentPetData) return;
+
+    confirmDeletePetBtn.disabled = true;
+    confirmDeletePetBtn.textContent = 'Eliminando...';
+    deletePetErrorMessage.classList.add('hidden');
+
+    const { success, error } = await deletePet(currentPetData.id);
+
+    if (success) {
+        closeDeletePetModal();
+        closePetDetailsModal();
+        showMainAlert('Mascota eliminada exitosamente.', false);
+        await loadAndRenderPets(true); // Recargar la lista
+    } else {
+        deletePetErrorMessage.textContent = `Error: ${error.message}`;
+        deletePetErrorMessage.classList.remove('hidden');
+        confirmDeletePetBtn.disabled = false;
+        confirmDeletePetBtn.textContent = 'Sí, Eliminar';
+    }
+};
+// --- FIN: CÓDIGO AÑADIDO ---
+
 const initializePetsSection = async () => {
+    // --- INICIO: CÓDIGO ACTUALIZADO ---
+    if (isInitialized) {
+        await loadAndRenderPets(true);
+        return;
+    }
+    isInitialized = true;
+    // --- FIN: CÓDIGO ACTUALIZADO ---
+
     if (headerTitle) headerTitle.textContent = 'Gestión de Mascotas';
 
     const stats = await getStats();
@@ -498,7 +590,7 @@ const initializePetsSection = async () => {
     if (appointmentsMonthCount) appointmentsMonthCount.textContent = stats.appointmentsMonth;
 
     await renderBreedOptions();
-    await loadPets();
+    await loadAndRenderPets(true); // <-- CÓDIGO ACTUALIZADO
 
     if (petSearchInput) petSearchInput.addEventListener('input', applyFilters);
 
@@ -518,7 +610,6 @@ const initializePetsSection = async () => {
         });
     }
     
-    // --- LISTENER PARA EL BOTÓN DE ÚLTIMA CITA EN EL DASHBOARD ---
     if (editSetLastServiceDateBtn) {
         editSetLastServiceDateBtn.addEventListener('click', async () => {
             editSetLastServiceDateBtn.disabled = true;
@@ -540,16 +631,12 @@ const initializePetsSection = async () => {
             }, 3000);
         });
     }
-    // --- FIN LISTENER ÚLTIMA CITA ---
 
-    // --- LISTENER PARA EL SWITCH DE ALTERNANCIA ---
     if (toggleReminderInput) {
         toggleReminderInput.addEventListener('change', (e) => {
             toggleReminderFields(e.target.checked);
         });
     }
-    // --- FIN LISTENER PARA EL SWITCH DE ALTERNANCIA ---
-
 
     document.addEventListener('click', (e) => {
         if (breedFilterBtn && breedFilterDropdown && !breedFilterBtn.contains(e.target) && !breedFilterDropdown.contains(e.target)) {
@@ -563,24 +650,31 @@ const initializePetsSection = async () => {
     if (savePetBtn) savePetBtn.addEventListener('click', savePetChanges);
     if (cancelEditBtn) cancelEditBtn.addEventListener('click', switchToViewMode);
     
-    // <<< INICIO: CÓDIGO AÑADIDO >>>
     if (addAppointmentFromPetBtn) {
         addAppointmentFromPetBtn.addEventListener('click', () => {
             if (currentPetData && currentPetData.profiles) {
                 const petId = currentPetData.id;
                 const clientId = currentPetData.profiles.id;
-                // Redirigir a la página de citas con los parámetros
                 window.location.href = `/public/modules/dashboard/dashboard-appointments.html?clientId=${clientId}&petId=${petId}`;
             } else {
-                alert('No se pueden cargar los datos del cliente para agendar la cita.');
+                showMainAlert('No se pueden cargar los datos del cliente para agendar la cita.', true); // <-- ALERTA DINÁMICA
             }
         });
     }
-    // <<< FIN: CÓDIGO AÑADIDO >>>
+
+    // --- INICIO: CÓDIGO AÑADIDO (Listeners modal borrado mascota) ---
+    if (modalDeletePetBtn) modalDeletePetBtn.addEventListener('click', openDeletePetModal);
+    if (cancelDeletePetBtn) cancelDeletePetBtn.addEventListener('click', closeDeletePetModal);
+    if (confirmDeletePetBtn) confirmDeletePetBtn.addEventListener('click', handleDeletePet);
+    if (deletePetConfirmModal) {
+        deletePetConfirmModal.addEventListener('click', (e) => {
+            if (e.target === deletePetConfirmModal) closeDeletePetModal();
+        });
+    }
+    // --- FIN: CÓDIGO AÑADIDO ---
 
     if (petsTableBody) {
         petsTableBody.addEventListener('click', async (e) => {
-            // FIX: Usar closest para asegurar que encontramos el botón o el elemento que lo contiene
             const button = e.target.closest('.view-details-btn');
             if (button) {
                 const row = button.closest('tr');
