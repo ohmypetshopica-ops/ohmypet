@@ -2,7 +2,9 @@
 // Módulo de gestión de clientes
 
 import { state, updateState } from './employee-state.js';
-import { registerClientFromDashboard, getClientsWithPets, getClientDetails, updateClientProfile, addPetFromDashboard } from '../dashboard/dashboard.api.js';
+// --- INICIO: CÓDIGO ACTUALIZADO ---
+import { registerClientFromDashboard, getClientsWithPets, getClientDetails, updateClientProfile, addPetFromDashboard, deleteClient } from '../dashboard/dashboard.api.js';
+// --- FIN: CÓDIGO ACTUALIZADO ---
 import { supabase } from '../../core/supabase.js';
 
 // --- UTILITY: LIMPIEZA DE NÚMEROS DE TELÉFONO ---
@@ -48,6 +50,17 @@ let petFormMessageEmployee;
 let cancelAddPetButtonEmployee;
 let submitAddPetButtonEmployee; 
 
+// --- INICIO: CÓDIGO AÑADIDO ---
+// Elementos del Modal Eliminar Cliente
+let modalDeleteClientBtnEmployee;
+let deleteClientConfirmModalEmployee;
+let deleteClientNameEmployee;
+let cancelDeleteClientBtnEmployee;
+let confirmDeleteClientBtnEmployee;
+let deleteClientErrorMessageEmployee;
+// --- FIN: CÓDIGO AÑADIDO ---
+
+
 let currentClientProfile = null;
 
 // Variables de paginación
@@ -76,10 +89,7 @@ export function initClientElements() {
 
     clientDetailsActions = document.getElementById('client-details-actions');
     
-    // ===== INICIO DE LA CORRECCIÓN 1 (Botón Agregar Mascota) =====
-    // Se corrige el ID del botón que se busca
     addPetBtn = document.getElementById('add-pet-to-client-btn');
-    // ===== FIN DE LA CORRECCIÓN 1 =====
 
     editClientBtn = document.getElementById('edit-client-btn');
     saveClientBtn = document.getElementById('save-client-btn');
@@ -92,6 +102,16 @@ export function initClientElements() {
     petFormMessageEmployee = document.querySelector('#pet-form-message-employee');
     cancelAddPetButtonEmployee = document.querySelector('#cancel-add-pet-button-employee');
     submitAddPetButtonEmployee = document.querySelector('#submit-add-pet-button-employee');
+
+    // --- INICIO: CÓDIGO AÑADIDO ---
+    // Selectores del modal de eliminación del empleado
+    modalDeleteClientBtnEmployee = document.getElementById('modal-delete-client-btn-employee');
+    deleteClientConfirmModalEmployee = document.getElementById('delete-client-confirm-modal-employee');
+    deleteClientNameEmployee = document.getElementById('delete-client-name-employee');
+    cancelDeleteClientBtnEmployee = document.getElementById('cancel-delete-client-btn-employee');
+    confirmDeleteClientBtnEmployee = document.getElementById('confirm-delete-client-btn-employee');
+    deleteClientErrorMessageEmployee = document.getElementById('delete-client-error-message-employee');
+    // --- FIN: CÓDIGO AÑADIDO ---
 }
 
 export function setupClientListeners() {
@@ -113,10 +133,7 @@ export function setupClientListeners() {
     addClientBtnEmployee?.addEventListener('click', () => openClientModal());
     cancelClientButtonEmployee?.addEventListener('click', closeClientModal);
     
-    // ===== INICIO DE LA CORRECCIÓN 2 (Evitar duplicados al crear cliente) =====
-    // Se cambia de 'click' a 'submit' en el formulario
     clientFormEmployee?.addEventListener('submit', handleAddClient);
-    // ===== FIN DE LA CORRECCIÓN 2 =====
 
 
     editClientBtn?.addEventListener('click', switchToEditMode);
@@ -127,10 +144,17 @@ export function setupClientListeners() {
     
     cancelAddPetButtonEmployee?.addEventListener('click', closeAddPetModal);
     
-    // ===== INICIO DE LA CORRECCIÓN 3 (Manejo robusto de formulario de mascota) =====
-    // Se cambia de 'click' a 'submit' en el formulario
     petFormEmployee?.addEventListener('submit', handleAddPetToClient);
-    // ===== FIN DE LA CORRECCIÓN 3 =====
+
+    // --- INICIO: CÓDIGO AÑADIDO ---
+    // Listeners para el modal de eliminación del empleado
+    modalDeleteClientBtnEmployee?.addEventListener('click', openDeleteClientModalEmployee);
+    cancelDeleteClientBtnEmployee?.addEventListener('click', closeDeleteClientModalEmployee);
+    confirmDeleteClientBtnEmployee?.addEventListener('click', handleDeleteClientEmployee);
+    deleteClientConfirmModalEmployee?.addEventListener('click', (e) => {
+        if (e.target === deleteClientConfirmModalEmployee) closeDeleteClientModalEmployee();
+    });
+    // --- FIN: CÓDIGO AÑADIDO ---
 }
 
 const handleSearch = (e) => {
@@ -394,8 +418,8 @@ const handleAddClient = async (e) => {
     const emergencyName = formData.get('emergency_contact_name')?.trim();
     const emergencyPhone = formData.get('emergency_contact_phone')?.trim();
 
-    if (!firstName || !email || !password || !phone || !district) {
-        clientFormMessageEmployee.textContent = '❌ Por favor, completa todos los campos obligatorios.';
+    if (!firstName || !lastName || !phone) {
+        clientFormMessageEmployee.textContent = '❌ Por favor, completa Nombre, Apellido y Teléfono.';
         clientFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         clientFormMessageEmployee.classList.remove('hidden');
         return;
@@ -408,17 +432,28 @@ const handleAddClient = async (e) => {
         clientFormMessageEmployee.classList.remove('hidden');
         return;
     }
+    
+    const cleanedEmergencyPhone = cleanPhoneNumber(emergencyPhone);
 
-    // ===== INICIO DE LA CORRECCIÓN 4 (Evitar duplicados al crear cliente) =====
     submitAddClientButtonEmployee.disabled = true;
     submitAddClientButtonEmployee.textContent = 'Registrando...';
-    // ===== FIN DE LA CORRECCIÓN 4 =====
 
     let result;
     try {
-        result = await registerClientFromDashboard(
-            email, password, firstName, lastName, cleanedPhone, district, docType, docNum, emergencyName, emergencyPhone
-        );
+        const clientData = {
+            firstName: firstName,
+            lastName: lastName,
+            email: email || null,
+            password: password || null,
+            phone: cleanedPhone,
+            district: district || null,
+            docType: docType || null,
+            docNum: docNum || null,
+            emergencyContactName: emergencyName || null,
+            emergencyContactPhone: cleanedEmergencyPhone || null,
+        };
+        
+        result = await registerClientFromDashboard(clientData);
 
         if (result.success) {
             clientFormMessageEmployee.textContent = '✅ Cliente registrado exitosamente.';
@@ -427,6 +462,7 @@ const handleAddClient = async (e) => {
 
             setTimeout(async () => {
                 closeClientModal();
+                // Actualizar el estado global
                 const clientsData = await getClientsWithPets();
                 updateState('clientsWithPets', clientsData);
                 const allClients = clientsData.map(c => ({
@@ -447,10 +483,8 @@ const handleAddClient = async (e) => {
         clientFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         clientFormMessageEmployee.classList.remove('hidden');
     } finally {
-        // ===== INICIO DE LA CORRECCIÓN 4 (Evitar duplicados al crear cliente) =====
         submitAddClientButtonEmployee.disabled = false;
-        submitAddClientButtonEmployee.textContent = 'Registrar Cliente';
-        // ===== FIN DE LA CORRECCIÓN 4 =====
+        submitAddClientButtonEmployee.textContent = 'Guardar Cliente';
     }
 };
 
@@ -470,6 +504,8 @@ const handleSaveClient = async (e) => {
         emergency_contact_name: formData.get('emergency_contact_name')?.trim(),
         emergency_contact_phone: formData.get('emergency_contact_phone')?.trim(),
     };
+    
+    updates.full_name = `${updates.first_name} ${updates.last_name}`;
 
     if (updates.phone) {
         const cleanedPhone = cleanPhoneNumber(updates.phone);
@@ -492,9 +528,23 @@ const handleSaveClient = async (e) => {
         editFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
         editFormMessage.classList.remove('hidden');
 
+        // Actualizar el estado global
+        const clientsData = await getClientsWithPets();
+        updateState('clientsWithPets', clientsData);
+        const allClients = clientsData.map(c => ({
+            id: c.id, first_name: c.first_name, last_name: c.last_name, 
+            phone: c.phone, email: c.email, district: c.district
+        }));
+        updateState('allClients', allClients);
+        renderClients(allClients);
+
+        // Actualizar los detalles en el modal
+        const updatedDetails = await getClientDetails(currentClientProfile.profile.id);
+        currentClientProfile = updatedDetails;
+        renderClientDetailsView(updatedDetails);
+        
         setTimeout(() => {
             switchToViewMode();
-            renderClients(state.allClients); 
         }, 1000);
 
     } else {
@@ -536,24 +586,23 @@ const handleAddPetToClient = async (e) => {
         name: formData.get('name')?.trim(),
         breed: formData.get('breed')?.trim(),
         sex: formData.get('sex')?.trim(),
-        birth_date: formData.get('birth_date')?.trim(),
+        // birth_date: formData.get('birth_date')?.trim(), // No está en el form de empleado
         weight: formData.get('weight') ? parseFloat(formData.get('weight')) : null,
         size: formData.get('size')?.trim(),
         observations: formData.get('observations')?.trim(),
-        owner_id: currentClientProfile.profile.id
+        owner_id: currentClientProfile.profile.id,
+        species: 'Perro' // Asumido
     };
 
-    if (!petData.name || !petData.breed || !petData.sex) {
-        petFormMessageEmployee.textContent = '❌ Por favor, completa todos los campos obligatorios.';
+    if (!petData.name || !petData.sex) {
+        petFormMessageEmployee.textContent = '❌ Por favor, completa al menos Nombre y Sexo.';
         petFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         petFormMessageEmployee.classList.remove('hidden');
         return;
     }
 
-    // ===== INICIO DE LA CORRECCIÓN 5 (Evitar duplicados al crear mascota) =====
     submitAddPetButtonEmployee.disabled = true;
     submitAddPetButtonEmployee.textContent = 'Guardando...';
-    // ===== FIN DE LA CORRECCIÓN 5 =====
 
     let result;
     try {
@@ -563,12 +612,22 @@ const handleAddPetToClient = async (e) => {
             petFormMessageEmployee.textContent = '✅ Mascota agregada correctamente.';
             petFormMessageEmployee.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
             petFormMessageEmployee.classList.remove('hidden');
+            
+            // Actualizar estado global de mascotas
+            const clientsData = await getClientsWithPets();
+            updateState('clientsWithPets', clientsData);
+            const allPets = clientsData.flatMap(client =>
+                client.pets ? client.pets.map(pet => ({ ...pet, owner_id: client.id })) : []
+            );
+            updateState('allPets', allPets);
+            
+            // Actualizar detalles del cliente actual
+            const updatedDetails = await getClientDetails(currentClientProfile.profile.id);
+            currentClientProfile = updatedDetails;
+            renderClientDetailsView(updatedDetails);
 
             setTimeout(async () => {
                 closeAddPetModal();
-                const updatedDetails = await getClientDetails(currentClientProfile.profile.id);
-                currentClientProfile = updatedDetails;
-                renderClientDetailsView(updatedDetails);
             }, 1500);
         } else {
             petFormMessageEmployee.textContent = `❌ Error: ${result.error?.message || 'Error desconocido'}`;
@@ -580,9 +639,67 @@ const handleAddPetToClient = async (e) => {
         petFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         petFormMessageEmployee.classList.remove('hidden');
     } finally {
-        // ===== INICIO DE LA CORRECCIÓN 5 (Evitar duplicados al crear mascota) =====
         submitAddPetButtonEmployee.disabled = false;
         submitAddPetButtonEmployee.textContent = 'Agregar Mascota';
-        // ===== FIN DE LA CORRECCIÓN 5 =====
     }
 };
+
+// --- INICIO: CÓDIGO AÑADIDO (Lógica modal borrado cliente) ---
+const openDeleteClientModalEmployee = () => {
+    if (!currentClientProfile?.profile) return;
+    
+    const profile = currentClientProfile.profile;
+    const displayName = (profile.first_name && profile.last_name) 
+        ? `${profile.first_name} ${profile.last_name}` 
+        : profile.full_name;
+        
+    deleteClientNameEmployee.textContent = displayName;
+    deleteClientErrorMessageEmployee.classList.add('hidden');
+    confirmDeleteClientBtnEmployee.disabled = false;
+    confirmDeleteClientBtnEmployee.textContent = 'Sí, Eliminar Todo';
+    deleteClientConfirmModalEmployee.classList.remove('hidden');
+};
+
+const closeDeleteClientModalEmployee = () => {
+    deleteClientConfirmModalEmployee.classList.add('hidden');
+};
+
+const handleDeleteClientEmployee = async () => {
+    if (!currentClientProfile?.profile?.id) return;
+
+    const clientId = currentClientProfile.profile.id;
+
+    confirmDeleteClientBtnEmployee.disabled = true;
+    confirmDeleteClientBtnEmployee.textContent = 'Eliminando...';
+    deleteClientErrorMessageEmployee.classList.add('hidden');
+
+    const { success, error } = await deleteClient(clientId);
+
+    if (success) {
+        closeDeleteClientModalEmployee();
+        showClientsList(); // Volver a la lista de clientes
+        
+        // Recargar todos los datos del estado
+        const clientsData = await getClientsWithPets();
+        updateState('clientsWithPets', clientsData);
+        const allClients = clientsData.map(c => ({
+            id: c.id, first_name: c.first_name, last_name: c.last_name, 
+            phone: c.phone, email: c.email, district: c.district
+        }));
+        updateState('allClients', allClients);
+        const allPets = clientsData.flatMap(client =>
+            client.pets ? client.pets.map(pet => ({ ...pet, owner_id: client.id })) : []
+        );
+        updateState('allPets', allPets);
+        
+        currentPage = 1;
+        renderClients(allClients); // Renderizar la lista actualizada
+        
+    } else {
+        deleteClientErrorMessageEmployee.textContent = `Error: ${error.message}`;
+        deleteClientErrorMessageEmployee.classList.remove('hidden');
+        confirmDeleteClientBtnEmployee.disabled = false;
+        confirmDeleteClientBtnEmployee.textContent = 'Sí, Eliminar Todo';
+    }
+};
+// --- FIN: CÓDIGO AÑADIDO ---
