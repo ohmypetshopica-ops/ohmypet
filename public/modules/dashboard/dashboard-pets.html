@@ -70,6 +70,11 @@
 
         /* Custom styles for mobile table list simulation (Card View) */
         @media (max-width: 767px) {
+            /* Hide desktop table headers */
+            .min-w-full thead {
+                display: none;
+            }
+            
             /* Transform each table row into a self-contained card */
             #pets-table-body tr {
                 display: block;

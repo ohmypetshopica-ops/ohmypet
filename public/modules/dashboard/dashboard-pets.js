@@ -96,7 +96,7 @@ const getPetLastServiceDate = async (petId) => {
         .limit(1)
         .single();
     
-    if (error && error.code !== 'PGRST116') {
+    if (error && error.code !== 'PGRST116') { // PGRST116 is no rows found
         console.error('Error al obtener la última fecha de servicio:', error);
         return null;
     }
@@ -145,16 +145,71 @@ const calculateAge = (birthDate) => {
     else return `${years} ${years === 1 ? 'año' : 'años'} y ${months} ${months === 1 ? 'mes' : 'meses'}`;
 };
 
+// =================================================================
+// --- INICIO DE LA CORRECCIÓN ---
+// =================================================================
 const getPetsPaginated = async (page = 1, search = '', breeds = []) => {
     const from = (page - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
-    let query = supabase.from('pets').select(`id, name, breed, sex, size, weight, birth_date, image_url, last_grooming_date, reminder_frequency_days, profiles (id, full_name, first_name, last_name)`, { count: 'exact' }).order('created_at', { ascending: false }).range(from, to);
-    if (search) query = query.or(`name.ilike.%${search}%,breed.ilike.%${search}%,profiles.full_name.ilike.%${search}%,profiles.first_name.ilike.%${search}%,profiles.last_name.ilike.%${search}%`);
-    if (breeds.length > 0) query = query.in('breed', breeds);
+
+    let query = supabase
+        .from('pets')
+        .select(`
+            id, name, breed, sex, size, weight, birth_date, image_url, 
+            last_grooming_date, reminder_frequency_days, 
+            profiles (id, full_name, first_name, last_name)
+        `, { count: 'exact' });
+
+    if (search) {
+        // 1. Encontrar IDs de dueños que coincidan con la búsqueda
+        const { data: matchingOwners, error: ownerError } = await supabase
+            .from('profiles')
+            .select('id')
+            .or(`full_name.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
+        
+        if (ownerError) console.error("Error buscando dueños:", ownerError);
+
+        const ownerIds = matchingOwners ? matchingOwners.map(o => o.id) : [];
+
+        // 2. Construir la consulta OR principal
+        // Busca:
+        // - nombre de mascota O
+        // - raza de mascota O
+        // - owner_id está en la lista de IDs de dueños que encontramos
+        let orConditions = `name.ilike.%${search}%,breed.ilike.%${search}%`;
+        if (ownerIds.length > 0) {
+            orConditions += `,owner_id.in.(${ownerIds.join(',')})`;
+        }
+        
+        query = query.or(orConditions);
+    }
+    
+    // =================================================================
+    // --- FIN DE LA CORRECCIÓN ---
+    // =================================================================
+
+    // Aplicar filtros de raza (si existen)
+    if (breeds.length > 0) {
+        query = query.in('breed', breeds);
+    }
+
+    // Aplicar orden y paginación
+    query = query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
     const { data, error, count } = await query;
-    if (error) { console.error('Error al obtener mascotas:', error); return { pets: [], total: 0 }; }
+    
+    if (error) { 
+        console.error('Error al obtener mascotas:', error); 
+        return { pets: [], total: 0 }; 
+    }
+    
     return { pets: data || [], total: count || 0 };
 };
+// =================================================================
+// --- FIN DE LA SECCIÓN CORREGIDA ---
+// =================================================================
 
 const getPetDetails = async (petId) => {
     const { data, error } = await supabase.from('pets').select(`*, profiles (id, full_name, first_name, last_name), appointments (id, appointment_date, appointment_time, service, status)`).eq('id', petId).single();
