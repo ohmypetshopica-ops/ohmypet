@@ -43,6 +43,8 @@ export const initPOSElements = () => {
     totalChangeDisplay = document.getElementById('total-change-display');
 };
 
+// --- INICIO DE LA MODIFICACIÓN (Listeners centralizados) ---
+
 export const setupPOSListeners = () => {
     posViewBtn?.addEventListener('click', showPOSView);
     productSearchEmployee?.addEventListener('input', handleProductSearch);
@@ -52,10 +54,96 @@ export const setupPOSListeners = () => {
     confirmPaymentBtnEmployee?.addEventListener('click', processSaleEmployee);
     addPaymentLineBtn?.addEventListener('click', addPaymentLine);
     
-    cartItemsEmployee?.addEventListener('click', handleCartActions);
+    // 1. Delegación para CLICS en el carrito (botones +, -, X y precio)
+    cartItemsEmployee?.addEventListener('click', (e) => {
+        const decreaseBtn = e.target.closest('.decrease-btn-employee');
+        const increaseBtn = e.target.closest('.increase-btn-employee');
+        const priceDisplay = e.target.closest('.price-display');
+        const removeBtn = e.target.closest('[data-remove]');
+
+        if (decreaseBtn) {
+            const productId = decreaseBtn.dataset.productId;
+            const item = state.cart.find(i => i.id == productId);
+            if (item) {
+                 if (item.quantity > 1) {
+                    item.quantity--;
+                } else {
+                    state.cart = state.cart.filter(i => i.id != productId);
+                }
+                renderCartEmployee(); // Volver a pintar
+                updateTotals(); // Recalcular
+            }
+            return;
+        }
+        
+        if (increaseBtn) {
+            const productId = increaseBtn.dataset.productId;
+            const item = state.cart.find(i => i.id == productId);
+            const product = state.allProducts.find(p => p.id == productId);
+            
+            if (item && product) {
+                if (item.quantity < product.stock) {
+                    item.quantity++;
+                    renderCartEmployee(); // Volver a pintar
+                    updateTotals(); // Recalcular
+                } else {
+                    alert('No hay suficiente stock disponible');
+                }
+            }
+            return;
+        }
+
+        if (priceDisplay) {
+            const container = priceDisplay.closest('.cart-item-price-container');
+            if (!container) return;
+            
+            const editView = container.querySelector('.price-edit');
+            const input = container.querySelector('.cart-item-price-input');
+            
+            priceDisplay.classList.add('hidden');
+            editView.classList.remove('hidden');
+            input.focus();
+            input.select();
+            return;
+        }
+        
+        if(removeBtn) {
+            removeFromCart(removeBtn.dataset.remove); // Esta función ya llama a render y updateTotals
+            return;
+        }
+    });
+
+    // 2. Delegación para CHANGE (Enter en input de precio)
+    cartItemsEmployee?.addEventListener('change', (e) => {
+        if (e.target.classList.contains('cart-item-price-input')) {
+            const newPrice = parseFloat(e.target.value);
+            const productId = e.target.closest('.cart-item-price-container').dataset.productId;
+            if (!isNaN(newPrice) && newPrice >= 0) {
+                updateEmployeeCartItemPrice(productId, newPrice);
+            } else {
+                renderCartEmployee(); // Valor inválido, resetea
+            }
+        }
+    });
+
+    // 3. Delegación para BLUR (clic afuera del input de precio)
+    cartItemsEmployee?.addEventListener('blur', (e) => {
+        if (e.target.classList.contains('cart-item-price-input')) {
+            const newPrice = parseFloat(e.target.value);
+            const productId = e.target.closest('.cart-item-price-container').dataset.productId;
+            if (!isNaN(newPrice) && newPrice >= 0) {
+                updateEmployeeCartItemPrice(productId, newPrice);
+            } else {
+                renderCartEmployee(); // Valor inválido, resetea
+            }
+        }
+    }, true); // Usar fase de captura
+
     customerSearchEmployee?.addEventListener('input', handleCustomerSearch);
     clearCustomerBtnEmployee?.addEventListener('click', clearCustomer);
 };
+// --- FIN DE LA MODIFICACIÓN ---
+
 
 export const loadProducts = async () => {
     const products = await getProducts();
@@ -72,7 +160,14 @@ const showPOSView = () => {
         btn.classList.add('text-gray-500');
     });
     
+    // Activa el botón del POS en el header (aunque no esté en la barra inf)
     posViewBtn?.classList.add('text-green-600');
+    
+    // Desactiva los botones de la barra inferior
+    document.querySelectorAll('.bottom-nav .nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
     document.getElementById('header-title').textContent = 'Punto de Venta';
 };
 
@@ -122,6 +217,7 @@ const addToCartEmployee = (product) => {
     }
     
     renderCartEmployee();
+    updateTotals();
 };
 
 const renderCartEmployee = () => {
@@ -135,19 +231,40 @@ const renderCartEmployee = () => {
         return;
     }
     
+    // --- INICIO DE LA MODIFICACIÓN (HTML del precio) ---
     cartItemsEmployee.innerHTML = state.cart.map(item => `
-        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-            <div class="flex-1 min-w-0 mr-2">
-                <p class="font-semibold text-sm truncate">${item.name}</p>
-                <p class="text-xs text-gray-500">S/ ${item.price.toFixed(2)} c/u</p>
+        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex-1 min-w-0 mr-2">
+                    <p class="font-semibold text-sm truncate">${item.name}</p>
+                    
+                    <div class="cart-item-price-container" data-product-id="${item.id}">
+                        <p class="price-display text-xs text-gray-500 cursor-pointer py-1" title="Clic para editar precio">
+                            S/ ${item.price.toFixed(2)} c/u
+                        </p>
+                        <div class="price-edit hidden flex items-center py-0.5">
+                            <span class="text-xs text-gray-500 mr-1">S/</span>
+                            <input type="number" step="0.10" class="cart-item-price-input w-20 border border-gray-300 rounded px-1 py-0.5 text-xs" value="${item.price.toFixed(2)}">
+                        </div>
+                    </div>
+
+                </div>
+                <button class="text-red-500 hover:text-red-700" data-remove="${item.id}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
             </div>
-            <div class="flex items-center space-x-2">
-                <button class="decrease-btn-employee bg-red-500 text-white w-6 h-6 rounded flex items-center justify-center text-sm" data-product-id="${item.id}">-</button>
-                <span class="text-sm font-bold">${item.quantity}</span>
-                <button class="increase-btn-employee bg-green-500 text-white w-6 h-6 rounded flex items-center justify-center text-sm" data-product-id="${item.id}">+</button>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <button class="decrease-btn-employee bg-red-500 text-white w-6 h-6 rounded flex items-center justify-center text-sm" data-product-id="${item.id}">-</button>
+                    <span class="text-sm font-bold">${item.quantity}</span>
+                    <button class="increase-btn-employee bg-green-500 text-white w-6 h-6 rounded flex items-center justify-center text-sm" data-product-id="${item.id}">+</button>
+                </div>
+                <span class="font-bold text-green-600">S/ ${(item.price * item.quantity).toFixed(2)}</span>
             </div>
         </div>
     `).join('');
+    // --- FIN DE LA MODIFICACIÓN ---
+
     
     const total = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     totalEmployee.textContent = `S/ ${total.toFixed(2)}`;
@@ -155,38 +272,23 @@ const renderCartEmployee = () => {
     processSaleBtnEmployee.disabled = false;
 };
 
-const handleCartActions = (e) => {
-    const decreaseBtn = e.target.closest('.decrease-btn-employee');
-    const increaseBtn = e.target.closest('.increase-btn-employee');
-    
-    if (decreaseBtn) {
-        const productId = decreaseBtn.dataset.productId;
-        const item = state.cart.find(i => i.id == productId);
-        if (item) {
-            if (item.quantity > 1) {
-                item.quantity--;
-            } else {
-                state.cart = state.cart.filter(i => i.id != productId);
-            }
-            renderCartEmployee();
-        }
-    }
-    
-    if (increaseBtn) {
-        const productId = increaseBtn.dataset.productId;
-        const item = state.cart.find(i => i.id == productId);
-        const product = state.allProducts.find(p => p.id == productId);
-        
-        if (item && product) {
-            if (item.quantity < product.stock) {
-                item.quantity++;
-                renderCartEmployee();
-            } else {
-                alert('No hay suficiente stock disponible');
-            }
-        }
+// --- INICIO DE LA MODIFICACIÓN (Función nueva) ---
+/**
+ * Actualiza el precio de un ítem en el estado del carrito
+ */
+const updateEmployeeCartItemPrice = (productId, newPrice) => {
+    const item = state.cart.find(item => item.id == productId);
+    if (item) {
+        item.price = newPrice;
+        renderCartEmployee();
+        updateTotals();
     }
 };
+// --- FIN DE LA MODIFICACIÓN ---
+
+
+// --- ESTA FUNCIÓN SE ELIMINA (reemplazada por la delegación en setupPOSListeners) ---
+// const handleCartActions = (e) => { ... };
 
 const clearCartEmployee = () => {
     resetCart();
@@ -196,9 +298,7 @@ const clearCartEmployee = () => {
 const openPaymentModalEmployee = () => {
     const totalToPay = parseFloat(totalEmployee.textContent.replace('S/ ', '')) || 0;
     
-    // **** INICIO DE LA CORRECCIÓN 1 ****
     state.paymentLines = [{ method: 'EFECTIVO', amount: totalToPay }];
-    // **** FIN DE LA CORRECCIÓN 1 ****
     
     selectedCustomerIdInputEmployee.value = '';
     selectedCustomerDisplayEmployee?.classList.add('hidden');
@@ -256,8 +356,6 @@ const clearCustomer = () => {
 const renderPaymentLines = () => {
     if (!paymentLinesContainer) return;
     
-    // **** INICIO DE LA CORRECCIÓN 2 ****
-    // Los 'value' del select están ahora en MAYÚSCULAS
     paymentLinesContainer.innerHTML = state.paymentLines.map((line, index) => `
         <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
             <select class="payment-method-select flex-1 p-2 border rounded-lg" data-index="${index}">
@@ -273,7 +371,6 @@ const renderPaymentLines = () => {
             ${state.paymentLines.length > 1 ? `<button class="remove-payment-line text-red-500 hover:text-red-700" data-index="${index}">✕</button>` : ''}
         </div>
     `).join('');
-    // **** FIN DE LA CORRECCIÓN 2 ****
     
     paymentLinesContainer.querySelectorAll('.payment-method-select').forEach(select => {
         select.addEventListener('change', (e) => {
@@ -305,9 +402,7 @@ const addPaymentLine = () => {
     const totalPaid = state.paymentLines.reduce((sum, line) => sum + line.amount, 0);
     const remaining = Math.max(0, totalToPay - totalPaid);
     
-    // **** INICIO DE LA CORRECCIÓN 3 ****
     state.paymentLines.push({ method: 'YAPE', amount: remaining });
-    // **** FIN DE LA CORRECCIÓN 3 ****
     
     renderPaymentLines();
     updatePaymentTotalsAndButtonState();
@@ -350,16 +445,11 @@ const processSaleEmployee = async () => {
     confirmPaymentBtnEmployee.disabled = true;
     confirmPaymentBtnEmployee.textContent = 'Procesando...';
     
-    // **** INICIO DE LA CORRECCIÓN 4 ****
-    // La API (addSale) espera un *único* método de pago para el *lote* de items.
-    // Usaremos el primer método de la lista como el método de pago principal para el registro.
-    // Este valor ya estará en MAYÚSCULAS gracias a las correcciones anteriores.
     const primaryPaymentMethod = state.paymentLines[0]?.method || 'DESCONOCIDO';
 
-    // Se construye el objeto saleData UNA VEZ, con el array de items.
     const saleData = {
         client_id: selectedCustomerIdInputEmployee.value,
-        payment_method: primaryPaymentMethod, // Se envía el valor ENUM
+        payment_method: primaryPaymentMethod,
         items: state.cart.map(item => ({
             product_id: item.id,
             quantity: item.quantity,
@@ -368,8 +458,7 @@ const processSaleEmployee = async () => {
         }))
     };
 
-    // Se llama a addSale UNA SOLA VEZ, pasando el objeto con el array de items.
-    // Pasamos 'null' para la fecha, para que la API use la fecha actual por defecto.
+    // Usamos 'null' para la fecha, para que la API use la fecha actual
     const { error } = await addSale(saleData, null);
     
     if (error) {
@@ -379,7 +468,6 @@ const processSaleEmployee = async () => {
         confirmPaymentBtnEmployee.textContent = 'Confirmar Venta';
         return;
     }
-    // **** FIN DE LA CORRECCIÓN 4 ****
     
     alert('Venta procesada con éxito');
     
