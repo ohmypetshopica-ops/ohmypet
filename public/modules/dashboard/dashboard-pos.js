@@ -32,7 +32,7 @@ const cancelPaymentBtn = document.getElementById('cancel-payment-btn');
 const confirmPaymentBtn = document.getElementById('confirm-payment-btn');
 const modalTotalElement = document.getElementById('modal-total');
 const cashSection = document.getElementById('cash-section');
-const saleDateInput = document.getElementById('sale-date'); // <-- NUEVO ELEMENTO
+const saleDateInput = document.getElementById('sale-date');
 
 // --- VARIABLES GLOBALES ---
 let allProducts = [];
@@ -113,7 +113,7 @@ const addToCart = (product) => {
         cart.push({
             id: product.id,
             name: product.name,
-            price: product.price,
+            price: product.price, // El precio se puede modificar después en el carrito
             quantity: 1,
             stock: product.stock
         });
@@ -140,7 +140,6 @@ const updateQuantity = (productId, newQuantity) => {
     
     if (newQuantity > item.stock) {
         alert(`Stock máximo: ${item.stock} unidades`);
-        // No actualiza la cantidad, pero sí renderiza para resetear el input (si se implementara)
         renderCart(); 
         return;
     }
@@ -148,6 +147,18 @@ const updateQuantity = (productId, newQuantity) => {
     item.quantity = newQuantity;
     renderCart();
     updateTotals();
+};
+
+/**
+ * Actualiza el precio de un ítem en el carrito.
+ */
+const updateCartItemPrice = (productId, newPrice) => {
+    const item = cart.find(item => item.id === productId);
+    if (item) {
+        item.price = newPrice;
+        renderCart(); // Re-renderiza el carrito (para actualizar el subtotal del ítem)
+        updateTotals(); // Re-renderiza los totales globales
+    }
 };
 
 const renderCart = () => {
@@ -169,7 +180,17 @@ const renderCart = () => {
             <div class="flex justify-between items-start mb-2">
                 <div class="flex-1">
                     <h4 class="font-semibold text-sm text-gray-800">${item.name}</h4>
-                    <p class="text-xs text-gray-500">S/ ${item.price.toFixed(2)} c/u</p>
+                    
+                    <div class="cart-item-price-container" data-product-id="${item.id}">
+                        <p class="price-display text-xs text-gray-500 cursor-pointer py-1" title="Clic para editar precio">
+                            S/ ${item.price.toFixed(2)} c/u
+                        </p>
+                        <div class="price-edit hidden flex items-center py-0.5">
+                            <span class="text-xs text-gray-500 mr-1">S/</span>
+                            <input type="number" step="0.10" class="cart-item-price-input w-20 border border-gray-300 rounded px-1 py-0.5 text-xs" value="${item.price.toFixed(2)}">
+                        </div>
+                    </div>
+
                 </div>
                 <button class="text-red-500 hover:text-red-700" data-remove="${item.id}">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -195,27 +216,88 @@ const renderCart = () => {
             </div>
         </div>
     `).join('');
-    
-    cartItems.querySelectorAll('[data-remove]').forEach(btn => {
-        btn.addEventListener('click', () => removeFromCart(btn.dataset.remove));
-    });
-    
-    cartItems.querySelectorAll('[data-decrease]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const item = cart.find(i => i.id === btn.dataset.decrease);
-            if (item) updateQuantity(item.id, item.quantity - 1);
-        });
-    });
-    
-    cartItems.querySelectorAll('[data-increase]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const item = cart.find(i => i.id === btn.dataset.increase);
-            if (item) updateQuantity(item.id, item.quantity + 1);
-        });
-    });
-    
+        
     processSaleBtn.disabled = false;
 };
+
+
+// --- INICIO DE LA CORRECCIÓN (Listeners movidos a una función única) ---
+
+/**
+ * Configura todos los event listeners para los botones dentro del carrito.
+ * Se debe llamar UNA SOLA VEZ en initializePOS.
+ */
+const setupCartEventListeners = () => {
+    if (!cartItems) return;
+
+    // Delegación de eventos para CLICS
+    cartItems.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('[data-remove]');
+        const decreaseBtn = e.target.closest('[data-decrease]');
+        const increaseBtn = e.target.closest('[data-increase]');
+        const priceDisplay = e.target.closest('.price-display');
+
+        if (removeBtn) {
+            removeFromCart(removeBtn.dataset.remove);
+            return;
+        }
+
+        if (decreaseBtn) {
+            const item = cart.find(i => i.id === decreaseBtn.dataset.decrease);
+            if (item) updateQuantity(item.id, item.quantity - 1);
+            return;
+        }
+
+        if (increaseBtn) {
+            const item = cart.find(i => i.id === increaseBtn.dataset.increase);
+            if (item) updateQuantity(item.id, item.quantity + 1);
+            return;
+        }
+
+        if (priceDisplay) {
+            const container = priceDisplay.closest('.cart-item-price-container');
+            if (!container) return;
+            
+            const editView = container.querySelector('.price-edit');
+            const input = container.querySelector('.cart-item-price-input');
+            
+            priceDisplay.classList.add('hidden');
+            editView.classList.remove('hidden');
+            input.focus();
+            input.select();
+        }
+    });
+
+    // Delegación de eventos para CHANGE (Enter en el input de precio)
+    cartItems.addEventListener('change', (e) => {
+        if (e.target.classList.contains('cart-item-price-input')) {
+            const newPrice = parseFloat(e.target.value);
+            const productId = e.target.closest('.cart-item-price-container').dataset.productId;
+            
+            if (!isNaN(newPrice) && newPrice >= 0) {
+                updateCartItemPrice(productId, newPrice); // Esto re-renderizará
+            } else {
+                renderCart(); // Valor inválido, resetea
+            }
+        }
+    });
+
+    // Delegación de eventos para BLUR (clic fuera del input de precio)
+    cartItems.addEventListener('blur', (e) => {
+        if (e.target.classList.contains('cart-item-price-input')) {
+            const newPrice = parseFloat(e.target.value);
+            const productId = e.target.closest('.cart-item-price-container').dataset.productId;
+
+            if (!isNaN(newPrice) && newPrice >= 0) {
+                updateCartItemPrice(productId, newPrice);
+            } else {
+                renderCart(); // Valor inválido, resetea
+            }
+        }
+    }, true); // Usar fase de captura para el evento blur
+};
+// --- FIN DE LA CORRECCIÓN ---
+
 
 const updateTotals = () => {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -248,8 +330,6 @@ const openPaymentModal = () => {
     selectedCustomerDisplay.classList.add('hidden');
     paymentMethodSelect.value = 'EFECTIVO'; // Default to first ENUM value
     
-    // --- LÍNEA AÑADIDA ---
-    // Establece la fecha actual por defecto
     saleDateInput.value = new Date().toISOString().split('T')[0];
 
     updatePaymentButton();
@@ -263,10 +343,9 @@ const updatePaymentButton = () => {
     const paymentMethod = paymentMethodSelect.value;
     const total = parseFloat(modalTotalElement.textContent);
     const customerId = selectedCustomerIdInput.value;
-    const saleDate = saleDateInput.value; // <-- NUEVA LECTURA
+    const saleDate = saleDateInput.value;
     
-    // El cliente y la fecha son obligatorios
-    if (!customerId || !saleDate) { // <-- CHEQUEO MODIFICADO
+    if (!customerId || !saleDate) {
         confirmPaymentBtn.disabled = true;
         return;
     }
@@ -324,9 +403,9 @@ const searchClients = (searchTerm) => {
 // --- PROCESAMIENTO DE VENTA ---
 const processSale = async () => {
     const customerId = selectedCustomerIdInput.value;
-    const saleDate = saleDateInput.value; // <-- NUEVA LECTURA
+    const saleDate = saleDateInput.value;
 
-    if (!customerId || !saleDate) { // <-- CHEQUEO MODIFICADO
+    if (!customerId || !saleDate) {
         alert('Debe seleccionar un cliente y una fecha para la venta');
         return;
     }
@@ -335,11 +414,7 @@ const processSale = async () => {
     confirmPaymentBtn.textContent = 'Procesando...';
     
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    // **** INICIO DE LA CORRECCIÓN ****
-    // El valor del select ya está en MAYÚSCULAS
     const paymentMethod = paymentMethodSelect.value;
-    // **** FIN DE LA CORRECCIÓN ****
     
     const saleData = {
         client_id: customerId,
@@ -347,14 +422,11 @@ const processSale = async () => {
         items: cart.map(item => ({
             product_id: item.id,
             quantity: item.quantity,
-            unit_price: item.price,
-            subtotal: item.price * item.quantity
+            unit_price: item.price, // <- Se usa el precio del carrito (potencialmente modificado)
+            subtotal: item.price * item.quantity // <- Se usa el precio del carrito (potencialmente modificado)
         }))
     };
     
-    // --- LLAMADA MODIFICADA ---
-    // Pasamos la fecha de la venta a la función de la API
-    // ***** ESTA ES LA LÍNEA CORREGIDA *****
     const { success, error } = await addSale(saleData, saleDate); 
     
     if (!success) {
@@ -405,14 +477,10 @@ processSaleBtn.addEventListener('click', openPaymentModal);
 cancelPaymentBtn.addEventListener('click', closePaymentModal);
 confirmPaymentBtn.addEventListener('click', processSale);
 
-// --- LISTENER AÑADIDO ---
 saleDateInput.addEventListener('change', updatePaymentButton);
 
 paymentMethodSelect.addEventListener('change', (e) => {
-    // **** INICIO DE LA CORRECCIÓN ****
-    // Comparamos con el valor ENUM en MAYÚSCULAS
     if (e.target.value === 'EFECTIVO') {
-    // **** FIN DE LA CORRECCIÓN ****
         cashSection.classList.remove('hidden');
     } else {
         cashSection.classList.add('hidden');
@@ -450,7 +518,6 @@ clearCustomerBtn.addEventListener('click', () => {
 const initializePOS = async () => {
     console.log('🚀 Inicializando POS...');
     
-    // Verificar elementos del DOM
     if (!productsGrid) {
         console.error('❌ productsGrid no encontrado');
         return;
@@ -471,12 +538,17 @@ const initializePOS = async () => {
         console.log('✅ Clientes cargados:', allClients.length);
         
         console.log('🎨 Renderizando productos...');
-        renderProducts(allProducts.filter(p => p.stock > 0)); // <-- Solo mostrar productos con stock
+        renderProducts(allProducts.filter(p => p.stock > 0));
         
         console.log('🛒 Renderizando carrito...');
         renderCart();
         updateTotals();
         
+        // --- INICIO DE LA CORRECCIÓN (Mover la llamada aquí) ---
+        // Configura los listeners del carrito UNA SOLA VEZ
+        setupCartEventListeners();
+        // --- FIN DE LA CORRECCIÓN ---
+
         ticketNumberElement.textContent = String(ticketNumber).padStart(4, '0');
         
         console.log('✅ POS inicializado correctamente');
