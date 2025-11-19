@@ -1340,3 +1340,45 @@ export const getAllDenormalizedDataForExport = async () => {
 };
 
 export { supabase };
+
+// ============ INICIO: NUEVA FUNCIÓN AÑADIDA ============
+/**
+ * Obtiene productos paginados y filtrados para el dashboard de admin.
+ * @param {number} page - El número de página actual.
+ * @param {number} itemsPerPage - Cuántos ítems por página.
+ *A @param {string} search - Término de búsqueda (nombre o descripción).
+ * @param {string} category - Categoría para filtrar.
+ * @returns {Promise<{data: Array, count: number}>}
+ */
+export const getProductsPaginated = async (page = 1, itemsPerPage = 10, search = '', category = '') => {
+    const from = (page - 1) * itemsPerPage;
+    const to = from + itemsPerPage - 1;
+
+    let query = supabase
+        .from('products')
+        .select('*', { count: 'exact' });
+
+    if (search) {
+        // Busca en nombre O descripción
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+    }
+
+    if (category) {
+        query = query.eq('category', category);
+    }
+
+    // Ordenar por nombre y aplicar paginación
+    query = query
+        .order('name', { ascending: true })
+        .range(from, to);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+        console.error('Error al obtener productos paginados:', error);
+        return { data: [], count: 0 };
+    }
+
+    return { data: data || [], count: count || 0 };
+};
+// ============ FIN: NUEVA FUNCIÓN AÑADIDA ============
