@@ -2,10 +2,7 @@
 // Módulo de gestión de mascotas
 
 import { state, updateState } from './employee-state.js';
-// --- INICIO: CÓDIGO ACTUALIZADO ---
-// Se importa 'deletePet' y 'getClientsWithPets' (para los nombres de los dueños)
-import { deletePet, getClientsWithPets, getAppointmentPhotos } from '../dashboard/dashboard.api.js';
-// --- FIN: CÓDIGO ACTUALIZADO ---
+import { getClientsWithPets, getAppointmentPhotos } from '../dashboard/dashboard.api.js';
 import { supabase } from '../../core/supabase.js';
 
 // Elementos del DOM
@@ -14,26 +11,11 @@ let addPetModalEmployee, closeAddPetModalButtonEmployee, cancelAddPetButtonEmplo
 let clearPetSearchBtn;
 let paginationContainerPets;
 
-// --- INICIO: CÓDIGO ACTUALIZADO (Selectores Limpiados) ---
-// Elementos de la vista de detalles
-let petDetailsActions;
-let modalDeletePetBtnEmployee;
-
-// Elementos del Modal Eliminar Mascota
-let deletePetConfirmModalEmployee;
-let deletePetNameEmployee;
-let cancelDeletePetBtnEmployee;
-let confirmDeletePetBtnEmployee;
-let deletePetErrorMessageEmployee;
-
-// --- INICIO: CÓDIGO AÑADIDO (Modal Historial) ---
+// Modal Historial
 let historyModalEmployee, closeHistoryModalBtn, closeHistoryModalBtnBottom;
 let historyPetName, historyArrivalPhoto, historyDeparturePhoto;
 let historyPrice, historyWeight, historyPayment, historyShampoo, historyObservations;
 let currentPetAppointments = []; // Para guardar las citas de la mascota
-// --- FIN: CÓDIGO AÑADIDO ---
-// --- FIN: CÓDIGO ACTUALIZADO ---
-
 
 // Variables de paginación
 let currentPagePets = 1;
@@ -58,17 +40,7 @@ export const initPetElements = () => {
     clearPetSearchBtn = document.getElementById('clear-pet-search-btn');
     paginationContainerPets = document.getElementById('pagination-container-pets');
 
-    // --- INICIO: CÓDIGO ACTUALIZADO (Inicialización de nuevos elementos) ---
-    petDetailsActions = document.getElementById('pet-details-actions');
-    modalDeletePetBtnEmployee = document.getElementById('modal-delete-pet-btn-employee');
-
-    deletePetConfirmModalEmployee = document.getElementById('delete-pet-confirm-modal-employee');
-    deletePetNameEmployee = document.getElementById('delete-pet-name-employee');
-    cancelDeletePetBtnEmployee = document.getElementById('cancel-delete-pet-btn-employee');
-    confirmDeletePetBtnEmployee = document.getElementById('confirm-delete-pet-btn-employee');
-    deletePetErrorMessageEmployee = document.getElementById('delete-pet-error-message-employee');
-
-    // --- INICIO: CÓDIGO AÑADIDO (Inicialización Modal Historial) ---
+    // Inicialización Modal Historial
     historyModalEmployee = document.getElementById('history-modal-employee');
     closeHistoryModalBtn = document.getElementById('close-history-modal-btn');
     closeHistoryModalBtnBottom = document.getElementById('close-history-modal-btn-bottom');
@@ -80,8 +52,6 @@ export const initPetElements = () => {
     historyPayment = document.getElementById('history-payment');
     historyShampoo = document.getElementById('history-shampoo');
     historyObservations = document.getElementById('history-observations');
-    // --- FIN: CÓDIGO AÑADIDO ---
-    // --- FIN: CÓDIGO ACTUALIZADO ---
 };
 
 export const setupPetListeners = () => {
@@ -104,22 +74,12 @@ export const setupPetListeners = () => {
         if (btn) showPetDetails(btn.dataset.petId);
     });
     
-    // --- INICIO: CÓDIGO ACTUALIZADO (Listeners de borrado) ---
-    modalDeletePetBtnEmployee?.addEventListener('click', openDeletePetModalEmployee);
-    cancelDeletePetBtnEmployee?.addEventListener('click', closeDeletePetModalEmployee);
-    confirmDeletePetBtnEmployee?.addEventListener('click', handleDeletePetEmployee);
-    deletePetConfirmModalEmployee?.addEventListener('click', (e) => {
-        if (e.target === deletePetConfirmModalEmployee) closeDeletePetModalEmployee();
-    });
-    // --- FIN: CÓDIGO ACTUALIZADO ---
-    
-    // --- INICIO: CÓDIGO AÑADIDO (Listeners Modal Historial) ---
+    // Listeners Modal Historial
     closeHistoryModalBtn?.addEventListener('click', closeHistoryModalEmployee);
     closeHistoryModalBtnBottom?.addEventListener('click', closeHistoryModalEmployee);
     historyModalEmployee?.addEventListener('click', (e) => {
         if (e.target === historyModalEmployee) closeHistoryModalEmployee();
     });
-    // --- FIN: CÓDIGO AÑADIDO ---
 };
 
 const handlePetSearch = (e) => {
@@ -164,16 +124,13 @@ const renderPaginationPets = (totalItems) => {
         </button>
     `;
 
-    // Lógica para mostrar solo 3 números centrados en la página actual
     let startPage = Math.max(1, currentPagePets - 1);
     let endPage = Math.min(totalPages, startPage + 2);
     
-    // Ajustar si estamos cerca del final
     if (endPage - startPage < 2) {
         startPage = Math.max(1, endPage - 2);
     }
 
-    // Números de página (máximo 3)
     for (let i = startPage; i <= endPage; i++) {
         const activeClass = i === currentPagePets 
             ? 'bg-green-600 text-white' 
@@ -186,7 +143,6 @@ const renderPaginationPets = (totalItems) => {
         `;
     }
 
-    // Botón Siguiente
     const nextDisabled = currentPagePets === totalPages;
     paginationHTML += `
         <button data-page="${currentPagePets + 1}" 
@@ -252,8 +208,8 @@ const showPetsList = () => {
     petsListView?.classList.remove('hidden');
     petDetailsView?.classList.add('hidden');
     updateState('currentPetId', null);
-    currentPetForDetails = null; // Limpiar mascota seleccionada
-    currentPetAppointments = []; // Limpiar citas
+    currentPetForDetails = null; 
+    currentPetAppointments = [];
 };
 
 const showPetDetails = async (petId) => {
@@ -269,13 +225,11 @@ const showPetDetails = async (petId) => {
         return;
     }
     
-    currentPetForDetails = pet; // Guardar mascota actual
+    currentPetForDetails = pet;
 
     const owner = state.allClients.find(c => c.id === pet.owner_id);
     const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}`.trim() || 'Dueño desconocido' : 'Dueño desconocido';
 
-    // --- INICIO: CÓDIGO ACTUALIZADO ---
-    // Pedir más datos de las citas, incluyendo fotos
     const { data: appointments } = await supabase
         .from('appointments')
         .select(`
@@ -288,9 +242,8 @@ const showPetDetails = async (petId) => {
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 
-    currentPetAppointments = appointments || []; // Guardar citas en el estado
+    currentPetAppointments = appointments || []; 
     const lastAppointment = currentPetAppointments.length > 0 ? currentPetAppointments[0] : null;
-    // --- FIN: CÓDIGO ACTUALIZADO ---
 
     const calculateAge = (birthDate) => {
         if (!birthDate) return null;
@@ -309,7 +262,6 @@ const showPetDetails = async (petId) => {
         ? pet.image_url 
         : `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name || 'M')}&background=10B981&color=FFFFFF`;
         
-    // --- INICIO: CÓDIGO ACTUALIZADO (Historial clickeable) ---
     const historyHTML = currentPetAppointments.length > 0 
         ? currentPetAppointments.map(app => `
             <div data-history-id="${app.id}" class="history-item-btn bg-gray-50 p-3 rounded-lg border-l-4 border-green-400 cursor-pointer hover:bg-gray-100 transition-colors">
@@ -319,7 +271,6 @@ const showPetDetails = async (petId) => {
             </div>
         `).join('')
         : '<p class="text-sm text-gray-500">No hay historial de servicios completados.</p>';
-    // --- FIN: CÓDIGO ACTUALIZADO ---
 
     
     petDetailsContent.innerHTML = `
@@ -395,12 +346,9 @@ const showPetDetails = async (petId) => {
         </div>
     `;
 
-    // --- INICIO: CÓDIGO ACTUALIZADO ---
-    // Corregir el error de la consola (eliminando referencia a petDetailsContentEdit)
     petDetailsContent?.classList.remove('hidden');
-    petDetailsActions?.classList.remove('hidden');
     
-    // Añadir listeners para los nuevos elementos de historial
+    // Añadir listeners para los elementos de historial
     const historyBlock = document.getElementById('history-block-button');
     if (historyBlock && lastAppointment) {
         historyBlock.addEventListener('click', () => {
@@ -417,20 +365,15 @@ const showPetDetails = async (petId) => {
             }
         });
     });
-    // --- FIN: CÓDIGO ACTUALIZADO ---
 };
 
 
-// --- INICIO: CÓDIGO AÑADIDO (Lógica modal historial) ---
 const openHistoryModalEmployee = (appointment, petName) => {
     if (!appointment) return;
     
     historyPetName.textContent = `Mascota: ${petName} (Servicio del ${appointment.appointment_date})`;
     
     const photos = appointment.appointment_photos || [];
-    // CORRECCIÓN: Las fotos en el panel de empleado se llaman 'before' y 'after'
-    // PERO las fotos del dashboard de admin se llaman 'arrival' y 'departure'. 
-    // Usamos ambas para ser robustos.
     const arrivalPhoto = photos.find(p => p.photo_type === 'arrival' || p.photo_type === 'before');
     const departurePhoto = photos.find(p => p.photo_type === 'departure' || p.photo_type === 'after');
 
@@ -453,61 +396,13 @@ const openHistoryModalEmployee = (appointment, petName) => {
     historyObservations.textContent = appointment.final_observations || 'Sin observaciones.';
 
     historyModalEmployee?.classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Bloquear scroll del body
+    document.body.style.overflow = 'hidden';
 };
 
 const closeHistoryModalEmployee = () => {
     historyModalEmployee?.classList.add('hidden');
-    document.body.style.overflow = ''; // Desbloquear scroll
+    document.body.style.overflow = '';
 };
-// --- FIN: CÓDIGO AÑADIDO ---
-
-
-// --- INICIO: CÓDIGO AÑADIDO (Lógica modal borrado mascota) ---
-const openDeletePetModalEmployee = () => {
-    if (!currentPetForDetails) return;
-    
-    deletePetNameEmployee.textContent = currentPetForDetails.name;
-    deletePetErrorMessageEmployee.classList.add('hidden');
-    confirmDeletePetBtnEmployee.disabled = false;
-    confirmDeletePetBtnEmployee.textContent = 'Sí, Eliminar';
-    deletePetConfirmModalEmployee.classList.remove('hidden');
-};
-
-const closeDeletePetModalEmployee = () => {
-    deletePetConfirmModalEmployee.classList.add('hidden');
-};
-
-const handleDeletePetEmployee = async () => {
-    if (!currentPetForDetails) return;
-
-    confirmDeletePetBtnEmployee.disabled = true;
-    confirmDeletePetBtnEmployee.textContent = 'Eliminando...';
-    
-    const { success, error } = await deletePet(currentPetForDetails.id);
-
-    if (success) {
-        closeDeletePetModalEmployee();
-        showPetsList(); // Volver a la lista
-        
-        // Recargar datos
-        const clientsData = await getClientsWithPets();
-        updateState('clientsWithPets', clientsData);
-        const allPets = clientsData.flatMap(client =>
-            client.pets ? client.pets.map(pet => ({ ...pet, owner_id: client.id })) : []
-        );
-        updateState('allPets', allPets);
-        renderPets(allPets); // Actualizar la lista principal
-
-    } else {
-        deletePetErrorMessageEmployee.textContent = `Error: ${error.message}`;
-        deletePetErrorMessageEmployee.classList.remove('hidden');
-        confirmDeletePetBtnEmployee.disabled = false;
-        confirmDeletePetBtnEmployee.textContent = 'Sí, Eliminar';
-    }
-};
-// --- FIN: CÓDIGO AÑADIDO ---
-
 
 const closePetModal = () => {
     addPetModalEmployee?.classList.add('hidden');
