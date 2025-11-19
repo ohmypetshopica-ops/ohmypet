@@ -3,7 +3,8 @@
 
 import { state, updateState } from './employee-state.js';
 // --- INICIO: CÓDIGO ACTUALIZADO ---
-import { getClientsWithPets, getBookedTimesForDashboard, addAppointmentFromDashboard, uploadAppointmentPhoto, uploadReceiptFile, updateAppointmentStatus, deleteAppointment, getAppointmentPhotos } from '../dashboard/dashboard.api.js';
+// Se eliminó 'deleteAppointment' de la importación
+import { getClientsWithPets, getBookedTimesForDashboard, addAppointmentFromDashboard, uploadAppointmentPhoto, uploadReceiptFile, updateAppointmentStatus, getAppointmentPhotos } from '../dashboard/dashboard.api.js';
 // --- FIN: CÓDIGO ACTUALIZADO ---
 import { supabase } from '../../core/supabase.js';
 import { addWeightRecord } from '../dashboard/pet-weight.api.js';
@@ -36,16 +37,6 @@ let appointmentsListView;
 let appointmentDetailsView;
 let backToAppointmentsListBtn;
 let appointmentDetailsContent;
-let appointmentDetailsActions; // Div que contiene el botón de eliminar
-let modalDeleteAppointmentBtnEmployee;
-
-// Elementos del Modal Eliminar Cita
-let deleteAppointmentConfirmModalEmployee;
-let deleteAppointmentPetNameEmployee;
-let cancelDeleteAppointmentBtnEmployee;
-let confirmDeleteAppointmentBtnEmployee;
-let deleteAppointmentErrorMessageEmployee;
-let appointmentToDeleteId = null; // Para guardar el ID de la cita a eliminar
 
 // --- INICIO: CÓDIGO AÑADIDO (Modal Historial) ---
 let historyModalEmployee, closeHistoryModalBtn, closeHistoryModalBtnBottom;
@@ -66,7 +57,7 @@ let shampooSelectToggleEmployee, shampooDropdownContentEmployee, shampooDisplayT
 // Elemento del botón de submit (agendar cita)
 let submitAddAppointmentButtonEmployee;
 
-// Elemento de paginación (Asumiendo que se agregará un contenedor en employee-appointments.html)
+// Elemento de paginación
 let paginationContainerAppointments;
 
 
@@ -121,15 +112,6 @@ export const initAppointmentElements = () => {
     appointmentDetailsView = document.getElementById('appointment-details-view');
     appointmentDetailsContent = document.getElementById('appointment-details-content');
     backToAppointmentsListBtn = document.getElementById('back-to-appointments-list-btn');
-
-    appointmentDetailsActions = document.getElementById('appointment-details-actions');
-    modalDeleteAppointmentBtnEmployee = document.getElementById('modal-delete-appointment-btn-employee');
-    
-    deleteAppointmentConfirmModalEmployee = document.getElementById('delete-appointment-confirm-modal-employee');
-    deleteAppointmentPetNameEmployee = document.getElementById('delete-appointment-pet-name-employee');
-    cancelDeleteAppointmentBtnEmployee = document.getElementById('cancel-delete-appointment-btn-employee');
-    confirmDeleteAppointmentBtnEmployee = document.getElementById('confirm-delete-appointment-btn-employee');
-    deleteAppointmentErrorMessageEmployee = document.getElementById('delete-appointment-error-message-employee');
 
     // --- INICIO: CÓDIGO AÑADIDO (Modal Historial) ---
     historyModalEmployee = document.getElementById('history-modal-employee');
@@ -236,7 +218,6 @@ const getShampooList = () => {
 const showAppointmentsList = () => {
     appointmentsListView?.classList.remove('hidden');
     appointmentDetailsView?.classList.add('hidden');
-    appointmentDetailsActions?.classList.add('hidden'); 
 };
 
 // --- INICIO: CÓDIGO ACTUALIZADO ---
@@ -280,12 +261,10 @@ const openAppointmentDetails = async (appointmentId) => {
     const currentAppointment = state.allAppointments.find(app => app.id === appointmentId);
     if (!currentAppointment) return;
     
-    appointmentToDeleteId = appointmentId; 
     const petId = currentAppointment.pet_id;
     
     appointmentsListView?.classList.add('hidden');
     appointmentDetailsView?.classList.remove('hidden');
-    appointmentDetailsActions?.classList.remove('hidden'); 
     
     appointmentDetailsContent.innerHTML = '<p class="text-center text-gray-500 py-8">Cargando detalles de historial...</p>';
 
@@ -330,7 +309,7 @@ const openAppointmentDetails = async (appointmentId) => {
     const statusClass = currentAppointment.status === 'confirmada' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
     const statusText = currentAppointment.status.charAt(0).toUpperCase() + currentAppointment.status.slice(1);
     
-    // --- INICIO: CÓDIGO ACTUALIZADO (HTML del historial) ---
+    // --- INICIO: CÓDIGO ACTUALIZADO (HTML del historial y cita) ---
     appointmentDetailsContent.innerHTML = `
         <div class="bg-white p-4 rounded-lg border border-gray-200">
             <h4 class="text-2xl font-bold text-gray-800 mb-4">Detalles de Cita</h4>
@@ -435,14 +414,6 @@ export const setupAppointmentListeners = () => {
     });
     // --- FIN DE LA ACTUALIZACIÓN ---
 
-    // --- INICIO: CÓDIGO AÑADIDO (Listeners modal borrado cita) ---
-    modalDeleteAppointmentBtnEmployee?.addEventListener('click', openDeleteAppointmentModalEmployee);
-    cancelDeleteAppointmentBtnEmployee?.addEventListener('click', closeDeleteAppointmentModalEmployee);
-    confirmDeleteAppointmentBtnEmployee?.addEventListener('click', handleDeleteAppointmentEmployee);
-    deleteAppointmentConfirmModalEmployee?.addEventListener('click', (e) => {
-        if (e.target === deleteAppointmentConfirmModalEmployee) closeDeleteAppointmentModalEmployee();
-    });
-    // --- FIN: CÓDIGO AÑADIDO ---
     
     // --- INICIO: CÓDIGO AÑADIDO (Listeners Modal Historial) ---
     closeHistoryModalBtn?.addEventListener('click', closeHistoryModal);
@@ -452,60 +423,6 @@ export const setupAppointmentListeners = () => {
     });
     // --- FIN: CÓDIGO AÑADIDO ---
 };
-
-// --- INICIO: CÓDIGO AÑADIDO (Lógica modal borrado cita) ---
-const openDeleteAppointmentModalEmployee = () => {
-    if (!appointmentToDeleteId) return;
-    
-    const appointment = state.allAppointments.find(app => app.id === appointmentToDeleteId);
-    const petName = appointment?.pets?.name || 'esta cita';
-    
-    deleteAppointmentPetNameEmployee.textContent = petName;
-    deleteAppointmentErrorMessageEmployee.classList.add('hidden');
-    confirmDeleteAppointmentBtnEmployee.disabled = false;
-    confirmDeleteAppointmentBtnEmployee.textContent = 'Sí, Eliminar';
-    deleteAppointmentConfirmModalEmployee.classList.remove('hidden');
-};
-
-const closeDeleteAppointmentModalEmployee = () => {
-    deleteAppointmentConfirmModalEmployee.classList.add('hidden');
-    appointmentToDeleteId = null; // Limpiar el ID
-};
-
-const handleDeleteAppointmentEmployee = async () => {
-    if (!appointmentToDeleteId) return;
-
-    confirmDeleteAppointmentBtnEmployee.disabled = true;
-    confirmDeleteAppointmentBtnEmployee.textContent = 'Eliminando...';
-    
-    const { success, error } = await deleteAppointment(appointmentToDeleteId);
-    
-    if (success) {
-        closeDeleteAppointmentModalEmployee();
-        showAppointmentsList(); // Volver a la lista
-        
-        // Recargar datos
-        const { data: appointments } = await supabase
-            .from('appointments')
-            .select('*, pets(name), profiles(first_name, last_name, full_name)')
-            .order('appointment_date', { ascending: true })
-            .order('appointment_time', { ascending: true });
-        
-        if (appointments) {
-            updateState('allAppointments', appointments);
-            renderConfirmedAppointments();
-        }
-        
-        showMainAlert('Cita eliminada exitosamente.', false);
-
-    } else {
-        deleteAppointmentErrorMessageEmployee.textContent = `Error: ${error.message}`;
-        deleteAppointmentErrorMessageEmployee.classList.remove('hidden');
-        confirmDeleteAppointmentBtnEmployee.disabled = false;
-        confirmDeleteAppointmentBtnEmployee.textContent = 'Sí, Eliminar';
-    }
-};
-// --- FIN: CÓDIGO AÑADIDO ---
 
 
 const extractNotes = (app) => {
