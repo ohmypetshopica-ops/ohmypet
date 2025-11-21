@@ -4,6 +4,8 @@
 import { state, updateState } from './employee-state.js';
 import { getClientsWithPets, getAppointmentPhotos } from '../dashboard/dashboard.api.js';
 import { supabase } from '../../core/supabase.js';
+// Importar la función para agendar cita desde detalles
+import { openAddAppointmentWithPreselection } from './employee-appointments.js';
 
 // Elementos del DOM
 let petSearch, petsList, petsListView, petDetailsView, petDetailsContent, backToPetsBtn;
@@ -15,12 +17,12 @@ let paginationContainerPets;
 let historyModalEmployee, closeHistoryModalBtn, closeHistoryModalBtnBottom;
 let historyPetName, historyArrivalPhoto, historyDeparturePhoto;
 let historyPrice, historyWeight, historyPayment, historyShampoo, historyObservations;
-let currentPetAppointments = []; // Para guardar las citas de la mascota
+let currentPetAppointments = []; 
 
 // Variables de paginación
 let currentPagePets = 1;
 const itemsPerPagePets = 8;
-let currentPetForDetails = null; // Para guardar la mascota seleccionada
+let currentPetForDetails = null; 
 
 export const initPetElements = () => {
     petSearch = document.getElementById('pet-search');
@@ -30,7 +32,6 @@ export const initPetElements = () => {
     petDetailsContent = document.getElementById('pet-details-content');
     backToPetsBtn = document.getElementById('back-to-pets-btn');
     
-    // Esto es para el modal que se abre desde "Clientes"
     addPetModalEmployee = document.querySelector('#add-pet-modal-employee');
     closeAddPetModalButtonEmployee = document.querySelector('#submit-add-pet-button-employee'); 
     cancelAddPetButtonEmployee = document.querySelector('#cancel-add-pet-button-employee');
@@ -40,7 +41,6 @@ export const initPetElements = () => {
     clearPetSearchBtn = document.getElementById('clear-pet-search-btn');
     paginationContainerPets = document.getElementById('pagination-container-pets');
 
-    // Inicialización Modal Historial
     historyModalEmployee = document.getElementById('history-modal-employee');
     closeHistoryModalBtn = document.getElementById('close-history-modal-btn');
     closeHistoryModalBtnBottom = document.getElementById('close-history-modal-btn-bottom');
@@ -74,7 +74,6 @@ export const setupPetListeners = () => {
         if (btn) showPetDetails(btn.dataset.petId);
     });
     
-    // Listeners Modal Historial
     closeHistoryModalBtn?.addEventListener('click', closeHistoryModalEmployee);
     closeHistoryModalBtnBottom?.addEventListener('click', closeHistoryModalEmployee);
     historyModalEmployee?.addEventListener('click', (e) => {
@@ -100,7 +99,6 @@ const handlePetSearch = (e) => {
     renderPets(filtered);
 };
 
-// ====== FUNCIÓN DE PAGINACIÓN MEJORADA ======
 const renderPaginationPets = (totalItems) => {
     if (!paginationContainerPets) return;
 
@@ -112,7 +110,6 @@ const renderPaginationPets = (totalItems) => {
 
     let paginationHTML = '<div class="flex items-center justify-center space-x-2">';
 
-    // Botón Anterior
     const prevDisabled = currentPagePets === 1;
     paginationHTML += `
         <button data-page="${currentPagePets - 1}" 
@@ -275,14 +272,20 @@ const showPetDetails = async (petId) => {
     
     petDetailsContent.innerHTML = `
         <div class="bg-white rounded-xl shadow-lg p-6">
-            <div class="flex items-center space-x-4 mb-6 pb-4 border-b border-gray-200">
-                <img src="${petImage}" 
-                     alt="${pet.name}" 
-                     class="w-24 h-24 rounded-full object-cover border-4 border-green-200 flex-shrink-0">
-                <div>
-                    <h3 class="font-bold text-3xl">${pet.name}</h3>
-                    <p class="text-lg text-gray-600">${pet.breed || 'Raza no especificada'}</p>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-200 pb-4 mb-6 gap-4">
+                <div class="flex items-center space-x-4">
+                    <img src="${petImage}" 
+                         alt="${pet.name}" 
+                         class="w-24 h-24 rounded-full object-cover border-4 border-green-200 flex-shrink-0">
+                    <div>
+                        <h3 class="font-bold text-3xl">${pet.name}</h3>
+                        <p class="text-lg text-gray-600">${pet.breed || 'Raza no especificada'}</p>
+                    </div>
                 </div>
+                <button id="schedule-appt-btn-details" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Agendar Cita
+                </button>
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-6">
@@ -348,6 +351,19 @@ const showPetDetails = async (petId) => {
 
     petDetailsContent?.classList.remove('hidden');
     
+    // --- LISTENER PARA BOTÓN AGENDAR CITA ---
+    const scheduleBtn = document.getElementById('schedule-appt-btn-details');
+    if (scheduleBtn && owner) {
+        scheduleBtn.addEventListener('click', () => {
+            // 1. Cambiar a vista de citas
+            const appointmentsNavBtn = document.querySelector('.nav-btn[data-view="appointments"]');
+            if (appointmentsNavBtn) appointmentsNavBtn.click();
+            
+            // 2. Abrir modal con datos prellenados
+            openAddAppointmentWithPreselection(owner, pet);
+        });
+    }
+
     // Añadir listeners para los elementos de historial
     const historyBlock = document.getElementById('history-block-button');
     if (historyBlock && lastAppointment) {
