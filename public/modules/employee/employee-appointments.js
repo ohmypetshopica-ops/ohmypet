@@ -606,7 +606,6 @@ export const renderConfirmedAppointments = () => {
     renderPagination(totalAppointments);
 };
 
-// --- FUNCIÓN EXPORTADA PARA AGENDAR DESDE DETALLES DE MASCOTA ---
 export const openAddAppointmentWithPreselection = async (client, pet) => {
     await openAddAppointmentModal();
     const clientName = (client.first_name && client.last_name) ? `${client.first_name} ${client.last_name}` : client.full_name;
@@ -764,10 +763,13 @@ const handleAddAppointment = async (e) => {
         if (result.success) {
             const newAppId = result.data.id; // ID de la nueva cita
 
-            // Si es completada, guardar peso si existe
-            if (isInstantComplete && appointmentData.final_weight) {
-                await addWeightRecord(appointmentData.pet_id, appointmentData.final_weight, newAppId);
-                // Actualizar fecha de último grooming en mascota
+            // Si es completada
+            if (isInstantComplete) {
+                // Guardar peso si existe
+                if (appointmentData.final_weight) {
+                    await addWeightRecord(appointmentData.pet_id, appointmentData.final_weight, newAppId);
+                }
+                // --- CORRECCIÓN: Actualizar SIEMPRE la fecha de grooming al completar, con o sin peso ---
                 await supabase.from('pets').update({ last_grooming_date: appointmentData.appointment_date }).eq('id', appointmentData.pet_id);
             }
 
@@ -892,7 +894,6 @@ const closeCompletionModal = () => {
     completionModal.classList.add('hidden');
     document.body.style.overflow = '';
     currentAppointmentToComplete = null;
-    // reset vars
     beforeImageInput.value = '';
     afterImageInput.value = '';
     receiptInput.value = '';
@@ -974,6 +975,7 @@ const handleCompleteAppointment = async () => {
         renderConfirmedAppointments();
     }
     
+    // --- CORRECCIÓN: Actualizar SIEMPRE la fecha de grooming al completar ---
     if (petId) {
         const appointmentDate = appointment ? appointment.appointment_date : new Date().toISOString().split('T')[0];
         await supabase.from('pets').update({ last_grooming_date: appointmentDate }).eq('id', petId);
@@ -988,13 +990,29 @@ const handleCompleteAppointment = async () => {
 
 const openHistoryModal = (appointment, petName) => {
     if (!appointment) return;
-    
     historyPetName.textContent = `Mascota: ${petName} (Servicio del ${appointment.appointment_date})`;
-    
-    // Lógica fotos historial...
-    // (Se omite para brevedad, es igual a tu archivo original)
     historyPrice.textContent = appointment.service_price ? `S/ ${appointment.service_price.toFixed(2)}` : 'N/A';
-    // ... resto de campos ...
+    
+    const photos = appointment.appointment_photos || [];
+    const arrivalPhoto = photos.find(p => p.photo_type === 'arrival' || p.photo_type === 'before');
+    const departurePhoto = photos.find(p => p.photo_type === 'departure' || p.photo_type === 'after');
+
+    if (arrivalPhoto) {
+        historyArrivalPhoto.innerHTML = `<img src="${arrivalPhoto.image_url}" alt="Foto de llegada" class="w-full h-full object-cover rounded-lg">`;
+    } else {
+        historyArrivalPhoto.innerHTML = `<p class="text-sm text-gray-500">Sin foto</p>`;
+    }
+
+    if (departurePhoto) {
+        historyDeparturePhoto.innerHTML = `<img src="${departurePhoto.image_url}" alt="Foto de salida" class="w-full h-full object-cover rounded-lg">`;
+    } else {
+        historyDeparturePhoto.innerHTML = `<p class="text-sm text-gray-500">Sin foto</p>`;
+    }
+
+    historyWeight.textContent = appointment.final_weight ? `${appointment.final_weight} kg` : 'N/A';
+    historyPayment.textContent = (appointment.payment_method || 'N/A').toUpperCase();
+    historyShampoo.textContent = appointment.shampoo_type || 'General';
+    historyObservations.textContent = appointment.final_observations || 'Sin observaciones.';
 
     historyModalEmployee?.classList.remove('hidden');
     document.body.style.overflow = 'hidden'; 

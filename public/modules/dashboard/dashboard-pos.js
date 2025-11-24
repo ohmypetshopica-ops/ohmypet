@@ -1,9 +1,9 @@
 // public/modules/dashboard/dashboard-pos.js
 
 import { supabase } from '../../core/supabase.js';
-import { getProducts, addSale } from './dashboard.api.js'; // addSale importado correctamente
+import { getProducts, addSale } from './dashboard.api.js';
 
-console.log('✅ dashboard-pos.js cargado');
+console.log('✅ dashboard-pos.js cargado (Versión con Alerta Rebote)');
 
 // --- ELEMENTOS DEL DOM ---
 const productsGrid = document.getElementById('products-grid');
@@ -16,7 +16,7 @@ const clearCartBtn = document.getElementById('clear-cart-btn');
 const processSaleBtn = document.getElementById('process-sale-btn');
 const ticketNumberElement = document.getElementById('ticket-number');
 
-// Modal
+// Modal y Elementos de Pago
 const paymentModal = document.getElementById('payment-modal');
 const paymentMethodSelect = document.getElementById('payment-method');
 const cashReceivedInput = document.getElementById('cash-received');
@@ -34,11 +34,48 @@ const modalTotalElement = document.getElementById('modal-total');
 const cashSection = document.getElementById('cash-section');
 const saleDateInput = document.getElementById('sale-date');
 
+// Elementos de la Alerta (Toast)
+const customToast = document.getElementById('custom-toast');
+const toastMessage = document.getElementById('toast-message');
+
 // --- VARIABLES GLOBALES ---
 let allProducts = [];
 let cart = [];
 let allClients = [];
 let ticketNumber = 1;
+
+// --- FUNCIÓN DE ALERTA CON REBOTE ---
+const showBounceToast = (message) => {
+    if (!customToast || !toastMessage) return;
+
+    // 1. Configurar mensaje
+    toastMessage.textContent = message;
+
+    // 2. Mostrar y animar entrada (Rebote hacia abajo)
+    customToast.classList.remove('hidden');
+    // Pequeño delay para permitir que el navegador renderice el 'remove hidden' antes de la transición
+    setTimeout(() => {
+        customToast.classList.remove('translate-y-[-100%]', 'opacity-0');
+        customToast.classList.add('translate-y-4', 'opacity-100'); // Baja un poco más de su posición final (efecto rebote)
+        
+        // 3. Ajuste final del rebote
+        setTimeout(() => {
+            customToast.classList.remove('translate-y-4');
+            customToast.classList.add('translate-y-0');
+        }, 300);
+    }, 10);
+
+    // 4. Ocultar automáticamente después de 3 segundos
+    setTimeout(() => {
+        customToast.classList.remove('translate-y-0', 'opacity-100');
+        customToast.classList.add('translate-y-[-100%]', 'opacity-0');
+        
+        // Ocultar completamente del DOM tras la animación de salida
+        setTimeout(() => {
+            customToast.classList.add('hidden');
+        }, 300);
+    }, 3000);
+};
 
 // --- FUNCIONES DE API ---
 const getClients = async () => {
@@ -54,8 +91,6 @@ const getClients = async () => {
     }
     return data || [];
 };
-
-// addSale se importa desde dashboard.api.js
 
 const updateProductStock = async (productId, newStock) => {
     const { error } = await supabase
@@ -113,9 +148,10 @@ const addToCart = (product) => {
         cart.push({
             id: product.id,
             name: product.name,
-            price: product.price, // El precio se puede modificar después en el carrito
+            price: product.price, 
             quantity: 1,
-            stock: product.stock
+            stock: product.stock,
+            note: '' 
         });
     }
     
@@ -149,18 +185,16 @@ const updateQuantity = (productId, newQuantity) => {
     updateTotals();
 };
 
-/**
- * Actualiza el precio de un ítem en el carrito.
- */
 const updateCartItemPrice = (productId, newPrice) => {
     const item = cart.find(item => item.id === productId);
     if (item) {
         item.price = newPrice;
-        renderCart(); // Re-renderiza el carrito (para actualizar el subtotal del ítem)
-        updateTotals(); // Re-renderiza los totales globales
+        renderCart(); 
+        updateTotals(); 
     }
 };
 
+// --- RENDERIZADO DEL CARRITO ---
 const renderCart = () => {
     if (cart.length === 0) {
         cartItems.innerHTML = `
@@ -176,7 +210,7 @@ const renderCart = () => {
     }
     
     cartItems.innerHTML = cart.map(item => `
-        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
             <div class="flex justify-between items-start mb-2">
                 <div class="flex-1">
                     <h4 class="font-semibold text-sm text-gray-800">${item.name}</h4>
@@ -191,14 +225,22 @@ const renderCart = () => {
                         </div>
                     </div>
 
+                    <div class="mt-1">
+                        <input type="text" 
+                               class="cart-item-note-input w-full p-1.5 text-xs border border-gray-300 rounded bg-white focus:ring-1 focus:ring-green-500 focus:border-green-500 placeholder-gray-400" 
+                               placeholder="Agregar descripción/nota (opcional)..."
+                               value="${item.note || ''}" 
+                               data-product-id="${item.id}">
+                    </div>
+
                 </div>
-                <button class="text-red-500 hover:text-red-700" data-remove="${item.id}">
+                <button class="text-red-500 hover:text-red-700 ml-2" data-remove="${item.id}">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between mt-2">
                 <div class="flex items-center gap-2">
                     <button class="bg-gray-200 hover:bg-gray-300 w-7 h-7 rounded flex items-center justify-center" data-decrease="${item.id}">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -220,47 +262,32 @@ const renderCart = () => {
     processSaleBtn.disabled = false;
 };
 
-
-// --- INICIO DE LA CORRECCIÓN (Listeners movidos a una función única) ---
-
-/**
- * Configura todos los event listeners para los botones dentro del carrito.
- * Se debe llamar UNA SOLA VEZ en initializePOS.
- */
 const setupCartEventListeners = () => {
     if (!cartItems) return;
 
-    // Delegación de eventos para CLICS
+    // Delegación de eventos
     cartItems.addEventListener('click', (e) => {
         const removeBtn = e.target.closest('[data-remove]');
         const decreaseBtn = e.target.closest('[data-decrease]');
         const increaseBtn = e.target.closest('[data-increase]');
         const priceDisplay = e.target.closest('.price-display');
 
-        if (removeBtn) {
-            removeFromCart(removeBtn.dataset.remove);
-            return;
-        }
-
+        if (removeBtn) { removeFromCart(removeBtn.dataset.remove); return; }
         if (decreaseBtn) {
             const item = cart.find(i => i.id === decreaseBtn.dataset.decrease);
             if (item) updateQuantity(item.id, item.quantity - 1);
             return;
         }
-
         if (increaseBtn) {
             const item = cart.find(i => i.id === increaseBtn.dataset.increase);
             if (item) updateQuantity(item.id, item.quantity + 1);
             return;
         }
-
         if (priceDisplay) {
             const container = priceDisplay.closest('.cart-item-price-container');
             if (!container) return;
-            
             const editView = container.querySelector('.price-edit');
             const input = container.querySelector('.cart-item-price-input');
-            
             priceDisplay.classList.add('hidden');
             editView.classList.remove('hidden');
             input.focus();
@@ -268,36 +295,34 @@ const setupCartEventListeners = () => {
         }
     });
 
-    // Delegación de eventos para CHANGE (Enter en el input de precio)
     cartItems.addEventListener('change', (e) => {
         if (e.target.classList.contains('cart-item-price-input')) {
             const newPrice = parseFloat(e.target.value);
             const productId = e.target.closest('.cart-item-price-container').dataset.productId;
-            
-            if (!isNaN(newPrice) && newPrice >= 0) {
-                updateCartItemPrice(productId, newPrice); // Esto re-renderizará
-            } else {
-                renderCart(); // Valor inválido, resetea
-            }
+            if (!isNaN(newPrice) && newPrice >= 0) { updateCartItemPrice(productId, newPrice); } 
+            else { renderCart(); }
         }
     });
 
-    // Delegación de eventos para BLUR (clic fuera del input de precio)
     cartItems.addEventListener('blur', (e) => {
         if (e.target.classList.contains('cart-item-price-input')) {
             const newPrice = parseFloat(e.target.value);
             const productId = e.target.closest('.cart-item-price-container').dataset.productId;
-
-            if (!isNaN(newPrice) && newPrice >= 0) {
-                updateCartItemPrice(productId, newPrice);
-            } else {
-                renderCart(); // Valor inválido, resetea
-            }
+            if (!isNaN(newPrice) && newPrice >= 0) { updateCartItemPrice(productId, newPrice); }
+            else { renderCart(); }
         }
-    }, true); // Usar fase de captura para el evento blur
-};
-// --- FIN DE LA CORRECCIÓN ---
+    }, true);
 
+    // Listener para las notas
+    cartItems.addEventListener('input', (e) => {
+        if (e.target.classList.contains('cart-item-note-input')) {
+            const newNote = e.target.value;
+            const productId = e.target.dataset.productId;
+            const item = cart.find(i => i.id === productId);
+            if (item) { item.note = newNote; }
+        }
+    });
+};
 
 const updateTotals = () => {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -328,7 +353,7 @@ const openPaymentModal = () => {
     customerResults.classList.add('hidden');
     selectedCustomerIdInput.value = '';
     selectedCustomerDisplay.classList.add('hidden');
-    paymentMethodSelect.value = 'EFECTIVO'; // Default to first ENUM value
+    paymentMethodSelect.value = 'EFECTIVO'; 
     
     saleDateInput.value = new Date().toISOString().split('T')[0];
 
@@ -418,12 +443,13 @@ const processSale = async () => {
     
     const saleData = {
         client_id: customerId,
-        payment_method: paymentMethod, // Se envía en MAYÚSCULAS
+        payment_method: paymentMethod, 
         items: cart.map(item => ({
             product_id: item.id,
             quantity: item.quantity,
-            unit_price: item.price, // <- Se usa el precio del carrito (potencialmente modificado)
-            subtotal: item.price * item.quantity // <- Se usa el precio del carrito (potencialmente modificado)
+            unit_price: item.price, 
+            subtotal: item.price * item.quantity,
+            note: item.note || ''
         }))
     };
     
@@ -437,7 +463,7 @@ const processSale = async () => {
         return;
     }
     
-    // Actualizar stock de productos
+    // Actualizar stock
     for (const item of cart) {
         const product = allProducts.find(p => p.id === item.id);
         if (product) {
@@ -447,7 +473,8 @@ const processSale = async () => {
         }
     }
     
-    alert('¡Venta procesada con éxito!');
+    // --- SUSTITUCIÓN DEL ALERT ---
+    showBounceToast('¡Venta procesada con éxito!');
     
     cart = [];
     renderCart();
@@ -531,23 +558,14 @@ const initializePOS = async () => {
     try {
         console.log('📦 Obteniendo productos...');
         allProducts = await getProducts();
-        console.log('✅ Productos cargados:', allProducts.length);
-        
         console.log('👥 Obteniendo clientes...');
         allClients = await getClients();
-        console.log('✅ Clientes cargados:', allClients.length);
         
-        console.log('🎨 Renderizando productos...');
         renderProducts(allProducts.filter(p => p.stock > 0));
-        
-        console.log('🛒 Renderizando carrito...');
         renderCart();
         updateTotals();
         
-        // --- INICIO DE LA CORRECCIÓN (Mover la llamada aquí) ---
-        // Configura los listeners del carrito UNA SOLA VEZ
         setupCartEventListeners();
-        // --- FIN DE LA CORRECCIÓN ---
 
         ticketNumberElement.textContent = String(ticketNumber).padStart(4, '0');
         
@@ -557,7 +575,6 @@ const initializePOS = async () => {
     }
 };
 
-// Inicializar cuando el DOM esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializePOS);
 } else {

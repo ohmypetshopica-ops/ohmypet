@@ -517,6 +517,7 @@ export const getSalesReportData = async (startDate, endDate) => {
             total_price,
             quantity,
             payment_method,
+            notes,
             client:client_id ( full_name, first_name, last_name ),
             product:product_id ( name, category )
         `)
@@ -573,6 +574,7 @@ export const getSalesReportData = async (startDate, endDate) => {
             fecha: new Date(sale.created_at).toISOString().split('T')[0],
             cliente: clientName,
             producto: sale.product?.name || 'N/A',
+            nota: sale.notes || '', // <--- CAMPO NOTA AÑADIDO
             categoria: sale.product?.category || 'N/A',
             cantidad: sale.quantity,
             // **** INICIO DE LA CORRECCIÓN ****
@@ -1116,6 +1118,9 @@ export const addSale = async (saleData, saleDate = null) => {
         // **** INICIO DE LA CORRECCIÓN ****
         payment_method: (saleData.payment_method || 'DESCONOCIDO').toUpperCase(),
         // **** FIN DE LA CORRECCIÓN ****
+        // --- NUEVO CAMPO: notes ---
+        notes: item.note || null, 
+        // ------------------------
         recorded_by: user?.id || null,
         created_at: saleTimestamp // <-- CAMPO AÑADIDO
     }));
@@ -1262,7 +1267,7 @@ export const getAllDenormalizedDataForExport = async () => {
             supabase
                 .from('sales')
                 .select(`
-                    created_at, total_price, quantity, payment_method,
+                    created_at, total_price, quantity, payment_method, notes,
                     client:client_id ( full_name, phone ),
                     product:product_id ( name, category )
                 `),
@@ -1316,6 +1321,7 @@ export const getAllDenormalizedDataForExport = async () => {
             'Fecha Venta': new Date(sale.created_at).toLocaleString('es-ES'),
             'Cliente': sale.client?.full_name,
             'Producto': sale.product?.name,
+            'Detalle/Nota': sale.notes || '', // <-- CAMPO NOTA AÑADIDO
             'Categoría Producto': sale.product?.category,
             'Cantidad': sale.quantity,
             'Precio Total (S/)': sale.total_price,
