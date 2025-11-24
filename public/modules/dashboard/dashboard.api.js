@@ -1388,3 +1388,34 @@ export const getProductsPaginated = async (page = 1, itemsPerPage = 10, search =
     return { data: data || [], count: count || 0 };
 };
 // ============ FIN: NUEVA FUNCIÓN AÑADIDA ============
+
+// ==========================================
+// NUEVA FUNCIÓN PARA EL POS (LAZY LOADING)
+// ==========================================
+export const getPOSProductsPaginated = async (page, limit, search = '') => {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    // Solo traemos productos con stock > 0
+    let query = supabase
+        .from('products')
+        .select('*', { count: 'exact' })
+        .gt('stock', 0);
+
+    // Si hay búsqueda, filtramos por nombre
+    if (search) {
+        query = query.ilike('name', `%${search}%`);
+    }
+
+    // Ordenamos y paginamos
+    const { data, error, count } = await query
+        .order('name', { ascending: true })
+        .range(from, to);
+
+    if (error) {
+        console.error('Error al obtener productos paginados:', error);
+        return { data: [], count: 0 };
+    }
+
+    return { data, count };
+};

@@ -1,9 +1,10 @@
 // public/modules/dashboard/dashboard-pos.js
 
 import { supabase } from '../../core/supabase.js';
-import { getProducts, addSale } from './dashboard.api.js';
+// Importamos la NUEVA función paginada y mantenemos addSale
+import { getPOSProductsPaginated, addSale } from './dashboard.api.js';
 
-console.log('✅ dashboard-pos.js cargado (Versión con Alerta Rebote)');
+console.log('✅ dashboard-pos.js cargado (Versión Lazy Loading)');
 
 // --- ELEMENTOS DEL DOM ---
 const productsGrid = document.getElementById('products-grid');
@@ -39,38 +40,40 @@ const customToast = document.getElementById('custom-toast');
 const toastMessage = document.getElementById('toast-message');
 
 // --- VARIABLES GLOBALES ---
-let allProducts = [];
 let cart = [];
 let allClients = [];
 let ticketNumber = 1;
 
+// --- VARIABLES PARA LAZY LOADING ---
+let posCurrentPage = 1;
+const posItemsPerPage = 20; // Cargamos de 20 en 20
+let posIsLoading = false;
+let posHasMore = true;
+let currentSearchTerm = '';
+let loadedProductsCache = []; // Guardamos los productos cargados para que el carrito pueda encontrarlos
+
+// Elemento centinela para detectar el scroll al final
+const sentinel = document.createElement('div');
+sentinel.id = 'infinite-scroll-sentinel';
+sentinel.className = 'col-span-full h-10 flex justify-center items-center py-4';
+sentinel.innerHTML = '<div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 hidden"></div>';
+
 // --- FUNCIÓN DE ALERTA CON REBOTE ---
 const showBounceToast = (message) => {
     if (!customToast || !toastMessage) return;
-
-    // 1. Configurar mensaje
     toastMessage.textContent = message;
-
-    // 2. Mostrar y animar entrada (Rebote hacia abajo)
     customToast.classList.remove('hidden');
-    // Pequeño delay para permitir que el navegador renderice el 'remove hidden' antes de la transición
     setTimeout(() => {
         customToast.classList.remove('translate-y-[-100%]', 'opacity-0');
-        customToast.classList.add('translate-y-4', 'opacity-100'); // Baja un poco más de su posición final (efecto rebote)
-        
-        // 3. Ajuste final del rebote
+        customToast.classList.add('translate-y-4', 'opacity-100');
         setTimeout(() => {
             customToast.classList.remove('translate-y-4');
             customToast.classList.add('translate-y-0');
         }, 300);
     }, 10);
-
-    // 4. Ocultar automáticamente después de 3 segundos
     setTimeout(() => {
         customToast.classList.remove('translate-y-0', 'opacity-100');
         customToast.classList.add('translate-y-[-100%]', 'opacity-0');
-        
-        // Ocultar completamente del DOM tras la animación de salida
         setTimeout(() => {
             customToast.classList.add('hidden');
         }, 300);
@@ -105,35 +108,129 @@ const updateProductStock = async (productId, newStock) => {
     return { success: true };
 };
 
-// --- RENDERIZADO DE PRODUCTOS ---
-const renderProducts = (products) => {
-    if (products.length === 0) {
-        productsGrid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400"><p>No hay productos disponibles</p></div>';
+// --- RENDERIZADO DE PRODUCTOS (LAZY LOADING) ---
+const renderProducts = (products, append = false) => {
+    // Si no estamos añadiendo (es una búsqueda nueva o inicio), limpiamos
+    if (!append) {
+        productsGrid.innerHTML = '';
+        loadedProductsCache = [];
+        productsGrid.appendChild(sentinel); // Re-añadir el centinela al final
+    }
+
+    // Actualizar caché local para el carrito
+    products.forEach(p => {
+        if (!loadedProductsCache.find(existing => existing.id === p.id)) {
+            loadedProductsCache.push(p);
+        }
+    });
+
+    if (products.length === 0 && !append) {
+        productsGrid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400"><p>No se encontraron productos</p></div>';
         return;
     }
-    
-    productsGrid.innerHTML = products.map(product => {
+
+    // Crear HTML de los nuevos productos
+    const productsHTML = products.map(product => {
         const imageUrl = product.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=D1D5DB&color=FFFFFF`;
         return `
-            <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-lg transition-shadow cursor-pointer" data-product-id="${product.id}">
-                <img src="${imageUrl}" alt="${product.name}" class="w-full h-24 object-cover rounded-md mb-2">
-                <h3 class="font-semibold text-sm text-gray-800 truncate">${product.name}</h3>
-                <p class="text-xs text-gray-500 mb-1">Stock: ${product.stock}</p>
-                <p class="text-lg font-bold text-green-600">S/ ${product.price.toFixed(2)}</p>
+            <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-lg transition-shadow cursor-pointer transform transition-transform hover:scale-105 product-card-anim" data-product-id="${product.id}">
+                <img src="${imageUrl}" alt="${product.name}" class="w-full h-24 object-cover rounded-md mb-2 bg-gray-100">
+                <h3 class="font-semibold text-sm text-gray-800 truncate" title="${product.name}">${product.name}</h3>
+                <div class="flex justify-between items-end mt-2">
+                    <p class="text-xs text-gray-500 mb-1">Stock: <span class="font-bold">${product.stock}</span></p>
+                    <p class="text-lg font-bold text-green-600">S/ ${product.price.toFixed(2)}</p>
+                </div>
             </div>
         `;
     }).join('');
+
+    // Insertar antes del centinela
+    sentinel.insertAdjacentHTML('beforebegin', productsHTML);
+
+    // Re-asignar eventos solo a los nuevos elementos o delegar (aquí reasignamos por seguridad en SPA)
+    // Una forma más eficiente es delegación de eventos en el contenedor padre, pero mantenemos tu lógica:
+    const newCards = productsGrid.querySelectorAll(`[data-product-id]`);
+    newCards.forEach(card => {
+        // Removemos listener anterior para evitar duplicados si se re-renderiza
+        card.replaceWith(card.cloneNode(true));
+    });
     
-    productsGrid.querySelectorAll('[data-product-id]').forEach(card => {
+    // Volver a seleccionar después del clone
+    productsGrid.querySelectorAll(`[data-product-id]`).forEach(card => {
         card.addEventListener('click', () => {
             const productId = card.dataset.productId;
-            const product = allProducts.find(p => p.id === productId);
+            const product = loadedProductsCache.find(p => p.id === productId);
             if (product) addToCart(product);
         });
     });
 };
 
-// --- FUNCIONES DEL CARRITO ---
+// --- LÓGICA DE CARGA DE PRODUCTOS ---
+const loadMoreProducts = async () => {
+    if (posIsLoading || !posHasMore) return;
+
+    posIsLoading = true;
+    // Mostrar spinner del centinela
+    sentinel.querySelector('div').classList.remove('hidden');
+
+    try {
+        const { data, count } = await getPOSProductsPaginated(posCurrentPage, posItemsPerPage, currentSearchTerm);
+        
+        if (data.length < posItemsPerPage) {
+            posHasMore = false; // No hay más productos
+        }
+
+        renderProducts(data, true); // true = append (añadir al final)
+        posCurrentPage++;
+
+    } catch (error) {
+        console.error("Error cargando productos:", error);
+    } finally {
+        posIsLoading = false;
+        sentinel.querySelector('div').classList.add('hidden');
+        
+        // Si no hay más, ocultar centinela para que no ocupe espacio
+        if (!posHasMore) {
+            sentinel.classList.add('hidden');
+        } else {
+            sentinel.classList.remove('hidden');
+        }
+    }
+};
+
+// --- CONFIGURAR OBSERVER PARA INFINITE SCROLL ---
+const setupInfiniteScroll = () => {
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+            loadMoreProducts();
+        }
+    }, {
+        root: productsGrid.parentElement, // El contenedor con scroll
+        rootMargin: '100px', // Cargar 100px antes de llegar al final
+        threshold: 0.1
+    });
+
+    observer.observe(sentinel);
+};
+
+// --- MANEJO DE BÚSQUEDA (Debounce) ---
+let searchTimeout;
+productSearch.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    const term = e.target.value.trim();
+    
+    // Esperar 300ms antes de buscar para no saturar la DB
+    searchTimeout = setTimeout(async () => {
+        currentSearchTerm = term;
+        posCurrentPage = 1;
+        posHasMore = true;
+        productsGrid.innerHTML = ''; // Limpiar grid
+        productsGrid.appendChild(sentinel); // Re-añadir centinela
+        await loadMoreProducts(); // Cargar primera página de resultados
+    }, 300);
+});
+
+// --- FUNCIONES DEL CARRITO (Sin cambios lógicos, solo uso de caché) ---
 const addToCart = (product) => {
     const existingItem = cart.find(item => item.id === product.id);
     
@@ -265,7 +362,6 @@ const renderCart = () => {
 const setupCartEventListeners = () => {
     if (!cartItems) return;
 
-    // Delegación de eventos
     cartItems.addEventListener('click', (e) => {
         const removeBtn = e.target.closest('[data-remove]');
         const decreaseBtn = e.target.closest('[data-decrease]');
@@ -313,7 +409,6 @@ const setupCartEventListeners = () => {
         }
     }, true);
 
-    // Listener para las notas
     cartItems.addEventListener('input', (e) => {
         if (e.target.classList.contains('cart-item-note-input')) {
             const newNote = e.target.value;
@@ -354,9 +449,7 @@ const openPaymentModal = () => {
     selectedCustomerIdInput.value = '';
     selectedCustomerDisplay.classList.add('hidden');
     paymentMethodSelect.value = 'EFECTIVO'; 
-    
     saleDateInput.value = new Date().toISOString().split('T')[0];
-
     updatePaymentButton();
 };
 
@@ -438,7 +531,6 @@ const processSale = async () => {
     confirmPaymentBtn.disabled = true;
     confirmPaymentBtn.textContent = 'Procesando...';
     
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const paymentMethod = paymentMethodSelect.value;
     
     const saleData = {
@@ -463,25 +555,28 @@ const processSale = async () => {
         return;
     }
     
-    // Actualizar stock
+    // Actualizar stock en la caché local y en la UI
     for (const item of cart) {
-        const product = allProducts.find(p => p.id === item.id);
+        const product = loadedProductsCache.find(p => p.id === item.id);
         if (product) {
-            const newStock = product.stock - item.quantity;
-            await updateProductStock(item.id, newStock);
-            product.stock = newStock;
+            // No necesitamos llamar a DB aquí porque addSale ya actualiza DB
+            // Solo actualizamos visualmente
+            product.stock -= item.quantity;
+            
+            // Actualizar tarjeta en el grid
+            const card = productsGrid.querySelector(`[data-product-id="${item.id}"]`);
+            if (card) {
+                card.querySelector('p.text-gray-500 span').textContent = product.stock;
+            }
         }
     }
     
-    // --- SUSTITUCIÓN DEL ALERT ---
     showBounceToast('¡Venta procesada con éxito!');
     
     cart = [];
     renderCart();
     updateTotals();
     closePaymentModal();
-    
-    renderProducts(allProducts.filter(p => p.stock > 0));
     
     ticketNumber++;
     ticketNumberElement.textContent = String(ticketNumber).padStart(4, '0');
@@ -490,15 +585,7 @@ const processSale = async () => {
     confirmPaymentBtn.textContent = 'Confirmar Venta';
 };
 
-// --- EVENT LISTENERS ---
-productSearch.addEventListener('input', (e) => {
-    const searchTerm = e.target.value.toLowerCase();
-    const filtered = allProducts.filter(product => 
-        product.name.toLowerCase().includes(searchTerm) && product.stock > 0
-    );
-    renderProducts(filtered);
-});
-
+// --- EVENT LISTENERS GENERALES ---
 clearCartBtn.addEventListener('click', clearCart);
 processSaleBtn.addEventListener('click', openPaymentModal);
 cancelPaymentBtn.addEventListener('click', closePaymentModal);
@@ -527,7 +614,6 @@ cashReceivedInput.addEventListener('input', () => {
     } else {
         changeDisplay.classList.add('hidden');
     }
-    
     updatePaymentButton();
 });
 
@@ -543,28 +629,27 @@ clearCustomerBtn.addEventListener('click', () => {
 
 // --- INICIALIZACIÓN ---
 const initializePOS = async () => {
-    console.log('🚀 Inicializando POS...');
+    console.log('🚀 Inicializando POS con Lazy Loading...');
     
-    if (!productsGrid) {
-        console.error('❌ productsGrid no encontrado');
-        return;
-    }
-    
-    if (!cartItems) {
-        console.error('❌ cartItems no encontrado');
+    if (!productsGrid || !cartItems) {
+        console.error('❌ Elementos del POS no encontrados');
         return;
     }
     
     try {
-        console.log('📦 Obteniendo productos...');
-        allProducts = await getProducts();
+        // Configurar Scroll Infinito
+        productsGrid.appendChild(sentinel);
+        setupInfiniteScroll();
+
+        // Cargar clientes
         console.log('👥 Obteniendo clientes...');
         allClients = await getClients();
         
-        renderProducts(allProducts.filter(p => p.stock > 0));
+        // Cargar primera tanda de productos
+        await loadMoreProducts();
+        
         renderCart();
         updateTotals();
-        
         setupCartEventListeners();
 
         ticketNumberElement.textContent = String(ticketNumber).padStart(4, '0');
