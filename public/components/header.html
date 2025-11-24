@@ -1,18 +1,22 @@
 <header class="bg-white shadow-sm sticky top-0 z-20">
     <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-        <!-- Logo -->
         <div class="flex items-center space-x-4">
-            <a href="/public/index.html" class="text-2xl font-bold text-green-600">OhMyPet</a>
+            <a href="/public/index.html" class="text-2xl font-bold text-green-600 tracking-tight">OhMyPet</a>
         </div>
         
-        <!-- Navegación -->
-        <div class="flex items-center space-x-4">
-            <!-- Menú de invitado (cuando NO está logueado) -->
+        <div class="flex items-center space-x-2 md:space-x-4">
+            
+            <a id="dashboard-link" href="#" class="hidden flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm font-bold py-2 px-4 rounded-full shadow-md transition-all duration-200 transform hover:scale-105 mr-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span>Dashboard</span>
+            </a>
             <div id="guest-nav" class="hidden relative">
                 <button id="guest-menu-btn" class="p-2 rounded-full hover:bg-gray-100 focus:outline-none transition-colors">
-                    <img src="/public/assets/icons/user.svg" alt="Usuario" class="h-7 w-7">
+                    <img src="/public/assets/icons/user.svg" alt="Usuario" class="h-7 w-7 opacity-70 hover:opacity-100 transition-opacity">
                 </button>
-                <div id="guest-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 border border-gray-200">
+                <div id="guest-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2 border border-gray-100 ring-1 ring-black ring-opacity-5 z-50">
                     <a href="/public/register.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 font-semibold text-green-600 transition-colors">
                         Registrarse
                     </a>
@@ -22,25 +26,32 @@
                 </div>
             </div>
 
-            <!-- Menú de usuario (cuando SÍ está logueado) -->
-            <div id="user-nav" class="hidden relative">
-                <button id="user-menu-btn" class="flex items-center justify-center h-10 w-10 bg-green-500 rounded-full text-white font-bold text-lg hover:bg-green-600 transition-colors focus:outline-none">
+            <div id="user-nav" class="hidden items-center space-x-3 relative">
+                <button id="user-menu-btn" class="flex items-center justify-center h-10 w-10 bg-green-500 rounded-full text-white font-bold text-lg hover:bg-green-600 transition-colors focus:outline-none shadow-sm ring-2 ring-green-100">
                     <span id="user-initial">U</span>
                 </button>
-                <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 border border-gray-200">
-                    <a href="/public/modules/profile/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 font-semibold text-green-600 transition-colors">
-                        Mi Perfil
+                
+                <div id="user-dropdown" class="hidden absolute right-0 top-12 mt-2 w-56 bg-white rounded-xl shadow-xl py-2 border border-gray-100 ring-1 ring-black ring-opacity-5 z-50">
+                    <div class="px-4 py-2 border-b border-gray-100 mb-1">
+                        <p class="text-xs text-gray-500 font-medium">Conectado como</p>
+                        <p id="user-role-label" class="text-sm font-bold text-green-700 truncate">Usuario</p>
+                    </div>
+                    <a href="/public/modules/profile/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors">
+                        👤 Mi Perfil
                     </a>
+                    <a href="/public/modules/profile/my-appointments.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors">
+                        📅 Mis Citas
+                    </a>
+                    <div class="border-t border-gray-100 my-1"></div>
                     <button id="logout-btn" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium">
                         Cerrar Sesión
                     </button>
                 </div>
             </div>
             
-            <!-- Botón del carrito -->
-            <a href="/public/modules/store/store.html" class="p-2 rounded-full hover:bg-gray-100 transition-colors relative">
-                <img src="/public/assets/icons/carrito.svg" alt="Carrito" class="h-7 w-7">
-                <span id="cart-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+            <a href="/public/modules/store/store.html" class="p-2 rounded-full hover:bg-gray-100 transition-colors relative group">
+                <img src="/public/assets/icons/carrito.svg" alt="Carrito" class="h-7 w-7 opacity-80 group-hover:opacity-100 transition-opacity">
+                <span id="cart-badge" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center shadow-sm transform scale-100 transition-transform">0</span>
             </a>
         </div>
     </nav>
