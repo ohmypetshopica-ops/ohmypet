@@ -11,8 +11,13 @@
     <meta name="keywords" content="estética canina, pet shop, peluquería para perros, Ica, OhMyPet, baño para mascotas">
 
     <link rel="icon" type="image/png" href="/public/assets/images/favicon.png">
+    
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    
+    <link rel="preload" as="image" href="/public/assets/images/hero-banner.jpg" fetchpriority="high">
+
     <style>
         :root { font-family: 'Inter', sans-serif; }
     </style>
@@ -23,12 +28,61 @@
         <p class="font-bold">¡Solicitud Enviada!</p>
         <p class="text-sm">En breve nos comunicaremos para confirmar.</p>
     </div>
-    <div id="header-container"></div>
+    
+    <header class="bg-white shadow-sm sticky top-0 z-20">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="/public/index.html" class="text-2xl font-bold text-green-600">OhMyPet</a>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div id="guest-nav" class="hidden relative">
+                    <button id="guest-menu-btn" class="p-2 rounded-full hover:bg-gray-100 focus:outline-none transition-colors">
+                        <img src="/public/assets/icons/user.svg" alt="Usuario" class="h-7 w-7">
+                    </button>
+                    <div id="guest-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 border border-gray-200">
+                        <a href="/public/register.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 font-semibold text-green-600 transition-colors">
+                            Registrarse
+                        </a>
+                        <a href="/public/modules/login/login.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 transition-colors">
+                            Iniciar Sesión
+                        </a>
+                    </div>
+                </div>
+
+                <div id="user-nav" class="hidden relative">
+                    <button id="user-menu-btn" class="flex items-center justify-center h-10 w-10 bg-green-500 rounded-full text-white font-bold text-lg hover:bg-green-600 transition-colors focus:outline-none">
+                        <span id="user-initial">U</span>
+                    </button>
+                    <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 border border-gray-200">
+                        <a href="/public/modules/profile/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 font-semibold text-green-600 transition-colors">
+                            Mi Perfil
+                        </a>
+                        <button id="logout-btn" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium">
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+                
+                <a href="/public/modules/store/store.html" class="p-2 rounded-full hover:bg-gray-100 transition-colors relative">
+                    <img src="/public/assets/icons/carrito.svg" alt="Carrito" class="h-7 w-7">
+                    <span id="cart-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </a>
+            </div>
+        </nav>
+    </header>
 
     <main>
         <section class="relative bg-white py-24 md:py-32 text-center text-white overflow-hidden">
             <div class="absolute inset-0 z-0">
-                <img src="/public/assets/images/hero-banner.jpg" alt="Banner de OhMyPet" class="w-full h-full object-cover">
+                <img 
+                    src="/public/assets/images/hero-banner.jpg" 
+                    alt="Banner de OhMyPet" 
+                    class="w-full h-full object-cover"
+                    fetchpriority="high"
+                    loading="eager"
+                    decoding="async"
+                >
                 <div class="absolute inset-0 bg-black opacity-40"></div>
             </div>
             <div class="relative z-10 container mx-auto px-6 max-w-4xl">
@@ -54,11 +108,11 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     <div class="grid grid-cols-2 gap-6 p-4 bg-emerald-50 rounded-2xl shadow-lg ring-1 ring-emerald-100">
                         <div class="overflow-hidden rounded-xl shadow-md">
-                            <img src="/public/assets/images/grooming-1.jpg" alt="Perro antes del aseo" class="w-full h-auto object-cover transition-transform duration-300 hover:scale-105">
+                            <img src="/public/assets/images/grooming-1.jpg" alt="Perro antes del aseo" class="w-full h-auto object-cover transition-transform duration-300 hover:scale-105" loading="lazy">
                             <p class="text-center font-semibold text-emerald-700 mt-2">Antes</p>
                         </div>
                         <div class="overflow-hidden rounded-xl shadow-md">
-                            <img src="/public/assets/images/grooming-3.jpg" alt="Perro después del aseo" class="w-full h-auto object-cover transition-transform duration-300 hover:scale-105">
+                            <img src="/public/assets/images/grooming-3.jpg" alt="Perro después del aseo" class="w-full h-auto object-cover transition-transform duration-300 hover:scale-105" loading="lazy">
                             <p class="text-center font-semibold text-emerald-700 mt-2">Después</p>
                         </div>
                     </div>
