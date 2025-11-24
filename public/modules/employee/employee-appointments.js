@@ -26,8 +26,14 @@ let serviceSelectEmployeeModal;
 // Modal de completar cita (Existente)
 let completionModal, beforeImageInput, beforeImagePreview, afterImageInput, afterImagePreview;
 let receiptInput, receiptContainer, finalObservationsTextarea, uploadMessage;
-let cancelCompletionBtn, confirmCompletionBtn;
+let cancelCompletionBtn, confirmCompletionBtn, saveDuringAppointmentBtn; // Añadido saveDuringAppointmentBtn
 let currentAppointmentToComplete = null;
+
+// --- CORRECCIÓN 1: Declarar TODAS las variables faltantes ---
+let currentPetId = null; 
+let arrivalPhotoFile = null;
+let departurePhotoFile = null;
+let receiptFile = null;
 
 // NUEVOS ELEMENTOS PARA LA VISTA DE DETALLES
 let appointmentsListView;
@@ -139,6 +145,8 @@ export const initAppointmentElements = () => {
     uploadMessage = document.querySelector('#upload-message');
     cancelCompletionBtn = document.querySelector('#cancel-completion-btn');
     confirmCompletionBtn = document.querySelector('#confirm-completion-btn');
+    // IMPORTANTE: Inicializar el botón de guardado durante la cita
+    saveDuringAppointmentBtn = document.querySelector('#save-during-appointment-btn');
 
     // Inputs Modal Completar (Existente)
     servicePriceInput = document.getElementById('service-price-input');
@@ -366,8 +374,8 @@ const openAppointmentDetails = async (appointmentId) => {
     `;
     
     document.getElementById('detail-complete-btn')?.addEventListener('click', (e) => {
-        currentAppointmentToComplete = e.target.dataset.appointmentId; 
-        openCompletionModal(e.target.dataset.appointmentId);
+        // --- CORRECCIÓN 2: Usar currentAppointment capturado en el closure ---
+        openCompletionModal(appointmentId, currentAppointment.pets?.name, currentAppointment.pet_id);
     });
 
     const historyBlock = document.getElementById('history-block-button');
@@ -404,8 +412,28 @@ export const setupAppointmentListeners = () => {
     cancelCompletionBtn?.addEventListener('click', closeCompletionModal);
     confirmCompletionBtn?.addEventListener('click', handleCompleteAppointment);
     
-    beforeImageInput?.addEventListener('change', (e) => handleImagePreview(e, beforeImagePreview));
-    afterImageInput?.addEventListener('change', (e) => handleImagePreview(e, afterImagePreview));
+    // --- CORRECCIÓN 3: Listeners para inputs de archivo ---
+    beforeImageInput?.addEventListener('change', (e) => {
+        handleImagePreview(e, beforeImagePreview);
+        if(e.target.files[0]) arrivalPhotoFile = e.target.files[0];
+    });
+    afterImageInput?.addEventListener('change', (e) => {
+        handleImagePreview(e, afterImagePreview);
+        if(e.target.files[0]) departurePhotoFile = e.target.files[0];
+    });
+    receiptInput?.addEventListener('change', (e) => {
+        // Lógica simple para preview de boleta si se desea, por ahora solo asignamos
+        if (receiptContainer) {
+             const file = e.target.files[0];
+             if (file) {
+                 receiptFile = file;
+                 receiptContainer.innerHTML = `<p class="text-sm text-green-600">✓ ${file.name}</p>`;
+             }
+        }
+    });
+
+    // Botón para guardar progreso
+    saveDuringAppointmentBtn?.addEventListener('click', handleSaveProgress);
 
     // Toggle Shampoo Modal Completar
     shampooSelectToggleEmployee?.addEventListener('click', (e) => {
@@ -606,7 +634,6 @@ export const renderConfirmedAppointments = () => {
     renderPagination(totalAppointments);
 };
 
-// --- FUNCIÓN EXPORTADA PARA AGENDAR DESDE DETALLES DE MASCOTA ---
 export const openAddAppointmentWithPreselection = async (client, pet) => {
     await openAddAppointmentModal();
     const clientName = (client.first_name && client.last_name) ? `${client.first_name} ${client.last_name}` : client.full_name;
@@ -645,6 +672,8 @@ const closeAddAppointmentModal = () => {
     addAppointmentMessage?.classList.add('hidden');
     selectedClientIdInput.value = '';
     petSelect.innerHTML = '<option value="">Selecciona una mascota</option>';
+    petSelect.disabled = true;
+    clientSearchInputModal.value = '';
     
     if (submitAddAppointmentButtonEmployee) {
         submitAddAppointmentButtonEmployee.disabled = false;
@@ -764,10 +793,13 @@ const handleAddAppointment = async (e) => {
         if (result.success) {
             const newAppId = result.data.id; // ID de la nueva cita
 
-            // Si es completada, guardar peso si existe
-            if (isInstantComplete && appointmentData.final_weight) {
-                await addWeightRecord(appointmentData.pet_id, appointmentData.final_weight, newAppId);
-                // Actualizar fecha de último grooming en mascota
+            // Si es completada
+            if (isInstantComplete) {
+                // Guardar peso si existe
+                if (appointmentData.final_weight) {
+                    await addWeightRecord(appointmentData.pet_id, appointmentData.final_weight, newAppId);
+                }
+                // --- CORRECCIÓN: Actualizar SIEMPRE la fecha de grooming al completar, con o sin peso ---
                 await supabase.from('pets').update({ last_grooming_date: appointmentData.appointment_date }).eq('id', appointmentData.pet_id);
             }
 
@@ -829,12 +861,12 @@ const handleAddAppointment = async (e) => {
 
 const openCompletionModal = async (appointmentId, petName, petId) => {
     currentAppointmentToComplete = appointmentId;
-    currentPetId = petId;
+    currentPetId = petId; // --- CORRECCIÓN 1: Asignar el valor ---
     arrivalPhotoFile = null;
     departurePhotoFile = null;
     receiptFile = null;
 
-    // completionModalSubtitle.textContent = `Mascota: ${petName}`; // Variable no definida arriba, cuidado
+    // completionModalSubtitle.textContent = `Mascota: ${petName}`; 
     finalObservationsTextarea.value = '';
     petWeightInput.value = '';
     servicePriceInput.value = '';
@@ -892,7 +924,6 @@ const closeCompletionModal = () => {
     completionModal.classList.add('hidden');
     document.body.style.overflow = '';
     currentAppointmentToComplete = null;
-    // reset vars
     beforeImageInput.value = '';
     afterImageInput.value = '';
     receiptInput.value = '';
@@ -915,6 +946,91 @@ const handleImagePreview = (e, previewContainer) => {
     }
 };
 
+// --- FUNCIÓN NUEVA: Guardar información durante la cita ---
+const handleSaveProgress = async () => {
+    if (!currentAppointmentToComplete) return;
+
+    saveDuringAppointmentBtn.disabled = true;
+    uploadMessage.classList.remove('hidden');
+    uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-blue-100 text-blue-700';
+    uploadMessage.textContent = 'Guardando información...';
+
+    try {
+        // Subir fotos si existen nuevos archivos
+        if (arrivalPhotoFile) {
+            uploadMessage.textContent = 'Subiendo foto de llegada...';
+            await uploadAppointmentPhoto(currentAppointmentToComplete, arrivalPhotoFile, 'arrival');
+            arrivalPhotoFile = null; // Resetear para no volver a subir
+        }
+
+        if (departurePhotoFile) {
+            uploadMessage.textContent = 'Subiendo foto de salida...';
+            await uploadAppointmentPhoto(currentAppointmentToComplete, departurePhotoFile, 'departure');
+            departurePhotoFile = null;
+        }
+
+        if (receiptFile) {
+            uploadMessage.textContent = 'Subiendo boleta...';
+            await uploadReceiptFile(currentAppointmentToComplete, receiptFile);
+            receiptFile = null;
+        }
+
+        // Recoger datos del formulario
+        const observations = finalObservationsTextarea.value.trim();
+        const weight = petWeightInput.value.trim();
+        const price = servicePriceInput.value.trim();
+        const paymentMethod = paymentMethodSelect.value;
+        const shampooType = modalCompletionShampoo.getSelected();
+
+        const updateData = {};
+        if (observations) updateData.final_observations = observations;
+        
+        // Permitir guardar datos parciales
+        if (weight) updateData.final_weight = parseFloat(weight);
+        if (price) updateData.service_price = parseFloat(price);
+        if (paymentMethod) updateData.payment_method = paymentMethod.toUpperCase();
+        if (shampooType) updateData.shampoo_type = shampooType;
+
+        if (Object.keys(updateData).length > 0) {
+            uploadMessage.textContent = 'Guardando datos adicionales...';
+            await supabase
+                .from('appointments')
+                .update(updateData)
+                .eq('id', currentAppointmentToComplete);
+        }
+
+        // Guardar historial de peso si hay peso
+        if (weight && currentPetId) {
+            uploadMessage.textContent = 'Registrando peso...';
+            await addWeightRecord(currentPetId, parseFloat(weight), currentAppointmentToComplete);
+        }
+
+        uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-green-100 text-green-700';
+        uploadMessage.textContent = '✓ Información guardada correctamente';
+
+        // Refrescar estado local pero NO cerrar el modal
+        const { data: appointments } = await supabase.from('appointments').select('*, pets(name), profiles(first_name, last_name, full_name)').order('appointment_date', { ascending: true });
+        if (appointments) {
+            updateState('allAppointments', appointments);
+            renderConfirmedAppointments();
+        }
+
+        // Actualizar visualización de fotos/boleta en el modal con las URLs nuevas
+        await loadExistingPhotosAndReceipt(currentAppointmentToComplete);
+
+        setTimeout(() => {
+            uploadMessage.classList.add('hidden');
+        }, 2000);
+
+    } catch (error) {
+        console.error("Error guardando progreso:", error);
+        uploadMessage.className = 'text-center text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
+        uploadMessage.textContent = `Error al guardar: ${error.message}`;
+    } finally {
+        saveDuringAppointmentBtn.disabled = false;
+    }
+};
+
 const handleCompleteAppointment = async () => {
     if (!currentAppointmentToComplete) return;
 
@@ -933,13 +1049,15 @@ const handleCompleteAppointment = async () => {
     confirmCompletionBtn.disabled = true;
     confirmCompletionBtn.textContent = 'Procesando...';
     
-    // Subida de fotos (lógica simplificada)
-    if (beforeImageInput.files[0]) await uploadAppointmentPhoto(currentAppointmentToComplete, beforeImageInput.files[0], 'arrival');
-    if (afterImageInput.files[0]) await uploadAppointmentPhoto(currentAppointmentToComplete, afterImageInput.files[0], 'departure');
-    if (receiptInput.files[0]) await uploadReceiptFile(currentAppointmentToComplete, receiptInput.files[0]);
+    // Subida de fotos (lógica simplificada, si quedaba algo pendiente)
+    if (arrivalPhotoFile) await uploadAppointmentPhoto(currentAppointmentToComplete, arrivalPhotoFile, 'arrival');
+    if (departurePhotoFile) await uploadAppointmentPhoto(currentAppointmentToComplete, departurePhotoFile, 'departure');
+    if (receiptFile) await uploadReceiptFile(currentAppointmentToComplete, receiptFile);
 
     const appointment = state.allAppointments.find(app => app.id === currentAppointmentToComplete);
-    const petId = appointment?.pet_id;
+    
+    // Se usa la variable currentPetId que se asignó al abrir el modal
+    const petId = currentPetId || appointment?.pet_id; 
     const weight = parseFloat(petWeightInput.value);
 
     if (petId && !isNaN(weight) && weight > 0) {
@@ -974,6 +1092,7 @@ const handleCompleteAppointment = async () => {
         renderConfirmedAppointments();
     }
     
+    // --- CORRECCIÓN: Actualizar SIEMPRE la fecha de grooming al completar ---
     if (petId) {
         const appointmentDate = appointment ? appointment.appointment_date : new Date().toISOString().split('T')[0];
         await supabase.from('pets').update({ last_grooming_date: appointmentDate }).eq('id', petId);
@@ -988,13 +1107,29 @@ const handleCompleteAppointment = async () => {
 
 const openHistoryModal = (appointment, petName) => {
     if (!appointment) return;
-    
     historyPetName.textContent = `Mascota: ${petName} (Servicio del ${appointment.appointment_date})`;
-    
-    // Lógica fotos historial...
-    // (Se omite para brevedad, es igual a tu archivo original)
     historyPrice.textContent = appointment.service_price ? `S/ ${appointment.service_price.toFixed(2)}` : 'N/A';
-    // ... resto de campos ...
+    
+    const photos = appointment.appointment_photos || [];
+    const arrivalPhoto = photos.find(p => p.photo_type === 'arrival' || p.photo_type === 'before');
+    const departurePhoto = photos.find(p => p.photo_type === 'departure' || p.photo_type === 'after');
+
+    if (arrivalPhoto) {
+        historyArrivalPhoto.innerHTML = `<img src="${arrivalPhoto.image_url}" alt="Foto de llegada" class="w-full h-full object-cover rounded-lg">`;
+    } else {
+        historyArrivalPhoto.innerHTML = `<p class="text-sm text-gray-500">Sin foto</p>`;
+    }
+
+    if (departurePhoto) {
+        historyDeparturePhoto.innerHTML = `<img src="${departurePhoto.image_url}" alt="Foto de salida" class="w-full h-full object-cover rounded-lg">`;
+    } else {
+        historyDeparturePhoto.innerHTML = `<p class="text-sm text-gray-500">Sin foto</p>`;
+    }
+
+    historyWeight.textContent = appointment.final_weight ? `${appointment.final_weight} kg` : 'N/A';
+    historyPayment.textContent = (appointment.payment_method || 'N/A').toUpperCase();
+    historyShampoo.textContent = appointment.shampoo_type || 'General';
+    historyObservations.textContent = appointment.final_observations || 'Sin observaciones.';
 
     historyModalEmployee?.classList.remove('hidden');
     document.body.style.overflow = 'hidden'; 
