@@ -4,144 +4,149 @@ import { supabase } from '../core/supabase.js';
  * Inicializa el header con toda su lógica
  */
 export const initHeader = async () => {
-    console.log('🚀 Inicializando header...');
+    console.log('🚀 [Header] Iniciando carga...');
     
     // Obtener elementos del DOM
     const guestNav = document.getElementById('guest-nav');
     const userNav = document.getElementById('user-nav');
+    const dashboardLink = document.getElementById('dashboard-link'); // El botón que buscamos
+    
+    const userInitial = document.getElementById('user-initial');
+    const userRoleLabel = document.getElementById('user-role-label'); 
+
     const guestMenuBtn = document.getElementById('guest-menu-btn');
     const guestDropdown = document.getElementById('guest-dropdown');
     const userMenuBtn = document.getElementById('user-menu-btn');
     const userDropdown = document.getElementById('user-dropdown');
-    const userInitial = document.getElementById('user-initial');
     const logoutBtn = document.getElementById('logout-btn');
     const cartBadge = document.getElementById('cart-badge');
     const cartBtn = document.querySelector('a[href="/public/modules/store/store.html"]');
 
-    // Verificar que existen los elementos
+    // Verificar elementos críticos
     if (!guestNav || !userNav) {
-        console.log('⏳ Header no cargado aún, reintentando...');
+        console.warn('⚠️ [Header] No se encontraron los elementos de navegación.');
         return false;
     }
 
-    console.log('✅ Elementos del header encontrados');
-
-    // ========== VERIFICAR ESTADO DE AUTENTICACIÓN ==========
+    // Verificar sesión
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
-        // Usuario LOGUEADO
-        console.log('👤 Usuario logueado:', user.email);
+        // -- USUARIO LOGUEADO --
+        console.log('✅ [Header] Usuario autenticado:', user.email);
+        
         guestNav.classList.add('hidden');
         userNav.classList.remove('hidden');
+        userNav.style.display = 'flex'; // Forzar visualización flex
 
-        // Obtener nombre del perfil
-        const { data: profile } = await supabase
+        // Obtener datos del perfil
+        const { data: profile, error } = await supabase
             .from('profiles')
-            .select('first_name, last_name, full_name')
+            .select('first_name, last_name, full_name, role')
             .eq('id', user.id)
             .single();
 
+        if (error) {
+            console.error('❌ [Header] Error al cargar perfil:', error);
+        }
+
         if (profile) {
+            console.log('👤 [Header] Perfil cargado. Rol:', profile.role);
+            
+            // 1. Iniciales
             const displayName = (profile.first_name && profile.last_name) 
                 ? `${profile.first_name} ${profile.last_name}` 
                 : profile.full_name;
             const initial = displayName ? displayName.charAt(0).toUpperCase() : 'U';
             if (userInitial) userInitial.textContent = initial;
+
+            // 2. Etiqueta de Rol en menú
+            if (userRoleLabel) {
+                userRoleLabel.textContent = profile.role ? profile.role.toUpperCase() : 'CLIENTE';
+            }
+
+            // 3. LÓGICA DEL BOTÓN DASHBOARD
+            if (dashboardLink) {
+                // Normalizar el rol a minúsculas por si acaso
+                const role = (profile.role || '').toLowerCase().trim();
+                
+                if (role === 'dueño' || role === 'admin') {
+                    console.log('🔓 [Header] Acceso ADMIN concedido. Mostrando botón.');
+                    dashboardLink.href = '/public/modules/dashboard/dashboard-overview.html';
+                    dashboardLink.classList.remove('hidden');
+                    dashboardLink.style.display = 'flex'; 
+                } else if (role === 'empleado') {
+                    console.log('🔓 [Header] Acceso EMPLEADO concedido. Mostrando botón.');
+                    dashboardLink.href = '/public/modules/employee/dashboard.html';
+                    dashboardLink.classList.remove('hidden');
+                    dashboardLink.style.display = 'flex';
+                } else {
+                    console.log('🔒 [Header] Usuario es CLIENTE. Ocultando botón Dashboard.');
+                    dashboardLink.classList.add('hidden');
+                    dashboardLink.style.display = 'none';
+                }
+            } else {
+                console.error('❌ [Header] No se encontró el elemento HTML #dashboard-link');
+            }
         }
     } else {
-        // Usuario NO LOGUEADO
-        console.log('🔓 Usuario no autenticado');
+        // -- USUARIO NO LOGUEADO --
+        console.log('zzz [Header] Sesión de invitado.');
         guestNav.classList.remove('hidden');
         userNav.classList.add('hidden');
+        userNav.style.display = 'none';
     }
 
-    // ========== MENÚ DESPLEGABLE DE INVITADO ==========
-    if (guestMenuBtn && guestDropdown) {
-        guestMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            guestDropdown.classList.toggle('hidden');
-            userDropdown?.classList.add('hidden');
-            console.log('📋 Menú de invitado toggled');
-        });
-    }
+    // --- EVENT LISTENERS (Menús, Logout, Carrito) ---
+    const toggleDropdown = (btn, dropdown, otherDropdown) => {
+        if (btn && dropdown) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+                if (otherDropdown) otherDropdown.classList.add('hidden');
+            });
+        }
+    };
 
-    // ========== MENÚ DESPLEGABLE DE USUARIO ==========
-    if (userMenuBtn && userDropdown) {
-        userMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userDropdown.classList.toggle('hidden');
-            guestDropdown?.classList.add('hidden');
-            console.log('📋 Menú de usuario toggled');
-        });
-    }
+    toggleDropdown(guestMenuBtn, guestDropdown, userDropdown);
+    toggleDropdown(userMenuBtn, userDropdown, guestDropdown);
 
-    // ========== CERRAR SESIÓN ==========
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            console.log('🚪 Cerrando sesión...');
-            
-            try {
-                await supabase.auth.signOut();
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = '/public/index.html';
-            } catch (error) {
-                console.error('❌ Error al cerrar sesión:', error);
-                window.location.href = '/public/index.html';
-            }
-        });
-    }
-
-    // ========== CARRITO ==========
-    
-    // Abrir modal del carrito (solo si estamos en store.html)
-    if (cartBtn) {
-        cartBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const cartModal = document.getElementById('cart-modal');
-            const cartModalContent = document.getElementById('cart-modal-content');
-            
-            if (cartModal && cartModalContent) {
-                // Estamos en la tienda, abrir modal
-                cartModal.classList.remove('hidden');
-                setTimeout(() => {
-                    cartModalContent.style.transform = 'translateX(0)';
-                }, 10);
-                
-                // Llamar función de renderizado si existe
-                if (window.renderCart) {
-                    window.renderCart();
-                }
-                console.log('🛒 Modal del carrito abierto');
-            } else {
-                // No estamos en la tienda, ir a la tienda
-                console.log('🛒 Redirigiendo a tienda...');
-                window.location.href = '/public/modules/store/store.html';
-            }
-        });
-    }
-
-    // Actualizar badge del carrito
-    updateCartBadge(cartBadge);
-
-    // Cerrar menús al hacer click fuera
     document.addEventListener('click', () => {
         guestDropdown?.classList.add('hidden');
         userDropdown?.classList.add('hidden');
     });
 
-    console.log('✅ Header inicializado completamente');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await supabase.auth.signOut();
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/public/index.html';
+        });
+    }
+
+    if (cartBtn) {
+        cartBtn.addEventListener('click', (e) => {
+            if (typeof window.renderCart === 'function') {
+                e.preventDefault();
+                const cartModal = document.getElementById('cart-modal');
+                const cartModalContent = document.getElementById('cart-modal-content');
+                if (cartModal) {
+                    cartModal.classList.remove('hidden');
+                    setTimeout(() => cartModalContent.style.transform = 'translateX(0)', 10);
+                    window.renderCart();
+                }
+            }
+        });
+    }
+
+    updateCartBadge(cartBadge);
     return true;
 };
 
-/**
- * Actualiza el badge del carrito
- */
 const updateCartBadge = (badge) => {
     if (!badge) return;
-    
     try {
         const cart = JSON.parse(localStorage.getItem('ohmypet_cart') || '[]');
         const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -149,41 +154,25 @@ const updateCartBadge = (badge) => {
         if (totalItems > 0) {
             badge.textContent = totalItems;
             badge.classList.remove('hidden');
-            console.log('🛒 Badge actualizado:', totalItems);
         } else {
             badge.classList.add('hidden');
         }
-    } catch (error) {
-        console.log('Cart no disponible');
-    }
+    } catch (error) {}
 };
 
-/**
- * Función pública para actualizar el badge desde otros scripts
- */
 export const refreshCartBadge = () => {
     const badge = document.getElementById('cart-badge');
     updateCartBadge(badge);
 };
 
-/**
- * Reintentar inicialización si falla
- */
 export const initHeaderWithRetry = async () => {
     let attempts = 0;
-    const maxAttempts = 3;
-
     const tryInit = async () => {
         const success = await initHeader();
-        
-        if (!success && attempts < maxAttempts) {
+        if (!success && attempts < 3) {
             attempts++;
-            console.log(`⏳ Reintento ${attempts}/${maxAttempts}`);
             setTimeout(tryInit, 200);
-        } else if (!success) {
-            console.error('❌ No se pudo inicializar el header después de múltiples intentos');
         }
     };
-
     tryInit();
 };

@@ -517,6 +517,7 @@ export const getSalesReportData = async (startDate, endDate) => {
             total_price,
             quantity,
             payment_method,
+            notes,
             client:client_id ( full_name, first_name, last_name ),
             product:product_id ( name, category )
         `)
@@ -573,6 +574,7 @@ export const getSalesReportData = async (startDate, endDate) => {
             fecha: new Date(sale.created_at).toISOString().split('T')[0],
             cliente: clientName,
             producto: sale.product?.name || 'N/A',
+            nota: sale.notes || '', // <--- CAMPO NOTA AÑADIDO
             categoria: sale.product?.category || 'N/A',
             cantidad: sale.quantity,
             // **** INICIO DE LA CORRECCIÓN ****
@@ -1116,6 +1118,9 @@ export const addSale = async (saleData, saleDate = null) => {
         // **** INICIO DE LA CORRECCIÓN ****
         payment_method: (saleData.payment_method || 'DESCONOCIDO').toUpperCase(),
         // **** FIN DE LA CORRECCIÓN ****
+        // --- NUEVO CAMPO: notes ---
+        notes: item.note || null, 
+        // ------------------------
         recorded_by: user?.id || null,
         created_at: saleTimestamp // <-- CAMPO AÑADIDO
     }));
@@ -1262,7 +1267,7 @@ export const getAllDenormalizedDataForExport = async () => {
             supabase
                 .from('sales')
                 .select(`
-                    created_at, total_price, quantity, payment_method,
+                    created_at, total_price, quantity, payment_method, notes,
                     client:client_id ( full_name, phone ),
                     product:product_id ( name, category )
                 `),
@@ -1316,6 +1321,7 @@ export const getAllDenormalizedDataForExport = async () => {
             'Fecha Venta': new Date(sale.created_at).toLocaleString('es-ES'),
             'Cliente': sale.client?.full_name,
             'Producto': sale.product?.name,
+            'Detalle/Nota': sale.notes || '', // <-- CAMPO NOTA AÑADIDO
             'Categoría Producto': sale.product?.category,
             'Cantidad': sale.quantity,
             'Precio Total (S/)': sale.total_price,
@@ -1382,3 +1388,34 @@ export const getProductsPaginated = async (page = 1, itemsPerPage = 10, search =
     return { data: data || [], count: count || 0 };
 };
 // ============ FIN: NUEVA FUNCIÓN AÑADIDA ============
+
+// ==========================================
+// NUEVA FUNCIÓN PARA EL POS (LAZY LOADING)
+// ==========================================
+export const getPOSProductsPaginated = async (page, limit, search = '') => {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    // Solo traemos productos con stock > 0
+    let query = supabase
+        .from('products')
+        .select('*', { count: 'exact' })
+        .gt('stock', 0);
+
+    // Si hay búsqueda, filtramos por nombre
+    if (search) {
+        query = query.ilike('name', `%${search}%`);
+    }
+
+    // Ordenamos y paginamos
+    const { data, error, count } = await query
+        .order('name', { ascending: true })
+        .range(from, to);
+
+    if (error) {
+        console.error('Error al obtener productos paginados:', error);
+        return { data: [], count: 0 };
+    }
+
+    return { data, count };
+};

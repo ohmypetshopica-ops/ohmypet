@@ -3,6 +3,8 @@
 import { supabase } from '../../core/supabase.js';
 import { getSales, updateSaleItem } from './dashboard.api.js';
 
+console.log("✅ dashboard-sales.js cargado (Versión con Notas)");
+
 // --- ELEMENTOS DEL DOM ---
 const salesTableBody = document.querySelector('#sales-table-body');
 const salesSearchInput = document.querySelector('#sales-search-input');
@@ -52,10 +54,8 @@ const groupSalesData = (salesRaw) => {
             const timeStr = saleDate.toTimeString().split(' ')[0] || '00:00:00';
             const timeKey = timeStr.substring(0, 5);
              
-            // **** INICIO DE LA CORRECCIÓN 1 ****
-            // Normalizamos el método de pago a MAYÚSCULAS para agrupar mejor
+            // Normalizamos el método de pago a MAYÚSCULAS
             const paymentMethod = (sale.payment_method || 'DESCONOCIDO').toUpperCase();
-            // **** FIN DE LA CORRECCIÓN 1 ****
             
             const key = `${dateKey}-${timeKey}-${sale.client_id}-${paymentMethod}`;
             
@@ -73,14 +73,18 @@ const groupSalesData = (salesRaw) => {
             }
             
             const group = groupedDataMap.get(key);
+            
+            // AQUI SE AGREGA LA NOTA AL PRODUCTO AGRUPADO
             group.products.push({
                 id: sale.id,
                 name: sale.product?.name || 'Producto Eliminado',
                 quantity: sale.quantity,
                 unit_price: sale.unit_price,
                 price: sale.total_price,
-                product_id: sale.product_id
+                product_id: sale.product_id,
+                note: sale.notes || '' // <--- CAMPO NOTA AGREGADO
             });
+            
             group.sale_ids.push(sale.id);
             group.total += (sale.total_price || 0);
         } catch (err) {
@@ -101,6 +105,7 @@ const loadSalesData = async () => {
         }
         
         console.log("Iniciando carga de ventas...");
+        // getSales trae todas las columnas (*), así que traerá 'notes' automáticamente
         const rawSales = await getSales();
         console.log(`Ventas cargadas: ${rawSales ? rawSales.length : 0}`);
 
@@ -135,7 +140,9 @@ const applyFilters = () => {
                 ? `${sale.client.first_name} ${sale.client.last_name}`.toLowerCase() 
                 : (sale.client?.full_name || '').toLowerCase();
             
-            const productsString = sale.products.map(p => p.name.toLowerCase()).join(' ');
+            // Buscamos también en el nombre del producto y en las NOTAS
+            const productsString = sale.products.map(p => `${p.name} ${p.note || ''}`).join(' ').toLowerCase();
+            
             matchesSearch = clientName.includes(searchTerm) || productsString.includes(searchTerm);
         }
 
@@ -216,6 +223,7 @@ const renderCurrentPage = () => {
             ? `${sale.client.first_name} ${sale.client.last_name}` 
             : sale.client?.full_name || 'Cliente Eliminado';
         
+        // Mostramos un resumen de productos (sin las notas aquí para no saturar la tabla)
         const productsList = sale.products.map(p => `${p.name} (x${p.quantity})`).join(', ');
         
         return `
@@ -237,11 +245,9 @@ const renderCurrentPage = () => {
         `;
     }).join('');
 
-    // Usar event delegation para mejor rendimiento
     const newRows = salesTableBody.querySelectorAll('tr[data-sale-key]');
     newRows.forEach(row => {
         row.addEventListener('click', (e) => {
-            // Evitar doble disparo si se hace clic específicamente en el botón, aunque el bubbling lo manejaría
              const saleKey = row.dataset.saleKey;
              const sale = filteredSales.find(s => s.key === saleKey);
              if (sale) openSaleDetails(sale);
@@ -258,13 +264,17 @@ const openSaleDetails = (sale) => {
         ? `${sale.client.first_name} ${sale.client.last_name}` 
         : sale.client?.full_name || 'Cliente Eliminado';
     
+    // AQUI RENDERIZAMOS LAS NOTAS EN EL MODAL
     const productsHTML = sale.products.map(p => `
         <div class="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
-            <div>
+            <div class="flex-1 pr-4">
                 <p class="font-medium text-gray-800">${p.name}</p>
-                <p class="text-xs text-gray-500">Cantidad: ${p.quantity} × S/ ${p.unit_price.toFixed(2)}</p>
+                
+                ${p.note ? `<p class="text-xs text-blue-600 italic mt-0.5 font-medium">Nota: ${p.note}</p>` : ''}
+                
+                <p class="text-xs text-gray-500 mt-0.5">Cantidad: ${p.quantity} × S/ ${p.unit_price.toFixed(2)}</p>
             </div>
-            <p class="font-bold text-gray-900">S/ ${p.price.toFixed(2)}</p>
+            <p class="font-bold text-gray-900 whitespace-nowrap">S/ ${p.price.toFixed(2)}</p>
         </div>
     `).join('');
     
@@ -316,24 +326,22 @@ const closeSaleDetails = () => {
 const openEditModal = () => {
     if (!selectedSaleGroup) return;
 
-    // Ajustar la fecha a formato local para el input datetime-local
     const saleDate = new Date(selectedSaleGroup.created_at);
     const tzOffset = saleDate.getTimezoneOffset() * 60000;
     const localISOTime = (new Date(saleDate - tzOffset)).toISOString().slice(0, 16);
     
     editSaleDate.value = localISOTime;
-    
-    // **** INICIO DE LA CORRECCIÓN 4 ****
-    // Asegurar que el valor coincida con las opciones del select (MAYÚSCULAS)
     editPaymentMethod.value = (selectedSaleGroup.payment_method || 'DESCONOCIDO').toUpperCase();
-    // **** FIN DE LA CORRECCIÓN 4 ****
-    
     editSaleMessage.classList.add('hidden');
 
+    // En la edición, permitimos ver la nota pero no editarla (para simplificar)
+    // O podríamos agregar un input si fuera crítico editar la nota histórica.
+    // Por ahora, solo mostramos la nota informativa.
     editSaleItemsContainer.innerHTML = selectedSaleGroup.products.map(p => `
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 border rounded-lg bg-gray-50 items-center" data-sale-id="${p.id}">
             <div class="sm:col-span-3">
                 <p class="font-semibold text-gray-800 text-sm">${p.name}</p>
+                ${p.note ? `<p class="text-xs text-blue-600 italic">Nota: ${p.note}</p>` : ''}
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">Cantidad</label>
@@ -365,7 +373,6 @@ const handleSaveSale = async () => {
 
     try {
         const newDateVal = editSaleDate.value;
-        // El valor del select ya vendrá en MAYÚSCULAS
         const newPaymentMethod = editPaymentMethod.value;
         
         if (!newDateVal || !newPaymentMethod) {
@@ -389,7 +396,7 @@ const handleSaveSale = async () => {
 
             const updates = {
                 created_at: newDateISO,
-                payment_method: newPaymentMethod, // Ya está en MAYÚSCULAS
+                payment_method: newPaymentMethod,
                 quantity: newQuantity,
                 total_price: newTotalPrice,
                 unit_price: newUnitPrice
@@ -432,7 +439,6 @@ const deleteSale = async () => {
     deleteSaleBtn.textContent = 'Eliminando...';
     
     try {
-        // 1. Eliminar registros de venta
         const { error: deleteError } = await supabase
             .from('sales')
             .delete()
@@ -440,9 +446,7 @@ const deleteSale = async () => {
         
         if (deleteError) throw deleteError;
         
-        // 2. Devolver stock (optimista, si falla uno no detiene todo, pero idealmente usaría una transacción RPC)
         for (const product of selectedSaleGroup.products) {
-            // Obtener stock actual para asegurar consistencia
             const { data: currentProd } = await supabase
                 .from('products')
                 .select('stock')
@@ -475,7 +479,6 @@ const initializeSalesPage = async () => {
     console.log("Inicializando página de ventas...");
     await loadSalesData();
 
-    // Listeners de Filtros
     salesSearchInput?.addEventListener('input', () => {
         clearTimeout(window.searchTimeout);
         window.searchTimeout = setTimeout(applyFilters, 300);
@@ -483,7 +486,6 @@ const initializeSalesPage = async () => {
     salesDateFilter?.addEventListener('change', applyFilters);
     clearSalesFiltersBtn?.addEventListener('click', clearFilters);
 
-    // Listeners Modales
     closeSaleDetailsBtn?.addEventListener('click', closeSaleDetails);
     deleteSaleBtn?.addEventListener('click', deleteSale);
     editSaleBtn?.addEventListener('click', openEditModal);
@@ -499,7 +501,6 @@ const initializeSalesPage = async () => {
     });
 };
 
-// Asegurar que se ejecute cuando el DOM esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeSalesPage);
 } else {

@@ -1,11 +1,17 @@
 import { initHeaderWithRetry } from './header.js';
 
+const CACHE_VERSION = Date.now(); // Genera un número único cada vez
+
 /**
  * Carga un componente HTML desde una URL en un contenedor específico.
+ * AÑADIDO: Cache busting (?v=...) para forzar la carga del nuevo HTML.
  */
 const loadComponent = async (url, containerId) => {
     try {
-        const response = await fetch(url);
+        // Agregamos la versión para evitar que el navegador use el archivo viejo
+        const versionedUrl = `${url}?v=${CACHE_VERSION}`; 
+        
+        const response = await fetch(versionedUrl, { cache: 'no-store' });
         if (!response.ok) {
             throw new Error(`Error al cargar ${url}: ${response.statusText}`);
         }
@@ -23,7 +29,7 @@ const loadComponent = async (url, containerId) => {
  * Carga todos los componentes comunes del layout
  */
 const loadLayout = async () => {
-    console.log('📦 Cargando layout...');
+    console.log('📦 Cargando layout (sin caché)...');
     
     await Promise.all([
         loadComponent('/public/components/header.html', 'header-container'),
@@ -37,7 +43,6 @@ const loadLayout = async () => {
     
     // Disparar evento de que todo está listo
     document.dispatchEvent(new CustomEvent('layoutReady'));
-    console.log('🎉 Layout listo');
 };
 
 document.addEventListener('DOMContentLoaded', loadLayout);

@@ -34,10 +34,10 @@ let totalAppointmentsCount = 0;
 let appointmentToDeleteId = null; 
 
 
-// --- OPCIONES DE SHAMPOO (NUEVO) ---
+// --- OPCIONES DE SHAMPOO ---
 const SHAMPOO_OPTIONS = [
     'Shampoo General', 'Avena', 'Pelo Blanco', 'Pelo Oscuro', 'Clorixidina',
-    'Hipoalergenico', 'Junior', 'Mascarilla', 'SHAMPO PROPIO' // <--- OPCIÓN AÑADIDA
+    'Hipoalergenico', 'Junior', 'Mascarilla', 'SHAMPO PROPIO'
 ];
 
 // --- ELEMENTOS DEL DOM GENERAL ---
@@ -57,7 +57,7 @@ const finalObservationsTextarea = document.querySelector('#final-observations-te
 const petWeightInput = document.querySelector('#pet-weight-input');
 const servicePriceInput = document.querySelector('#service-price-input');
 const paymentMethodSelect = document.querySelector('#payment-method-select');
-// Elementos del Dropdown de Shampoo (NUEVOS)
+// Elementos del Dropdown de Shampoo
 const shampooSelectToggle = document.querySelector('#shampoo-select-toggle'); 
 const shampooDropdownContent = document.querySelector('#shampoo-dropdown-content');
 const shampooDisplayText = document.querySelector('#shampoo-display-text');
@@ -108,13 +108,8 @@ const confirmDeleteBtn = document.querySelector('#confirm-delete-btn');
 const cancelDeleteBtn = document.querySelector('#cancel-delete-btn');
 
 
-// --- INICIO: CÓDIGO AÑADIDO (Helpers de Alertas) ---
+// --- HELPERS DE ALERTAS ---
 
-/**
- * Muestra la alerta principal en la página (fuera de los modales)
- * @param {string} message - El mensaje a mostrar.
- * @param {boolean} isError - true para alerta roja (error), false para verde (éxito).
- */
 const showMainAlert = (message, isError = false) => {
     if (!mainAlertMessage) return;
 
@@ -126,15 +121,11 @@ const showMainAlert = (message, isError = false) => {
     }
     mainAlertMessage.classList.remove('hidden');
 
-    // Ocultar automáticamente después de 4 segundos
     setTimeout(() => {
         mainAlertMessage.classList.add('hidden');
     }, 4000);
 };
 
-/**
- * Muestra una alerta DENTRO del modal de reprogramación.
- */
 const showRescheduleAlert = (message, isError = false) => {
     if (!rescheduleMessage) return;
 
@@ -147,16 +138,12 @@ const showRescheduleAlert = (message, isError = false) => {
     rescheduleMessage.classList.remove('hidden');
 };
 
-/**
- * Oculta la alerta del modal de reprogramación.
- */
 const hideRescheduleAlert = () => {
     if (rescheduleMessage) rescheduleMessage.classList.add('hidden');
 };
-// --- FIN: CÓDIGO AÑADIDO ---
 
 
-// --- FUNCIONES SHAMPOO CHECKLIST (NUEVO) ---
+// --- FUNCIONES SHAMPOO CHECKLIST ---
 const updateShampooDisplayText = () => {
     const checkedBoxes = document.querySelectorAll('#shampoo-dropdown-content .shampoo-checkbox:checked');
     const count = checkedBoxes.length;
@@ -188,7 +175,6 @@ const renderShampooChecklist = (selectedShampoos = []) => {
         `;
     }).join('');
 
-    // Añadir listener para actualizar el texto del botón al cambiar un checkbox
     shampooDropdownContent.querySelectorAll('.shampoo-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', updateShampooDisplayText);
     });
@@ -201,7 +187,6 @@ const getShampooList = () => {
     const selectedShampoos = Array.from(checkedBoxes).map(cb => cb.value).join(',');
     return selectedShampoos || null;
 };
-// --- FIN FUNCIONES SHAMPOO CHECKLIST ---
 
 
 // --- PAGINACIÓN ---
@@ -396,7 +381,6 @@ const openRescheduleModal = async (appointmentId) => {
     rescheduleServiceSelect.value = appointment.service;
     rescheduleNotesTextarea.value = appointment.notes || '';
 
-    // Cargar horarios para la fecha actual
     await renderAvailableTimes(rescheduleDateInput, rescheduleTimeSelect);
     rescheduleTimeSelect.value = appointment.appointment_time;
 
@@ -409,14 +393,12 @@ const closeRescheduleModal = () => {
     hideRescheduleAlert(); 
 };
 
-// --- INICIO: CÓDIGO ACTUALIZADO ---
 const openDeleteModal = (appointmentId, petName) => {
     appointmentToDeleteId = appointmentId;
     deletePetNameElement.textContent = petName;
     
-    // Limpiar mensajes de error anteriores
     const deleteModalText = deletePetNameElement.parentElement.querySelector('p');
-    if (deleteModalText) { // Asegurarse de que el elemento exista
+    if (deleteModalText) { 
         const errorText = deleteModalText.querySelector('.error-text');
         if (errorText) {
             errorText.remove();
@@ -432,7 +414,6 @@ const closeDeleteModal = () => {
     confirmDeleteBtn.disabled = false;
     confirmDeleteBtn.textContent = 'Sí, Eliminar';
 };
-// --- FIN: CÓDIGO ACTUALIZADO ---
 
 const initializeAddAppointmentModal = async () => {
     clientsWithPets = await getClientsWithPets();
@@ -515,7 +496,7 @@ const initializeAddAppointmentModal = async () => {
         const { success, error } = await addAppointmentFromDashboard(appointmentData);
 
         if (success) {
-            showMainAlert('¡Cita agendada con éxito!', false); // <-- ALERTA DINÁMICA
+            showMainAlert('¡Cita agendada con éxito!', false); 
             
             try {
                 const appointmentDateTime = new Date(`${appointmentData.appointment_date}T${appointmentData.appointment_time}`);
@@ -571,7 +552,6 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
     servicePriceInput.value = '';
     paymentMethodSelect.value = '';
     
-
     uploadMessage.classList.add('hidden');
 
     const appointment = allAppointments.find(app => app.id == appointmentId);
@@ -587,19 +567,15 @@ const openCompletionModal = async (appointmentId, petName, petId) => {
         petWeightInput.value = appointment.final_weight || '';
         servicePriceInput.value = appointment.service_price || '';
         
-        // **** INICIO DE LA CORRECCIÓN 1 ****
-        // Aseguramos que el valor (MAYÚSCULAS) coincida con el select
         paymentMethodSelect.value = (appointment.payment_method || '').toUpperCase();
         if (!paymentMethodSelect.value) {
-             paymentMethodSelect.value = ""; // Si es null o "", vuelve a "Seleccionar..."
+             paymentMethodSelect.value = ""; 
         }
-        // **** FIN DE LA CORRECCIÓN 1 ****
         
-        // --- Cargar y renderizar checkboxes (NUEVO) ---
         const selectedShampoos = appointment.shampoo_type ? appointment.shampoo_type.split(',').map(s => s.trim()) : [];
         renderShampooChecklist(selectedShampoos);
     } else {
-        renderShampooChecklist([]); // Nuevo: Si no hay cita, renderiza vacío
+        renderShampooChecklist([]);
     }
 
     await loadExistingPhotosAndReceipt(appointmentId);
@@ -643,7 +619,6 @@ const closeCompletionModal = () => {
 const initializePage = async () => {
     await loadAppointmentsAndRender();
 
-    // --- EVENTOS DEL DROPDOWN DE SHAMPOO (NUEVO) ---
     shampooSelectToggle?.addEventListener('click', (e) => {
         e.stopPropagation();
         shampooDropdownContent?.classList.toggle('hidden');
@@ -654,7 +629,6 @@ const initializePage = async () => {
             shampooDropdownContent?.classList.add('hidden');
         }
     });
-    // --- FIN EVENTOS DROPDOWN SHAMPOO ---
 
     searchInput?.addEventListener('input', applyFiltersAndSearch);
     statusFilter?.addEventListener('change', applyFiltersAndSearch);
@@ -789,7 +763,7 @@ const initializePage = async () => {
             const weight = petWeightInput.value.trim();
             const price = servicePriceInput.value.trim();
             const paymentMethod = paymentMethodSelect.value;
-            const shampooType = getShampooList(); // NEW: Read from checklist
+            const shampooType = getShampooList();
 
             const updateData = {};
             if (observations) updateData.final_observations = observations;
@@ -799,7 +773,7 @@ const initializePage = async () => {
             
             if (paymentMethod) updateData.payment_method = paymentMethod.toUpperCase();
 
-            if (shampooType) updateData.shampoo_type = shampooType; // NEW
+            if (shampooType) updateData.shampoo_type = shampooType;
 
             if (Object.keys(updateData).length > 0) {
                 uploadMessage.textContent = 'Guardando datos adicionales...';
@@ -834,7 +808,7 @@ const initializePage = async () => {
         const weight = petWeightInput.value.trim();
         const price = servicePriceInput.value.trim();
         const paymentMethod = paymentMethodSelect.value;
-        const shampooType = getShampooList(); // NEW: Read from checklist
+        const shampooType = getShampooList();
         
         let missingFields = [];
         if (!price) missingFields.push('precio del servicio');
@@ -886,17 +860,14 @@ const initializePage = async () => {
 
             if (success) {
                 uploadMessage.textContent = 'Actualizando fecha de último servicio...';
-                const { error: petUpdateError } = await supabase
-                    .from('pets')
-                    .update({ last_grooming_date: appointmentDate })
-                    .eq('id', currentPetId);
-
-                if (petUpdateError) {
-                    showMainAlert('Cita completada, pero hubo un error al actualizar la fecha del último baño en el perfil de la mascota.', true);
-                    console.error('Error al actualizar last_grooming_date:', petUpdateError);
-                } else {
-                     showMainAlert('✓ Cita completada exitosamente', false); 
+                
+                // --- CORRECCIÓN: Actualizar SIEMPRE la fecha de grooming al completar ---
+                if (currentPetId) {
+                     await supabase.from('pets').update({ last_grooming_date: appointmentDate }).eq('id', currentPetId);
                 }
+                // --- FIN DE LA CORRECCIÓN ---
+
+                showMainAlert('✓ Cita completada exitosamente', false);
                 
                 await loadAppointmentsAndRender();
                 closeCompletionModal();
@@ -914,7 +885,6 @@ const initializePage = async () => {
         }
     });
     
-    // --- LISTENERS PARA EL MODAL DE REPROGRAMACIÓN ---
     rescheduleDateInput?.addEventListener('change', () => renderAvailableTimes(rescheduleDateInput, rescheduleTimeSelect));
     cancelRescheduleBtn?.addEventListener('click', closeRescheduleModal);
     rescheduleModal?.addEventListener('click', (e) => {
@@ -957,7 +927,6 @@ const initializePage = async () => {
         confirmRescheduleBtn.textContent = 'Confirmar Cambios';
     });
     
-    // --- INICIO: CÓDIGO ACTUALIZADO (Listeners del modal de borrado) ---
     cancelDeleteBtn?.addEventListener('click', closeDeleteModal);
     deleteConfirmModal?.addEventListener('click', (e) => {
         if (e.target === deleteConfirmModal) closeDeleteModal();
@@ -972,11 +941,10 @@ const initializePage = async () => {
         const { success, error } = await deleteAppointment(appointmentToDeleteId);
         
         if (success) {
-            showMainAlert('Cita eliminada exitosamente.', false); // <-- ALERTA DINÁMICA
+            showMainAlert('Cita eliminada exitosamente.', false);
             closeDeleteModal();
-            await loadAppointmentsAndRender(); // Recargar la tabla
+            await loadAppointmentsAndRender(); 
         } else {
-            // Mostrar error dentro del modal
             const deleteModalText = deletePetNameElement.parentElement.querySelector('p');
             if (deleteModalText) { 
                 const existingError = deleteModalText.querySelector('.error-text');
@@ -986,12 +954,10 @@ const initializePage = async () => {
                     deleteModalText.innerHTML += `<br><strong class="text-red-700 error-text">Error: ${error.message}</strong>`;
                 }
             }
-            // Reactivamos el botón en el modal
             confirmDeleteBtn.disabled = false;
             confirmDeleteBtn.textContent = 'Sí, Eliminar';
         }
     });
-    // --- FIN: CÓDIGO ACTUALIZADO ---
     
     initializeAddAppointmentModal();
 };

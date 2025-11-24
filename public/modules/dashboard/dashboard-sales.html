@@ -182,6 +182,20 @@
         </div>
     </div>
 
+    <div id="custom-toast" class="fixed top-5 right-5 z-[80] hidden transform transition-all duration-300 ease-out translate-y-[-100%] opacity-0">
+        <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-2xl p-4 flex items-center gap-3 min-w-[300px]">
+            <div class="rounded-full bg-green-100 p-2">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-800 text-sm">¡Éxito!</h4>
+                <p id="toast-message" class="text-sm text-gray-600">Operación realizada correctamente.</p>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         const CACHE_VERSION = Date.now();
         async function loadComponent(url, containerId) {

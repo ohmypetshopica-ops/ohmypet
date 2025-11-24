@@ -57,12 +57,11 @@ const triggerDownload = (data, filename) => {
     document.body.removeChild(a);
 };
 
-// --- ESTRUCTURA DE EXPORTACIÓN (CORREGIDA) ---
+// --- ESTRUCTURA DE EXPORTACIÓN (ACTUALIZADA) ---
 const EXPORT_SECTIONS = {
     clients: {
         title: "Clientes",
         filename: "Clientes_OhMyPet.csv",
-        // CORRECCIÓN: Se eliminó 'created_at' de los headers.
         headers: [
             "first_name", "last_name", "full_name", "email", "phone", "district",
             "doc_type", "doc_num", "emergency_contact_name", "emergency_contact_phone",
@@ -92,8 +91,9 @@ const EXPORT_SECTIONS = {
     sales: {
         title: "Ventas",
         filename: "Ventas_OhMyPet.csv",
+        // --- CAMPO "Detalle/Nota" AÑADIDO ---
         headers: [
-            "Fecha Venta", "Cliente", "Producto", "Categoría Producto", "Cantidad",
+            "Fecha Venta", "Cliente", "Producto", "Detalle/Nota", "Categoría Producto", "Cantidad",
             "Precio Total (S/)", "Método Pago"
         ],
         dataKey: 'sales'
@@ -101,7 +101,6 @@ const EXPORT_SECTIONS = {
     complaints: {
         title: "Reclamos",
         filename: "Reclamos_OhMyPet.csv",
-        // NOTA: Se deja 'created_at' aquí ya que sí existe en la tabla 'complaints'.
         headers: [
             "created_at", "status", "doc_type", "doc_num", "first_name", "last_name",
             "mother_last_name", "email", "phone", "district", "bien_contratado", "monto",
