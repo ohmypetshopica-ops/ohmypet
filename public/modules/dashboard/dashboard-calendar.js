@@ -170,6 +170,12 @@ const renderCalendar = async () => {
     
     calendarGrid.innerHTML = '';
     
+    // Días de la semana (Encabezado) - Asegurarse que no se duplique si ya existe en HTML
+    // Nota: En el HTML original ya existen los headers estáticos, pero si se regenera el grid completo:
+    // Si el grid se vacía, se pierden los headers. Aquí asumimos que el grid contiene todo.
+    // Si tu HTML tiene los headers fuera del grid, elimina este bloque.
+    // Como el HTML usa grid-cols-7, es seguro añadir los headers aquí si el grid se vacía.
+    
     // Días del mes anterior (grises)
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
         const day = daysInPrevMonth - i;
@@ -255,7 +261,7 @@ const createDayCell = (day, isOtherMonth, year, month) => {
         if (dayAppointments.length > 0 || dayBlocked.length > 0) {
             const counter = document.createElement('div');
             counter.className = 'text-xs text-gray-600 mt-1';
-            counter.textContent = `${dayAppointments.length} citas, ${dayBlocked.length} bloqueados`;
+            counter.textContent = `${dayAppointments.length} citas, ${dayBlocked.length} bloq.`;
             cell.appendChild(counter);
         }
         
@@ -322,10 +328,10 @@ const renderClientSearchResults = (clients) => {
 };
 
 
-// --- FUNCIONES DEL CALENDARIO - CONTINUACIÓN ---
+// --- FUNCIONES DEL CALENDARIO - MODAL DE DETALLE DEL DÍA ---
 
 /**
- * Abre el modal con los detalles del día
+ * Abre el modal con los detalles del día, mostrando TODAS las citas por horario
  */
 const openDayDetailModal = async (dateStr) => {
     selectedDate = dateStr;
@@ -335,65 +341,103 @@ const openDayDetailModal = async (dateStr) => {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     modalDate.textContent = date.toLocaleDateString('es-ES', options);
     
-    // Obtener citas y bloqueos del día
+    // Obtener todas las citas del día
     const dayAppointments = appointments.filter(apt => apt.appointment_date === dateStr);
+    // Obtener bloqueos del día
     const dayBlocked = blockedSlots.filter(slot => slot.blocked_date === dateStr);
     
     // Renderizar horarios
     timeSlotsContainer.innerHTML = '';
     
-    // --- INICIO DE LA CORRECCIÓN: Definir el tiempo actual para la validación ---
+    // Validar tiempo actual para deshabilitar agendamiento en el pasado
     const now = new Date();
-    // Normalizamos el tiempo actual a la precisión del minuto
     now.setSeconds(0, 0); 
-    // --- FIN DE LA CORRECCIÓN ---
 
     AVAILABLE_HOURS.forEach(time => {
-        const appointment = dayAppointments.find(apt => apt.appointment_time.startsWith(time));
+        // Filtrar todas las citas que empiecen a esta hora
+        const appointmentsAtThisTime = dayAppointments.filter(apt => apt.appointment_time.startsWith(time));
         const blocked = dayBlocked.find(slot => slot.blocked_time.startsWith(time));
         
         const slot = document.createElement('div');
-        slot.className = 'p-3 rounded-lg border-2 transition-all';
+        slot.className = 'p-3 rounded-lg border-2 transition-all h-full flex flex-col';
         
         // Determinar si el slot de tiempo es pasado o actual
         const slotDateTime = new Date(`${dateStr}T${time}:00`);
         const isPastOrCurrent = slotDateTime <= now;
 
         
-        if (appointment) {
-            // Hay una cita - Mostrar detalles
-            const ownerName = appointment.profiles?.first_name 
-                ? `${appointment.profiles.first_name} ${appointment.profiles.last_name}`
-                : appointment.profiles?.full_name || 'Cliente';
+        if (appointmentsAtThisTime.length > 0) {
+            // === ESCENARIO A: Hay una o más citas ===
+            slot.className += ' border-gray-300 bg-white shadow-sm';
             
-            const statusColors = {
-                'pendiente': 'border-yellow-500 bg-yellow-50',
-                'confirmada': 'border-blue-500 bg-blue-50',
-                'completada': 'border-green-500 bg-green-50',
-                'cancelada': 'border-gray-400 bg-gray-50',
-                'rechazada': 'border-red-400 bg-red-50'
-            };
-            
-            slot.className += ` ${statusColors[appointment.status] || 'border-gray-300'}`;
-            slot.innerHTML = `
-                <div class="font-bold text-sm">${time}</div>
-                <div class="text-xs text-gray-700 mt-1">${appointment.pets?.name || 'Mascota'}</div>
-                <div class="text-xs text-gray-600">${ownerName}</div>
-                <div class="text-xs text-gray-500 mt-1">${appointment.status}</div>
+            let htmlContent = `
+                <div class="font-bold text-lg mb-2 text-gray-800 border-b pb-1 flex justify-between items-center">
+                    ${time}
+                    <span class="text-xs font-normal bg-green-100 text-green-800 px-2 py-0.5 rounded-full">${appointmentsAtThisTime.length} cita(s)</span>
+                </div>
+                <div class="space-y-2 flex-1 overflow-y-auto max-h-40 pr-1 custom-scrollbar">
             `;
-            slot.style.cursor = 'default';
-        } else if (blocked) {
-            // Está bloqueado - Opción para desbloquear
-            slot.className += ' blocked-slot border-red-500';
-            slot.innerHTML = `
-                <div class="font-bold text-sm">${time}</div>
-                <div class="text-xs text-red-700 mt-1">🚫 Bloqueado</div>
-                <div class="text-xs text-gray-600">${blocked.reason || 'Sin motivo'}</div>
-                ${!isPastOrCurrent ? `
-                    <div class="mt-2">
-                        <button class="unblock-btn w-full bg-red-500 text-white text-xs font-semibold py-1 rounded hover:bg-red-600">Desbloquear</button>
+
+            appointmentsAtThisTime.forEach(appointment => {
+                const ownerName = appointment.profiles?.first_name 
+                    ? `${appointment.profiles.first_name} ${appointment.profiles.last_name}`
+                    : appointment.profiles?.full_name || 'Cliente';
+                
+                const statusColors = {
+                    'pendiente': 'border-yellow-400 bg-yellow-50 text-yellow-900',
+                    'confirmada': 'border-blue-400 bg-blue-50 text-blue-900',
+                    'completada': 'border-green-400 bg-green-50 text-green-900',
+                    'cancelada': 'border-gray-300 bg-gray-100 text-gray-500',
+                    'rechazada': 'border-red-300 bg-red-50 text-red-800'
+                };
+
+                const colorClass = statusColors[appointment.status] || 'border-gray-200 bg-gray-50';
+
+                htmlContent += `
+                    <div class="p-2 rounded border-l-4 ${colorClass} text-xs">
+                        <div class="font-bold truncate">${appointment.pets?.name || 'Mascota'}</div>
+                        <div class="truncate">${ownerName}</div>
+                        <div class="uppercase font-semibold mt-1 opacity-75" style="font-size: 0.65rem;">${appointment.status}</div>
                     </div>
-                ` : `<div class="mt-2 text-xs text-gray-500">Horario pasado</div>`}
+                `;
+            });
+
+            htmlContent += `</div>`; // Cierre space-y-2
+
+            // Botón para agendar OTRA cita en el mismo horario (sobreturno)
+            if (!isPastOrCurrent) {
+                htmlContent += `
+                    <div class="mt-3 pt-2 border-t border-gray-100">
+                        <button class="schedule-btn w-full bg-green-600 text-white text-xs font-bold py-1.5 rounded hover:bg-green-700 transition-colors flex items-center justify-center gap-1">
+                            <span>+</span> Agendar Otra
+                        </button>
+                    </div>
+                `;
+            }
+
+            slot.innerHTML = htmlContent;
+            slot.style.cursor = 'default';
+
+            // Listener para el botón de sobreturno
+            const scheduleBtn = slot.querySelector('.schedule-btn');
+            if (scheduleBtn) {
+                scheduleBtn.addEventListener('click', () => {
+                    openAddAppointmentModal(dateStr, time);
+                });
+            }
+
+        } else if (blocked) {
+            // === ESCENARIO B: Está bloqueado ===
+            slot.className += ' blocked-slot border-red-500 bg-red-50';
+            slot.innerHTML = `
+                <div class="font-bold text-sm mb-1">${time}</div>
+                <div class="text-xs text-red-700 font-bold mb-1">🚫 Bloqueado</div>
+                <div class="text-xs text-gray-600 italic mb-2">${blocked.reason || 'Sin motivo'}</div>
+                ${!isPastOrCurrent ? `
+                    <div class="mt-auto">
+                        <button class="unblock-btn w-full bg-red-500 text-white text-xs font-semibold py-1.5 rounded hover:bg-red-600 transition-colors">Desbloquear</button>
+                    </div>
+                ` : `<div class="mt-auto text-xs text-gray-400">Horario pasado</div>`}
             `;
             
             if (!isPastOrCurrent) {
@@ -401,7 +445,7 @@ const openDayDetailModal = async (dateStr) => {
                     if (confirm(`¿Desbloquear el horario ${time}?`)) {
                         const result = await unblockTimeSlot(dateStr, time + ':00');
                         if (result.success) {
-                            alert('Horario desbloqueado');
+                            // alert('Horario desbloqueado'); // Opcional: Quitar alert para fluidez
                             await renderCalendar();
                             openDayDetailModal(dateStr);
                         } else {
@@ -412,33 +456,40 @@ const openDayDetailModal = async (dateStr) => {
             }
            
         } else {
-            // Está disponible - Opciones de agendar/bloquear
-            slot.className += ' border-green-300 bg-green-50 hover:bg-green-100 cursor-pointer';
+            // === ESCENARIO C: Disponible (Vacío) ===
+            slot.className += ' border-green-200 bg-green-50 hover:bg-green-100 cursor-pointer hover:shadow-md group';
 
             const blockButtonHTML = isPastOrCurrent ? '' : 
-                `<button class="block-btn bg-gray-600 text-white text-xs font-semibold py-1 px-2 rounded hover:bg-gray-700">Bloquear</button>`;
+                `<button class="block-btn opacity-0 group-hover:opacity-100 bg-gray-500 text-white text-xs px-2 py-1 rounded hover:bg-gray-600 transition-all">Bloquear</button>`;
             
             slot.innerHTML = `
-                <div class="font-bold text-sm">${time}</div>
-                <div class="text-xs text-green-700 mt-1">✓ Disponible</div>
-                <div class="mt-2 flex gap-2 justify-center">
-                    <button class="schedule-btn bg-green-600 text-white text-xs font-semibold py-1 px-2 rounded hover:bg-green-700">Agendar Cita</button>
+                <div class="flex justify-between items-start">
+                    <div class="font-bold text-sm text-green-900">${time}</div>
                     ${blockButtonHTML}
+                </div>
+                <div class="flex-1 flex flex-col items-center justify-center py-4">
+                    <span class="text-xs text-green-600 font-medium mb-2">✓ Disponible</span>
+                    <button class="schedule-btn bg-green-600 text-white text-xs font-bold py-2 px-4 rounded-full hover:bg-green-700 shadow-sm transition-transform transform group-hover:scale-105">
+                        Agendar Cita
+                    </button>
                 </div>
             `;
             
-            slot.querySelector('.schedule-btn').addEventListener('click', () => {
-                // Abrir el modal de agendar cita con la fecha y hora seleccionadas
+            // Listener principal para agendar (al hacer click en el botón verde)
+            slot.querySelector('.schedule-btn').addEventListener('click', (e) => {
+                e.stopPropagation(); // Evitar conflicto con el contenedor si tuviera listener
                 openAddAppointmentModal(dateStr, time);
             });
             
-            if (!isPastOrCurrent) {
-                slot.querySelector('.block-btn').addEventListener('click', async () => {
+            // Listener para bloquear
+            const blockBtn = slot.querySelector('.block-btn');
+            if (blockBtn) {
+                blockBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
                     const reason = prompt(`Bloquear horario ${time}. Motivo (opcional):`, 'Bloqueado por administrador');
                     if (reason !== null) {
                         const result = await blockTimeSlot(dateStr, time + ':00', reason || 'Bloqueado por administrador');
                         if (result.success) {
-                            alert('Horario bloqueado');
                             await renderCalendar();
                             openDayDetailModal(dateStr);
                         } else {
@@ -462,7 +513,7 @@ const closeDayDetailModal = () => {
     dayDetailModal.classList.add('hidden');
 };
 
-// --- FUNCIÓN DE INICIALIZACIÓN DE LISTENERS (para corregir el error) ---
+// --- FUNCIÓN DE INICIALIZACIÓN DE LISTENERS ---
 
 const setupAppointmentModalListeners = () => {
     // Escucha de eventos para el modal de agendar cita
@@ -591,6 +642,11 @@ const setupAppointmentModalListeners = () => {
 
             closeAddAppointmentModal();
             await renderCalendar(); // Recargar el calendario para mostrar la nueva cita
+            // Si el modal de detalle está abierto, refrescarlo
+            if (!dayDetailModal.classList.contains('hidden')) {
+                openDayDetailModal(appointmentData.appointment_date);
+            }
+
         } else {
             addAppointmentMessage.textContent = `Error: ${error.message}`;
             addAppointmentMessage.className = 'p-3 rounded-md bg-red-100 text-red-700 text-sm';
@@ -636,7 +692,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Cargar datos de clientes y mascotas al inicio
     clientsWithPets = await getClientsWithPets();
     
-    // Configurar listeners del modal de agendamiento después de que el DOM esté cargado.
+    // Configurar listeners del modal de agendamiento
     setupAppointmentModalListeners();
     
     // Establecer la fecha mínima para la nueva cita a la fecha actual.
