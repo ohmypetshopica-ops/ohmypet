@@ -214,7 +214,13 @@ const getPetsPaginated = async (page = 1, search = '', breeds = []) => {
 const getPetDetails = async (petId) => {
     const { data, error } = await supabase.from('pets').select(`*, profiles (id, full_name, first_name, last_name), appointments (id, appointment_date, appointment_time, service, status)`).eq('id', petId).single();
     if (error) { console.error('Error al obtener detalles de la mascota:', error); return null; }
-    if (data.appointments) data.appointments.sort((a, b) => new Date(`${b.appointment_date}T${b.appointment_time}`) - new Date(`${b.appointment_date}T${b.appointment_time}`));
+    
+    // CORRECCIÓN CRÍTICA: Se corrige el ordenamiento (antes era b - b, ahora es b - a)
+    if (data.appointments) {
+        data.appointments.sort((a, b) => 
+            new Date(`${b.appointment_date}T${b.appointment_time}`) - new Date(`${a.appointment_date}T${a.appointment_time}`)
+        );
+    }
     return data;
 };
 
