@@ -4,7 +4,9 @@ import { supabase } from '../../core/supabase.js';
 import { 
     getClientsWithPets, 
     getBookedTimesForDashboard, 
-    addAppointmentFromDashboard 
+    addAppointmentFromDashboard,
+    unblockTimeSlot, // Asegúrate de importar esto si se usa
+    blockTimeSlot    // Asegúrate de importar esto si se usa
 } from './dashboard.api.js';
 
 // --- ELEMENTOS DEL DOM CALENDAR ---
@@ -67,6 +69,7 @@ const getMonthAppointments = async (year, month) => {
             appointment_time, 
             service, 
             status,
+            pet_id,
             pets ( name ),
             profiles ( full_name, first_name, last_name )
         `)
@@ -104,44 +107,6 @@ const getMonthBlockedSlots = async (year, month) => {
     return data || [];
 };
 
-/**
- * Bloquea un horario específico
- */
-const blockTimeSlot = async (date, time, reason = 'Bloqueado por administrador') => {
-    const { data, error } = await supabase
-        .from('blocked_slots')
-        .insert([{
-            blocked_date: date,
-            blocked_time: time,
-            reason: reason
-        }])
-        .select();
-    
-    if (error) {
-        console.error('Error al bloquear horario:', error);
-        return { success: false, error };
-    }
-    return { success: true, data: data[0] };
-};
-
-/**
- * Desbloquea un horario específico
- */
-const unblockTimeSlot = async (date, time) => {
-    const { data, error } = await supabase
-        .from('blocked_slots')
-        .delete()
-        .eq('blocked_date', date)
-        .eq('blocked_time', time)
-        .select();
-    
-    if (error) {
-        console.error('Error al desbloquear horario:', error);
-        return { success: false, error };
-    }
-    return { success: true };
-};
-
 
 // --- FUNCIONES DEL CALENDARIO ---
 
@@ -169,12 +134,6 @@ const renderCalendar = async () => {
     const daysInPrevMonth = new Date(year, month, 0).getDate();
     
     calendarGrid.innerHTML = '';
-    
-    // Días de la semana (Encabezado) - Asegurarse que no se duplique si ya existe en HTML
-    // Nota: En el HTML original ya existen los headers estáticos, pero si se regenera el grid completo:
-    // Si el grid se vacía, se pierden los headers. Aquí asumimos que el grid contiene todo.
-    // Si tu HTML tiene los headers fuera del grid, elimina este bloque.
-    // Como el HTML usa grid-cols-7, es seguro añadir los headers aquí si el grid se vacía.
     
     // Días del mes anterior (grises)
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {
@@ -393,16 +352,24 @@ const openDayDetailModal = async (dateStr) => {
 
                 const colorClass = statusColors[appointment.status] || 'border-gray-200 bg-gray-50';
 
+                // --- TARJETA DE CITA CLICKEABLE ---
                 htmlContent += `
-                    <div class="p-2 rounded border-l-4 ${colorClass} text-xs">
-                        <div class="font-bold truncate">${appointment.pets?.name || 'Mascota'}</div>
+                    <div class="appointment-card p-2 rounded border-l-4 ${colorClass} text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                         data-id="${appointment.id}" 
+                         data-status="${appointment.status}"
+                         data-pet-name="${appointment.pets?.name || 'Mascota'}"
+                         data-pet-id="${appointment.pet_id}">
+                        <div class="font-bold truncate flex justify-between items-center">
+                            <span>${appointment.pets?.name || 'Mascota'}</span>
+                            <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </div>
                         <div class="truncate">${ownerName}</div>
                         <div class="uppercase font-semibold mt-1 opacity-75" style="font-size: 0.65rem;">${appointment.status}</div>
                     </div>
                 `;
             });
 
-            htmlContent += `</div>`; // Cierre space-y-2
+            htmlContent += `</div>`;
 
             // Botón para agendar OTRA cita en el mismo horario (sobreturno)
             if (!isPastOrCurrent) {
@@ -417,6 +384,22 @@ const openDayDetailModal = async (dateStr) => {
 
             slot.innerHTML = htmlContent;
             slot.style.cursor = 'default';
+
+            // --- LISTENERS PARA LAS TARJETAS DE CITA ---
+            slot.querySelectorAll('.appointment-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Evitar conflicto con el slot
+                    const status = card.dataset.status;
+                    const petName = card.dataset.petName;
+                    
+                    // Redirigir pasando Search (Nombre) y Date (Fecha) en la URL
+                    if (status === 'completada') {
+                        window.location.href = `/public/modules/dashboard/dashboard-services.html?search=${encodeURIComponent(petName)}&date=${dateStr}`;
+                    } else {
+                        window.location.href = `/public/modules/dashboard/dashboard-appointments.html?search=${encodeURIComponent(petName)}&date=${dateStr}`;
+                    }
+                });
+            });
 
             // Listener para el botón de sobreturno
             const scheduleBtn = slot.querySelector('.schedule-btn');
@@ -445,7 +428,6 @@ const openDayDetailModal = async (dateStr) => {
                     if (confirm(`¿Desbloquear el horario ${time}?`)) {
                         const result = await unblockTimeSlot(dateStr, time + ':00');
                         if (result.success) {
-                            // alert('Horario desbloqueado'); // Opcional: Quitar alert para fluidez
                             await renderCalendar();
                             openDayDetailModal(dateStr);
                         } else {

@@ -617,6 +617,19 @@ const closeCompletionModal = () => {
 
 
 const initializePage = async () => {
+    // --- INICIO: Verificar URL para parámetros de búsqueda y fecha ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get('search');
+    const dateParam = urlParams.get('date');
+
+    if (searchParam) { 
+        searchInput.value = searchParam; 
+    }
+    if (dateParam) {
+        dateFilter.value = dateParam;
+    }
+    // --- FIN ---
+
     await loadAppointmentsAndRender();
 
     shampooSelectToggle?.addEventListener('click', (e) => {

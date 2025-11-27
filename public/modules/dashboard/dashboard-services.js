@@ -644,15 +644,25 @@ const attachServiceRowListeners = () => {
 };
 
 const initializeServicesPage = async () => {
-    if (petIdFromUrl) {
+    // --- INICIO: Check URL for params ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get('search');
+    const dateParam = urlParams.get('date');
+    // Mantener soporte para petId para no romper enlaces viejos, pero priorizar búsqueda
+    const petIdFromUrl = urlParams.get('pet'); 
+
+    if (searchParam) { 
+        serviceSearchInput.value = searchParam;
+    } else if (petIdFromUrl) {
         currentFilters.petId = petIdFromUrl;
-        currentFilters.petName = petNameFromUrl ? decodeURIComponent(petNameFromUrl) : '';
-        if (headerTitle && currentFilters.petName) {
-            headerTitle.textContent = `Historial de Servicios - ${currentFilters.petName}`;
-        }
-    } else {
-        if (headerTitle) headerTitle.textContent = 'Historial de Servicios';
     }
+
+    if (dateParam) {
+        serviceDateFilter.value = dateParam;
+    }
+    // --- FIN ---
+
+    if (headerTitle) headerTitle.textContent = 'Historial de Servicios';
 
     servicesTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Cargando servicios...</td></tr>';
 

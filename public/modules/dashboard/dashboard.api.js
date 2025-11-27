@@ -863,8 +863,6 @@ export const rescheduleAppointmentFromDashboard = async (appointmentId, updatedD
 
 export const deleteAppointment = async (appointmentId) => {
     // 1. Eliminar fotos asociadas (si las hay)
-    // Asumimos que las fotos están en un bucket 'appointment_images' y
-    // la tabla es 'appointment_photos'
     const { data: photos, error: photoFetchError } = await supabase
         .from('appointment_photos')
         .select('image_url')
@@ -875,10 +873,8 @@ export const deleteAppointment = async (appointmentId) => {
     }
 
     if (photos && photos.length > 0) {
-        // Extraer los nombres de los archivos de las URLs
         const fileNames = photos.map(photo => {
             const urlParts = photo.image_url.split('/');
-            // Asegurarnos de tomar el path correcto en el bucket
             const bucketName = 'appointment_images';
             const pathIndex = photo.image_url.indexOf(bucketName + '/');
             if (pathIndex > -1) {
@@ -887,14 +883,12 @@ export const deleteAppointment = async (appointmentId) => {
             return urlParts[urlParts.length - 1]; // Fallback
         });
         
-        // Eliminar los archivos del bucket
         const { error: storageError } = await supabase.storage
             .from('appointment_images')
             .remove(fileNames);
             
         if (storageError) {
             console.error('Error al eliminar archivos de storage:', storageError);
-            // No detenemos el proceso, pero lo registramos
         }
     }
     
@@ -908,7 +902,6 @@ export const deleteAppointment = async (appointmentId) => {
         console.error('Error al eliminar registros de fotos de la DB:', photoDbError);
     }
 
-    // --- INICIO: CÓDIGO AÑADIDO (Mascotas) ---
     // 3. Eliminar historial de peso asociado a ESTA cita
     const { error: weightError } = await supabase
         .from('pet_weight_history')
@@ -918,7 +911,6 @@ export const deleteAppointment = async (appointmentId) => {
     if (weightError) {
         console.warn('Error al eliminar historial de peso de la cita:', weightError.message);
     }
-    // --- FIN: CÓDIGO AÑADIDO ---
     
     // 4. Eliminar la cita principal
     const { error: appointmentError } = await supabase
@@ -934,12 +926,6 @@ export const deleteAppointment = async (appointmentId) => {
     return { success: true };
 };
 
-// --- INICIO: CÓDIGO AÑADIDO (Mascotas) ---
-/**
- * Elimina una mascota y todos sus datos asociados (citas, historial de peso).
- * @param {string} petId - El ID de la mascota a eliminar.
- * @returns {Promise<{success: boolean, error?: Error}>}
- */
 export const deletePet = async (petId) => {
     try {
         // 1. Obtener todas las citas de la mascota para eliminar fotos
@@ -1017,7 +1003,6 @@ export const deletePet = async (petId) => {
         return { success: false, error };
     }
 };
-// --- FIN: CÓDIGO AÑADIDO ---
 
 
 export const deleteClient = async (clientId) => {
@@ -1037,7 +1022,7 @@ export const deleteClient = async (clientId) => {
                 .from('pet_weight_history')
                 .delete()
                 .in('pet_id', petIds);
-            if (weightError) console.warn('Error al eliminar historial de peso:', weightError.message); // No es crítico
+            if (weightError) console.warn('Error al eliminar historial de peso:', weightError.message); 
         }
 
         // 3. Eliminar todas las ventas asociadas al cliente
@@ -1045,14 +1030,13 @@ export const deleteClient = async (clientId) => {
             .from('sales')
             .delete()
             .eq('client_id', clientId);
-        if (salesError) console.warn('Error al eliminar ventas:', salesError.message); // No es crítico
+        if (salesError) console.warn('Error al eliminar ventas:', salesError.message);
 
         // 4. Eliminar todas las citas asociadas al cliente
         const { error: apptError } = await supabase
             .from('appointments')
             .delete()
             .eq('user_id', clientId);
-        // Si hay un error aquí (ej. RLS), el resto fallará, lo cual es bueno.
         if (apptError) throw new Error(`Error al eliminar citas: ${apptError.message}`);
 
         // 5. Eliminar todas las mascotas del cliente
@@ -1097,17 +1081,13 @@ export const getSales = async () => {
     return data;
 };
 
-/**
- * MODIFICADO: Acepta un saleDate opcional para registrar ventas pasadas
- */
 export const addSale = async (saleData, saleDate = null) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: { message: 'Usuario no autenticado' } };
 
-    // Determinar el timestamp de la venta
     const saleTimestamp = saleDate 
-        ? new Date(`${saleDate}T12:00:00`).toISOString() // Usa el mediodía de la fecha seleccionada para evitar problemas de zona horaria
-        : new Date().toISOString(); // Usa la fecha y hora actual si no se proporciona
+        ? new Date(`${saleDate}T12:00:00`).toISOString() 
+        : new Date().toISOString();
 
     const salesRecords = saleData.items.map(item => ({
         client_id: saleData.client_id,
@@ -1115,14 +1095,10 @@ export const addSale = async (saleData, saleDate = null) => {
         quantity: item.quantity,
         unit_price: item.unit_price,
         total_price: item.subtotal,
-        // **** INICIO DE LA CORRECCIÓN ****
         payment_method: (saleData.payment_method || 'DESCONOCIDO').toUpperCase(),
-        // **** FIN DE LA CORRECCIÓN ****
-        // --- NUEVO CAMPO: notes ---
         notes: item.note || null, 
-        // ------------------------
         recorded_by: user?.id || null,
-        created_at: saleTimestamp // <-- CAMPO AÑADIDO
+        created_at: saleTimestamp
     }));
     
     const { data, error: saleError } = await supabase
@@ -1135,7 +1111,6 @@ export const addSale = async (saleData, saleDate = null) => {
         return { success: false, error: saleError };
     }
 
-    // La lógica de actualización de stock permanece igual
     for (const item of saleData.items) {
         const { data: product, error: productError } = await supabase
             .from('products')
@@ -1200,16 +1175,10 @@ export const getPetsNeedingAppointment = async () => {
     return petsNeedingCare;
 };
 
-/**
- * Actualiza una fila de venta individual en la base de datos
- */
 export const updateSaleItem = async (saleId, updates) => {
-    // **** INICIO DE LA CORRECCIÓN ****
-    // Asegurarse de que el payment_method se actualice en MAYÚSCULAS
     if (updates.payment_method) {
         updates.payment_method = updates.payment_method.toUpperCase();
     }
-    // **** FIN DE LA CORRECCIÓN ****
 
     const { data, error } = await supabase
         .from('sales')
@@ -1224,10 +1193,6 @@ export const updateSaleItem = async (saleId, updates) => {
     return { success: true, data: data[0] };
 };
 
-/**
- * NUEVA FUNCIÓN: Obtiene todos los datos denormalizados para exportación.
- * CORRECCIÓN: Se elimina 'created_at' de la consulta de profiles.
- */
 export const getAllDenormalizedDataForExport = async () => {
     try {
         const [
@@ -1237,7 +1202,6 @@ export const getAllDenormalizedDataForExport = async () => {
             salesRes,
             complaintsRes,
         ] = await Promise.all([
-            // Clientes (Profiles)
             supabase
                 .from('profiles')
                 .select(`
@@ -1246,7 +1210,6 @@ export const getAllDenormalizedDataForExport = async () => {
                 `)
                 .eq('role', 'cliente'),
             
-            // Mascotas (Pets)
             supabase
                 .from('pets')
                 .select(`
@@ -1254,7 +1217,6 @@ export const getAllDenormalizedDataForExport = async () => {
                     profiles ( full_name, phone )
                 `),
             
-            // Citas (Appointments)
             supabase
                 .from('appointments')
                 .select(`
@@ -1263,7 +1225,6 @@ export const getAllDenormalizedDataForExport = async () => {
                     profiles ( full_name )
                 `),
                 
-            // Ventas (Sales)
             supabase
                 .from('sales')
                 .select(`
@@ -1272,7 +1233,6 @@ export const getAllDenormalizedDataForExport = async () => {
                     product:product_id ( name, category )
                 `),
                 
-            // Reclamos (Complaints)
             supabase
                 .from('complaints')
                 .select(`
@@ -1286,7 +1246,6 @@ export const getAllDenormalizedDataForExport = async () => {
         if (salesRes.error) throw salesRes.error;
         if (complaintsRes.error) throw complaintsRes.error;
 
-        // Limpiar y denormalizar la estructura de los datos para la exportación.
         const cleanedPets = petsRes.data.map(pet => ({
             'Nombre Mascota': pet.name,
             'Raza': pet.breed,
@@ -1309,9 +1268,7 @@ export const getAllDenormalizedDataForExport = async () => {
             'Servicio Solicitado': apt.service,
             'Estado': apt.status,
             'Precio Servicio (S/)': apt.service_price,
-            // **** INICIO DE LA CORRECCIÓN ****
             'Método Pago': (apt.payment_method || 'DESCONOCIDO').toUpperCase(),
-            // **** FIN DE LA CORRECCIÓN ****
             'Peso Final (kg)': apt.final_weight,
             'Shampoo Utilizado': apt.shampoo_type,
             'Observaciones Finales': apt.final_observations,
@@ -1321,15 +1278,12 @@ export const getAllDenormalizedDataForExport = async () => {
             'Fecha Venta': new Date(sale.created_at).toLocaleString('es-ES'),
             'Cliente': sale.client?.full_name,
             'Producto': sale.product?.name,
-            'Detalle/Nota': sale.notes || '', // <-- CAMPO NOTA AÑADIDO
+            'Detalle/Nota': sale.notes || '', 
             'Categoría Producto': sale.product?.category,
             'Cantidad': sale.quantity,
             'Precio Total (S/)': sale.total_price,
-            // **** INICIO DE LA CORRECCIÓN ****
             'Método Pago': (sale.payment_method || 'DESCONOCIDO').toUpperCase(),
-            // **** FIN DE LA CORRECCIÓN ****
         }));
-
 
         return {
             clients: clientsRes.data,
@@ -1345,17 +1299,40 @@ export const getAllDenormalizedDataForExport = async () => {
     }
 };
 
-export { supabase };
+// ============ INICIO: NUEVAS FUNCIONES AÑADIDAS ============
 
-// ============ INICIO: NUEVA FUNCIÓN AÑADIDA ============
-/**
- * Obtiene productos paginados y filtrados para el dashboard de admin.
- * @param {number} page - El número de página actual.
- * @param {number} itemsPerPage - Cuántos ítems por página.
- *A @param {string} search - Término de búsqueda (nombre o descripción).
- * @param {string} category - Categoría para filtrar.
- * @returns {Promise<{data: Array, count: number}>}
- */
+export const blockTimeSlot = async (date, time, reason = 'Bloqueado por administrador') => {
+    const { data, error } = await supabase
+        .from('blocked_slots')
+        .insert([{
+            blocked_date: date,
+            blocked_time: time,
+            reason: reason
+        }])
+        .select();
+    
+    if (error) {
+        console.error('Error al bloquear horario:', error);
+        return { success: false, error };
+    }
+    return { success: true, data: data[0] };
+};
+
+export const unblockTimeSlot = async (date, time) => {
+    const { data, error } = await supabase
+        .from('blocked_slots')
+        .delete()
+        .eq('blocked_date', date)
+        .eq('blocked_time', time)
+        .select();
+    
+    if (error) {
+        console.error('Error al desbloquear horario:', error);
+        return { success: false, error };
+    }
+    return { success: true };
+};
+
 export const getProductsPaginated = async (page = 1, itemsPerPage = 10, search = '', category = '') => {
     const from = (page - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
@@ -1365,7 +1342,6 @@ export const getProductsPaginated = async (page = 1, itemsPerPage = 10, search =
         .select('*', { count: 'exact' });
 
     if (search) {
-        // Busca en nombre O descripción
         query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
@@ -1373,7 +1349,6 @@ export const getProductsPaginated = async (page = 1, itemsPerPage = 10, search =
         query = query.eq('category', category);
     }
 
-    // Ordenar por nombre y aplicar paginación
     query = query
         .order('name', { ascending: true })
         .range(from, to);
@@ -1387,27 +1362,20 @@ export const getProductsPaginated = async (page = 1, itemsPerPage = 10, search =
 
     return { data: data || [], count: count || 0 };
 };
-// ============ FIN: NUEVA FUNCIÓN AÑADIDA ============
 
-// ==========================================
-// NUEVA FUNCIÓN PARA EL POS (LAZY LOADING)
-// ==========================================
 export const getPOSProductsPaginated = async (page, limit, search = '') => {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    // Solo traemos productos con stock > 0
     let query = supabase
         .from('products')
         .select('*', { count: 'exact' })
         .gt('stock', 0);
 
-    // Si hay búsqueda, filtramos por nombre
     if (search) {
         query = query.ilike('name', `%${search}%`);
     }
 
-    // Ordenamos y paginamos
     const { data, error, count } = await query
         .order('name', { ascending: true })
         .range(from, to);
