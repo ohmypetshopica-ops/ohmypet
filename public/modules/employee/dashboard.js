@@ -125,9 +125,10 @@ const loadInitialData = async () => {
         renderPets(allPets);
 
         // Cargar todas las citas (para diferentes vistas)
+        // CORRECCIÓN AQUI: Se agregó 'phone' a la selección de profiles
         const { data: appointments } = await supabase
             .from('appointments')
-            .select('*, pets(name, image_url), profiles(first_name, last_name, full_name)') // Añadido full_name
+            .select('*, pets(name, image_url), profiles(first_name, last_name, full_name, phone)') 
             .order('appointment_date', { ascending: true })
             .order('appointment_time', { ascending: true });
 

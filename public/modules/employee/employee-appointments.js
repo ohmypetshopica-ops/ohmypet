@@ -808,9 +808,10 @@ const handleAddAppointment = async (e) => {
             addAppointmentMessage.classList.remove('hidden');
             
             // Refrescar listas
+            // CORRECCIÓN AQUI: Se agregó 'phone' a la selección de profiles
             const { data: appointments } = await supabase
                 .from('appointments')
-                .select('*, pets(name), profiles(first_name, last_name, full_name)')
+                .select('*, pets(name), profiles(first_name, last_name, full_name, phone)')
                 .order('appointment_date', { ascending: true })
                 .order('appointment_time', { ascending: true });
             
@@ -1009,7 +1010,8 @@ const handleSaveProgress = async () => {
         uploadMessage.textContent = '✓ Información guardada correctamente';
 
         // Refrescar estado local pero NO cerrar el modal
-        const { data: appointments } = await supabase.from('appointments').select('*, pets(name), profiles(first_name, last_name, full_name)').order('appointment_date', { ascending: true });
+        // CORRECCIÓN AQUI: Se agregó 'phone' a la selección de profiles
+        const { data: appointments } = await supabase.from('appointments').select('*, pets(name), profiles(first_name, last_name, full_name, phone)').order('appointment_date', { ascending: true });
         if (appointments) {
             updateState('allAppointments', appointments);
             renderConfirmedAppointments();
@@ -1086,7 +1088,8 @@ const handleCompleteAppointment = async () => {
     uploadMessage.classList.remove('hidden');
     
     // Actualizar estado local y remoto
-    const { data: appointments } = await supabase.from('appointments').select('*, pets(name), profiles(first_name, last_name, full_name)').order('appointment_date', { ascending: true });
+    // CORRECCIÓN AQUI: Se agregó 'phone' a la selección de profiles
+    const { data: appointments } = await supabase.from('appointments').select('*, pets(name), profiles(first_name, last_name, full_name, phone)').order('appointment_date', { ascending: true });
     if (appointments) {
         updateState('allAppointments', appointments);
         renderConfirmedAppointments();
