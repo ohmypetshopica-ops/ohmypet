@@ -1,9 +1,19 @@
 // public/modules/employee/employee-clients.js
-// Módulo de gestión de clientes
+// Módulo de gestión de clientes para EMPLEADOS
 
 import { state, updateState } from './employee-state.js';
-import { registerClientFromDashboard, getClientsWithPets, getClientDetails, updateClientProfile, addPetFromDashboard } from '../dashboard/dashboard.api.js';
 import { supabase } from '../../core/supabase.js';
+
+// --- 1. IMPORTACIONES CORREGIDAS (Nuevas Rutas) ---
+import { 
+    registerClientFromDashboard, 
+    getClientsWithPets, 
+    getClientDetails, 
+    updateClientProfile 
+} from '../dashboard/clients.api.js';
+
+import { addPetFromDashboard } from '../dashboard/pets.api.js';
+// --------------------------------------------------
 
 // --- UTILITY: LIMPIEZA DE NÚMEROS DE TELÉFONO ---
 const cleanPhoneNumber = (rawNumber) => {
@@ -76,10 +86,8 @@ export function initClientElements() {
 
     clientDetailsActions = document.getElementById('client-details-actions');
     
-    // ===== INICIO DE LA CORRECCIÓN 1 (Botón Agregar Mascota) =====
-    // Se corrige el ID del botón que se busca
+    // Botón para agregar mascota dentro del detalle del cliente
     addPetBtn = document.getElementById('add-pet-to-client-btn');
-    // ===== FIN DE LA CORRECCIÓN 1 =====
 
     editClientBtn = document.getElementById('edit-client-btn');
     saveClientBtn = document.getElementById('save-client-btn');
@@ -113,11 +121,8 @@ export function setupClientListeners() {
     addClientBtnEmployee?.addEventListener('click', () => openClientModal());
     cancelClientButtonEmployee?.addEventListener('click', closeClientModal);
     
-    // ===== INICIO DE LA CORRECCIÓN 2 (Evitar duplicados al crear cliente) =====
-    // Se cambia de 'click' a 'submit' en el formulario
+    // Manejo del formulario de cliente (Submit)
     clientFormEmployee?.addEventListener('submit', handleAddClient);
-    // ===== FIN DE LA CORRECCIÓN 2 =====
-
 
     editClientBtn?.addEventListener('click', switchToEditMode);
     cancelEditClientBtn?.addEventListener('click', switchToViewMode);
@@ -127,10 +132,8 @@ export function setupClientListeners() {
     
     cancelAddPetButtonEmployee?.addEventListener('click', closeAddPetModal);
     
-    // ===== INICIO DE LA CORRECCIÓN 3 (Manejo robusto de formulario de mascota) =====
-    // Se cambia de 'click' a 'submit' en el formulario
+    // Manejo del formulario de mascota (Submit)
     petFormEmployee?.addEventListener('submit', handleAddPetToClient);
-    // ===== FIN DE LA CORRECCIÓN 3 =====
 }
 
 const handleSearch = (e) => {
@@ -151,7 +154,7 @@ const handleSearch = (e) => {
     renderClients(filtered);
 };
 
-// ====== FUNCIÓN DE PAGINACIÓN MEJORADA ======
+// ====== FUNCIÓN DE PAGINACIÓN ======
 const renderPagination = (totalItems) => {
     if (!paginationContainer) return;
 
@@ -175,16 +178,14 @@ const renderPagination = (totalItems) => {
         </button>
     `;
 
-    // Lógica para mostrar solo 3 números centrados en la página actual
+    // Números de página
     let startPage = Math.max(1, currentPage - 1);
     let endPage = Math.min(totalPages, startPage + 2);
     
-    // Ajustar si estamos cerca del final
     if (endPage - startPage < 2) {
         startPage = Math.max(1, endPage - 2);
     }
 
-    // Números de página (máximo 3)
     for (let i = startPage; i <= endPage; i++) {
         const activeClass = i === currentPage 
             ? 'bg-green-600 text-white' 
@@ -386,16 +387,17 @@ const handleAddClient = async (e) => {
     const firstName = formData.get('first_name')?.trim();
     const lastName = formData.get('last_name')?.trim();
     const email = formData.get('email')?.trim();
-    const password = formData.get('password')?.trim();
     const phone = formData.get('phone')?.trim();
     const district = formData.get('district')?.trim();
     const docType = formData.get('doc_type')?.trim();
     const docNum = formData.get('doc_num')?.trim();
+    // Empleados no registran contraseña usualmente, se asume null o valor por defecto si se requiere
+    const password = null; 
     const emergencyName = formData.get('emergency_contact_name')?.trim();
     const emergencyPhone = formData.get('emergency_contact_phone')?.trim();
 
-    if (!firstName || !email || !password || !phone || !district) {
-        clientFormMessageEmployee.textContent = '❌ Por favor, completa todos los campos obligatorios.';
+    if (!firstName || !phone || !district) {
+        clientFormMessageEmployee.textContent = '❌ Por favor, completa los campos obligatorios (Nombre, Teléfono, Distrito).';
         clientFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         clientFormMessageEmployee.classList.remove('hidden');
         return;
@@ -409,16 +411,14 @@ const handleAddClient = async (e) => {
         return;
     }
 
-    // ===== INICIO DE LA CORRECCIÓN 4 (Evitar duplicados al crear cliente) =====
     submitAddClientButtonEmployee.disabled = true;
     submitAddClientButtonEmployee.textContent = 'Registrando...';
-    // ===== FIN DE LA CORRECCIÓN 4 =====
 
-    let result;
     try {
-        result = await registerClientFromDashboard(
-            email, password, firstName, lastName, cleanedPhone, district, docType, docNum, emergencyName, emergencyPhone
-        );
+        // Se usa la misma función del admin
+        const result = await registerClientFromDashboard({
+            email, password, firstName, lastName, phone: cleanedPhone, district, docType, docNum, emergencyContactName: emergencyName, emergencyContactPhone: emergencyPhone
+        });
 
         if (result.success) {
             clientFormMessageEmployee.textContent = '✅ Cliente registrado exitosamente.';
@@ -427,6 +427,7 @@ const handleAddClient = async (e) => {
 
             setTimeout(async () => {
                 closeClientModal();
+                // Recargar datos locales del empleado
                 const clientsData = await getClientsWithPets();
                 updateState('clientsWithPets', clientsData);
                 const allClients = clientsData.map(c => ({
@@ -447,10 +448,8 @@ const handleAddClient = async (e) => {
         clientFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         clientFormMessageEmployee.classList.remove('hidden');
     } finally {
-        // ===== INICIO DE LA CORRECCIÓN 4 (Evitar duplicados al crear cliente) =====
         submitAddClientButtonEmployee.disabled = false;
-        submitAddClientButtonEmployee.textContent = 'Registrar Cliente';
-        // ===== FIN DE LA CORRECCIÓN 4 =====
+        submitAddClientButtonEmployee.textContent = 'Guardar Cliente';
     }
 };
 
@@ -492,9 +491,19 @@ const handleSaveClient = async (e) => {
         editFormMessage.className = 'block p-3 rounded-md bg-green-100 text-green-700 text-sm mb-4';
         editFormMessage.classList.remove('hidden');
 
-        setTimeout(() => {
+        setTimeout(async () => {
             switchToViewMode();
-            renderClients(state.allClients); 
+            // Actualizar lista global en segundo plano
+            const clientsData = await getClientsWithPets();
+            updateState('clientsWithPets', clientsData);
+            const allClients = clientsData.map(c => ({
+                id: c.id, first_name: c.first_name, last_name: c.last_name, 
+                phone: c.phone, email: c.email, district: c.district
+            }));
+            updateState('allClients', allClients);
+            renderClients(allClients);
+            // Recargar detalles
+            showClientDetails(currentClientProfile.profile.id);
         }, 1000);
 
     } else {
@@ -536,7 +545,6 @@ const handleAddPetToClient = async (e) => {
         name: formData.get('name')?.trim(),
         breed: formData.get('breed')?.trim(),
         sex: formData.get('sex')?.trim(),
-        birth_date: formData.get('birth_date')?.trim(),
         weight: formData.get('weight') ? parseFloat(formData.get('weight')) : null,
         size: formData.get('size')?.trim(),
         observations: formData.get('observations')?.trim(),
@@ -550,14 +558,11 @@ const handleAddPetToClient = async (e) => {
         return;
     }
 
-    // ===== INICIO DE LA CORRECCIÓN 5 (Evitar duplicados al crear mascota) =====
     submitAddPetButtonEmployee.disabled = true;
     submitAddPetButtonEmployee.textContent = 'Guardando...';
-    // ===== FIN DE LA CORRECCIÓN 5 =====
 
-    let result;
     try {
-        result = await addPetFromDashboard(petData);
+        const result = await addPetFromDashboard(petData);
 
         if (result.success) {
             petFormMessageEmployee.textContent = '✅ Mascota agregada correctamente.';
@@ -580,9 +585,7 @@ const handleAddPetToClient = async (e) => {
         petFormMessageEmployee.className = 'block p-3 rounded-md bg-red-100 text-red-700 text-sm mb-4';
         petFormMessageEmployee.classList.remove('hidden');
     } finally {
-        // ===== INICIO DE LA CORRECCIÓN 5 (Evitar duplicados al crear mascota) =====
         submitAddPetButtonEmployee.disabled = false;
-        submitAddPetButtonEmployee.textContent = 'Agregar Mascota';
-        // ===== FIN DE LA CORRECCIÓN 5 =====
+        submitAddPetButtonEmployee.textContent = 'Guardar Mascota';
     }
 };

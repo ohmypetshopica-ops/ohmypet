@@ -1,10 +1,8 @@
 // public/modules/employee/employee-pets.js
-// Módulo de gestión de mascotas
+// Módulo de gestión de mascotas (WhatsApp SOLO en detalles)
 
 import { state, updateState } from './employee-state.js';
-import { getClientsWithPets, getAppointmentPhotos } from '../dashboard/dashboard.api.js';
 import { supabase } from '../../core/supabase.js';
-// Importar la función para agendar cita desde detalles
 import { openAddAppointmentWithPreselection } from './employee-appointments.js';
 
 // Elementos del DOM
@@ -69,9 +67,12 @@ export const setupPetListeners = () => {
 
     backToPetsBtn?.addEventListener('click', showPetsList);
     
+    // Delegación estándar (clic en toda la tarjeta abre detalle)
     petsList?.addEventListener('click', (e) => {
         const btn = e.target.closest('.pet-btn');
-        if (btn) showPetDetails(btn.dataset.petId);
+        if (btn) {
+            showPetDetails(btn.dataset.petId);
+        }
     });
     
     closeHistoryModalBtn?.addEventListener('click', closeHistoryModalEmployee);
@@ -186,8 +187,9 @@ export const renderPets = (pets) => {
             ? pet.image_url 
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(pet.name || 'M')}&background=10B981&color=FFFFFF`;
         
+        // LISTA LIMPIA: Sin teléfono ni WhatsApp aquí
         return `
-            <button data-pet-id="${pet.id}" class="pet-btn w-full text-left bg-white p-4 rounded-lg shadow-sm border hover:bg-gray-50 flex items-center space-x-3">
+            <button data-pet-id="${pet.id}" class="pet-btn w-full text-left bg-white p-4 rounded-lg shadow-sm border hover:bg-gray-50 flex items-center space-x-3 transition-colors">
                 <img src="${petImage}" alt="${pet.name}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
                 <div class="flex-1 min-w-0">
                     <h3 class="font-bold text-gray-800 truncate">${pet.name}</h3>
@@ -226,6 +228,7 @@ const showPetDetails = async (petId) => {
 
     const owner = state.allClients.find(c => c.id === pet.owner_id);
     const ownerName = owner ? `${owner.first_name || ''} ${owner.last_name || ''}`.trim() || 'Dueño desconocido' : 'Dueño desconocido';
+    const ownerPhone = owner?.phone || '';
 
     const { data: appointments } = await supabase
         .from('appointments')
@@ -269,6 +272,13 @@ const showPetDetails = async (petId) => {
         `).join('')
         : '<p class="text-sm text-gray-500">No hay historial de servicios completados.</p>';
 
+    // Crear enlace de WhatsApp para mostrarlo SOLO en los detalles
+    const whatsappLink = ownerPhone && ownerPhone.length >= 9
+        ? `<a href="https://wa.me/51${ownerPhone.replace(/\D/g,'')}" target="_blank" class="text-green-600 font-bold hover:underline flex items-center gap-1">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.986.597 1.973 1.016 3.275 1.016 3.181 0 5.768-2.587 5.768-5.766.001-3.187-2.575-5.77-5.768-5.771l1.771 1.768zm3.576 8.011c-.147.413-.86.758-1.203.796-.373.042-2.508-.246-4.519-2.246-1.814-1.814-2.109-3.559-2.227-4.049-.11-.46-.03-.762.154-1.014.14-.193.38-.396.572-.396.17 0 .318.011.444.072.175.083.819 1.665.911 1.84.062.119.024.26-.106.496-.094.174-.344.392-.486.526-.149.141-.295.289.057.905.726 1.263 1.906 2.12 2.552 2.386.292.12.573.077.778-.14.236-.25.553-.79.711-1.096.159-.305.332-.253.606-.147 1.607.765 1.931.95 2.027 1.123.098.176.098.881-.047 1.296z"></path></svg>
+            ${ownerPhone}
+           </a>`
+        : '<span class="text-gray-400">Sin teléfono</span>';
     
     petDetailsContent.innerHTML = `
         <div class="bg-white rounded-xl shadow-lg p-6">
@@ -290,8 +300,12 @@ const showPetDetails = async (petId) => {
 
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="bg-gray-50 p-3 rounded-lg">
-                    <p class="text-xs font-semibold text-gray-500">Raza</p>
-                    <p class="font-bold text-gray-800">${pet.breed || 'N/A'}</p>
+                    <p class="text-xs font-semibold text-gray-500">Dueño</p>
+                    <p class="font-bold text-gray-800">${ownerName}</p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-xs font-semibold text-gray-500">Contacto</p>
+                    ${whatsappLink}
                 </div>
                 <div class="bg-gray-50 p-3 rounded-lg">
                     <p class="text-xs font-semibold text-gray-500">Sexo</p>
@@ -308,10 +322,6 @@ const showPetDetails = async (petId) => {
                 <div class="bg-gray-50 p-3 rounded-lg">
                     <p class="text-xs font-semibold text-gray-500">Tamaño</p>
                     <p class="font-bold text-gray-800">${pet.size || 'N/A'}</p>
-                </div>
-                <div class="bg-gray-50 p-3 rounded-lg">
-                    <p class="text-xs font-semibold text-gray-500">Dueño</p>
-                    <p class="font-bold text-gray-800"><a href="tel:${owner?.phone || ''}" class="text-blue-600">${ownerName}</a></p>
                 </div>
             </div>
 
@@ -351,20 +361,15 @@ const showPetDetails = async (petId) => {
 
     petDetailsContent?.classList.remove('hidden');
     
-    // --- LISTENER PARA BOTÓN AGENDAR CITA ---
     const scheduleBtn = document.getElementById('schedule-appt-btn-details');
     if (scheduleBtn && owner) {
         scheduleBtn.addEventListener('click', () => {
-            // 1. Cambiar a vista de citas
             const appointmentsNavBtn = document.querySelector('.nav-btn[data-view="appointments"]');
             if (appointmentsNavBtn) appointmentsNavBtn.click();
-            
-            // 2. Abrir modal con datos prellenados
             openAddAppointmentWithPreselection(owner, pet);
         });
     }
 
-    // Añadir listeners para los elementos de historial
     const historyBlock = document.getElementById('history-block-button');
     if (historyBlock && lastAppointment) {
         historyBlock.addEventListener('click', () => {
@@ -382,7 +387,6 @@ const showPetDetails = async (petId) => {
         });
     });
 };
-
 
 const openHistoryModalEmployee = (appointment, petName) => {
     if (!appointment) return;
@@ -418,10 +422,4 @@ const openHistoryModalEmployee = (appointment, petName) => {
 const closeHistoryModalEmployee = () => {
     historyModalEmployee?.classList.add('hidden');
     document.body.style.overflow = '';
-};
-
-const closePetModal = () => {
-    addPetModalEmployee?.classList.add('hidden');
-    petFormEmployee?.reset();
-    petFormMessageEmployee?.classList.add('hidden');
 };

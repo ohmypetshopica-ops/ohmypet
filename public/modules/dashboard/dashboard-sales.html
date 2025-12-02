@@ -15,6 +15,110 @@
         #mobile-menu.active { transform: translateX(0); }
         #mobile-overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
         #mobile-overlay.active { opacity: 1; pointer-events: auto; }
+
+        /* --- ESTILOS PARA VISTA MÓVIL TIPO TARJETA (CUADROS) --- */
+        @media (max-width: 767px) {
+            /* Ocultar encabezados de tabla */
+            thead { display: none; }
+
+            /* Convertir filas en TARJETAS */
+            #sales-table-body tr {
+                display: flex;
+                flex-direction: column;
+                background: white;
+                margin-bottom: 1rem;
+                padding: 1.25rem;
+                border-radius: 1rem; /* Bordes redondeados como clientes */
+                border: 1px solid #E5E7EB;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+                position: relative;
+            }
+
+            #sales-table-body td {
+                display: block;
+                width: 100%;
+                padding: 0.25rem 0;
+                border: none;
+                white-space: normal !important;
+            }
+
+            /* ORDENAMIENTO DE ELEMENTOS DENTRO DE LA TARJETA */
+            
+            /* 1. Nombre del Cliente (Grande arriba) */
+            #sales-table-body tr td:nth-child(2) {
+                order: 1;
+                font-size: 1.125rem; /* text-lg */
+                font-weight: 700;
+                color: #111827; /* gray-900 */
+                margin-bottom: 0.25rem;
+            }
+
+            /* 2. Fecha (Debajo del nombre, pequeño) */
+            #sales-table-body tr td:nth-child(1) {
+                order: 2;
+                font-size: 0.875rem; /* text-sm */
+                color: #6B7280; /* gray-500 */
+                margin-bottom: 0.75rem;
+                border-bottom: 1px solid #F3F4F6;
+                padding-bottom: 0.75rem;
+            }
+
+            /* 3. Productos (Cuerpo de la tarjeta) */
+            #sales-table-body tr td:nth-child(3) {
+                order: 3;
+                font-size: 0.9rem;
+                color: #374151; /* gray-700 */
+                margin-bottom: 0.5rem;
+                display: -webkit-box;
+                -webkit-line-clamp: 2; /* Limitar a 2 líneas */
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            #sales-table-body tr td:nth-child(3)::before {
+                content: "📦 ";
+            }
+
+            /* 4. Método de Pago */
+            #sales-table-body tr td:nth-child(5) {
+                order: 4;
+                font-size: 0.8rem;
+                color: #9CA3AF;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 0.5rem;
+            }
+
+            /* 5. Total (Grande y Verde a la derecha o abajo) */
+            #sales-table-body tr td:nth-child(4) {
+                order: 5;
+                font-size: 1.25rem;
+                font-weight: 800;
+                color: #059669; /* green-600 */
+                text-align: left;
+                margin-bottom: 1rem;
+            }
+
+            /* 6. Botón de Acción (Ancho completo al final) */
+            #sales-table-body tr td:nth-child(6) {
+                order: 6;
+                border-top: 1px solid #F3F4F6;
+                padding-top: 1rem;
+                margin-top: 0.5rem;
+            }
+            
+            #sales-table-body tr td:nth-child(6) button {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: #F0FDFA; /* Fondo muy suave */
+                color: #0D9488; /* Teal/Green text */
+                padding: 0.75rem;
+                border-radius: 0.5rem;
+                font-weight: 600;
+                border: 1px solid #CCFBF1;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-black">

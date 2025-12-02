@@ -2,7 +2,7 @@
 
 import { supabase } from '../../core/supabase.js';
 // MODIFICADO: Importar la nueva función paginada y las funciones existentes
-import { getProductsPaginated, addProduct, updateProduct, deleteProduct } from './dashboard.api.js';
+import { getProductsPaginated, addProduct, updateProduct, deleteProduct } from './products.api.js';
 import { createProductRow } from './dashboard.utils.js';
 
 // --- ELEMENTOS DEL DOM ---

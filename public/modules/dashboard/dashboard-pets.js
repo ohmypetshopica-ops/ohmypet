@@ -2,7 +2,7 @@
 import { supabase } from '../../core/supabase.js';
 // --- INICIO: CÓDIGO ACTUALIZADO ---
 // Se eliminó 'getPetLastServiceDate' de esta línea de importación
-import { deletePet } from './dashboard.api.js';
+import { deletePet } from './pets.api.js';
 // --- FIN: CÓDIGO ACTUALIZADO ---
 
 

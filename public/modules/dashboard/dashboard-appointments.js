@@ -1,19 +1,27 @@
 // public/modules/dashboard/dashboard-appointments.js
 
 import { supabase } from '../../core/supabase.js';
+
+// 1. Funciones de CITAS (desde su propio archivo)
 import { 
     getAppointments,
     updateAppointmentStatus, 
     getAppointmentPhotos, 
     uploadAppointmentPhoto, 
     uploadReceiptFile,
-    getClientsWithPets,
     getBookedTimesForDashboard,
     addAppointmentFromDashboard,
     rescheduleAppointmentFromDashboard,
     deleteAppointment 
-} from './dashboard.api.js';
+} from './appointments.api.js';
+
+// 2. Funciones de CLIENTES (¡Aquí estaba el error!)
+import { getClientsWithPets } from './clients.api.js';
+
+// 3. Funciones de PESO (se mantienen igual)
 import { addWeightRecord } from './pet-weight.api.js';
+
+// 4. Utilidades (se mantienen igual)
 import { createAppointmentRow } from './dashboard.utils.js';
 
 console.log("🚀 dashboard-appointments.js cargado y ejecutándose...");
@@ -191,6 +199,8 @@ const getShampooList = () => {
 
 // --- PAGINACIÓN ---
 const renderPagination = (totalCount) => {
+    if (!paginationContainer) return;
+
     const totalPages = Math.ceil(totalCount / itemsPerPage);
     
     if (totalPages <= 1) {
@@ -243,11 +253,13 @@ const renderAppointmentsTable = (appointments) => {
 };
 
 const loadAppointmentsAndRender = async () => {
+    if (!appointmentsTableBody) return;
+    
     appointmentsTableBody.innerHTML = `<tr><td colspan="5" class="block md:table-cell text-center py-8 text-gray-500">Cargando citas...</td></tr>`;
 
-    const searchTerm = searchInput.value.trim();
-    const selectedStatus = statusFilter.value;
-    const selectedDate = dateFilter.value;
+    const searchTerm = searchInput ? searchInput.value.trim() : '';
+    const selectedStatus = statusFilter ? statusFilter.value : '';
+    const selectedDate = dateFilter ? dateFilter.value : '';
 
     const { data: appointments, count: totalCount } = await getAppointments(
         currentPage,
@@ -418,13 +430,13 @@ const closeDeleteModal = () => {
 const initializeAddAppointmentModal = async () => {
     clientsWithPets = await getClientsWithPets();
 
-    addAppointmentBtn.addEventListener('click', openAddAppointmentModal);
-    cancelAddAppointmentBtn.addEventListener('click', closeAddAppointmentModal);
-    addAppointmentModal.addEventListener('click', (e) => {
+    addAppointmentBtn?.addEventListener('click', openAddAppointmentModal);
+    cancelAddAppointmentBtn?.addEventListener('click', closeAddAppointmentModal);
+    addAppointmentModal?.addEventListener('click', (e) => {
         if (e.target === addAppointmentModal) closeAddAppointmentModal();
     });
 
-    clientSearchInputModal.addEventListener('input', () => {
+    clientSearchInputModal?.addEventListener('input', () => {
         const searchTerm = clientSearchInputModal.value.toLowerCase();
         
         petSelect.innerHTML = '<option>Selecciona un cliente primero</option>';
@@ -444,7 +456,7 @@ const initializeAddAppointmentModal = async () => {
         renderClientSearchResults(matchedClients);
     });
 
-    clientSearchResults.addEventListener('click', (e) => {
+    clientSearchResults?.addEventListener('click', (e) => {
         const clientDiv = e.target.closest('[data-client-id]');
         if (clientDiv) {
             const clientId = clientDiv.dataset.clientId;
@@ -459,14 +471,16 @@ const initializeAddAppointmentModal = async () => {
     });
     
     document.addEventListener('click', (e) => {
-        if (!clientSearchInputModal.contains(e.target) && !clientSearchResults.contains(e.target)) {
-            clientSearchResults.classList.add('hidden');
+        if (clientSearchInputModal && clientSearchResults) {
+             if (!clientSearchInputModal.contains(e.target) && !clientSearchResults.contains(e.target)) {
+                clientSearchResults.classList.add('hidden');
+            }
         }
     });
 
-    newAppointmentDateInput.addEventListener('change', () => renderAvailableTimes(newAppointmentDateInput, newAppointmentTimeSelect));
+    newAppointmentDateInput?.addEventListener('change', () => renderAvailableTimes(newAppointmentDateInput, newAppointmentTimeSelect));
 
-    addAppointmentForm.addEventListener('submit', async (e) => {
+    addAppointmentForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitButton = addAppointmentForm.querySelector('button[type="submit"]');
         submitButton.disabled = true;

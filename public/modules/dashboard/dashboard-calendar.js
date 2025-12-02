@@ -1,13 +1,24 @@
 // public/modules/dashboard/dashboard-calendar.js
 
 import { supabase } from '../../core/supabase.js';
+
+// 1. Importar funciones del CALENDARIO (desde su nuevo archivo)
 import { 
-    getClientsWithPets, 
-    getBookedTimesForDashboard, 
+    blockTimeSlot, 
+    unblockTimeSlot,
+    getMonthAppointments,
+    getMonthBlockedSlots
+} from './calendar.api.js';
+
+// 2. Importar funciones de CLIENTES (para búsqueda en modal)
+import { getClientsWithPets } from './clients.api.js';
+
+// 3. Importar funciones de CITAS (para agendar y verificar disponibilidad puntual)
+import { 
     addAppointmentFromDashboard,
-    unblockTimeSlot, // Asegúrate de importar esto si se usa
-    blockTimeSlot    // Asegúrate de importar esto si se usa
-} from './dashboard.api.js';
+    getBookedTimesForDashboard 
+} from './appointments.api.js';
+
 
 // --- ELEMENTOS DEL DOM CALENDAR ---
 const calendarGrid = document.getElementById('calendar-grid');
@@ -52,61 +63,6 @@ const AVAILABLE_HOURS = [
     "15:00", "15:30", "16:00"
 ];
 
-// --- FUNCIONES DE API ---
-
-/**
- * Obtiene todas las citas de un mes específico
- */
-const getMonthAppointments = async (year, month) => {
-    const firstDay = new Date(year, month, 1).toISOString().split('T')[0];
-    const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-            id, 
-            appointment_date, 
-            appointment_time, 
-            service, 
-            status,
-            pet_id,
-            pets ( name ),
-            profiles ( full_name, first_name, last_name )
-        `)
-        .gte('appointment_date', firstDay)
-        .lte('appointment_date', lastDay)
-        .order('appointment_date', { ascending: true })
-        .order('appointment_time', { ascending: true });
-    
-    if (error) {
-        console.error('Error al obtener citas:', error);
-        return [];
-    }
-    return data || [];
-};
-
-/**
- * Obtiene todos los horarios bloqueados de un mes
- */
-const getMonthBlockedSlots = async (year, month) => {
-    const firstDay = new Date(year, month, 1).toISOString().split('T')[0];
-    const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0];
-    
-    const { data, error } = await supabase
-        .from('blocked_slots')
-        .select('*')
-        .gte('blocked_date', firstDay)
-        .lte('blocked_date', lastDay)
-        .order('blocked_date', { ascending: true })
-        .order('blocked_time', { ascending: true });
-    
-    if (error) {
-        console.error('Error al obtener horarios bloqueados:', error);
-        return [];
-    }
-    return data || [];
-};
-
 
 // --- FUNCIONES DEL CALENDARIO ---
 
@@ -122,7 +78,7 @@ const renderCalendar = async () => {
                         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     currentMonthYear.textContent = `${monthNames[month]} ${year}`;
     
-    // Obtener datos del mes
+    // Obtener datos del mes usando las nuevas funciones API
     [appointments, blockedSlots] = await Promise.all([
         getMonthAppointments(year, month),
         getMonthBlockedSlots(year, month)
@@ -545,24 +501,6 @@ const setupAppointmentModalListeners = () => {
         }
     });
 
-    newAppointmentDateInput?.addEventListener('change', async () => {
-        const selectedDate = newAppointmentDateInput.value;
-        if (!selectedDate) return;
-        
-        newAppointmentTimeSelect.innerHTML = '<option>Cargando...</option>';
-        const bookedTimes = await getBookedTimesForDashboard(selectedDate);
-        
-        newAppointmentTimeSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
-        AVAILABLE_HOURS.forEach(hour => {
-            if (!bookedTimes.includes(hour)) {
-                const option = new Option(hour, hour + ':00');
-                newAppointmentTimeSelect.add(option);
-            }
-        });
-        newAppointmentTimeSelect.disabled = false;
-    });
-
-
     addAppointmentForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         submitAppointmentBtn.disabled = true;
@@ -579,7 +517,7 @@ const setupAppointmentModalListeners = () => {
             appointment_time: formData.get('appointment_time'),
             service: serviceValue,
             notes: notesValue || null,
-            status: 'confirmada' // Asumimos que el administrador lo confirma inmediatamente
+            status: 'confirmada'
         };
 
         if (!appointmentData.user_id || !appointmentData.pet_id || !appointmentData.appointment_date || !appointmentData.appointment_time || !appointmentData.service) {
@@ -595,7 +533,6 @@ const setupAppointmentModalListeners = () => {
             alert('¡Cita agendada con éxito!');
             
             try {
-                // 1. Verificar si la cita es para el futuro
                 const appointmentDateTime = new Date(`${appointmentData.appointment_date}T${appointmentData.appointment_time}`);
                 const now = new Date();
 
@@ -610,21 +547,14 @@ const setupAppointmentModalListeners = () => {
                         
                         const whatsappUrl = `https://wa.me/51${client.phone}?text=${encodeURIComponent(message)}`;
                         window.open(whatsappUrl, '_blank');
-                    } else {
-                        alert('La cita fue agendada, pero no se pudo notificar por WhatsApp porque el cliente no tiene un número de teléfono registrado.');
                     }
-                } else {
-                    // 2. Mensaje si la fecha es pasada
-                    alert('Cita agendada para una fecha/hora pasada. No se envió notificación por WhatsApp.');
                 }
             } catch (e) {
                 console.error('Error al intentar enviar WhatsApp:', e);
-                alert('La cita fue agendada, pero ocurrió un error al intentar generar el mensaje de WhatsApp.');
             }
 
             closeAddAppointmentModal();
-            await renderCalendar(); // Recargar el calendario para mostrar la nueva cita
-            // Si el modal de detalle está abierto, refrescarlo
+            await renderCalendar();
             if (!dayDetailModal.classList.contains('hidden')) {
                 openDayDetailModal(appointmentData.appointment_date);
             }
@@ -671,13 +601,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         headerTitle.textContent = 'Calendario de Citas';
     }
     
-    // Cargar datos de clientes y mascotas al inicio
     clientsWithPets = await getClientsWithPets();
-    
-    // Configurar listeners del modal de agendamiento
     setupAppointmentModalListeners();
-    
-    // Establecer la fecha mínima para la nueva cita a la fecha actual.
     newAppointmentDateInput.min = new Date().toISOString().split("T")[0];
     
     await renderCalendar();

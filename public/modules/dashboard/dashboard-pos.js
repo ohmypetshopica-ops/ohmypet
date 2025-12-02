@@ -1,10 +1,17 @@
 // public/modules/dashboard/dashboard-pos.js
 
 import { supabase } from '../../core/supabase.js';
-// Importamos la NUEVA función paginada y mantenemos addSale
-import { getPOSProductsPaginated, addSale } from './dashboard.api.js';
 
-console.log('✅ dashboard-pos.js cargado (Versión Lazy Loading)');
+// 1. Importar productos (inventario)
+import { getPOSProductsPaginated, updateProduct } from './products.api.js';
+
+// 2. Importar ventas (registrar venta) - ¡AQUÍ ESTABA EL ERROR!
+import { addSale } from './sales.api.js';
+
+// 3. Importar clientes (buscar cliente para la venta)
+import { getClients } from './clients.api.js';
+
+console.log('✅ dashboard-pos.js cargado (Versión Modular)');
 
 // --- ELEMENTOS DEL DOM ---
 const productsGrid = document.getElementById('products-grid');
@@ -46,19 +53,19 @@ let ticketNumber = 1;
 
 // --- VARIABLES PARA LAZY LOADING ---
 let posCurrentPage = 1;
-const posItemsPerPage = 20; // Cargamos de 20 en 20
+const posItemsPerPage = 20; 
 let posIsLoading = false;
 let posHasMore = true;
 let currentSearchTerm = '';
-let loadedProductsCache = []; // Guardamos los productos cargados para que el carrito pueda encontrarlos
+let loadedProductsCache = []; 
 
-// Elemento centinela para detectar el scroll al final
+// Elemento centinela para scroll infinito
 const sentinel = document.createElement('div');
 sentinel.id = 'infinite-scroll-sentinel';
 sentinel.className = 'col-span-full h-10 flex justify-center items-center py-4';
 sentinel.innerHTML = '<div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 hidden"></div>';
 
-// --- FUNCIÓN DE ALERTA CON REBOTE ---
+// --- FUNCIÓN DE ALERTA ---
 const showBounceToast = (message) => {
     if (!customToast || !toastMessage) return;
     toastMessage.textContent = message;
@@ -80,44 +87,14 @@ const showBounceToast = (message) => {
     }, 3000);
 };
 
-// --- FUNCIONES DE API ---
-const getClients = async () => {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, full_name, phone')
-        .eq('role', 'cliente')
-        .order('first_name', { ascending: true });
-    
-    if (error) {
-        console.error('Error al obtener clientes:', error);
-        return [];
-    }
-    return data || [];
-};
-
-const updateProductStock = async (productId, newStock) => {
-    const { error } = await supabase
-        .from('products')
-        .update({ stock: newStock })
-        .eq('id', productId);
-    
-    if (error) {
-        console.error('Error al actualizar stock:', error);
-        return { success: false, error };
-    }
-    return { success: true };
-};
-
-// --- RENDERIZADO DE PRODUCTOS (LAZY LOADING) ---
+// --- RENDERIZADO DE PRODUCTOS ---
 const renderProducts = (products, append = false) => {
-    // Si no estamos añadiendo (es una búsqueda nueva o inicio), limpiamos
     if (!append) {
         productsGrid.innerHTML = '';
         loadedProductsCache = [];
-        productsGrid.appendChild(sentinel); // Re-añadir el centinela al final
+        productsGrid.appendChild(sentinel);
     }
 
-    // Actualizar caché local para el carrito
     products.forEach(p => {
         if (!loadedProductsCache.find(existing => existing.id === p.id)) {
             loadedProductsCache.push(p);
@@ -129,7 +106,6 @@ const renderProducts = (products, append = false) => {
         return;
     }
 
-    // Crear HTML de los nuevos productos
     const productsHTML = products.map(product => {
         const imageUrl = product.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=D1D5DB&color=FFFFFF`;
         return `
@@ -144,18 +120,13 @@ const renderProducts = (products, append = false) => {
         `;
     }).join('');
 
-    // Insertar antes del centinela
     sentinel.insertAdjacentHTML('beforebegin', productsHTML);
 
-    // Re-asignar eventos solo a los nuevos elementos o delegar (aquí reasignamos por seguridad en SPA)
-    // Una forma más eficiente es delegación de eventos en el contenedor padre, pero mantenemos tu lógica:
     const newCards = productsGrid.querySelectorAll(`[data-product-id]`);
     newCards.forEach(card => {
-        // Removemos listener anterior para evitar duplicados si se re-renderiza
         card.replaceWith(card.cloneNode(true));
     });
     
-    // Volver a seleccionar después del clone
     productsGrid.querySelectorAll(`[data-product-id]`).forEach(card => {
         card.addEventListener('click', () => {
             const productId = card.dataset.productId;
@@ -165,22 +136,21 @@ const renderProducts = (products, append = false) => {
     });
 };
 
-// --- LÓGICA DE CARGA DE PRODUCTOS ---
+// --- CARGA DE PRODUCTOS ---
 const loadMoreProducts = async () => {
     if (posIsLoading || !posHasMore) return;
 
     posIsLoading = true;
-    // Mostrar spinner del centinela
     sentinel.querySelector('div').classList.remove('hidden');
 
     try {
         const { data, count } = await getPOSProductsPaginated(posCurrentPage, posItemsPerPage, currentSearchTerm);
         
         if (data.length < posItemsPerPage) {
-            posHasMore = false; // No hay más productos
+            posHasMore = false;
         }
 
-        renderProducts(data, true); // true = append (añadir al final)
+        renderProducts(data, true);
         posCurrentPage++;
 
     } catch (error) {
@@ -188,49 +158,41 @@ const loadMoreProducts = async () => {
     } finally {
         posIsLoading = false;
         sentinel.querySelector('div').classList.add('hidden');
-        
-        // Si no hay más, ocultar centinela para que no ocupe espacio
-        if (!posHasMore) {
-            sentinel.classList.add('hidden');
-        } else {
-            sentinel.classList.remove('hidden');
-        }
+        if (!posHasMore) sentinel.classList.add('hidden');
+        else sentinel.classList.remove('hidden');
     }
 };
 
-// --- CONFIGURAR OBSERVER PARA INFINITE SCROLL ---
 const setupInfiniteScroll = () => {
     const observer = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting) {
             loadMoreProducts();
         }
     }, {
-        root: productsGrid.parentElement, // El contenedor con scroll
-        rootMargin: '100px', // Cargar 100px antes de llegar al final
+        root: productsGrid.parentElement,
+        rootMargin: '100px',
         threshold: 0.1
     });
-
     observer.observe(sentinel);
 };
 
-// --- MANEJO DE BÚSQUEDA (Debounce) ---
+// --- MANEJO DE BÚSQUEDA ---
 let searchTimeout;
 productSearch.addEventListener('input', (e) => {
     clearTimeout(searchTimeout);
     const term = e.target.value.trim();
     
-    // Esperar 300ms antes de buscar para no saturar la DB
     searchTimeout = setTimeout(async () => {
         currentSearchTerm = term;
         posCurrentPage = 1;
         posHasMore = true;
-        productsGrid.innerHTML = ''; // Limpiar grid
-        productsGrid.appendChild(sentinel); // Re-añadir centinela
-        await loadMoreProducts(); // Cargar primera página de resultados
+        productsGrid.innerHTML = '';
+        productsGrid.appendChild(sentinel);
+        await loadMoreProducts();
     }, 300);
 });
 
-// --- FUNCIONES DEL CARRITO (Sin cambios lógicos, solo uso de caché) ---
+// --- LÓGICA DEL CARRITO ---
 const addToCart = (product) => {
     const existingItem = cart.find(item => item.id === product.id);
     
@@ -251,7 +213,6 @@ const addToCart = (product) => {
             note: '' 
         });
     }
-    
     renderCart();
     updateTotals();
 };
@@ -291,7 +252,6 @@ const updateCartItemPrice = (productId, newPrice) => {
     }
 };
 
-// --- RENDERIZADO DEL CARRITO ---
 const renderCart = () => {
     if (cart.length === 0) {
         cartItems.innerHTML = `
@@ -311,7 +271,6 @@ const renderCart = () => {
             <div class="flex justify-between items-start mb-2">
                 <div class="flex-1">
                     <h4 class="font-semibold text-sm text-gray-800">${item.name}</h4>
-                    
                     <div class="cart-item-price-container" data-product-id="${item.id}">
                         <p class="price-display text-xs text-gray-500 cursor-pointer py-1" title="Clic para editar precio">
                             S/ ${item.price.toFixed(2)} c/u
@@ -321,7 +280,6 @@ const renderCart = () => {
                             <input type="number" step="0.10" class="cart-item-price-input w-20 border border-gray-300 rounded px-1 py-0.5 text-xs" value="${item.price.toFixed(2)}">
                         </div>
                     </div>
-
                     <div class="mt-1">
                         <input type="text" 
                                class="cart-item-note-input w-full p-1.5 text-xs border border-gray-300 rounded bg-white focus:ring-1 focus:ring-green-500 focus:border-green-500 placeholder-gray-400" 
@@ -329,7 +287,6 @@ const renderCart = () => {
                                value="${item.note || ''}" 
                                data-product-id="${item.id}">
                     </div>
-
                 </div>
                 <button class="text-red-500 hover:text-red-700 ml-2" data-remove="${item.id}">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -339,17 +296,9 @@ const renderCart = () => {
             </div>
             <div class="flex items-center justify-between mt-2">
                 <div class="flex items-center gap-2">
-                    <button class="bg-gray-200 hover:bg-gray-300 w-7 h-7 rounded flex items-center justify-center" data-decrease="${item.id}">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                        </svg>
-                    </button>
+                    <button class="bg-gray-200 hover:bg-gray-300 w-7 h-7 rounded flex items-center justify-center" data-decrease="${item.id}">-</button>
                     <span class="font-bold text-gray-800 w-8 text-center">${item.quantity}</span>
-                    <button class="bg-gray-200 hover:bg-gray-300 w-7 h-7 rounded flex items-center justify-center" data-increase="${item.id}">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                    </button>
+                    <button class="bg-gray-200 hover:bg-gray-300 w-7 h-7 rounded flex items-center justify-center" data-increase="${item.id}">+</button>
                 </div>
                 <span class="font-bold text-green-600">S/ ${(item.price * item.quantity).toFixed(2)}</span>
             </div>
@@ -458,7 +407,6 @@ const closePaymentModal = () => {
 };
 
 const updatePaymentButton = () => {
-    const paymentMethod = paymentMethodSelect.value;
     const total = parseFloat(modalTotalElement.textContent);
     const customerId = selectedCustomerIdInput.value;
     const saleDate = saleDateInput.value;
@@ -468,7 +416,7 @@ const updatePaymentButton = () => {
         return;
     }
     
-    if (paymentMethod === 'EFECTIVO') {
+    if (paymentMethodSelect.value === 'EFECTIVO') {
         const cashReceived = parseFloat(cashReceivedInput.value) || 0;
         confirmPaymentBtn.disabled = cashReceived < total;
     } else {
@@ -477,7 +425,7 @@ const updatePaymentButton = () => {
 };
 
 // --- BÚSQUEDA DE CLIENTES ---
-const searchClients = (searchTerm) => {
+const handleSearchClients = (searchTerm) => {
     if (searchTerm.length < 2) {
         customerResults.classList.add('hidden');
         return;
@@ -524,18 +472,16 @@ const processSale = async () => {
     const saleDate = saleDateInput.value;
 
     if (!customerId || !saleDate) {
-        alert('Debe seleccionar un cliente y una fecha para la venta');
+        alert('Debe seleccionar un cliente y una fecha');
         return;
     }
     
     confirmPaymentBtn.disabled = true;
     confirmPaymentBtn.textContent = 'Procesando...';
     
-    const paymentMethod = paymentMethodSelect.value;
-    
     const saleData = {
         client_id: customerId,
-        payment_method: paymentMethod, 
+        payment_method: paymentMethodSelect.value, 
         items: cart.map(item => ({
             product_id: item.id,
             quantity: item.quantity,
@@ -548,22 +494,18 @@ const processSale = async () => {
     const { success, error } = await addSale(saleData, saleDate); 
     
     if (!success) {
-        console.error('Error completo:', error);
+        console.error('Error:', error);
         alert('Error al procesar la venta: ' + (error.message || 'Error desconocido'));
         confirmPaymentBtn.disabled = false;
         confirmPaymentBtn.textContent = 'Confirmar Venta';
         return;
     }
     
-    // Actualizar stock en la caché local y en la UI
+    // Actualizar stock visualmente
     for (const item of cart) {
         const product = loadedProductsCache.find(p => p.id === item.id);
         if (product) {
-            // No necesitamos llamar a DB aquí porque addSale ya actualiza DB
-            // Solo actualizamos visualmente
             product.stock -= item.quantity;
-            
-            // Actualizar tarjeta en el grid
             const card = productsGrid.querySelector(`[data-product-id="${item.id}"]`);
             if (card) {
                 card.querySelector('p.text-gray-500 span').textContent = product.stock;
@@ -585,12 +527,11 @@ const processSale = async () => {
     confirmPaymentBtn.textContent = 'Confirmar Venta';
 };
 
-// --- EVENT LISTENERS GENERALES ---
+// --- LISTENERS ---
 clearCartBtn.addEventListener('click', clearCart);
 processSaleBtn.addEventListener('click', openPaymentModal);
 cancelPaymentBtn.addEventListener('click', closePaymentModal);
 confirmPaymentBtn.addEventListener('click', processSale);
-
 saleDateInput.addEventListener('change', updatePaymentButton);
 
 paymentMethodSelect.addEventListener('change', (e) => {
@@ -606,10 +547,8 @@ paymentMethodSelect.addEventListener('change', (e) => {
 cashReceivedInput.addEventListener('input', () => {
     const total = parseFloat(modalTotalElement.textContent);
     const cashReceived = parseFloat(cashReceivedInput.value) || 0;
-    
     if (cashReceived >= total) {
-        const change = cashReceived - total;
-        changeAmountElement.textContent = change.toFixed(2);
+        changeAmountElement.textContent = (cashReceived - total).toFixed(2);
         changeDisplay.classList.remove('hidden');
     } else {
         changeDisplay.classList.add('hidden');
@@ -618,7 +557,7 @@ cashReceivedInput.addEventListener('input', () => {
 });
 
 customerSearch.addEventListener('input', (e) => {
-    searchClients(e.target.value);
+    handleSearchClients(e.target.value);
 });
 
 clearCustomerBtn.addEventListener('click', () => {
@@ -629,35 +568,21 @@ clearCustomerBtn.addEventListener('click', () => {
 
 // --- INICIALIZACIÓN ---
 const initializePOS = async () => {
-    console.log('🚀 Inicializando POS con Lazy Loading...');
+    if (!productsGrid || !cartItems) return;
     
-    if (!productsGrid || !cartItems) {
-        console.error('❌ Elementos del POS no encontrados');
-        return;
-    }
+    productsGrid.appendChild(sentinel);
+    setupInfiniteScroll();
     
-    try {
-        // Configurar Scroll Infinito
-        productsGrid.appendChild(sentinel);
-        setupInfiniteScroll();
-
-        // Cargar clientes
-        console.log('👥 Obteniendo clientes...');
-        allClients = await getClients();
-        
-        // Cargar primera tanda de productos
-        await loadMoreProducts();
-        
-        renderCart();
-        updateTotals();
-        setupCartEventListeners();
-
-        ticketNumberElement.textContent = String(ticketNumber).padStart(4, '0');
-        
-        console.log('✅ POS inicializado correctamente');
-    } catch (error) {
-        console.error('❌ Error al inicializar POS:', error);
-    }
+    // Cargar clientes para el POS
+    allClients = await getClients();
+    
+    await loadMoreProducts();
+    
+    renderCart();
+    updateTotals();
+    setupCartEventListeners();
+    
+    ticketNumberElement.textContent = String(ticketNumber).padStart(4, '0');
 };
 
 if (document.readyState === 'loading') {
